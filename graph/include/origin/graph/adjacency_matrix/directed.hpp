@@ -5,6 +5,10 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
+/**
+ * TODO Finish degree and iterators.
+ */
+
 #ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_DIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACENCY_MATRIX_DIRECTED_HPP
 
@@ -111,8 +115,6 @@ namespace origin
 
     /** @name Vertex Properties and Operations */
     //@{
-    vertex add_vertex(vertex_value_type);
-    void remove_vertex(vertex v);
     size_type out_degree(const_vertex v) const;
     size_type in_degree(const_vertex v) const;
     size_type degree(const_vertex v) const;
@@ -193,21 +195,45 @@ namespace origin
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix::operator[](vertex v) -> vertex_value_type&
-  { }
+  { return vertices_[v.value]; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix::const& operator[](const_vertex v) const
     -> vertex_value_type const&
-  { }
+  { return vertices_[v.value]; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix::operator[](edge e) -> edge_value_type&
-  { }
+  { return edges_[e.value]; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix::const& operator[](const_edge e) const
     -> edge_value_type const&
-  { }
+  { return edges_[e.value]; }
+
+  template<typename V, typename E, typename A>
+  void directed_adjacency_matrix::swap(directed_adjacency_matrix& c)
+  {
+    std::swap(vertices_, c.vertices_);
+    std::swap(edges_, c.edges_);
+  }
+
+  // TODO Requires some thought. What happens to vertices?
+  template<typename V, typename E, typename A>
+  void directed_adjacency_matrix::clear()
+  { edges_.clear(); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix::out_degree(const_vertex v) const -> size_type
+  { return 0; }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix::in_degree(const_vertex v) const -> size_type
+  { return 0; }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix::degree(const_vertex v) const -> size_type
+  { return 0; }
   //@}
 
 } // namesapce origin
