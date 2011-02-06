@@ -27,7 +27,7 @@ namespace origin
    */
   template<typename Iter>
   class key_iterator
-    : bidirectional_iterator<
+    : public bidirectional_iterator_facade<
         key_iterator<Iter>,
         typename std::iterator_traits<Iter>::value_type::first_type const&
       >
@@ -40,6 +40,9 @@ namespace origin
     key_iterator(Iter i = base_iterator{})
       : iter_{i}
     { }
+
+    bool equal(key_iterator const& x) const
+    { return iter_ == x.iter_; }
     
     reference dereference() const
     { return (*iter_).first; }
@@ -71,10 +74,19 @@ namespace origin
     { }
     
     iterator begin() const
-    { return begin(rng); }
+    {
+      using std::begin;
+      return begin(range_);
+    }
     
     iterator end() const
-    { return end(rng); }
+    {
+      using std::end;
+      return end(range_);
+    }
+
+  private:
+    Range& range_;
   };
 
   /**
@@ -88,3 +100,6 @@ namespace origin
   key_range<Range const> keys(Range const& rng)
   { return rng; }
 }
+
+#endif
+

@@ -16,7 +16,7 @@ using namespace origin;
 int main()
 {
   map<int, char> m = {
-    {0, 'a'}, {1, 'b'}, {1, 'c'}
+    {0, 'a'}, {1, 'b'}, {2, 'c'}
   };
   for(auto x : keys(m)) {
     cout << x << " ";

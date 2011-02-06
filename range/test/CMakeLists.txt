@@ -15,4 +15,5 @@ origin_executable(enumerate_range enumerate_range.cpp)
 origin_executable(zip_range zip_range.cpp)
 origin_executable(stride_range stride_range.cpp)
 
+origin_executable(key_range key_range.cpp)
 
