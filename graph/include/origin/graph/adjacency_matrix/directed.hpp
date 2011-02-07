@@ -42,6 +42,7 @@ namespace origin
 
     typedef typename vertex_list::size_type size_type;
     typedef typename vertex_list::difference_type difference_type;
+    typedef typename adj_mtx_impl_::d_adj_mtx_tag graph_category;
 
     // Vertex and Edge data types
     typedef adj_mtx_impl_::handles::vertex_t vertex;

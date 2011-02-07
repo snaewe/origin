@@ -8,6 +8,8 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_IMPL_HPP
 #define ORIGIN_GRAPH_ADJACENCY_MATRIX_IMPL_HPP
 
+#include <origin/graph/traits.hpp>
+
 #include <cstddef>
 #include <iterator>
 #include <limits>
@@ -95,7 +97,7 @@ namespace origin {
 
 
 
-    /** in_edge_iterator implementation. */
+    /** (out_)edge_iterator implementation. */
     template<typename Graph>
     class edge_iter
     {
@@ -110,100 +112,67 @@ namespace origin {
 
       edge_iter() = delete;
 
-      edge_iter(Graph* g, size_type source, size_type target)
-        : g_(g), source_(source), target_(target)
-      { }
+      edge_iter(Graph* g, size_type index)
+        : g_(g), index_(index), order_(g->order())
+      { move_to_next_edge(); }
 
       edge_iter(edge_iter const&) = default;
 
       // Dereference
       reference operator*()
-      { return (*g_)(source_, target_); }
+      { return (*g_)(index_ / order_, index_ % order_); }
 
       const reference operator*() const
-      { return (*g_)(source_, target_); }
+      { return (*g_)(index_ / order_, index_ % order_); }
 
       pointer operator->()
-      { return &((*g_)(source_, target_)); }
+      { return &((*g_)(index_ / order_, index_ % order_)); }
 
       const pointer operator->() const
-      { return &((*g_)(source_, target_)); }
+      { return &((*g_)(index_ / order_, index_ % order_)); }
 
       // Implicit conversion to edge_t
       operator handles::edge_t()
-      { return handles::edge_t(source_ * g_->order() + target_); }
+      { return handles::edge_t(index_); }
 
       // Increment
       edge_iter& operator++()
       {
-        // There is a better way to do this.
-        if(target_ == g_->order() - 1)
-        {
-          target_ = 0;
-          ++source_;
-        }
-        else
-          ++target_;
+        move_to_next_edge();
         return *this;
       }
 
       edge_iter operator++(int)
       {
         edge_iter copy = *this;
-
-        // There is a better way to do this.
-        if(target_ == g_->order() - 1)
-        {
-          target_ = 0;
-          ++source_;
-        }
-        else
-          ++target_;
-
+        move_to_next_edge();
         return copy;
       }
 
       // Decrement
       edge_iter& operator--()
       {
-        // There is a better way to do this
-        if(target_ == 0)
-        {
-          target_ = g_->order() - 1;
-          -- source_;
-        }
-        else
-          --target_;
-
+        move_to_previous_edge();
         return *this;
       }
 
       edge_iter operator--(int)
       {
         edge_iter copy(*this);
-
-        // There is a better way to do this
-        if(target_ == 0)
-        {
-          target_ = g_->order() - 1;
-          -- source_;
-        }
-        else
-          --target_;
-
+        move_to_previous_edge();
         return copy;
       }
 
       // Equality
       friend inline bool operator==(edge_iter const& x, edge_iter const& y)
-      { return x.source_ == y.source_ && x.target_ == y.target_; }
+      { return x.index_ == y.index_; }
 
       friend inline bool operator!=(edge_iter const& x, edge_iter const& y)
       { return !(x == y); }
 
       // Order
       friend inline bool operator<(edge_iter const& x, edge_iter const& y)
-      { return x.source_ < y.source_ && x.target_ < y.target_; }
+      { return x.index_ < y.index_; }
 
       friend inline bool operator>(edge_iter const& x, edge_iter const& y)
       { return y < x; }
@@ -218,14 +187,28 @@ namespace origin {
       // Helper functions
       void move_to_next_edge()
       {
+        while(!(bool)((*g_)(index_ / order_, index_ % order_)) &&
+          index_ < order_ * order_)
+        { ++index_; }
       }
       void move_to_previous_edge()
+      {
+        do { --index_; }
+        while((!(bool)((*g_)(index_ / order_, index_ % order_))) && index_ != 0);
+      }
 
       // Members
-      size_type source_;
-      size_type target_;
+      size_type index_;
+      // Order is in g, but used so often that it merits local scope.
+      size_type order_;
       Graph* g_;
     };
+
+    /** Directed adjacency matrix category */
+    // Flesh out as more categories are added.
+    struct d_adj_mtx_tag
+      : directed_graph_tag
+    { };
 
   }   // namespace adj_mtx_impl_
 }     // namespace origin
