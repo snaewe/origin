@@ -116,7 +116,7 @@ namespace origin
     /** @name Data Structure Operations */
     //@{
     void swap(directed_adjacency_matrix&);
-    void clear();   // Clear edges? Vertices are fixed.
+    //void clear();   // Clear edges? Vertices are fixed.
     //@}
 
     /** @name Vertex Properties and Operations */
@@ -129,6 +129,7 @@ namespace origin
     /** @name Edge Properties and Operations */
     //@{
     edge add_edge(vertex u, vertex v);
+    edge add_edge(vertex u, vertex v, edge_value_type const& e);
     void remove_edge(edge e);
     void remove_edges(vertex u, vertex v);
     void remove_edges();
@@ -260,7 +261,7 @@ namespace origin
     -> edge_value_type&
   {
     assert(((bool)edges[vertex(r * order() + c)]));
-    return *edges[vertex(r * order() + c)];
+    return *edges[edge(r * order() + c)];
   }
 
   template<typename V, typename E, typename A>
@@ -268,7 +269,7 @@ namespace origin
     -> edge_value_type const&
   {
     assert(((bool)edges[vertex(r * order() + c)]));
-    return *edges[vertex(r * order() + c)];
+    return *edges[edge(r * order() + c)];
   }
 
   template<typename V, typename E, typename A>
@@ -279,9 +280,9 @@ namespace origin
   }
 
   // TODO Requires some thought. What happens to vertices?
-  template<typename V, typename E, typename A>
+  /*template<typename V, typename E, typename A>
   void directed_adjacency_matrix<V,E,A>::clear()
-  { edges_.clear(); }
+  { edges_.clear(); }*/
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::out_degree(const_vertex v) const -> size_type
@@ -294,6 +295,51 @@ namespace origin
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::degree(const_vertex v) const -> size_type
   { return 0; }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::add_edge(vertex v, vertex u) -> edge
+  {
+    size_type edge_index = v.value * order() + u.value;
+    // Should this assert? (that it isn't initialized)
+    //assert((!edges_[v.value * order() + u.value]));
+    // Or should it return the old edge
+    if(!edges_[edge_index])
+      edges_[edge_index] = edge_value_type();
+
+    return edge(edge_index);
+  }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::add_edge
+  (vertex v, vertex u, edge_value_type const& e) -> edge
+  {
+    size_type edge_index = v.value * order() + u.value;
+    if(!edges_[edge_index])
+      edges_[edge_index] = e;
+
+    return edge(edge_index);
+  }
+
+  template<typename V, typename E, typename A>
+  void directed_adjacency_matrix<V,E,A>::remove_edge(edge e)
+  { /* How does this work?*/ }
+
+  template<typename V, typename E, typename A>
+  void directed_adjacency_matrix<V,E,A>::remove_edges(vertex v, vertex u)
+  { /* How does this work?*/ }
+
+  template<typename V, typename E, typename A>
+  void directed_adjacency_matrix<V,E,A>::remove_edges()
+  { edges_.clear(); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::get_edge(vertex v, vertex u) -> edge
+  { return edge(v.value * order() + u.value); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::get_edge(const_vertex v, const_vertex)
+    -> const_edge
+  { return const_edge(v.value * order() + u.value); }
   //@}
 
 } // namesapce origin

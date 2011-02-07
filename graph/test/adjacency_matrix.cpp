@@ -31,6 +31,10 @@ int main()
   assert(g.order() == g_size);
   assert(g.size() == g_size * g_size);
 
+  // Testing: Add edges
+  g.add_edge(g_type::vertex(1), g_type::vertex(2));
+
+  // Testing additional constructors.
   {
     g_type h(g);
     assert(h.vertices_.data() != g.vertices_.data());
@@ -52,6 +56,12 @@ int main()
     assert(!k.null());
     assert(!k.empty());
     assert(k.order() == g_size);
+  }
+
+  // Testing ranges.
+
+  {
+    auto i = g_type::edge_iterator(&g, 0);
   }
 
   return 0;

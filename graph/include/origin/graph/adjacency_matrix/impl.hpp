@@ -187,21 +187,21 @@ namespace origin {
       // Helper functions
       void move_to_next_edge()
       {
-        while(!(bool)((*g_)(index_ / order_, index_ % order_)) &&
-          index_ < order_ * order_)
+        while(!(*g_)[handles::edge_t(index_)] && index_ < order_ * order_)
         { ++index_; }
       }
       void move_to_previous_edge()
       {
         do { --index_; }
-        while((!(bool)((*g_)(index_ / order_, index_ % order_))) && index_ != 0);
+        while(!(*g_)[handles::edge_t(index_)] && index_ != 0);
       }
 
       // Members
+      
+      Graph* g_;
       size_type index_;
       // Order is in g, but used so often that it merits local scope.
       size_type order_;
-      Graph* g_;
     };
 
     /** Directed adjacency matrix category */
