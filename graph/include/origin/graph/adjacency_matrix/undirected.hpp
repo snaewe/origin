@@ -7,10 +7,11 @@
 
 
 
-#ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
-#define ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
+#ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_UNDIRECTED_HPP
+#define ORIGIN_GRAPH_ADJACENCY_MATRIX_UNDIRECTED_HPP
 
-#include <origin/graph/adjacency_matrix/directed.hpp>
-#include <origin/graph/adjacency_matrix/undirected.hpp>
+namespace origin {
+
+} // namespace origin
 
 #endif

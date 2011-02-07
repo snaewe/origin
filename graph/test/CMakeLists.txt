@@ -6,3 +6,7 @@
 # and conditions.
 
 origin_executable(graph graph.cpp)
+
+# Scratch Work. This will not be integrated into the library
+
+origin_executable(adjacency_graph adjacency_matrix.cpp)
