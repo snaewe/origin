@@ -310,15 +310,6 @@ namespace origin {
       { clear(); }
       //@}
 
-      /** @name Equality */
-      //@{
-      bool operator==(impl const& x) const
-      { return equal(x); }
-
-      bool operator!=(impl const& x) const
-      { return !equal(x); }
-      //@}
-
       /** @name Properties */
       //@{
       allocator_type get_allocator() const

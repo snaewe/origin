@@ -31,7 +31,6 @@ namespace origin
     template<typename Edge, typename Vertex>
     class undirected_edge
       : public implicit_bool_facade<undirected_edge<Edge, Vertex>>
-      , public equality_facade<undirected_edge<Edge, Vertex>>
     {
     public:
       typedef Edge* edge_pointer;
@@ -286,11 +285,8 @@ namespace origin
 
     /** @name Properties */
     //@{
-    bool operator==(undirected_adjacency_list const& x) const
-    { return base_type::operator==(x); }
-
-    bool operator!=(undirected_adjacency_list const& x) const
-    { return base_type::operator!=(x); }
+    bool equal(undirected_adjacency_list const& x) const
+    { return base_type::equal(x); }
     //@}
 
     /** @name Properties */

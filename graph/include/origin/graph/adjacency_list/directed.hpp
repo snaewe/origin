@@ -120,11 +120,8 @@ namespace origin
 
     /** @name Equality */
     //@{
-    bool operator==(directed_adjacency_list const& x) const
-    { return base_type::operator==(x); }
-
-    bool operator!=(directed_adjacency_list const& x) const
-    { return base_type::operator!=(x); }
+    bool equal(directed_adjacency_list const& x) const
+    { return base_type::equal(x); }
     //@}
 
     /** @name Properties */
