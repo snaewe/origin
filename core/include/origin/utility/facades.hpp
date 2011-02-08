@@ -8,7 +8,7 @@
 #ifndef ORIGIN_UTILITY_FACADES_HPP
 #define ORIGIN_UTILITY_FACADES_HPP
 
-#include <type_traits>
+#include <origin/utility/meta.hpp>
 
 namespace origin
 {
@@ -106,42 +106,128 @@ namespace origin
     }
   };
 
-  // FIXME: Rewrite these facades to use the generic member lookup approach.
+  // NOTE: I'm currently using the term "protocol" to describe something very
+  // similar to a concept.
 
   /**
-   * The equality facade provides an implementation of the equality comparable
-   * operations for the derived class.
+   * @name Equality Protocol
+   * The equality protocol defines the sets of function required for a type
+   * to be a model of the Equality_Comparable concept.
    */
-  template<typename Derived>
-  struct equality_facade
+  //@{
+  /**
+   * Return the result type of the member equal function or indicate a
+   * substitution failure.
+   */
+  template<typename T>
+  struct deduce_member_equal
   {
-    friend bool operator==(Derived const& x, Derived const& y)
-    { return x.equal(y); }
+    template<typename U>
+    static auto check(U const& x) -> decltype(x.equal(x));
 
-    friend bool operator!=(Derived const& x, Derived const& y)
-    { return !x.equal(y); }
+    static substitution_failure check(...);
+
+    typedef decltype(check(std::declval<T>())) type;
   };
 
   /**
-   * The ordered facade provides an implementation of the ordered concept for
-   * the derived class.
+   * Returns true if an object of type T supports the syntax `x.equal(x).`
    */
-  template<typename Derived>
-  struct ordered_facade
+  template<typename T>
+  struct has_member_equal
+    : is_different<typename deduce_member_equal<T>::type, substitution_failure>
+  { };
+
+  /**
+   * Provide operator== for all types T that model the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_equal<T>::value, typename deduce_member_equal<T>::type
+  >::type
+  operator==(T const& x, T const& y)
+  { return x.equal(y); }
+
+  /**
+   * Provide operator!= for all types T that model the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_equal<T>::value, typename deduce_member_equal<T>::type
+  >::type
+  operator!=(T const& x, T const& y)
+  { return !x.equal(y); }
+  //@}
+
+  /**
+   * @name Ordered Protocol
+   * The ordered protocol describes a set of member functions that can be
+   * defined in order to model the Ordered concept.
+   */
+  //@{
+  /**
+   * Return the result type of the member less function or indicate a
+   * substitution failure.
+   */
+  template<typename T>
+  struct deduce_member_less
   {
-    friend bool operator<(Derived const& x, Derived const& y)
-    { return x.less(y); }
+    template<typename U>
+    static auto check(U const& x) -> decltype(x.less(x));
 
-    friend bool operator>(Derived const& x, Derived const& y)
-    { return y.less(x); }
+    static substitution_failure check(...);
 
-    friend bool operator<=(Derived const& x, Derived const& y)
-    { return !y.less(x); }
-
-    friend bool operator>=(Derived const& x, Derived const& y)
-    { return !x.less(y); }
+    typedef decltype(check(std::declval<T>())) type;
   };
 
+  /**
+   * Returns true if an object of type T supports the syntax `x.equal(x).`
+   */
+  template<typename T>
+  struct has_member_less
+    : is_different<typename deduce_member_less<T>::type, substitution_failure>
+  { };
+
+  /**
+   * Provide operator< for all types modeling the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_less<T>::value, typename deduce_member_less<T>::type
+  >::type
+  operator<(T const& x, T const& y)
+  { return x.less(y); }
+
+  /**
+   * Provide operator> for all types modeling the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_less<T>::value, typename deduce_member_less<T>::type
+  >::type
+  operator>(T const& x, T const& y)
+  { return y.less(x); }
+
+  /**
+   * Provide operator>= for all types modeling the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_less<T>::value, typename deduce_member_less<T>::type
+  >::type
+  operator>=(T const& x, T const& y)
+  { return !y.less(x); }
+
+  /**
+   * Provide operator<= for all types modeling the ... concept.
+   */
+  template<typename T>
+  typename std::enable_if<
+    has_member_less<T>::value, typename deduce_member_less<T>::type
+  >::type
+  operator<=(T const& x, T const& y)
+  { return !x.less(y); }
+  //@}
 
 } // namespace origin
 

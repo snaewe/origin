@@ -25,7 +25,6 @@ namespace origin
   template<typename Derived, typename Reference>
   struct forward_iterator_facade
     : dereference_facade<Derived, Reference>
-    , equality_facade<Derived>
     , increment_facade<Derived>
   {
     typedef std::forward_iterator_tag iterator_category;

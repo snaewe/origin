@@ -5,7 +5,7 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <cassert>
+#include <iostream>
 
 #include <origin/optional.hpp>
 
@@ -43,4 +43,9 @@ int main()
   assert(( x1 < x4 ));
   assert(( !(x1 < x1) ));
   assert(( x1 <= x1 ));
+
+  assert(( x3 == nullptr ));
+  assert(( x2 == 5 ));
+  assert(( x2 < 10 ));
+  assert(( x2 > nullptr ));
 }
