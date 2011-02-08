@@ -6,7 +6,11 @@
 // and conditions.
 
 #include <cassert>
+#include <vector>
 #include <iostream>
+
+#include <origin/utility/typestr.hpp>
+#include <origin/utility/meta.hpp>
 #include <origin/tuple.hpp>
 
 // FIXME: This could probably be improved quite a bit.
@@ -43,9 +47,56 @@ struct void_call
   { return void_func(forward<Args>(args)...); }
 };
 
+// NOTE: Can be T [cv].
+template<typename T>
+struct member_begin_result
+{
+  template<typename U>
+  static auto check(U&& x) -> decltype(x.begin());
+
+  static substitution_failure check(...);
+
+  typedef decltype(check(declval<T>())) type;
+};
+
+template<typename T>
+struct has_member_begin
+  : is_different<typename member_begin_result<T>::type, substitution_failure>
+{ };
+
+template<typename T>
+typename enable_if<
+  has_member_begin<T>::value,
+  typename member_begin_result<T>::type
+>::type
+foo(T& x)
+{ return x.begin(); }
+
+template<typename T>
+typename enable_if<
+  has_member_begin<T const>::value,
+  typename member_begin_result<T const>::type
+>::type
+foo(T const& x)
+{ return x.begin(); }
+
+template<typename T, size_t N>
+T* foo(T (&arr)[N])
+{ return arr; }
 
 int main()
 {
+  string const s;
+  vector<int> v;
+  int a[10];
+
+  cout << typestr(foo(s)) << "\n";
+  cout << typestr(foo(v)) << "\n";
+  cout << typestr(foo(a)) << "\n";
+//   foo(0);
+
+
+
   auto x = make_tuple(0, 1, 2, 'a', 3.14);
   assert(( tuple_invoke(func_call{}, x) == 5 ));
 

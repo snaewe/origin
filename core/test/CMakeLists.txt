@@ -7,3 +7,4 @@
 
 # FIXME: Make these real tests!
 add_executable(tuple tuple.cpp)
+add_executable(optional optional.cpp)

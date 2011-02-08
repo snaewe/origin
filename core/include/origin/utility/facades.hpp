@@ -55,19 +55,6 @@ namespace origin
     { return static_cast<Derived const*>(this)->dereference(); }
   };
 
-  /**
-   * The equality comparable facade provides an implementation of the equality
-   * comparable operations for the derived class.
-   */
-  template<typename Derived>
-  struct equality_facade
-  {
-    friend bool operator==(Derived const& x, Derived const& y)
-    { return x.equal(y); }
-
-    friend bool operator!=(Derived const& x, Derived const& y)
-    { return !x.equal(y); }
-  };
 
   /**
    * The increment facade provides implementations of then pre- and pos-
@@ -118,6 +105,43 @@ namespace origin
       return tmp;
     }
   };
+
+  // FIXME: Rewrite these facades to use the generic member lookup approach.
+
+  /**
+   * The equality facade provides an implementation of the equality comparable
+   * operations for the derived class.
+   */
+  template<typename Derived>
+  struct equality_facade
+  {
+    friend bool operator==(Derived const& x, Derived const& y)
+    { return x.equal(y); }
+
+    friend bool operator!=(Derived const& x, Derived const& y)
+    { return !x.equal(y); }
+  };
+
+  /**
+   * The ordered facade provides an implementation of the ordered concept for
+   * the derived class.
+   */
+  template<typename Derived>
+  struct ordered_facade
+  {
+    friend bool operator<(Derived const& x, Derived const& y)
+    { return x.less(y); }
+
+    friend bool operator>(Derived const& x, Derived const& y)
+    { return y.less(x); }
+
+    friend bool operator<=(Derived const& x, Derived const& y)
+    { return !y.less(x); }
+
+    friend bool operator>=(Derived const& x, Derived const& y)
+    { return !x.less(y); }
+  };
+
 
 } // namespace origin
 
