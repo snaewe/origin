@@ -35,33 +35,13 @@ int main()
   g.add_edge(g_type::vertex(1), g_type::vertex(2));
 
   // Testing additional constructors.
-  {
-    g_type h(g);
-    assert(h.vertices_.data() != g.vertices_.data());
-    assert(h.edges_.data() != g.edges_.data());
-
-    g_type k;
-    k = g;
-    assert(k.vertices_.data() != g.vertices_.data());
-    assert(k.edges_.data() != g.edges_.data());
-  }
-  {
-    g_type h(r_copy(g));
-    assert(!h.null());
-    assert(!h.empty());
-    assert(h.order() == g_size);
-
-    g_type k;
-    k = r_copy(g);
-    assert(!k.null());
-    assert(!k.empty());
-    assert(k.order() == g_size);
-  }
 
   // Testing ranges.
 
   {
-    auto i = g_type::edge_iterator(&g, 0);
+    auto edges = g.edges();
+    /*for(; edges.begin() != edges.end(); ++edges.begin())
+    { }*/
   }
 
   return 0;

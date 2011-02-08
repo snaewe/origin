@@ -146,15 +146,14 @@ namespace origin
     vertex_range vertices();
     const_vertex_range vertices() const;
     edge_range edges();
-    const_vertex_range edges() const;
+    const_edge_range edges() const;
     out_edge_range out_edges(vertex_iterator);
     const_out_edge_range out_edges(const_vertex_iterator) const;
-
     in_edge_range in_edges(vertex_iterator);
     const_in_edge_range in_edges(const_vertex_iterator) const;
     //@}
 
-  //private:
+  private:
     vertex_list vertices_;
     edge_matrix edges_;
   };
@@ -337,9 +336,49 @@ namespace origin
   { return edge(v.value * order() + u.value); }
 
   template<typename V, typename E, typename A>
-  auto directed_adjacency_matrix<V,E,A>::get_edge(const_vertex v, const_vertex)
+  auto directed_adjacency_matrix<V,E,A>::get_edge
+  (const_vertex v, const_vertex u) const
     -> const_edge
   { return const_edge(v.value * order() + u.value); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::source(edge e) -> vertex
+  { return vertex(e.value / order()); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::source(const_edge e) const -> const_vertex
+  { return const_vertex(e.value / order()); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::target(edge e) -> vertex
+  { return vertex(e.value % order()); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::target(const_edge e) const -> const_vertex
+  { return const_vertex(e.value % order()); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::vertices() -> vertex_range
+  { vertex_range(vertices_); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::vertices() const -> const_vertex_range
+  { const_vertex_range(vertices_); }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::edges() -> edge_range
+  {
+    return edge_range(edge_iterator(this, 0), edge_iterator(this, order() * order()));
+  }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::edges() const -> const_edge_range
+  {
+    return const_edge_range(
+      const_edge_iterator(this, 0),
+      const_edge_iterator(this, order() * order())
+    );
+  }
   //@}
 
 } // namesapce origin
