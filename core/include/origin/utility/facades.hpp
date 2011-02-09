@@ -122,11 +122,11 @@ namespace origin
   template<typename T>
   struct deduce_member_equal
   {
+  private:
     template<typename U>
     static auto check(U const& x) -> decltype(x.equal(x));
-
     static substitution_failure check(...);
-
+  public:
     typedef decltype(check(std::declval<T>())) type;
   };
 
@@ -135,11 +135,40 @@ namespace origin
    */
   template<typename T>
   struct has_member_equal
-    : is_different<typename deduce_member_equal<T>::type, substitution_failure>
+    : is_different<
+        typename deduce_member_equal<T>::type, substitution_failure
+      >
   { };
 
   /**
-   * Provide operator== for all types T that model the ... concept.
+   * Safely return the result of the expression T::equal(x, y) where x is an
+   * object of type T and y is an object of type U.
+   */
+  template<typename T, typename U>
+  struct deduce_static_member_equal
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(X::equal(x, y));
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the type T supports the syntax T::equal(x, y) where x is
+   * an object of type T and y is an object of type U.
+   */
+  template<typename T, typename U>
+  struct has_static_member_equal
+    : is_different<
+        typename deduce_static_member_equal<T, U>::type, substitution_failure
+      >
+  { };
+
+  /**
+   * Provide the syntax x == y for all objects x and y of type T where T
+   * supports the syntax x.equal(y).
    */
   template<typename T>
   typename std::enable_if<
@@ -149,7 +178,9 @@ namespace origin
   { return x.equal(y); }
 
   /**
-   * Provide operator!= for all types T that model the ... concept.
+   * Provide the syntax x != y for all objects x and y of type T where T
+   * supports the syntax x.equal(y). The expression is equivalent to
+   * !x.equal(y).
    */
   template<typename T>
   typename std::enable_if<
@@ -157,6 +188,54 @@ namespace origin
   >::type
   operator!=(T const& x, T const& y)
   { return !x.equal(y); }
+
+  /**
+   * Provide the syntax x == y for all objects x of type T where T supports
+   * the syntax T::equal(x, y).
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_static_member_equal<T, U>::value,
+    typename deduce_static_member_equal<T, U>::type
+  >::type
+  operator==(T const& x, U const& y)
+  { return T::equal(x, y); }
+
+  /**
+   * Provide the syntax x == y for all objects y of type U where U supports
+   * the syntax U::equal(y, x).
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_static_member_equal<U, T>::value,
+    typename deduce_static_member_equal<U, T>::type
+  >::type
+  operator==(T const& x, U const& y)
+  { return U::equal(y, x); }
+
+  /**
+   * Provide the syntax x != y for all objects x of type T where T supports
+   * the syntax T::equal(x, y). This is equivalent to !T::equal(x, y).
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_static_member_equal<T, U>::value,
+    typename deduce_static_member_equal<T, U>::type
+  >::type
+  operator!=(T const& x, U const& y)
+  { return !T::equal(x, y); }
+
+  /**
+   * Provide the syntax for x != y for all objects y of type U where U supports
+   * the syntax T::equal(y, x). This is equivalent to !U::equal(y, x).
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_static_member_equal<U, T>::value,
+    typename deduce_static_member_equal<U, T>::type
+  >::type
+  operator!=(T const& x, U const& y)
+  { return !U::equal(y, x); }
   //@}
 
   /**
@@ -172,11 +251,11 @@ namespace origin
   template<typename T>
   struct deduce_member_less
   {
+  private:
     template<typename U>
     static auto check(U const& x) -> decltype(x.less(x));
-
     static substitution_failure check(...);
-
+  public:
     typedef decltype(check(std::declval<T>())) type;
   };
 
@@ -188,8 +267,65 @@ namespace origin
     : is_different<typename deduce_member_less<T>::type, substitution_failure>
   { };
 
+  // NOTE: Because operator< is an asymmetric operation, we actually require
+  // two different protocols. One where the primary type is on the left and
+  // one where it is on the right.
   /**
-   * Provide operator< for all types modeling the ... concept.
+   * Deduce the result type of the expression T::equal(x, y) where x is of type
+   * T and y is not.
+   */
+  template<typename T, typename U>
+  struct deduce_left_static_member_less
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(X::less(x, y));
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if type T supports the syntax T::equal(x, y) where x is of
+   * type T and y is not.
+   */
+  template<typename T, typename U>
+  struct has_left_static_member_less
+    : is_different<
+      typename deduce_left_static_member_less<T, U>::type, substitution_failure
+    >
+  { };
+
+  /**
+   * Deduce the result type of the expression T::less(y, x) where x is of type
+   * T and y is not.
+   */
+  template<typename T, typename U>
+  struct deduce_right_static_member_less
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(Y::less(x, y));
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<U>(), std::declval<T>())) type;
+  };
+
+  /**
+   * Return true if T supports the syntax T::less(y, x) where x is of type T
+   * and y is not.
+   */
+  template<typename T, typename U>
+  struct has_right_static_member_less
+    : is_different<
+      typename deduce_right_static_member_less<T, U>::type, substitution_failure
+    >
+  { };
+
+  // FIXME: What's the right way to write "..." Is it a concept being modeled,
+  // or is it a protocol being implemented? Is there really a difference.
+  /**
+   * Provide the syntax x < y for all objects x and y of type T where...
    */
   template<typename T>
   typename std::enable_if<
@@ -199,7 +335,7 @@ namespace origin
   { return x.less(y); }
 
   /**
-   * Provide operator> for all types modeling the ... concept.
+   * Provide the syntax x > y for all objects x and y of type T where...
    */
   template<typename T>
   typename std::enable_if<
@@ -209,7 +345,7 @@ namespace origin
   { return y.less(x); }
 
   /**
-   * Provide operator>= for all types modeling the ... concept.
+   * Provide the syntax x <= y for all objects x and y of type T where...
    */
   template<typename T>
   typename std::enable_if<
@@ -219,7 +355,7 @@ namespace origin
   { return !y.less(x); }
 
   /**
-   * Provide operator<= for all types modeling the ... concept.
+   * Provide the syntax x >= y for all objects x and y of type T where...
    */
   template<typename T>
   typename std::enable_if<
@@ -227,6 +363,28 @@ namespace origin
   >::type
   operator<=(T const& x, T const& y)
   { return !x.less(y); }
+
+  /**
+   * Provide the syntax x < y for objects x of type T where...
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_left_static_member_less<T, U>::value,
+    typename deduce_left_static_member_less<T, U>::type
+  >::type
+  operator<(T const& x, U const& y)
+  { return T::less(x, y); }
+
+  /**
+   * Provide the syntax x < y for objects y of type U where...
+   */
+  template<typename T, typename U>
+  typename std::enable_if<
+    has_right_static_member_less<U, T>::value,
+    typename deduce_right_static_member_less<U, T>::type
+  >::type
+  operator<(T const& x, U const& y)
+  { return U::less(x, y); }
   //@}
 
 } // namespace origin

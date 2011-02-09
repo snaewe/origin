@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#include <origin/utility/typestr.hpp>
 #include <origin/optional.hpp>
 
 using namespace std;
@@ -44,8 +45,16 @@ int main()
   assert(( !(x1 < x1) ));
   assert(( x1 <= x1 ));
 
+  // Test relation operators for underlying value types.
   assert(( x3 == nullptr ));
+  assert(( nullptr == x3 ));
+  assert(( x2 != nullptr ));
+  assert(( nullptr != x2 ));
   assert(( x2 == 5 ));
-  assert(( x2 < 10 ));
-  assert(( x2 > nullptr ));
+  assert(( 5 == x2 ));
+  assert(( x2 != 3 ));
+  assert(( 3 != x2 ));
+
+  x2 < nullptr;
+  nullptr < x2;
 }

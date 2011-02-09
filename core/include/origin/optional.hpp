@@ -97,30 +97,12 @@ namespace origin
         return false;
     }
 
-    friend bool operator==(optional const& x, T const& y)
+    static bool equal(optional const& x, T const& y)
     { return x.init_ && *x.ptr() == y; }
 
-    friend bool operator!=(optional const& x, T const& y)
-    { return !operator==(x, y); }
-
-    friend bool operator==(T const& x, optional const& y)
-    { return operator==(y, x); }
-
-    friend bool operator!=(T const& x, optional const& y)
-    { return !operator==(y, x); }
-
-
-    friend bool operator==(optional const& x, std::nullptr_t)
+    static bool equal(optional const& x, std::nullptr_t)
     { return !x.init_; }
 
-    friend bool operator!=(optional const& x, std::nullptr_t)
-    { return !operator==(x, nullptr); }
-
-    friend bool operator==(std::nullptr_t, optional const& x)
-    { return operator==(nullptr, x); }
-
-    friend bool operator!=(std::nullptr_t, optional const& x)
-    { return !operator==(nullptr, x); }
 
     bool less(optional const& x) const
     {
@@ -132,57 +114,19 @@ namespace origin
         return *ptr() < *x.ptr();
     }
 
-    friend bool operator<(optional const& x, T const& y)
+    // FIXME: It would probably be more efficient to implement comparisons
+    // without explicitly constructing new optional values.
+    static bool less(optional const& x, T const& y)
     { return x < optional{y}; }
 
-    friend bool operator>(optional const& x, T const& y)
-    { return x > optional{y}; }
+    static bool less(T const& x, optional const& y)
+    { return optional{x} < y; }
 
-    friend bool operator<=(optional const& x, T const& y)
-    { return x <= optional{y}; }
+    static bool less(optional const& x, std::nullptr_t)
+    { return x < optional{nullptr}; }
 
-    friend bool operator>=(optional const& x, T const& y)
-    { return x >= optional{y}; }
-
-    friend bool operator<(T const& x, optional const& y)
-    { return operator<(y, x); }
-
-    friend bool operator>(T const& x, optional const& y)
-    { return operator>(y, x); }
-
-    friend bool operator<=(T const& x, optional const& y)
-    { return operator<=(y, x); }
-
-    friend bool operator>=(T const& x, optional const& y)
-    { return operator>=(y, x); }
-
-    // No value is less than nullptr
-    friend bool operator<(optional const& x, std::nullptr_t)
-    { return false; }
-
-    // All initialized values are > nullptr.
-    friend bool operator>(optional const& x, std::nullptr_t)
-    { return x.init_; }
-
-    // Only an uninitializd values are <= nullptr.
-    friend bool operator<=(optional const& x, std::nullptr_t)
-    { return !x.init_; }
-
-    // All values are >= nullptr.
-    friend bool operator>=(optional const& x, std::nullptr_t)
-    { return true; }
-
-    friend bool operator<(std::nullptr_t, optional const& x)
-    { return operator<(x, nullptr); }
-
-    friend bool operator>(std::nullptr_t, optional const& x)
-    { return operator>(x, nullptr); }
-
-    friend bool operator<=(std::nullptr_t, optional const& x)
-    { return operator<=(x, nullptr); }
-
-    friend bool operator>=(std::nullptr_t, optional const& x)
-    { return operator>=(x, nullptr); }
+    static bool less(std::nullptr_t, optional const& x)
+    { return optional{nullptr} < x; }
 
     void swap(optional& x)
     {
