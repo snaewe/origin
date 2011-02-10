@@ -88,6 +88,11 @@ namespace origin
     directed_adjacency_matrix& operator=(directed_adjacency_matrix&&);
     //@}
 
+    /** @name Equality */
+    //@{
+    bool equal(directed_adjacency_matrix const&) const;
+    //@}
+
     /** @name Data Structure Properties */
     //@{
     allocator_type get_allocator() const;
@@ -201,6 +206,11 @@ namespace origin
     edges_ = c.edges_;
     return *this;
   }
+
+  template<typename V, typename E, typename A>
+  bool directed_adjacency_matrix<V,E,A>::equal
+  (directed_adjacency_matrix const& d) const
+  { return vertices_ == d.vertices && edges_ == d.edges_; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::get_allocator() const -> allocator_type

@@ -95,6 +95,12 @@ namespace origin {
       edge_t(edge_t const&) = default;
       edge_t& operator=(edge_t const&) = default;
 
+      vertex_t source()
+      { return vertex_t(source_); }
+
+      vertex_t target()
+      { return vertex_t(target_); }
+
       value_type source_;
       value_type target_;
     };
