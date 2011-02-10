@@ -37,6 +37,7 @@ namespace origin
     typedef Vertex_T vertex_value_type;
     typedef typename edge_type::value_type edge_value_type;
     typedef Alloc allocator_type;
+    // FIXME This will use dynarrays as soon as they are part of Origin
     typedef std::vector<vertex_value_type, Alloc> vertex_list;
     typedef std::vector<edge_value_type, Alloc> edge_matrix;
 
@@ -45,19 +46,18 @@ namespace origin
     typedef typename adj_mtx_impl_::d_adj_mtx_tag graph_category;
 
     // Vertex and Edge data types
-    typedef adj_mtx_impl_::handles::vertex_t vertex;
-    typedef const adj_mtx_impl_::handles::vertex_t const_vertex;
-    typedef adj_mtx_impl_::handles::edge_t edge;
-    typedef const adj_mtx_impl_::handles::edge_t const_edge;
+    typedef adj_mtx_impl_::vertex_t vertex;
+    typedef adj_mtx_impl_::vertex_t const_vertex;
+    typedef adj_mtx_impl_::edge_t edge;
+    typedef adj_mtx_impl_::edge_t const_edge;
 
     // Iterator types
-    typedef typename vertex_list::iterator vertex_iterator;
-    typedef typename vertex_list::const_iterator const_vertex_iterator;
+    typedef adj_mtx_impl_::vertex_iter_t<this_type> vertex_iterator;
+    typedef adj_mtx_impl_::vertex_iter_t<this_type> const_vertex_iterator;
     typedef adj_mtx_impl_::edge_iter<this_type> edge_iterator;
     typedef adj_mtx_impl_::edge_iter<const this_type> const_edge_iterator;
-    // These are just out_edge with source and target_ swapped... (impl level)
-    typedef float in_edge_iterator;
-    typedef const float const_in_edge_iterator;
+    typedef adj_mtx_impl_::in_edge_iter<this_type> in_edge_iterator;
+    typedef adj_mtx_impl_::in_edge_iter< const this_type> const_in_edge_iterator;
     typedef adj_mtx_impl_::edge_iter<this_type> out_edge_iterator;
     typedef adj_mtx_impl_::edge_iter<const this_type> const_out_edge_iterator;
     //typedef int adjacent_edge_iterator;
