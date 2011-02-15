@@ -19,7 +19,8 @@
 # Explicitly disable unused variables, which causes concept code to become
 # quite noisy.
 # FIXME: Disable unused parameters also?
-set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-variable -std=c++0x")
+set(ORIGIN_IGNORED_WARNINGS "-Wno-unused-variable -Wno-unused-value")
+set(CMAKE_CXX_FLAGS "-Wall ${ORIGIN_IGNORED_WARNINGS} -std=c++0x")
 
 # NOTE: This was deprecated in favor of simply snatching the BoostUtils modul
 # into the Origin source tree
