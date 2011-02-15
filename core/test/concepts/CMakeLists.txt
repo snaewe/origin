@@ -5,8 +5,4 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-# FIXME: Make these real tests!
-add_executable(tuple tuple.cpp)
-add_executable(optional optional.cpp)
-
-add_subdirectory(concepts)
+add_executable(concepts concepts.cpp)

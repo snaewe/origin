@@ -20,31 +20,6 @@ namespace origin
    */
 
   /**
-   * @internal
-   * @ingroup meta
-   * The substitution failure type represents the result of failed SFINAE
-   * @see substitution_failed
-   */
-  struct substitution_failure { };
-
-  /**
-   * @internal
-   * @ingroup meta
-   * The substitution failed metafunction returns true if the result of a
-   * SFINAE query is a substitution failure.
-   */
-  template<typename T>
-  struct substitution_failed
-    : std::integral_constant<bool, false>
-  { };
-
-  template<>
-  struct substitution_failed<substitution_failure>
-    : std::integral_constant<bool, true>
-  { };
-
-
-  /**
    * @ingroup meta
    * The bool constant is an alias for the type integral_constant<bool, X>.
    * This type is provided purely for convenience.
@@ -56,13 +31,61 @@ namespace origin
 
   /**
    * @ingroup meta
-   * This metafunction returns true if the types T and U are not the same. This
+   * This trait returns true if the types T and U are not the same. This
    * is the logical inverse of the is_same type trait.
    */
   template<typename T, typename U>
   struct is_different
     : bool_constant<!std::is_same<T, U>::value>
   { };
+
+  /**
+   * @defgroup sfinae
+   * @ingroup meta
+   * Types and traits for handling SFINAE-related queries.
+   */
+
+  /**
+   * @internal
+   * @ingroup sfinae
+   * The substitution failure type represents the result of failed name lookup
+   * and is used to support queries about the existence or state of expressions
+   * that might fail.
+   */
+  struct substitution_failure { };
+
+  /**
+   * @internal
+   * @ingroup sfinae
+   * The substitution failed trait returns true if the the given type indicates
+   * a failed substitution.
+   */
+  template<typename T>
+  struct substitution_failed
+    : std::false_type
+  { };
+
+  template<>
+  struct substitution_failed<substitution_failure>
+    : std::true_type
+  { };
+
+  /**
+   * @internal
+   * @ingroup sfinae
+   * The substitution succeeded trait is true if the given type does not
+   * indicate a failed substitution.
+   */
+  template<typename T>
+  struct substitution_succeeded : std::true_type
+  { };
+
+  template<>
+  struct substitution_succeeded<substitution_failure>
+    : std::false_type
+  { };
+
+
 
 } // namespace origin
 
