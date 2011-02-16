@@ -8,47 +8,42 @@
 #ifndef ORIGIN_CONCEPTS_ALGEBRA_HPP
 #define ORIGIN_CONCEPTS_ALGEBRA_HPP
 
-#include <origin/concepts/function.hpp>
-
-// FIXME: Should be called algebraic.hpp?
+#include <origin/concepts/functional.hpp>
 
 namespace origin
 {
-  template<typename T, 
-           typename And, 
-           typename Or, 
-           typename Not, 
-           typename True, 
+  /**
+   * @ingroup algebraic_concepts
+   * A boolean algebra...
+   */
+  template<typename T,
+           typename And,
+           typename Or,
+           typename Not,
+           typename True,
            typename False>
   struct Boolean_Algebra
+    : Operation<And, T, T>
+    , Operation<Or, T, T>
+    , Operation<Not, T>
+    , Constant<True, T>
+    , Constant<False, T>
   {
     Boolean_Algebra()
     { auto p = constraints; }
-    
+
     static void constraints()
     {
-      // FIXME: These are largely subsumed by the semantic requirements.
-      Operation<And, T, T>{};
-      Operation<Or, T, T>{};
-      Operation<Not, T>{};
-      
-      // FIXME: These are generators, but they're constant generators. What
-      // do you call a nullary function that always returns the same value?
-      // Constant_Operation<True, T>{};
-      // Constant_Operation<False, T>{};
-      
       Associative_Operation<And, T>{};
       Associative_Operation<Or, T>{};
       Commutative_Operation<And, T>{};
       Commutative_Operation<Or, T>{};
-      Absorptive_Property<And, Or, T>{};
-      Absorptive_Property<Or, And, T>{};
-      Distribute_Property<And, Or, T>{};
-      Distribute_Property<Or, And, T>{};
-      
-      // FIXME: These names will change.
-      Complement_Lattice<And, False>{};
-      Complement_Lattice<Or, True>{};
+      Distributive_Property<And, Or, T>{};
+      Distributive_Property<Or, And, T>{};
+      Absorption_Law<And, Or, T>{};
+      Absorption_Law<Or, And, T>{};
+      Complement_Law<And, Not, False, T>{};
+      Complement_Law<Or, Not, True, T>{};
     }
   };
 

@@ -8,6 +8,38 @@
 #ifndef ORIGIN_TRAITS_HPP
 #define ORIGIN_TRAITS_HPP
 
+#include <utility>  // std::forward
+
 #include <origin/traits/operators.hpp>
+
+namespace origin {
+
+  /**
+   * Deduce the result type of the expression f(arg...) where f is a callable
+   * type and args... is a sequence of arguments or arbitrary type.
+   */
+  template<typename F, typename... Args>
+  struct deduce_callable
+  {
+  private:
+    template<typename X, typename... Y>
+    static auto check(X x, Y&&... y) -> decltype(x(std::forward<Y>(y)...));
+    static substitution_failure check(...);
+  public:
+    typedef decltype(
+      check(std::declval<F>()(std::forward<Args>(std::declval<Args>())...))
+    ) type;
+  };
+
+  /**
+   * Return true if the expression f(args...) is valid where f is a callable
+   * type and args... is a sequence of arguments or arbitrary type.
+   */
+  template<typename F, typename... Args>
+  struct is_callable
+    : substitution_succeeded<typename deduce_callable<F, Args...>::type>
+  { };
+
+} // namespace origin
 
 #endif

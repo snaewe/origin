@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_CONCEPTS_HPP
-#define ORIGIN_CONCEPTS_HPP
+#ifndef ORIGIN_CONCEPTS_REGULAR_HPP
+#define ORIGIN_CONCEPTS_REGULAR_HPP
 
 #include <functional>
 
@@ -15,6 +15,12 @@
 
 namespace origin
 {
+  template<typename T, typename U = T> struct Equal;
+  template<typename T, typename U = T> struct Ordered;
+
+  template<typename T> struct Regular;
+  template<typename T> struct Boolean;
+
   /**
    * @ingroup concepts
    * When instantiated over two different types, the concept determines whether
@@ -30,19 +36,12 @@ namespace origin
 
     static void constraints(T x, U y)
     {
+      // FIXME: I think that this might be missing a number of deriveable
+      // semantic requirements (e.g. x == y <=> y == x).
       Boolean<decltype(x == y)>{};
       Boolean<decltype(x != y)>{};
       Boolean<decltype(y == x)>{};
       Boolean<decltype(y != x)>{};
-
-      // FIXME: Is there anything else that I'm missing here?
-    }
-
-    // FIXME: Make this an axiom class.
-    static void symmetry(T x, U y)
-    {
-      if(x == y) assert(( y == x ));
-      if(y == x) assert(( x == y ));
     }
 
     typedef std::tuple<
@@ -64,23 +63,7 @@ namespace origin
   template <typename T>
   struct Equal<T, T>
   {
-    /**
-     * The equal identity concept requires that an object is equivalent to
-     * itself. This is defined internally since it's definition is incomplete
-     * without first evaluating whether or T is Equal.
-     */
-    struct Equal_Identity
-      : std::true_type
-    {
-      Equal_Identity()
-      { auto p = constraints; }
-
-      static void constraints(T x, T y)
-      { identity(x, y); }
-
-      static void identity(T x, T y)
-      { if(&x == &y) assert(( x == y )); }
-    };
+    struct Equal_Identity;
 
     // Encapsulate the operator.
     typedef std::equal_to<T> Eq;
@@ -118,6 +101,25 @@ namespace origin
     static constexpr bool value = type::value;
   };
 
+  /**
+   * The equal identity concept requires that an object is equivalent to
+   * itself. This is defined internally since it's definition is incomplete
+   * without first evaluating whether or T is Equal.
+   */
+  template<typename T>
+  struct Equal<T, T>::Equal_Identity
+      : std::true_type
+    {
+      Equal_Identity()
+      { auto p = constraints; }
+
+      static void constraints(T x, T y)
+      { identity(x, y); }
+
+      static void identity(T x, T y)
+      { if(&x == &y) assert(( x == y )); }
+    };
+
   // FIXME:
   // Explicitly provide models for builtin types. Hopefully, this will
   // cut down compilation times.
@@ -136,10 +138,11 @@ namespace origin
   struct Ordered<T, T>
   {
     // Encapsulate the operator.
+    // FIXME: Don't use these?
     typedef std::less<T> Lt;
     typedef std::greater<T> Gt;
     typedef std::less_equal<T> Leq;
-    typedef std::Greater_equal<T> Geq;
+    typedef std::greater_equal<T> Geq;
 
     Ordered()
     { auto p = constraints; }
@@ -172,7 +175,7 @@ namespace origin
     }
 
     typedef std::tuple<
-      Equal<T>
+//       Equal<T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
@@ -213,21 +216,14 @@ namespace origin
       // FIXME: Could also apply convertability requirements to these functions
       // to further separate the constraints on the expression from the result
       // type.
-      auto notf = [](T x) { return !x; }
-      auto andf = [](T x, T y) { return x && y; }
-      auto orf = [](T x, T y) { return x || y; }
-      
+      auto notf = [](T x) { return !x; };
+      auto andf = [](T x, T y) { return x && y; };
+      auto orf = [](T x, T y) { return x || y; };
       typedef decltype(notf) Not;
       typedef decltype(andf) And;
       typedef decltype(orf) Or;
-      
-      Associative_Operation<Or, T>{};
-      Commutative_Operation<Or, T>{};
-      Absorptive_Property<Or, And, T>{};
-      Distributive_Property<Or, And, T>{};
-      
-      // FIXME: I can't write this yet.
-      // Compliment_Lattice<Or, And, T>
+
+      // FIXME: Requires a Boolean algebra over the required operations.
     }
 
     typedef std::tuple<

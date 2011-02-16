@@ -19,6 +19,18 @@ namespace origin
    * metaprogramming utilities provided in the C++ standard.
    */
 
+  // FIXME: I don't like this type trait, or its name, but I'm not sure if
+  // there's anything better to call it. There should be.
+  /**
+   * @ingroup meta
+   * The head type trait returns the first type in a type parameter pack.
+   */
+  template<typename... Args> struct head_type;
+
+  template<typename T, typename... Args>
+  struct head_type<T, Args...>
+  { typedef T type; };
+
   /**
    * @ingroup meta
    * The bool constant is an alias for the type integral_constant<bool, X>.
@@ -37,6 +49,28 @@ namespace origin
   template<typename T, typename U>
   struct is_different
     : bool_constant<!std::is_same<T, U>::value>
+  { };
+
+  /**
+   * @ingroup meta
+   * This trait returns true if all of the argument types are the same type.
+   */
+  template<typename... Args> struct are_same;
+
+  // For a single type, this is trivially true.
+  template<typename T> struct are_same<T> : std::true_type { };
+
+  // The recursive implementation is true if is_same<T, head_type<Args...>>
+  // and are_same<Args...> Otherwise, this is false.
+  // FIXME: Does && properly short-circuit the instantiation, or do I need to
+  // use std::conditional to make sure thta it's done correctly. How do you
+  // test this?
+  template<typename T, typename... Args>
+  struct are_same<T, Args...>
+    : bool_constant<
+           std::is_same<T, typename head_type<Args...>::type>::value
+        && are_same<Args...>::value
+      >
   { };
 
   /**
