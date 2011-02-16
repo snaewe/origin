@@ -126,6 +126,94 @@ namespace origin
   struct has_not_equal
     : substitution_succeeded<typename deduce_not_equal<T, U>::type>
   { };
+
+  /**
+   * Deduce the result type of the expression x < y for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct deduce_less
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x < y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x < y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_less
+    : substitution_succeeded<typename deduce_less<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x > y for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct deduce_greater
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x > y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x > y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_greater
+    : substitution_succeeded<typename deduce_greater<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x <= y for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct deduce_less_equal
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x <= y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x <= y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_less_equal
+    : substitution_succeeded<typename deduce_less_equal<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x >= y for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct deduce_greater_equal
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x >= y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x <= y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_greater_equal
+    : substitution_succeeded<typename deduce_greater_equal<T, U>::type>
+  { };
   //@}
 
 } // namespace origin

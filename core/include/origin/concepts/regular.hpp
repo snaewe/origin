@@ -10,11 +10,19 @@
 
 #include <functional>
 
-#include <origin/traits.hpp>
-#include <origin/tuple.hpp>
+#include <origin/concepts/functional.hpp>
 
 namespace origin
 {
+  // NOTE: Where are all of the semantic requirements? Where are the
+  // restrictions on result types?
+  //
+  // It turns out that restricting result types or enforcing requirements do
+  // not make sufficiently generic concepts. Consider the extreme case where
+  // the argument types of a required operation are expression templates. It
+  // is unlikely that the results will satisfy any type restrictions or semantic
+  // requirements.
+
   template<typename T, typename U = T> struct Equal;
   template<typename T, typename U = T> struct Ordered;
 
@@ -36,19 +44,15 @@ namespace origin
 
     static void constraints(T x, U y)
     {
-      // FIXME: I think that this might be missing a number of deriveable
-      // semantic requirements (e.g. x == y <=> y == x).
-      Boolean<decltype(x == y)>{};
-      Boolean<decltype(x != y)>{};
-      Boolean<decltype(y == x)>{};
-      Boolean<decltype(y != x)>{};
+      x == y; x != y;
+      y == x; y != x;
     }
 
+    // FIXME: There are some axioms here... I know it!
+
     typedef std::tuple<
-      Boolean<typename deduce_equal<T, U>::type>,
-      Boolean<typename deduce_not_equal<T, U>::type>,
-      Boolean<typename deduce_equal<U, T>::type>,
-      Boolean<typename deduce_not_equal<U, T>::type>
+      has_equal<T, U>, has_not_equal<T, U>,
+      has_equal<U, T>, has_not_equal<U, T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
@@ -63,66 +67,33 @@ namespace origin
   template <typename T>
   struct Equal<T, T>
   {
-    struct Equal_Identity;
-
-    // Encapsulate the operator.
-    typedef std::equal_to<T> Eq;
-    typedef std::not_equal_to<T> Neq;
-
     Equal()
     { auto p = constraints; }
 
-    static void constraints(T x, T y)
+    static void constraints(T x, T y, T z)
     {
-      Boolean<decltype(x == y)>{};
-      Boolean<decltype(x != y)>{};
-
-      Equal_Identity{};
-
-      // FIXME: Say something about Eq and Neq?
-
-      Reflexive_Relation<Eq, T>{};
-      Symmetric_Relation<Eq, T>{};
-      Transitive_Relation<Eq, T>{};
+      x == y; x != y;
     }
 
-    // NOTE: We can avoid writing has_ + deduce_ since dedce_ will return a
-    // type that is not convertible to bool. This one test happens to cover
-    // both cases.
+    // FIXME: Only valid if convertible<decltype(x == y), bool>
+    static void equal_identity(T x, T y)
+    { if(&x == &y) assert(( x == y )); }
+
+    static void reflexive(T x)
+    { assert(( x == x )); }
+
+    static void symmetric(T x, T y)
+    { if(x == y) assert(( y == x )); }
+
+    static void transitive(T x, T y, T z)
+    { if(x == y && y == z) assert(( x == z )); }
+
     typedef std::tuple<
-      std::is_convertible<typename deduce_equal<T, T>::type, bool>,
-      std::is_convertible<typename deduce_not_equal<T, T>::type, bool>,
-      Equal_Identity,
-      Reflexive_Relation<Eq, T>,
-      Symmetric_Relation<Eq, T>,
-      Transitive_Relation<Eq, T>
+      has_equal<T, T>, has_not_equal<T, T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
-
-  /**
-   * The equal identity concept requires that an object is equivalent to
-   * itself. This is defined internally since it's definition is incomplete
-   * without first evaluating whether or T is Equal.
-   */
-  template<typename T>
-  struct Equal<T, T>::Equal_Identity
-      : std::true_type
-    {
-      Equal_Identity()
-      { auto p = constraints; }
-
-      static void constraints(T x, T y)
-      { identity(x, y); }
-
-      static void identity(T x, T y)
-      { if(&x == &y) assert(( x == y )); }
-    };
-
-  // FIXME:
-  // Explicitly provide models for builtin types. Hopefully, this will
-  // cut down compilation times.
 
   /**
    * The ordered concept defines two different comparisons. When instantiated
@@ -132,32 +103,103 @@ namespace origin
    */
   template<typename T, typename U>
   struct Ordered
-  { };
-
-  template<typename T>
-  struct Ordered<T, T>
   {
-    // Encapsulate the operator.
-    // FIXME: Don't use these?
-    typedef std::less<T> Lt;
-    typedef std::greater<T> Gt;
-    typedef std::less_equal<T> Leq;
-    typedef std::greater_equal<T> Geq;
-
     Ordered()
     { auto p = constraints; }
 
     static void constraints(T x, T y)
     {
-      Boolean<decltype(x < y)>{};
-      Boolean<decltype(x > y)>{};
-      Boolean<decltype(x <= y)>{};
-      Boolean<decltype(x >= y)>{};
+      x < y; x > y; x <= y; y <= x;
+      y < x; y > x; x <= y; x >= y;
     }
+
+    // FIXME: Axioms here!
+
+    typedef std::tuple<
+      has_less<T, U>, has_greater<T, U>,
+      has_less_equal<T, U>, has_greater_equal<T, U>,
+      has_less<U, T>, has_greater<U, T>,
+      has_less_equal<U, T>, has_greater_equal<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
-  // FIXME: Provide built-in models.
+  template<typename T>
+  struct Ordered<T, T>
+  {
+    Ordered()
+    { auto p = constraints; }
 
+    static void constraints(T x, T y)
+    {
+      x < y; x > y; x <= y; y <= x;
+    }
+
+    static void irreflexive(T x)
+    { assert(( !(x < x) )); }
+
+    static void antisymmetric(T x)
+    { if(x < y) assert(( !(y < x) )); }
+
+    static void transitive(T x, T y, T z)
+    { if(x == y && y == z) assert(( x == z )); }
+
+    typedef std::tuple<
+      has_less<T, T>, has_greater<T, T>,
+      has_less_equal<T, T>, has_greater_equal<T, T>,
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+
+  /**
+   * A default type can be default constructed.
+   */
+  template<typename T>
+  struct Default
+  {
+    Default()
+    { auto p = constraints; }
+
+    static void constraints()
+    {
+      T{};
+      T x;
+    }
+
+    typedef std::tuple<
+    > type;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * A type is copyable if it can be copy constucted or copy assigned.
+   */
+  template<typename T>
+  struct Copyable
+    : Equal<T>
+  {
+    Copyable()
+    { auto p = constraints; }
+
+    static void constraints(T x)
+    {
+      T y{x};
+      x = y;
+    }
+
+    // FIXME: Only valid if Equal_Bool<T>
+    void copy_equivalence(T x)
+    { T y{x}; assert((x == y)); }
+
+    typedef std::tuple<
+    > type;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
 
   // FIXME: Implement me!
   /**
@@ -181,57 +223,34 @@ namespace origin
     static constexpr bool value = type::value;
   };
 
-  // FIXME: Should this type actually encompass the requirements of a
-  // Boolean_Algebra? Probably not. This merely wants a type that can behave
-  // like a bool in a bare number of cases. It would be interesting to know
-  // if this sufficiently describes the syntax required by a boolean algebra.
+  // The difference between a boolean type and a type (and operations) that
+  // model a boolean algebra is the ability to evaluate a boolean type in a
+  // boolean context (i.e., if(x)).
   /**
    * A boolean type is a type that can be evaluated in boolean contexts and
-   * participate in logical expresssions. Note that this does not constrain
-   * the set of values defined by the boolean type, this concept is purely
-   * syntactic.
+   * participate in logical expresssions.
    */
   template<typename T>
   struct Boolean
+    : Regular<T>
   {
     Boolean()
     { auto p = constraints; }
 
     static void constraints(T x, T y)
     {
-      Regular<T>{};
-
-      if(x) ;
-
-      // NOTE: I can't recursively constrain these exressions as Boolean
-      // types (infinite recursion!). I shouldn't constrain them as T since
-      // T might not actually be Boolean-like (it could be an int*). The only
-      // reasonable choice is to require these to be convertible to bool.
-      //
-      // FIXME: There's an ICE calling bool{..}.
-      bool(!x);
-      bool(x && y);
-      bool(x || y);
-
-      // FIXME: Could also apply convertability requirements to these functions
-      // to further separate the constraints on the expression from the result
-      // type.
-      auto notf = [](T x) { return !x; };
-      auto andf = [](T x, T y) { return x && y; };
-      auto orf = [](T x, T y) { return x || y; };
-      typedef decltype(notf) Not;
-      typedef decltype(andf) And;
-      typedef decltype(orf) Or;
-
-      // FIXME: Requires a Boolean algebra over the required operations.
+      if(x);
+      !x;
+      x && y;
+      x || y;
     }
 
     typedef std::tuple<
       Regular<T>,
       std::is_convertible<T, bool>,
-      std::is_convertible<typename deduce_logical_not<T>::type, bool>,
-      std::is_convertible<typename deduce_logical_and<T, T>::type, bool>,
-      std::is_convertible<typename deduce_logical_or<T, T>::type, bool>
+      has_logical_not<T>,
+      has_logical_and<T, T>,
+      has_logical_or<T, T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
@@ -239,7 +258,6 @@ namespace origin
 
   // Make sure that we have some built in models of Boolean types. Note that
   // if we don't have this, we get recursive template instantiation.
-  // FIXME: Are there any other known models? char, short, int?
   template<> struct Boolean<bool> : std::true_type { };
 
 } // namespace origin

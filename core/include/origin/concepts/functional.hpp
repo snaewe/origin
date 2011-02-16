@@ -14,15 +14,65 @@
 
 namespace origin
 {
-  template<typename T> struct Regular;
 
-  // FIXME: Axiomatic concepts are not validated during concept checking. They
-  // are trivially true unless they are explicitly required (e.g., multipass).
-  // It would probably be a good idea to define several "levels" of
-  // verification, that explain why something is or is not validated.
+  template<typename Op, typename T>
+  struct is_boolean_relation
+    : bool_constant<
+        is_callable<Op, T, T>::value &&
+        std::is_convertible<typename deduce_callable<Op, T, T>::type, bool>::value
+      >
+  { };
 
-  // FIXME: All of these constraints implicitly require Callable, Relation,
-  // Predicate, and Operations concepts. Implement these.
+  // The following functions enforce axiomatic properties. We can only actually
+  // evaluate these axioms if the subject operations are implicitly convertible
+  // to bool. If not, we cannot validate the claim.
+  //
+  // Note that these are separate from the concept classes that might require
+  // them.
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    is_boolean_relation<Op, T>::value, void
+  >::type
+  reflexive_relation(Op op, T x)
+  { assert(( op(x, x) )); }
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    !is_boolean_relation<Op, T>::value, void
+  >::type
+  reflexive_relation(Op op, T x)
+  { }
+
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    is_boolean_relation<Op, T>::value, void
+  >::type
+  symmetric_relation(Op op, T x, T y)
+  { if(op(x, y)) assert(( op(y, x) )); }
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    !is_boolean_relation<Op, T>::value, void
+  >::type
+  symmetric_relation(Op op, T x, T y)
+  { }
+
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    is_boolean_relation<Op, T>::value, void
+  >::type
+  transitive_relation(Op op, T x, T y, T z)
+  { if(op(x, y) && op(y, z)) assert(( op(x, z) )); }
+
+  template<typename Op, typename T>
+  typename std::enable_if<
+    !is_boolean_relation<Op, T>::value, void
+  >::type
+  transitive_relation(Op op, T x, T y, T z)
+  { }
 
   /**
    * @ingroup func_concepts
