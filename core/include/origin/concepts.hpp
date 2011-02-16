@@ -112,6 +112,44 @@ namespace origin
     static void transitivity(Op op, T x, T y, T z)
     { if(op(x, y) && op(y, z)) assert(( op(x, z) )); }
   };
+  
+  // NOTE: The following implicitly require Equal<T>
+
+  template<typename Op, typename T>
+  struct Associative_Operation
+  {
+    static void associativity(Op op, T x, T y, T z)
+    { assert(( op(x, op(y, z)) == op(op(x, y), z) )); }
+  };
+  
+  template<typename Op, typename T>
+  struct Commutative_Operation
+  {
+    static void commutativity(Op op, T x, T y)
+    { assert(( op(x, y) == op(y, x) )); }
+  };
+  
+  template<typename Op1, typename Op2, typename T>
+  struct Absorptive_Property
+  {
+    static void absorb(Op1 op1, Op2 op2, T x, T y)
+    { assert(( op1(a, op2(a, b)) == a )); }
+  };
+  
+  template<typename Op1, typename Op2, typename T>
+  struct Distributive_Property
+  {
+    static void distribute(Op1, Op2, T x, T y, T z)
+    { assert(( op1(x, op2(y, z)) == op2(op1(x, y), op1(y, z)) )); }
+  };
+  
+  // FIXME: Probably not the right name for this.
+  template<typename Bin_Op, typename Un_Op, typename T>
+  struct Compliment_Lattice
+  {
+    static void compliment(Bin_Op bin, Un_Op un, T x, T comp)
+    { assert(( bin(x, un(x)) == comp )); }
+  };
 
   /**
    * @ingroup concepts
@@ -307,6 +345,25 @@ namespace origin
       bool(!x);
       bool(x && y);
       bool(x || y);
+
+      // FIXME: Could also apply convertability requirements to these functions
+      // to further separate the constraints on the expression from the result
+      // type.
+      auto notf = [](T x) { return !x; }
+      auto andf = [](T x, T y) { return x && y; }
+      auto orf = [](T x, T y) { return x || y; }
+      
+      typedef decltype(notf) Not;
+      typedef decltype(andf) And;
+      typedef decltype(orf) Or;
+      
+      Associative_Operation<Or, T>{};
+      Commutative_Operation<Or, T>{};
+      Absorptive_Property<Or, And, T>{};
+      Distributive_Property<Or, And, T>{};
+      
+      // FIXME: I can't write this yet.
+      // Compliment_Lattice<Or, And, T>
     }
 
     typedef std::tuple<
