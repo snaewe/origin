@@ -10,6 +10,7 @@
 
 #include <origin/utility/meta.hpp>
 #include <origin/traits.hpp>
+#include <origin/logic.hpp>
 
 namespace origin
 {
@@ -63,6 +64,49 @@ namespace origin
     : concept_check<Args...>::type
   { };
 
+
+  /**
+   * @ingroup concepts
+   * This concept implements a same-type constraint over a set of types.
+   */
+  template<typename... Args>
+  struct Same
+  {
+    Same()
+    { auto p = constraints; }
+
+    static void constraints()
+    { static_assert(are_same<Args...>::value, "Types are not the same"); }
+
+    typedef std::tuple<
+      are_same<Args...>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @ingroup concepts
+   * This concept implements a same-type constraint over a set of types.
+   */
+  template<typename T, typename U>
+  struct Convertible
+  {
+    Convertible()
+    { auto p = constraints; }
+
+    static void constraints()
+    {
+      static_assert(std::is_convertible<T, U>::value,
+                    "Type is not convertible");
+    }
+
+    typedef std::tuple<
+      std::is_convertible<T, U>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
 } // namespace origin
 
 #endif

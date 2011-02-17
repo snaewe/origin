@@ -14,15 +14,6 @@
 
 namespace origin
 {
-  // NOTE: Where are all of the semantic requirements? Where are the
-  // restrictions on result types?
-  //
-  // It turns out that restricting result types or enforcing requirements do
-  // not make sufficiently generic concepts. Consider the extreme case where
-  // the argument types of a required operation are expression templates. It
-  // is unlikely that the results will satisfy any type restrictions or semantic
-  // requirements.
-
   template<typename T, typename U = T> struct Equal;
   template<typename T, typename U = T> struct Ordered;
 
@@ -48,7 +39,7 @@ namespace origin
       y == x; y != x;
     }
 
-    // FIXME: There are some axioms here... I know it!
+    // FIXME: Axioms!
 
     typedef std::tuple<
       has_equal<T, U>, has_not_equal<T, U>,
@@ -72,21 +63,27 @@ namespace origin
 
     static void constraints(T x, T y, T z)
     {
-      x == y; x != y;
+      x == y;
+      x != y;
     }
 
-    // FIXME: Only valid if convertible<decltype(x == y), bool>
-    static void equal_identity(T x, T y)
-    { if(&x == &y) assert(( x == y )); }
+    struct axioms {
+      static auto Equal_Identity(T x, T y)
+        -> decltype(implies(&x == &y, x == y))
+      { return implies(&x == &y, x == y); }
 
-    static void reflexive(T x)
-    { assert(( x == x )); }
+      static auto Reflexive(T x)
+        -> decltype(x == x)
+      { return x == x; }
 
-    static void symmetric(T x, T y)
-    { if(x == y) assert(( y == x )); }
+      static auto Symmetric(T x, T y)
+        -> decltype(implies(x == y, y == x))
+      { return implies(x == y, y == x); }
 
-    static void transitive(T x, T y, T z)
-    { if(x == y && y == z) assert(( x == z )); }
+      static auto Transitive(T x, T y, T z)
+        -> decltype(implies(x == y && y == z, x == z))
+      { return implies(x == y && y == z, x == z); }
+    };
 
     typedef std::tuple<
       has_equal<T, T>, has_not_equal<T, T>
@@ -113,7 +110,7 @@ namespace origin
       y < x; y > x; x <= y; x >= y;
     }
 
-    // FIXME: Axioms here!
+    // FIXME: Axioms!
 
     typedef std::tuple<
       has_less<T, U>, has_greater<T, U>,
@@ -133,21 +130,32 @@ namespace origin
 
     static void constraints(T x, T y)
     {
-      x < y; x > y; x <= y; y <= x;
+      x < y;
+      x > y;
+      x <= y;
+      y <= x;
     }
 
-    static void irreflexive(T x)
-    { assert(( !(x < x) )); }
+    struct axioms
+    {
+      static auto irreflexive(T x)
+        -> decltype(!(x < x))
+      { return !(x < x); }
 
-    static void antisymmetric(T x)
-    { if(x < y) assert(( !(y < x) )); }
+      static auto antisymmetric(T x, T y)
+        -> decltype(implies(x < y, !(y < x)))
+      { return implies(x < y, !(y < x)); }
 
-    static void transitive(T x, T y, T z)
-    { if(x == y && y == z) assert(( x == z )); }
+      static auto transitive(T x, T y, T z)
+        -> decltype(implies(x < y && y < z, x == z))
+      { return implies(x < y && y < z, x == z); }
+    };
 
     typedef std::tuple<
-      has_less<T, T>, has_greater<T, T>,
-      has_less_equal<T, T>, has_greater_equal<T, T>,
+      has_less<T, T>,
+      has_greater<T, T>,
+      has_less_equal<T, T>,
+      has_greater_equal<T, T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
@@ -169,8 +177,10 @@ namespace origin
       T x;
     }
 
+    // FIXME: Use std::has_default_constructor when it becomes available.
     typedef std::tuple<
-    > type;
+      is_constructible<T>
+    > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
@@ -191,74 +201,44 @@ namespace origin
       x = y;
     }
 
-    // FIXME: Only valid if Equal_Bool<T>
-    void copy_equivalence(T x)
-    { T y{x}; assert((x == y)); }
+    struct axioms
+    {
+      static auto copy_equivalence(T x)
+        -> decltype(x == y)
+      { T y{x}; return x == y; }
+    };
 
+    // FIXME: Use std::has_copy_constructor and has_copy_assign when they
+    // become available.
     typedef std::tuple<
-    > type;
+      is_constructible<T, T const&>,
+      has_assign<T, T const&>
+    > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
 
   // FIXME: Implement me!
   /**
-   * A regular type...
+   * A regular type is one that can be default constructed and copied, which
+   * also implies equality comparison.
    */
   template<typename T>
   struct Regular
+    : Default<T>, Copyable<T>
   {
     Regular()
     { auto p = constraints; }
 
     static void constraints()
-    {
-      Equal<T>{};
-    }
+    { }
 
     typedef std::tuple<
-//       Equal<T>
+      Default<T>, Copyable<T>, Equal<T>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
-
-  // The difference between a boolean type and a type (and operations) that
-  // model a boolean algebra is the ability to evaluate a boolean type in a
-  // boolean context (i.e., if(x)).
-  /**
-   * A boolean type is a type that can be evaluated in boolean contexts and
-   * participate in logical expresssions.
-   */
-  template<typename T>
-  struct Boolean
-    : Regular<T>
-  {
-    Boolean()
-    { auto p = constraints; }
-
-    static void constraints(T x, T y)
-    {
-      if(x);
-      !x;
-      x && y;
-      x || y;
-    }
-
-    typedef std::tuple<
-      Regular<T>,
-      std::is_convertible<T, bool>,
-      has_logical_not<T>,
-      has_logical_and<T, T>,
-      has_logical_or<T, T>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
-
-  // Make sure that we have some built in models of Boolean types. Note that
-  // if we don't have this, we get recursive template instantiation.
-  template<> struct Boolean<bool> : std::true_type { };
 
 } // namespace origin
 

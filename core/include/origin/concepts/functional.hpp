@@ -12,68 +12,10 @@
 
 #include <origin/concepts/impl.hpp>
 
+// FIXME: This module is fundamentally broken and need to be rewritten.
+
 namespace origin
 {
-
-  template<typename Op, typename T>
-  struct is_boolean_relation
-    : bool_constant<
-        is_callable<Op, T, T>::value &&
-        std::is_convertible<typename deduce_callable<Op, T, T>::type, bool>::value
-      >
-  { };
-
-  // The following functions enforce axiomatic properties. We can only actually
-  // evaluate these axioms if the subject operations are implicitly convertible
-  // to bool. If not, we cannot validate the claim.
-  //
-  // Note that these are separate from the concept classes that might require
-  // them.
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    is_boolean_relation<Op, T>::value, void
-  >::type
-  reflexive_relation(Op op, T x)
-  { assert(( op(x, x) )); }
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    !is_boolean_relation<Op, T>::value, void
-  >::type
-  reflexive_relation(Op op, T x)
-  { }
-
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    is_boolean_relation<Op, T>::value, void
-  >::type
-  symmetric_relation(Op op, T x, T y)
-  { if(op(x, y)) assert(( op(y, x) )); }
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    !is_boolean_relation<Op, T>::value, void
-  >::type
-  symmetric_relation(Op op, T x, T y)
-  { }
-
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    is_boolean_relation<Op, T>::value, void
-  >::type
-  transitive_relation(Op op, T x, T y, T z)
-  { if(op(x, y) && op(y, z)) assert(( op(x, z) )); }
-
-  template<typename Op, typename T>
-  typename std::enable_if<
-    !is_boolean_relation<Op, T>::value, void
-  >::type
-  transitive_relation(Op op, T x, T y, T z)
-  { }
-
   /**
    * @ingroup func_concepts
    * A type F is callable over a sequence of argument types Args... if the
@@ -102,7 +44,7 @@ namespace origin
   // FIXME: I think Symbol might also be a valid name for this concept. In fact,
   // it might be better
   /**
-   * @ingroup concepts
+   * @ingroup func_concepts
    * A constant is a function taking no arguments (a nullary function) and
    * returning the same value. Examples include functions that return 0, 1,
    * pi, true, false, and the empty set.
@@ -113,70 +55,97 @@ namespace origin
    * Note that the Constant concept is not related to the language notion of
    * const.
    */
-  template<typename F, typename T>
+  template<typename F>
   struct Constant
     : Callable<F>
   {
     Constant()
     { auto p = constraints; }
 
-    static void constraints(F f)
-    {
-      T{f()};
-      constant(f);
-    }
+    static void constraints()
+    { }
 
     // FIXME: This probably isn't the most accurate way of stating that f()
     // denotes a constant, unchanging value.
+    // FIXME: This implicitly requires that result_of<F()> is implicitly
+    // convertible to bool.
     static void constant(F f)
     { assert(( f() == f() )); }
-  };
-
-  /**
-   * @ingroup func_concepts
-   * A relation is a homogenous binary function whose result type is
-   * convertible to bool.
-   */
-  template<typename Op, typename T>
-  struct Relation
-  {
-    Relation()
-    { auto p = constraints; }
-
-    static void constraints(Op op, T x, T y)
-    {
-      // FIXME: GCC was complaining about bool{op(x, y)}, saying that I can't
-      // use op as a function. I beg to differ.
-      bool result = op(x, y);
-    }
 
     typedef std::tuple<
-      Callable<Op, T, T>,
-      std::is_convertible<typename deduce_callable<Op, T, T>::type, bool>
+      Callable<F>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
 
+  /**
+   * @ingroup func_concepts
+   * A relation is a binary function whose result type is convertible to bool.
+   *
+   * Note that the relation concept enforces a type constraint on an
+   * intermediate type (i.e., the result of the operation). Constraining a
+   * template to require a Relation may result in the exclusion of viable
+   * models.
+   *
+   * Note that binary relations are typically homogenous; there are a lot of
+   * nice properties of such functions (e.g., symmetry, reflexivity, etc.).
+   * However, in the most general sense, we can't strictly enforce this
+   */
+  template<typename Op, typename T, typename U>
+  struct Relation
+    : Callable<Op, T, U>
+  {
+    Relation()
+    { auto p = constraints; }
+
+    static void constraints(Op op, T x, U y)
+    { bool result = op(x, y); }
+
+    typedef std::tuple<
+      Callable<Op, T, U>,
+      std::is_convertible<typename deduce_callable<Op, T, U>::type, bool>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  // NOTE: All of the "property" concepts for relations and operations are
+  // specified in terms of homogenous relations. If the relation is not
+  // homogenous, then it seems unlikely that we can realistically evaluate
+  // any semantic requirements.
+  //
+  // This is particularly true for expression templates. Consider an expression
+  // op(x, y) where x and y are expression template types denoting different,
+  // yet ulitmiately equivalent subtrees (e.g., b and !!b). We could evaluate
+  // whether or not op satisfies the reflexive property, but since the types
+  // of x and y vary, we would have to develop additional notions of
+  // equivalence. Is lit<b> the same as not<not<lit<b>>>?
 
   /**
    * @ingroup concepts
-   * @ingroup unchecked_concepts
    * A relation is reflexive if, for all objects x in the domain of the
    * operation, op(x, x) == true.
    */
   template<typename Op, typename T>
   struct Reflexive_Relation
-    : Relation<Op, T>
+    : Relation<Op, T, T>
   {
     Reflexive_Relation()
     { auto p = constraints; }
 
-    static void constraints(Op op, T x)
-    { reflexivity(op, x); }
+    static void constraints()
+    { }
 
+    // FIXME: Only valid if result_of<Op(T, U)> is convertible to bool.
     static void reflexivity(Op op, T x)
     { assert(( op(x, x) )); }
+
+    typedef std::tuple<
+      Relation<Op, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
   // NOTE: Symmetry can conceivably be applied to relations on objects of
@@ -189,16 +158,22 @@ namespace origin
    */
   template<typename Op, typename T>
   struct Symmetric_Relation
-    : Relation<Op, T>
+    : Relation<Op, T, T>
   {
     Symmetric_Relation()
     { auto p = constraints; }
 
-    static void constraints(Op op, T x, T y)
-    { symmetry(op, x, y); }
+    static void constraints()
+    { }
 
     static void symmetry(Op op, T x, T y)
     { if(op(x, y)) assert(( op(y, x) )); }
+
+    typedef std::tuple<
+      Relation<Op, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
   /**
@@ -209,64 +184,59 @@ namespace origin
    */
   template<typename Op, typename T>
   struct Transitive_Relation
-    : Relation<Op, T>
+    : Relation<Op, T, T>
   {
     Transitive_Relation()
     { auto p = constraints; }
 
-    static void constraints(Op op, T x, T y, T z)
-    { transitivity(op, x, y, z); }
+    static void constraints()
+    { }
 
     static void transitivity(Op op, T x, T y, T z)
     { if(op(x, y) && op(y, z)) assert(( op(x, z) )); }
-  };
 
+    typedef std::tuple<
+      Relation<Op, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
 
   /**
    * @ingroup func_concepts
-   * An operation is a homogenous function whose domain and codomain are the
-   * same types. Note that the arity of an operation is determined by the
-   * number of arguments that it can be called over.
+   * An operation is a callable function whose argument and result types are
+   * intended to be eqiuvalent.
+   *
+   * Note that this concept enforces a number of type constraints on both
+   * argument and intermediate types. Using this concept to costrain a template
+   * may exclude viable models if not weaker alternative is provided.
    */
   template<typename Op, typename... Args>
   struct Operation
+    : Callable<Op, Args...>
   {
     Operation()
     { auto p = constraints; }
 
     static void constraints(Op op, Args&&... args)
     {
-      // This is the weakest possible constraint. The operation must be callable
-      // over its argument types.
-      Callable<Op, Args...>{};
-
-      // These are very strict type requirements. I'm not sure if they're
-      // strictly necessary. Well, they're necessary to be strict, but I'm
-      // don't how limiting they'll be on implementations that are otherwise
-      // viable.
-      static_assert( are_same<Args...>::value,
-                     "Argument types are not the same" );
-      typedef typename head_type<Args...>::type Arg;
-      typedef typename deduce_callable<Op, Args...>::type Result;
-      static_assert( std::is_same<Arg, Result>::value,
-                     "Result type does not match the argument types" );
+      Same<Args...>{};
+      typedef typename front_type<Args...>::type Dom;
+      typedef typename deduce_callable<Op, Args...>::type Codom;
+      Same<Dom, Codom>{};
     }
 
     typedef std::tuple<
       Callable<Op, Args...>,
-      are_same<Args...>,
-      std::is_same<
-        typename head_type<Args...>::type,
+      Same<Args...>,
+      Same<
+        typename front_type<Args...>::type,
         typename deduce_callable<Op, Args...>::type
       >
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
-
-  // FIXME: The following implicitly require Equal<T>, and possibly Regular<T>.
-  // I'm not entirely sure how, or if these should be so constrained since it
-  // may induce recursive constraints.
 
   /**
    * @ingroup concepts
@@ -281,11 +251,20 @@ namespace origin
     Associative_Operation()
     { auto p = constraints; }
 
-    static void constraints(Op op, T x, T y, T z)
-    { associativity(op, x, y, z); }
+    static void constraints()
+    { }
 
+    // FIXME: This is only valid if a) the result type if the result type of
+    // op is equality comparable and if the result of that operation is
+    // convertible to bol.
     static void associativity(Op op, T x, T y, T z)
     { assert(( op(x, op(y, z)) == op(op(x, y), z) )); }
+
+    typedef std::tuple<
+      Operation<Op, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
   /**
@@ -301,11 +280,20 @@ namespace origin
     Commutative_Operation()
     { auto p = constraints; }
 
-    static void constraints(Op op, T x, T y)
-    { commutativity(op, x, y); }
+    static void constraints()
+    { }
 
+    // FIXME: This is only valid if a) the result type if the result type of
+    // op is equality comparable and if the result of that operation is
+    // convertible to bol.
     static void commutativity(Op op, T x, T y)
     { assert(( op(x, y) == op(y, x) )); }
+
+    typedef std::tuple<
+      Operation<Op, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
   /**
@@ -316,17 +304,25 @@ namespace origin
    */
   template<typename Op1, typename Op2, typename T>
   struct Distributive_Property
-    : Operation<Op1, T, T>
-    , Operation<Op2, T, T>
   {
     Distributive_Property()
     { auto p = constraints; }
 
-    static void constraints(Op1 op1, Op2 op2, T x, T y, T z)
-    { distribute(op1, op2, x, y, z); }
+    static void constraints()
+    {
+      Operation<Op1, T, T>{};
+      Operation<Op2, T, T>{};
+    }
 
     static void distribute(Op1 op1, Op2 op2, T x, T y, T z)
     { assert(( op1(x, op2(y, z)) == op2(op1(x, y), op1(y, z)) )); }
+
+    typedef std::tuple<
+      Operation<Op1, T, T>,
+      Operation<Op2, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
   /**
@@ -337,19 +333,29 @@ namespace origin
    */
   template<typename Op1, typename Op2, typename T>
   struct Absorption_Law
-    : Operation<Op1, T, T>
-    , Operation<Op2, T, T>
   {
     Absorption_Law()
     { auto p = constraints; }
 
-    static void constraints(Op1 op1, Op2 op2, T x, T y)
-    { absorb(op1, op2, x, y); }
+    static void constraints()
+    {
+      Operation<Op1, T, T>{};
+      Operation<Op2, T, T>{};
+    }
 
     static void absorb(Op1 op1, Op2 op2, T x, T y)
     { assert(( op1(x, op2(x, y)) == x )); }
+
+    typedef std::tuple<
+      Operation<Op1, T, T>,
+      Operation<Op2, T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
   };
 
+  // FIXME: Would it be reasonable to further constrain the intermediate types
+  // in this concept (i.e., the result types of Inv and Elem)?
   /**
    * @ingroup concepts
    * @ingroup unchecked_concepts
@@ -360,21 +366,34 @@ namespace origin
    */
   template<typename Op, typename Inv, typename Elem, typename T>
   struct Complement_Law
-    : Operation<Op, T, T>
-    , Operation<Inv, T>
-    , Constant<Elem, T>
   {
     Complement_Law()
     { auto p = constraints; }
 
     static void constraints(Op op, Inv inv, Elem elem, T x)
-    { compliment(); }
+    {
+      Operation<Op, T, T>{};
+      Operation<Inv, T>{};
+      Constant<Elem>{};
+    }
 
+    // FIXME: Actually evaluatin this axiom requires a number of semantic
+    // requirements. Specifically, the result type of Inv must be T, and the
+    // result type of Op must be equality comparable with the result type of
+    // Elem, and the result of that comparison must be implicitly convertible
+    // to bool.
     static void compliment(Op op, Inv inv, Elem elem, T x)
     { assert(( op(x, inv(x)) == elem() )); }
-  };
 
-  // FIXME: Do I need the ivolution law (!!x == x)
+    typedef std::tuple<
+      Operation<Op, T, T>,
+      Operation<Inv, T>,
+      Constant<Elem>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+
+  };
 
 } // namespace origin
 

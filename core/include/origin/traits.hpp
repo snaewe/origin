@@ -8,8 +8,7 @@
 #ifndef ORIGIN_TRAITS_HPP
 #define ORIGIN_TRAITS_HPP
 
-#include <utility>  // std::forward
-
+#include <origin/traits/constructors.hpp>
 #include <origin/traits/operators.hpp>
 
 namespace origin {
@@ -27,7 +26,7 @@ namespace origin {
     static substitution_failure check(...);
   public:
     typedef decltype(
-      check(std::declval<F>()(std::forward<Args>(std::declval<Args>())...))
+      check(std::declval<F>(), std::forward<Args>(std::declval<Args>())...)
     ) type;
   };
 

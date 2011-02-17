@@ -5,6 +5,9 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
+#ifndef ORIGIN_TRAITS_OPERATORS_HPP
+#define ORIGIN_TRAITS_OPERATORS_HPP
+
 #include <origin/utility/meta.hpp>
 
 namespace origin
@@ -216,4 +219,38 @@ namespace origin
   { };
   //@}
 
+  // FIXME: Some forms of assignment are checked in the std namespace,
+  // specifically, those dealing with triviality of copy and move operators.
+  //
+  // FIXME: Implement the rest of these traits!
+  /**
+   * @ingroup traits
+   * @name Assignment oeprators
+   * Traits for querying common assignment expressions.
+   */
+  /**
+   * Deduce the result type of the x = y for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct deduce_assign
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X& x, Y const& y) -> decltype(x = y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x = y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_assign
+    : substitution_succeeded<typename deduce_assign<T, U>::type>
+  { };
+  //@}
+
 } // namespace origin
+
+#endif

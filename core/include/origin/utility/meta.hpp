@@ -19,17 +19,30 @@ namespace origin
    * metaprogramming utilities provided in the C++ standard.
    */
 
-  // FIXME: I don't like this type trait, or its name, but I'm not sure if
-  // there's anything better to call it. There should be.
   /**
    * @ingroup meta
-   * The head type trait returns the first type in a type parameter pack.
+   * The front type trait returns the first type in a type parameter pack.
    */
-  template<typename... Args> struct head_type;
+  template<typename... Args> struct front_type;
 
   template<typename T, typename... Args>
-  struct head_type<T, Args...>
+  struct front_type<T, Args...>
   { typedef T type; };
+
+  /**
+   * @ingroup meta
+   * The last type trait returns the last type in as type parameter pack.
+   */
+  template<typename... Args> struct last_type;
+
+  template<typename T>
+  struct last_type<T>
+  { typedef T type; };
+
+  template<typename T, typename... Args>
+  struct last_type<T, Args...>
+    : last_type<Args...>
+  { };
 
   /**
    * @ingroup meta
@@ -68,7 +81,7 @@ namespace origin
   template<typename T, typename... Args>
   struct are_same<T, Args...>
     : bool_constant<
-           std::is_same<T, typename head_type<Args...>::type>::value
+           std::is_same<T, typename front_type<Args...>::type>::value
         && are_same<Args...>::value
       >
   { };

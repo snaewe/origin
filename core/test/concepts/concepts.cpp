@@ -15,40 +15,83 @@
 using namespace std;
 using namespace origin;
 
+// Failable archetypes
 struct not_equal { };
+struct not_ordered { };
 
-template<typename T, typename U = T>
-void check_equal(bool result)
-{ assert(( Equal<T, U>::value == result )); }
+struct not_default { not_default() = delete; };
+struct not_copyable { not_copyable(not_copyable const&) = delete; };
 
+/**
+ * The check class is used to evaluate both the compile-time and run-time
+ * checks of a concept. The boolean value passed to the constructor specifies
+ * the test frameworks expectation about the validity of the model.
+ *
+ * This framework is also valid for testing type traits. Note that a type
+ * predicates. A type predicate (boolean metafunction) is a concept that the
+ * does not enforce any static assertions when instantiated. Type traits also
+ * have weaker guarantees about never generating compiler errors.
+ */
+template<typename Model, bool valid = Model::value>
+struct check
+{
+  check(bool result)
+  { assert(( result == false )); }
+};
 
-// FIXME: Figure out a way to bootstrap both tests. If the type models the
-// the concept, then pass it to a function that causes it to agree. Both tests
-// need to pass in order for the test to really work.
-template<typename T>
-void check_boolean(bool result)
-{ assert(( Boolean<T>::value == result )); }
+template<typename Model>
+struct check<Model, true>
+{
+  check(bool result)
+  {
+    Model{};
+    assert(( result == true ));
+  }
+};
 
-template<typename T>
-void assert_boolean()
-{ Boolean<T>{}; }
 
 int main()
 {
-  check_equal<bool>(true);
-  check_equal<int>(true);
-  check_equal<not_equal>(false);
+  // FIXME: Test exhuastively. I should Make sure that these are valid for all
+  // builtin types, standard types, containers, etc.
 
+  // Equality tests
+  {
+    check<Equal<bool>>{true};
+    check<Equal<string>>{true};
+    check<Equal<not_equal>>{false};
 
-  check_boolean<bool>(true);
-  assert_boolean<bool>();
+    // Spot-checking with axioms
+    assert(( Equal<int>::axioms::Reflexive(1) ));
+    assert(( Equal<int>::axioms::Symmetric(1, 2) ));
+    assert(( Equal<int>::axioms::Transitive(1, 1, 1) ));
+  }
 
-  check_boolean<char>(true);
-  check_boolean<int>(true);
-  check_boolean<long>(true);
+  // Order tests
+  {
+    check<Ordered<bool>>{true};
+    check<Ordered<int>>{true};
+    check<Ordered<string>>{true};
+    check<Ordered<not_ordered>>{false};
+  }
 
-  check_boolean<int*>(true);
-  assert_boolean<bool>();
+  // Constructability
+  {
+    check<Default<int>>{true};
+    check<Default<string>>{true};
+    check<Default<not_default>>{false};
 
-  check_boolean<string>(false);
+    check<Copyable<int>>{true};
+    check<Copyable<string>>{true};
+    check<Copyable<not_copyable>>{false};
+  }
+
+  // Regular types
+  {
+    check<Regular<int>>{true};
+    check<Regular<string>>{true};
+
+    check<Regular<not_default>>{false};
+    check<Regular<not_copyable>>{false};
+  }
 }
