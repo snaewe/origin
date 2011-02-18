@@ -14,6 +14,8 @@
 #include <iterator>
 #include <limits>
 
+#include <boost/optional.hpp>
+
 /**
  * Contains implementation details for origin.adjacency matrix.
  *
@@ -276,7 +278,7 @@ namespace origin {
       // Helper functions
       void move_to_next_edge()
       {
-        while(!(*g_)[edge_t(index_)] && index_ < order_ * order_)
+        while((*g_)[edge_t(index_)] && index_ < order_ * order_)
         { ++index_; }
       }
       void move_to_previous_edge()
@@ -291,6 +293,7 @@ namespace origin {
       size_type index_;
       // Order is in g, but used so often that it merits local scope.
       size_type order_;
+      size_type end_;
     };
 
     /** in_edge_iterator implementation. 

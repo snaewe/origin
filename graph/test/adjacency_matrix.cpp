@@ -27,21 +27,27 @@ int main()
   g_type g(g_size);
 
   assert(!g.null());
-  assert(!g.empty());
+  assert(g.empty());
   assert(g.order() == g_size);
-  assert(g.size() == g_size * g_size);
+  assert(g.size() == 0u);
 
   // Testing: Add edges
   g.add_edge(g_type::vertex(1), g_type::vertex(2));
+  assert(g.size() == 1);
 
   // Testing additional constructors.
 
   // Testing ranges.
 
   {
+    bool found_edge = false;
     auto edges = g.edges();
-    /*for(; edges.begin() != edges.end(); ++edges.begin())
-    { }*/
+    for(; edges.begin() != edges.end(); ++edges.begin())
+    {
+      found_edge = true;
+      break;
+    }
+    assert(found_edge);
   }
 
   return 0;

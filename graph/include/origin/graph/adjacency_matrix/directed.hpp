@@ -152,15 +152,16 @@ namespace origin
     const_vertex_range vertices() const;
     edge_range edges();
     const_edge_range edges() const;
-    out_edge_range out_edges(vertex_iterator);
-    const_out_edge_range out_edges(const_vertex_iterator) const;
-    in_edge_range in_edges(vertex_iterator);
-    const_in_edge_range in_edges(const_vertex_iterator) const;
+    out_edge_range out_edges(vertex);
+    const_out_edge_range out_edges(const_vertex) const;
+    in_edge_range in_edges(vertex);
+    const_in_edge_range in_edges(const_vertex) const;
     //@}
 
   private:
     vertex_list vertices_;
     edge_matrix edges_;
+    size_type num_edges_;
   };
 
   /** @Internal Member Definitions */
@@ -168,19 +169,19 @@ namespace origin
   template<typename V, typename E, typename A>
   directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
   (allocator_type const& alloc)
-    : vertices_(), edges_()
+    : vertices_(), edges_(), num_edges_()
   { }
 
   template<typename V, typename E, typename A>
   directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
   (size_type n, allocator_type const& alloc)
-    : vertices_(n), edges_(n * n)
+    : vertices_(n), edges_(n * n), num_edges_(0)
   { }
 
   template<typename V, typename E, typename A>
   directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
   (directed_adjacency_matrix const& c)
-    : vertices_(c.vertices_), edges_(c.edges_)
+    : vertices_(c.vertices_), edges_(c.edges_), num_edges_(c.num_edges_)
   { }
 
   template<typename V, typename E, typename A>
@@ -189,13 +190,14 @@ namespace origin
   {
     vertices_ = c.vertices_;
     edges_ = c.edges_;
+    num_edges_ = c.num_edges_;
     return *this;
   }
 
   template<typename V, typename E, typename A>
   directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
   (directed_adjacency_matrix&& c)
-    : vertices_(c.vertices_), edges_(c.edges_)
+    : vertices_(c.vertices_), edges_(c.edges_), num_edges_(c.num_edges_)
   { }
 
   template<typename V, typename E, typename A>
@@ -204,13 +206,18 @@ namespace origin
   {
     vertices_ = c.vertices_;
     edges_ = c.edges_;
+    num_edges_ = c.num_edges_;
     return *this;
   }
 
   template<typename V, typename E, typename A>
   bool directed_adjacency_matrix<V,E,A>::equal
   (directed_adjacency_matrix const& d) const
-  { return vertices_ == d.vertices && edges_ == d.edges_; }
+  {
+    return num_edges_ == d.num_edges_ &&
+      vertices_ == d.vertices &&
+      edges_ == d.edges_;
+  }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::get_allocator() const -> allocator_type
@@ -219,11 +226,11 @@ namespace origin
   // Since the order of the graph is fixed, return size/capacity of verticies.
   template<typename V, typename E, typename A>
   constexpr auto directed_adjacency_matrix<V,E,A>::max_order() const -> size_type
-  { return vertices_.capacity(); }
+  { return vertices_.size(); }
 
   template<typename V, typename E, typename A>
   constexpr auto directed_adjacency_matrix<V,E,A>::max_size() const -> size_type
-  { return edges_.max_size(); }
+  { return edges_.size(); }
 
   template<typename V, typename E, typename A>
   bool directed_adjacency_matrix<V,E,A>::null() const
@@ -235,11 +242,11 @@ namespace origin
 
   template<typename V, typename E, typename A>
   bool directed_adjacency_matrix<V,E,A>::empty() const
-  { return edges_.empty(); }
+  { return num_edges_ == 0u; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::size() const -> size_type
-  { return edges_.size(); }
+  { return num_edges_; }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::operator[](vertex v) -> vertex_value_type&
@@ -253,7 +260,6 @@ namespace origin
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::operator[](edge e) -> edge_value_type&
   {
-    assert(((bool)edges_[e.value]));
     return edges_[e.value];
   }
 
@@ -261,7 +267,6 @@ namespace origin
   auto directed_adjacency_matrix<V,E,A>::operator[](const_edge e) const
     -> edge_value_type const&
   {
-    assert(((bool)edges_[e.value]));
     return *edges_[e.value];
   }
 
@@ -269,7 +274,6 @@ namespace origin
   auto directed_adjacency_matrix<V,E,A>::operator()(size_type r, size_type c)
     -> edge_value_type&
   {
-    assert(((bool)edges[vertex(r * order() + c)]));
     return *edges[edge(r * order() + c)];
   }
 
@@ -277,7 +281,6 @@ namespace origin
   auto directed_adjacency_matrix<V,E,A>::operator()(size_type r, size_type c) const
     -> edge_value_type const&
   {
-    assert(((bool)edges[vertex(r * order() + c)]));
     return *edges[edge(r * order() + c)];
   }
 
@@ -286,12 +289,8 @@ namespace origin
   {
     std::swap(vertices_, c.vertices_);
     std::swap(edges_, c.edges_);
+    std::swap(num_edges_, c.num_edges_);
   }
-
-  // TODO Requires some thought. What happens to vertices?
-  /*template<typename V, typename E, typename A>
-  void directed_adjacency_matrix<V,E,A>::clear()
-  { edges_.clear(); }*/
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::out_degree(const_vertex v) const -> size_type
@@ -313,7 +312,10 @@ namespace origin
     //assert((!edges_[v.value * order() + u.value]));
     // Or should it return the old edge
     if(!edges_[edge_index])
+    {
+      ++num_edges_;
       edges_[edge_index] = edge_value_type();
+    }
 
     return edge(edge_index);
   }
@@ -324,18 +326,37 @@ namespace origin
   {
     size_type edge_index = v.value * order() + u.value;
     if(!edges_[edge_index])
+    {
+      ++num_edges_;
       edges_[edge_index] = e;
+    }
 
     return edge(edge_index);
   }
 
   template<typename V, typename E, typename A>
   void directed_adjacency_matrix<V,E,A>::remove_edge(edge e)
-  { /* How does this work?*/ }
+  {
+    if(edges_[e.value])
+    {
+      --num_edges_;
+      edge_type new_edge;
+      swap(edges_[e.value], new_edge);
+    }
+  }
 
+  // FIXME Add uninitialize to optional
   template<typename V, typename E, typename A>
   void directed_adjacency_matrix<V,E,A>::remove_edges(vertex v, vertex u)
-  { /* How does this work?*/ }
+  {
+    size_type edge_index = v.value * order() + u.value;
+    if(edges_[edge_index])
+    {
+      --num_edges_;
+      edge_type e;
+      swap(edges_[edge_index], e);
+    }
+  }
 
   template<typename V, typename E, typename A>
   void directed_adjacency_matrix<V,E,A>::remove_edges()
@@ -378,7 +399,9 @@ namespace origin
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::edges() -> edge_range
   {
-    return edge_range(edge_iterator(this, 0), edge_iterator(this, order() * order()));
+    return edge_range(
+      edge_iterator(this, 0),
+      edge_iterator(this, order() * order()));
   }
 
   template<typename V, typename E, typename A>
@@ -387,6 +410,42 @@ namespace origin
     return const_edge_range(
       const_edge_iterator(this, 0),
       const_edge_iterator(this, order() * order())
+    );
+  }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::out_edges(vertex v) -> out_edge_range
+  {
+    return out_edge_range(
+      out_edge_iterator(this, v.value * order()),
+      out_edge_iterator(this, (v.value + 1) * order())
+    );
+  }
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::out_edges(vertex v) const
+    -> const_out_edge_range
+  {
+    return const_out_edge_range(
+      const_out_edge_iterator(this, v.value * order()),
+      const_out_edge_iterator(this, (v.value + 1) * order())
+    );
+  }
+
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::in_edges(vertex v) -> in_edge_range
+  {
+    return in_edge_range(
+      in_edge_iterator(this, v.value * order()),
+      in_edge_iterator(this, (v.value + 1) * order())
+    );
+  }
+  template<typename V, typename E, typename A>
+  auto directed_adjacency_matrix<V,E,A>::in_edges(vertex v) const
+    -> const_in_edge_range
+  {
+    return const_in_edge_range(
+      const_in_edge_iterator(this, v.value * order()),
+      const_in_edge_iterator(this, (v.value + 1) * order())
     );
   }
   //@}
