@@ -6,3 +6,4 @@
 # and conditions.
 
 add_executable(concepts concepts.cpp)
+add_executable(proto proto.cpp)

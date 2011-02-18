@@ -12,6 +12,8 @@
 #include <origin/utility/typestr.hpp>
 #include <origin/concepts.hpp>
 
+#include "check.hpp"
+
 using namespace std;
 using namespace origin;
 
@@ -21,34 +23,6 @@ struct not_ordered { };
 
 struct not_default { not_default() = delete; };
 struct not_copyable { not_copyable(not_copyable const&) = delete; };
-
-/**
- * The check class is used to evaluate both the compile-time and run-time
- * checks of a concept. The boolean value passed to the constructor specifies
- * the test frameworks expectation about the validity of the model.
- *
- * This framework is also valid for testing type traits. Note that a type
- * predicates. A type predicate (boolean metafunction) is a concept that the
- * does not enforce any static assertions when instantiated. Type traits also
- * have weaker guarantees about never generating compiler errors.
- */
-template<typename Model, bool valid = Model::value>
-struct check
-{
-  check(bool result)
-  { assert(( result == false )); }
-};
-
-template<typename Model>
-struct check<Model, true>
-{
-  check(bool result)
-  {
-    Model{};
-    assert(( result == true ));
-  }
-};
-
 
 int main()
 {

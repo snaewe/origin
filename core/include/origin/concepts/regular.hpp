@@ -68,6 +68,7 @@ namespace origin
     }
 
     struct axioms {
+      //  FIXME: Requires Boolean<T>
       static auto Equal_Identity(T x, T y)
         -> decltype(implies(&x == &y, x == y))
       { return implies(&x == &y, x == y); }
@@ -76,10 +77,12 @@ namespace origin
         -> decltype(x == x)
       { return x == x; }
 
+      //  FIXME: Requires Boolean<T>
       static auto Symmetric(T x, T y)
         -> decltype(implies(x == y, y == x))
       { return implies(x == y, y == x); }
 
+      //  FIXME: Requires Boolean<T>
       static auto Transitive(T x, T y, T z)
         -> decltype(implies(x == y && y == z, x == z))
       { return implies(x == y && y == z, x == z); }
@@ -142,10 +145,12 @@ namespace origin
         -> decltype(!(x < x))
       { return !(x < x); }
 
+      // FIXME: Requires Boolean<T>
       static auto antisymmetric(T x, T y)
         -> decltype(implies(x < y, !(y < x)))
       { return implies(x < y, !(y < x)); }
 
+      //  FIXME: Requires Boolean<T>
       static auto transitive(T x, T y, T z)
         -> decltype(implies(x < y && y < z, x == z))
       { return implies(x < y && y < z, x == z); }
@@ -203,12 +208,12 @@ namespace origin
 
     struct axioms
     {
-      static auto copy_equivalence(T x)
+      static auto copy_equivalence(T x, T y)
         -> decltype(x == y)
-      { T y{x}; return x == y; }
+      { x = y; return x == y; }
     };
 
-    // FIXME: Use std::has_copy_constructor and has_copy_assign when they
+    // FIXME: Use std::has_copy_constructor and std::has_copy_assign when they
     // become available.
     typedef std::tuple<
       is_constructible<T, T const&>,
@@ -218,8 +223,40 @@ namespace origin
     static constexpr bool value = type::value;
   };
 
-  // FIXME: Implement me!
   /**
+   * @ingroup concepts
+   * A type is moveable if it can be constructed over or assigned to an rvalue
+   * reference. This is typically done by calling std::move to generate an
+   * rvalue reference.
+   *
+   * Note that, as a concept, moveability is unrelated to copyability even
+   * though all copyable types will generally satisfy the move syntax unless
+   * they explicitly delete those operations.
+   */
+  template<typename T>
+  struct Moveable
+  {
+    Moveable()
+    { auto p = constraints; }
+
+    static void constraints(T x)
+    {
+      T y{std::move(x)};
+      x = std::move(y);
+    }
+
+    // FIXME: Use std::has_move_constructor and std::has_move_assign when they
+    // become available.
+    typedef std::tuple<
+      is_constructible<T, T&&>,
+      has_assign<T, T&&>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @ingroup concepts
    * A regular type is one that can be default constructed and copied, which
    * also implies equality comparison.
    */
@@ -235,6 +272,78 @@ namespace origin
 
     typedef std::tuple<
       Default<T>, Copyable<T>, Equal<T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  // FIXME: It's probably worthwhile to consider a refinement of Boolean, say
+  // Bool that does require evaluation in a Boolean context.
+
+  /**
+   * @ingroup concepts
+   * A boolean type is one that can participate in Boolean expressions.
+   * Specifically, a Boolean type must be negatable, logically and'd and
+   * logically or'd. This concept requires two further binary operators:
+   * implies and iff.
+   *
+   * Note that the Boolean concept does not require the type to be convertible
+   * to bool. This allows a type to behave as a boolean, but not to require
+   * evaluation in boolean contexts (e.g., if conditions).
+   */
+  template<typename T>
+  struct Boolean
+  {
+    Boolean()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    {
+      !x;
+      x && y;
+      x || y;
+    }
+
+    // FIXME: Axioms! It's generally going to be the case that the Boolean
+    // concept also defines a Boolean algebra. However, we can't reliably
+    // enforce these constraints
+
+    typedef std::tuple<
+      has_logical_not<T>,
+      has_logical_and<T, T>,
+      has_logical_or<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * The Bool concept is a refinement of Boolean that adds the requirement
+   * that the type T and the result of all logical operations are implicitly
+   * convertible to bool. This allows models to be evaluated in a boolean
+   * context.
+   */
+  template<typename T>
+  struct Bool
+    : Boolean<T>
+  {
+    Bool()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    {
+      if(x);
+      if(!x);
+      if(x && y);
+      if(x || y);
+    }
+
+    typedef std::tuple<
+      Boolean<T>,
+      Convertible<T, bool>,
+      Convertible<typename deduce_logical_not<T>::type, bool>,
+      Convertible<typename deduce_logical_and<T, T>::type, bool>,
+      Convertible<typename deduce_logical_or<T, T>::type, bool>
     > requirements;
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
