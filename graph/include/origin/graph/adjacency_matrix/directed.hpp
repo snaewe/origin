@@ -400,16 +400,16 @@ namespace origin
   auto directed_adjacency_matrix<V,E,A>::edges() -> edge_range
   {
     return edge_range(
-      edge_iterator(this, 0),
-      edge_iterator(this, order() * order()));
+      edge_iterator(this, 0, order() * order()),
+      edge_iterator(this, order() * order(),  order() * order()));
   }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::edges() const -> const_edge_range
   {
     return const_edge_range(
-      const_edge_iterator(this, 0),
-      const_edge_iterator(this, order() * order())
+      const_edge_iterator(this, 0, order() * order()),
+      const_edge_iterator(this, order() * order(), order() * order())
     );
   }
 
@@ -417,8 +417,8 @@ namespace origin
   auto directed_adjacency_matrix<V,E,A>::out_edges(vertex v) -> out_edge_range
   {
     return out_edge_range(
-      out_edge_iterator(this, v.value * order()),
-      out_edge_iterator(this, (v.value + 1) * order())
+      out_edge_iterator(this, v.value * order(), (v.value + 1) * order()),
+      out_edge_iterator(this, (v.value + 1) * order(), (v.value + 1) * order())
     );
   }
   template<typename V, typename E, typename A>
@@ -426,26 +426,32 @@ namespace origin
     -> const_out_edge_range
   {
     return const_out_edge_range(
-      const_out_edge_iterator(this, v.value * order()),
-      const_out_edge_iterator(this, (v.value + 1) * order())
+      const_out_edge_iterator(this, v.value * order(), (v.value + 1) * order()),
+      const_out_edge_iterator(
+        this,
+        (v.value + 1) * order(),
+        (v.value + 1) * order()
+      )
     );
   }
 
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::in_edges(vertex v) -> in_edge_range
   {
+    auto one_past_last = v.value + 1 + (order() - 1) * order();
     return in_edge_range(
-      in_edge_iterator(this, v.value * order()),
-      in_edge_iterator(this, (v.value + 1) * order())
+      in_edge_iterator(this, v.value, one_past_last),
+      in_edge_iterator(this, one_past_last, one_past_last)
     );
   }
   template<typename V, typename E, typename A>
   auto directed_adjacency_matrix<V,E,A>::in_edges(vertex v) const
     -> const_in_edge_range
   {
+    auto one_past_last = v.value + 1 + (order() - 1) * order();
     return const_in_edge_range(
-      const_in_edge_iterator(this, v.value * order()),
-      const_in_edge_iterator(this, (v.value + 1) * order())
+      const_in_edge_iterator(this, v.value, one_past_last),
+      const_in_edge_iterator(this, one_past_last, one_past_last)
     );
   }
   //@}

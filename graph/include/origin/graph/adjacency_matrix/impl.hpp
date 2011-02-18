@@ -209,8 +209,8 @@ namespace origin {
 
       edge_iter() = delete;
 
-      edge_iter(Graph* g, size_type index)
-        : g_(g), index_(index), order_(g->order())
+      edge_iter(Graph* g, size_type index, size_type end)
+        : g_(g), index_(index), order_(g->order()), end_(end)
       { move_to_next_edge(); }
 
       edge_iter(edge_iter const&) = default;
@@ -278,7 +278,7 @@ namespace origin {
       // Helper functions
       void move_to_next_edge()
       {
-        while((*g_)[edge_t(index_)] && index_ < order_ * order_)
+        while((*g_)[edge_t(index_)] && index_ < end_)
         { ++index_; }
       }
       void move_to_previous_edge()
@@ -312,8 +312,8 @@ namespace origin {
 
       in_edge_iter() = delete;
 
-      in_edge_iter(Graph* g, size_type index)
-        : g_(g), index_(index), order_(g->order())
+      in_edge_iter(Graph* g, size_type index, size_type end)
+        : g_(g), index_(index), order_(g->order()), end_(end)
       { move_to_next_edge(); }
 
       in_edge_iter(in_edge_iter const&) = default;
@@ -381,7 +381,7 @@ namespace origin {
       // Helper functions
       void move_to_next_edge()
       {
-        while(!(*g_)[edge_t(index_)] && index_ < order_ * order_)
+        while(!(*g_)[edge_t(index_)] && index_ < end_)
         { index_ += order_; }
       }
       void move_to_previous_edge()
@@ -396,6 +396,7 @@ namespace origin {
       size_type index_;
       // Order is in g, but used so often that it merits local scope.
       size_type order_;
+      size_type end_;
     };
 
     /** Adjacency matrix categories */
