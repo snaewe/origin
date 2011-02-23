@@ -12,7 +12,7 @@ list(APPEND CMAKE_MODULE_PATH ${ORIGIN_ROOT}/cmake)
 include(Origin)
 
 origin_component(
-  graph
+  data
   VERSION 0.1.0
   DEPENDS core range
   AUTHORS
