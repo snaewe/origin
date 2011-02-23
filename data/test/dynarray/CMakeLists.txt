@@ -5,4 +5,4 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-add_subdirectory(dynarray)
+origin_executable(dynarray dynarray.cpp)

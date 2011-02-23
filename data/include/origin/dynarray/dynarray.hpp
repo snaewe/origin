@@ -11,8 +11,6 @@
 #include <memory>
 
 #include <origin/exception.hpp>
-#include <origin/iterator.hpp>
-#include <origin/range.hpp>
 
 namespace origin 
 {
@@ -38,7 +36,7 @@ namespace origin
     typedef typename allocator_type::pointer pointer;
     typedef typename allocator_type::const_pointer const_pointer;
     typedef typename allocator_type::size_type size_type;
-    typedef typename allocator_rtpe::difference_type difference_type;
+    typedef typename allocator_type::difference_type difference_type;
 
     typedef pointer iterator;
     typedef const_pointer const_iterator;
@@ -204,8 +202,13 @@ namespace origin
     pointer allocate(size_type n)
     { return new T[n]; }
 
+  private:
+    // FIXME: Use two pointers.
     pointer data_;
     size_type size_;
+    
+    // FIXME: Optimize storage costs using EBO.
+    allocator_type alloc_;
   };
 
   template<typename T>
