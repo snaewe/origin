@@ -111,7 +111,7 @@ namespace origin
      * @tparam Edge The edge type.
      * @tparam Vertex The vertex type.
      *
-     * @note The implementatio of this class relies heavily on the fact that
+     * @note The implementation of this class relies heavily on the fact that
      * a default constructed node list iterator is PTE. By relying on this fact,
      * the implementation can omit a reference to the parent graph type.
      */
@@ -199,6 +199,7 @@ namespace origin
     typedef undirected_adjacency_list<Vertex, Edge, Alloc> this_type;
 
   public:
+    // FIXME: Update this as we get more categories.
     struct graph_category : undirected_graph_tag { };
 
     typedef Vertex vertex_value_type;
@@ -447,10 +448,12 @@ namespace origin
   {
     assert(( v ));
     return {
-      incident_edge_iterator{
-        begin(base_type::out_edges(v)), begin(base_type::in_edges(v)), v
+      const_incident_edge_iterator{
+        begin(base_type::out_edges(v)), 
+        begin(base_type::in_edges(v)), 
+        v
       },
-      incident_edge_iterator{}
+      const_incident_edge_iterator{}
     };
   }
 

@@ -341,7 +341,7 @@ namespace origin {
     template<typename List, typename Node>
     class const_node_iterator
       : public bidirectional_iterator_facade<
-          const_node_iterator<List, Node>, Node const&
+          const_node_iterator<List, Node>, Node const*
         >
     {
     public:

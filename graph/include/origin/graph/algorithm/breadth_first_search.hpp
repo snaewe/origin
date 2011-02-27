@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include <origin/graph/color.hpp>
+#include <origin/graph/edge.hpp>
 
 namespace origin
 {
@@ -54,60 +55,75 @@ namespace origin
   // Question: is it better to let the graph and visitor type "bubble" up to
   // the BGL or to "fix" those types before calling the function. I personally
   // prefer the latter, but I can see arguments for the former.
+  
+  // FIXME: I don't like the visit/search distinction, here. They're both
+  // searches, its just that one visits all vertices, and the other is rooted
+  // and a single vertex. Other viable name pairs are:
+  //
+  //   - search, search_all
+  //   - search_from, search
 
   /**
    * @ingroup graph_bfs
+   *
+   * @note The visitor uses polymorphic visit functions to accomodate both
+   * const and non-const visit strategies. If the visiting algorithm is 
+   * instatiated over a constant graph type, then the graph, vertex, and
+   * edge parameters will also be constant.
    */
-  template<typename Graph>
   struct breadth_first_search_visitor
   {
-    typedef Graph graph_type;    
-    typedef typename graph_type::vertex vertex;
-    typedef typename graph_type::edge edge;
-    
     // Called after a vertex has been initialized
-    void initialized(graph_type const& g, vertex v) { }
+    template<typename Graph, typename Vertex>
+    void initialized_vertex(Graph& g, Vertex v) { }
     
     // Called after a vertex has been discovered
-    void discovered(graph_type const& g, vertex v) { }
+    template<typename Graph, typename Vertex>
+    void discovered_vertex(Graph& g, Vertex v) { }
     
     // Called after a vertex has been popped from the queue and before its
     // incident edges have been examined.
-    void started(graph_type const& g, vertex v) { }
+    template<typename Graph, typename Vertex>
+    void started_vertex(Graph& g, Vertex v) { }
     
     // Called after the vertex has been examined.
-    void finished(graph_type const& g, vertex v) { }
+    template<typename Graph, typename Vertex>
+    void finished_vertex(Graph& g, Vertex v) { }
     
     // Called when a discovered vertex is the root of a search tree in the
     // search forest.
-    void root(graph_type const& g, vertex v) { }
+    template<typename Graph, typename Vertex>
+    void root_vertex(Graph& g, Vertex v) { }
     
     // Called before an incident edge is examined.
-    void started(graph_type const& g, edge e) { }
+    template<typename Graph, typename Edge>
+    void started_edge(Graph& g, Edge e) { }
 
     // Called when an edge is determined to be in the search tree. Occurs 
     // just before the target vertex is discovered.
-    void tree(graph_type const& g, edge e) { }
+    template<typename Graph, typename Edge>
+    void tree_edge(Graph& g, Edge e) { }
     
     // Called when an edge is determined to not be in the search tree.
-    void nontree(graph_type const& g, edge e) { }
+    template<typename Graph, typename Edge>
+    void nontree_edge(Graph& g, Edge e) { }
   };
 
   // FIXME: Parameterize over a color label. Use a default argument to select
   // between one or more base classes that supply labeling functions.
-
+  
   /**
    * The breadth first visit algorithm object performs a breadth first 
    * traversal on all vertices connected to a single starting vertex.
    */
   template<typename Graph, typename Visitor>
-  class breadth_first_visit_algorithm
+  class breadth_first_search_from_algorithm
   {
   public:
     typedef Visitor visitor_type;
     typedef Graph graph_type;
-    typedef typename graph_type::vertex vertex;
-    typedef typename graph_type::edge edge;
+    typedef typename vertex_type<graph_type>::type vertex;
+    typedef typename edge_type<graph_type>::type edge;
     
     // FIXME: Generate an optimal mapping based on the indexing properties
     // of the graph type.
@@ -115,44 +131,44 @@ namespace origin
     
     typedef std::queue<vertex> search_queue;
     
-    breadth_first_visit_algorithm(Graph const& g, Visitor vis)
+    breadth_first_search_from_algorithm(Graph& g, Visitor vis)
       : graph(g), visitor(vis)
-    { 
-      for(vertex v : graph.vertices()) {
+    {
+      for(auto v : graph.vertices()) {
         color(v) = white;
-        visitor.initialized(graph, v);
+        visitor.initialized_vertex(graph, v);
       }
     }
     
     // Perform search
-    void search(vertex v)
+    void operator()(vertex v)
     {
       color(v) = gray;
       queue.push(v);
-      visitor.discovered(graph, v);
-      visitor.root(graph, v);
+      visitor.discovered_vertex(graph, v);
+      visitor.root_vertex(graph, v);
 
       while(!queue.empty()) {
         vertex u = queue.front();
         queue.pop();
-        visitor.started(u);
+        visitor.started_vertex(graph, u);
         
-        for(edge e : search_edges(graph)) {
-          visitor.started(e);
+        for(edge e : out_edges(graph, u)) {
+          visitor.started_edge(graph, e);
           vertex v = graph.target(e);
           
           if(color(v) == white) {
             color(v) = gray;
             queue.push(v);
-            visitor.tree(e);
-            visitor.discovered(v);
+            visitor.tree_edge(graph, e);
+            visitor.discovered_vertex(graph, v);
           } else {
-            visitor.nontree(e);
+            visitor.nontree_edge(graph, e);
           }
         }
         
         color(v) = black;
-        visitor.finished(u);
+        visitor.finished_vertex(graph, u);
       }
     }
     
@@ -162,7 +178,7 @@ namespace origin
     color_t color(vertex v) const
     { return colors[v]; }
     
-    graph_type const& graph;
+    graph_type& graph;
     visitor_type visitor;
     search_queue queue;
     color_map colors;    
@@ -174,18 +190,20 @@ namespace origin
    */
   template<typename Graph, typename Visitor>
   struct breadth_first_search_algorithm 
-    : private breadth_first_visit_algorithm<Graph, Visitor>
+    : private breadth_first_search_from_algorithm<Graph, Visitor>
   {
-    typedef breadth_first_visit_algorithm<Graph, Visitor> base_type;
-    typedef Graph graph_type;
-    typedef typename graph_type::vertex vertex;
-    typedef typename graph_type::edge edge;
+    typedef breadth_first_search_from_algorithm<Graph, Visitor> base_type;
     
-    breadth_first_search_algorithm(Graph const& g, Visitor vis)
+    typedef Visitor visitor_type;
+    typedef Graph graph_type;
+    typedef typename base_type::type vertex;
+    typedef typename base_type::type edge;
+    
+    breadth_first_search_algorithm(Graph& g, Visitor vis)
       : base_type(g, vis)
     { }
 
-    void search()
+    void operator()()
     {
       for(auto v : graph.vertices()) {
         if(color(v) == white) {
@@ -198,6 +216,15 @@ namespace origin
     using base_type::colors;
     using base_type::graph;
   };
+  
+  template<typename Graph, typename Visitor>
+  void breadth_first_search_from(Graph const& g, 
+                                 typename Graph::vertex v, 
+                                 Visitor vis)
+  {
+    breadth_first_search_from_algorithm<Graph const, Visitor> algo(g, vis);
+    algo(v);
+  }
 
 } // namespace origin
 

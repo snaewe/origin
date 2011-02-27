@@ -1,4 +1,5 @@
-// Copyright (c) 2008-2011 Kent State University
+// Copyright (c) 2008-2010 Kent State University
+// Copyright (c) 2011 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -7,25 +8,56 @@
 #ifndef ORIGIN_GRAPH_EDGE_HPP
 #define ORIGIN_GRAPH_EDGE_HPP
 
-// This header contains generic operations on edges. Note that conceptually,
-// an edge is both an iterator, a bool-testable value, and provides access to
-// its source and target (even for undirected edges!).
+#include <origin/graph/traits.hpp>
 
 namespace origin
 {
-  /**
-   *  Return an iterator to the source vertex of the given edge.
-   */
-  template<typename Edge>
-  inline auto source(Edge const& e) -> decltype(e.source())
-  { return e.source(); }
+  // NOTE: We could *amlost* get the directed/undirected selection to work
+  // without enable_if if undirected graphs don't derive from directed graphs.
+  // Unfortunately, access violations don't count as SFINAE errors.
+  
+  // NOTE: If a graph is somehow both directed and undirected, then we're going
+  // to have ambiguity problems.
 
   /**
-   * Return an iterator to the target vertex of the given edge.
+   * Return the set of out edges of a vertex. This function is overloaded for
+   * both directed and undirected graphs. For undirected graphs, the set of
+   * out edges is defined as the set of incident edges.
    */
-  template<typename Edge>
-  inline auto target(Edge const& e) -> decltype(e.target())
-  { return e.target(); }
+  
+  // Specializations for directed graphs.
+  template<typename Graph>
+  typename std::enable_if<
+    is_directed_graph<Graph>::value,
+    typename Graph::out_edge_range
+  >::type
+  out_edges(Graph& g, typename Graph::vertex v) 
+  { return g.out_edges(v); }
+
+  template<typename Graph>
+  typename std::enable_if<
+    is_directed_graph<Graph>::value,
+    typename Graph::const_out_edge_range
+  >::type
+  out_edges(Graph const& g, typename Graph::const_vertex v) 
+  { return g.out_edges(v); }
+
+  // Specializations for undirected graphs
+  template<typename Graph>
+  typename std::enable_if<
+    is_undirected_graph<Graph>::value,
+    typename Graph::incident_edge_range
+  >::type
+  out_edges(Graph& g, typename Graph::vertex v) 
+  { return g.incident_edges(v); }
+
+  template<typename Graph>
+  typename std::enable_if<
+    is_undirected_graph<Graph>::value,
+    typename Graph::const_incident_edge_range
+  >::type
+  out_edges(Graph const& g, typename Graph::const_vertex v) 
+  { return g.incident_edges(v); }
 
 } // namesapce origin
 

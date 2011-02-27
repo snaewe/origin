@@ -42,6 +42,7 @@ namespace origin
     typedef typename base_type::out_list out_list;
     typedef typename base_type::in_list in_list;
   public:
+    // FIXME: Update this as we get more categories.
     struct graph_category : directed_graph_tag { };
 
     // Value types and allocator.

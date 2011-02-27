@@ -12,9 +12,43 @@
 
 namespace origin
 {
+
+  /**
+   * The vertex type trait selects the vertex type of a graph. For non-const
+   * graph types, this is the nested vertex type. For const graph types, this 
+   * is the const vertex type.
+   *
+   * @invariant vertex_type<Graph>::type == Graph::vertex
+   * @invariant vertex_type<Graph const>::type == Graph::const_vertex
+   */
+  template<typename Graph>
+  struct vertex_type 
+  { typedef typename Graph::vertex type; };
+  
+  template<typename Graph>
+  struct vertex_type<Graph const>
+  { typedef typename Graph::const_vertex type; };
+
+  /**
+   * The edge type trait selects the edge type of a graph. For non-const
+   * graph types, this is the nested edge type. For const graph types, this is 
+   * the const edge type.
+   *
+   * @invariant edge_type<Graph>::type == Graph::edge
+   * @invariant edge_type<Graph const>::type == Graph::const_edge
+   */
+  template<typename Graph>
+  struct edge_type
+  { typedef typename Graph::edge type; };
+  
+  template<typename Graph>
+  struct edge_type<Graph const>
+  { typedef typename Graph::const_edge type; };
+
   /**
    * @defgroup graph_traits
    * @ingroup graph
+   *
    * The types and traits in this category support conceptual abstractions for
    * graph data structures.
    */

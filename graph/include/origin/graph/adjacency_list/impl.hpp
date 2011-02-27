@@ -274,7 +274,7 @@ namespace origin {
       typedef typename allocator_type::template rebind<edge_type>::other
         edge_allocator_type;
 
-//       // NOTE: This is effectively defined as the maximum degree of any vertex
+      // NOTE: This is effectively defined as the maximum degree of any vertex
       // in the graph, which is essentially required to be >= to the number of
       // vertices.
       typedef typename edge_allocator_type::size_type size_type;
