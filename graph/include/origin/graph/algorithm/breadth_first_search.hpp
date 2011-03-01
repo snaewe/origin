@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include <origin/graph/color.hpp>
+#include <origin/graph/label.hpp>
 #include <origin/graph/edge.hpp>
 
 namespace origin
@@ -108,15 +109,14 @@ namespace origin
     template<typename Graph, typename Edge>
     void nontree_edge(Graph& g, Edge e) { }
   };
-
-  // FIXME: Parameterize over a color label. Use a default argument to select
-  // between one or more base classes that supply labeling functions.
   
   /**
    * The breadth first visit algorithm object performs a breadth first 
    * traversal on all vertices connected to a single starting vertex.
    */
-  template<typename Graph, typename Visitor>
+  template<typename Graph, 
+           typename Visitor, 
+           typename Color_Label = internal_label<Graph, color_t>>
   class breadth_first_search_from_algorithm
   {
   public:
@@ -124,15 +124,18 @@ namespace origin
     typedef Graph graph_type;
     typedef typename vertex_type<graph_type>::type vertex;
     typedef typename edge_type<graph_type>::type edge;
-    
-    // FIXME: Generate an optimal mapping based on the indexing properties
-    // of the graph type.
-    typedef std::unordered_map<vertex, color_t> color_map;
-    
     typedef std::queue<vertex> search_queue;
+    typedef vertex_label<Graph, Color_Label> color_label;
     
     breadth_first_search_from_algorithm(Graph& g, Visitor vis)
-      : graph(g), visitor(vis)
+      : graph(g), visitor(vis), queue(), color(g)
+    { }
+    
+    breadth_first_search_from_algorithm(Graph& g, Visitor vis, Color_Label color)
+      : graph(g), visitor(vis), queue(), color(color)
+    { }
+
+    void init()
     {
       for(auto v : graph.vertices()) {
         color(v) = white;
@@ -172,16 +175,10 @@ namespace origin
       }
     }
     
-    color_t& color(vertex v)
-    { return colors[v]; }
-    
-    color_t color(vertex v) const
-    { return colors[v]; }
-    
     graph_type& graph;
     visitor_type visitor;
     search_queue queue;
-    color_map colors;    
+    color_label color;    
   };
   
   /**
@@ -217,14 +214,59 @@ namespace origin
     using base_type::graph;
   };
   
-  template<typename Graph, typename Visitor>
-  void breadth_first_search_from(Graph const& g, 
-                                 typename Graph::vertex v, 
-                                 Visitor vis)
+  /**
+   * Perform a breadth first search on the graph, starting at the given vertex.
+   */
+  //@{
+  template<typename Graph, typename Vertex, typename Visitor>
+  void breadth_first_search_from(Graph& g,  Vertex v,  Visitor vis)
+  {
+    breadth_first_search_from_algorithm<Graph, Visitor> algo(g, vis);
+    algo(v);
+  }
+
+  // Const version of above.
+  template<typename Graph, typename Vertex, typename Visitor>
+  void breadth_first_search_from(Graph const& g,  Vertex v,  Visitor vis)
   {
     breadth_first_search_from_algorithm<Graph const, Visitor> algo(g, vis);
     algo(v);
   }
+  
+  // This variant takes an additional color label parameter.
+  template<typename Graph, 
+           typename Vertex, 
+           typename Visitor, 
+           typename Color_Label>
+  void breadth_first_search_from(Graph& g, 
+                                 Vertex v, 
+                                 Visitor vis,
+                                 Color_Label color)
+  {
+    breadth_first_search_from_algorithm<Graph, Visitor, Color_Label> 
+      algo(g, vis, color);
+    algo(v);
+  }
+
+  // Const version of above.
+  template<typename Graph, 
+           typename Vertex, 
+           typename Visitor, 
+           typename Color_Label>
+  void breadth_first_search_from(Graph const& g, 
+                                 Vertex v, 
+                                 Visitor vis,
+                                 Color_Label color)
+  {
+    breadth_first_search_from_algorithm<Graph const, Visitor, Color_Label> 
+      algo(g, vis, color);
+    algo(v);
+  }
+  //@}
+
+  /**
+   * 
+   */
 
 } // namespace origin
 
