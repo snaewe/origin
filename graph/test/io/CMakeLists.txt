@@ -5,11 +5,8 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_executable(graph graph.cpp)
-
-# Scratch Work. This will not be integrated into the library
-
-origin_executable(adjacency_graph adjacency_matrix.cpp)
-origin_executable(bfs bfs.cpp)
-
-add_subdirectory(io)
+# FIXME: These need to be tests. A nice way to verify the tests would be to
+# compare the output to the input. If they're indentical, then we're in good
+# shape.s
+origin_executable(char_empty char_empty.cpp)
+origin_executable(char_int char_int.cpp)

@@ -8,6 +8,8 @@
 #ifndef ORIGIN_UTILITY_EMPTY_HPP
 #define ORIGIN_UTILITY_EMPTY_HPP
 
+#include <iosfwd>
+
 namespace origin
 {
   /**
@@ -16,6 +18,17 @@ namespace origin
    * placeholder for unspecified types in containers or other data structures.
    */
   struct empty_t { };
+
+  // Make sure that empty is I/O-streamable.
+  template<typename Char, typename Traits>
+  inline std::basic_ostream<Char, Traits>& 
+  operator<<(std::basic_ostream<Char, Traits>& os, empty_t)
+  { return os; }
+
+  template<typename Char, typename Traits>
+  inline std::basic_istream<Char, Traits>& 
+  operator>>(std::basic_istream<Char, Traits>& is, empty_t&)
+  { return is; }
 
 } // namespace origin
 
