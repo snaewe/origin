@@ -17,7 +17,7 @@ using namespace origin;
 template<typename Graph>
 void test() 
 {
-  typedef breadth_first_search_visitor Visitor;
+  typedef bfs_visitor Visitor;
   
   Graph g;
   auto u = g.add_vertex();
@@ -36,7 +36,7 @@ int main()
   
   {
     typedef directed_adjacency_list<color_t> Graph;
-    typedef breadth_first_search_visitor Visitor;
+    typedef bfs_visitor Visitor;
 
     Graph g;
     auto u = g.add_vertex();
@@ -51,7 +51,7 @@ int main()
 
   {
     typedef directed_adjacency_list<color_t> Graph;
-    typedef breadth_first_search_visitor Visitor;
+    typedef bfs_visitor Visitor;
 
     Graph g;
     auto u = g.add_vertex();
@@ -72,7 +72,7 @@ int main()
   
   {
     typedef undirected_adjacency_list<char> Graph;
-    typedef breadth_first_search_visitor Visitor;
+    typedef bfs_visitor Visitor;
 
     Graph g;
     auto u = g.add_vertex('a');

@@ -226,7 +226,7 @@ namespace origin
    */
   //@{
   template<typename Graph, typename Vertex, typename Visitor>
-  void breadth_first_search(Graph& g, Vertex v, Visitor vis)
+  void breadth_first_search_from(Graph& g, Vertex v, Visitor vis)
   {
     rooted_bfs_algo<Graph, Visitor> algo(g, vis);
     algo(v);
@@ -294,7 +294,7 @@ namespace origin
   void breadth_first_search(Graph& g, Visitor vis, Color_Label color)
   {
     bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
-    algo(v);
+    algo();
   }
 
   // Const version of above.
@@ -302,7 +302,7 @@ namespace origin
   void breadth_first_search(Graph const& g, Visitor vis, Color_Label color)
   {
     bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
-    algo(v);
+    algo();
   }
   //@}
   
