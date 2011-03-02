@@ -12,7 +12,6 @@
 
 namespace origin
 {
-
   /**
    * The vertex type trait selects the vertex type of a graph. For non-const
    * graph types, this is the nested vertex type. For const graph types, this 
@@ -44,6 +43,71 @@ namespace origin
   template<typename Graph>
   struct edge_type<Graph const>
   { typedef typename Graph::const_edge type; };
+
+  /**
+   * The graph traits class abstracts the access to associated types of a graph
+   * class, providing a uniform and simplified abstraction. The traits class
+   * effetively hides the difference between graphs and const graphs.
+   */
+  template<typename Graph>
+  struct graph_traits
+  {
+    typedef typename Graph::vertex vertex;
+    typedef typename Graph::edge edge;
+    typedef typename Graph::vertex_range vertex_range;
+    typedef typename Graph::edge_range edge_range;
+    
+    // For convenience
+    typedef typename vertex_range::iterator vertex_iterator;
+    typedef typename edge_range::iterator edge_iterator;
+  };
+
+  template<typename Graph>
+  struct graph_traits<Graph const>
+  {
+    typedef typename Graph::const_vertex vertex;
+    typedef typename Graph::const_edge edge;
+    typedef typename Graph::const_vertex_range vertex_range;
+    typedef typename Graph::const_edge_range edge_range;
+    
+    // For convenience
+    typedef typename vertex_range::iterator vertex_iterator;
+    typedef typename edge_range::iterator edge_iterator;
+  };
+  
+  // FIXME: Build similar accessors for edge vertices. Consider building 
+  // similar abstractions for all common graph operations (vertices, edges, 
+  // etc.).
+  
+  // FIXME: This requires that the graph has interable vertex set. In other
+  // words, this is only instantiable if g.vertices() is a valid expresson
+  // of g.
+
+  /**
+   * Return an iterator to the first vertex in the graph.
+   */
+  template<typename Graph>
+  typename graph_traits<Graph>::vertex_iterator
+  begin_vertex(Graph& g)
+  { return begin(g.vertices()); }
+  
+  template<typename Graph>
+  typename graph_traits<Graph const>::vertex_iterator
+  begin_vertex(Graph const& g)
+  { return end(g.vertices()); }
+
+  /**
+   * Return an iterator past the end of the graph's vertex set.
+   */
+  template<typename Graph>
+  typename graph_traits<Graph>::vertex_iterator
+  end_vertex(Graph& g)
+  { return end(g.vertices()); }
+
+  template<typename Graph>
+  typename graph_traits<Graph const>::vertex_iterator
+  end_vertex(Graph const& g)
+  { return end(g.vertices()); }
 
   /**
    * @defgroup graph_traits
