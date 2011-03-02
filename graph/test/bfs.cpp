@@ -32,10 +32,9 @@ int main()
 {
   test<directed_adjacency_list<>>();
   test<undirected_adjacency_list<>>();
-  
-  
+
   {
-    typedef directed_adjacency_list<color_t> Graph;
+    typedef directed_adjacency_list<basic_color_t> Graph;
     typedef bfs_visitor Visitor;
 
     Graph g;
@@ -44,13 +43,13 @@ int main()
     g.add_edge(u, v);
 
     Visitor vis;
-    auto color = [&g](Graph::vertex v) -> color_t& { return g[v]; };
+    auto color = [&g](Graph::vertex v) -> basic_color_t& { return g[v]; };
     breadth_first_search_from(g, v, vis, color);
   }
 
 
   {
-    typedef directed_adjacency_list<color_t> Graph;
+    typedef directed_adjacency_list<basic_color_t> Graph;
     typedef bfs_visitor Visitor;
 
     Graph g;
@@ -65,8 +64,8 @@ int main()
     // a good thing.
     Graph const& cg = g;
     Visitor vis;
-    unordered_map<Graph::const_vertex, color_t> colors;
-    auto color = [&colors](Graph::const_vertex v) -> color_t& { return colors[v]; };
+    unordered_map<Graph::const_vertex, basic_color_t> colors;
+    auto color = [&colors](Graph::const_vertex v) -> basic_color_t& { return colors[v]; };
     breadth_first_search_from(cg, v, vis, color);
   }
   

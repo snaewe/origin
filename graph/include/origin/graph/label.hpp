@@ -34,12 +34,26 @@ namespace origin
   template<typename Graph, typename Label>
   struct vertex_label
   {
+    // FIXME: This should be the same as decay<T>, I think. Basically, we're
+    // just getting the value type with cv-qualifiers removed. Also note that
+    // we're explicitly generating the result type over the non-const vertex
+    // type. The const and non-const result types should only vary by a const
+    // and maybe a reference, both of which are removed here.
+    typedef typename std::remove_reference<
+      typename std::remove_const<
+        typename std::result_of<Label(typename Graph::vertex)>::type
+      >::type
+    >::type value_type;
+  
     vertex_label(Label l)
       : label(l)
     { }
     
+    // FIXME: Try to use decltype. May not be easy since I can't access the
+    // label as a member
     template<typename Vertex>
-    typename std::result_of<Label(Vertex)>::type operator()(Vertex v)
+    typename std::result_of<Label(Vertex)>::type 
+    operator()(Vertex v) const
     { return label(v); }
     
     Label label;

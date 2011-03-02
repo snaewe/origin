@@ -115,10 +115,14 @@ namespace origin
   /**
    * The breadth first visit algorithm object performs a breadth first 
    * traversal on all vertices connected to a single starting vertex.
+   *
+   *
+   * @tparam Color_Label If given, a label for a coloring with at least three
+   *         values: white, black, and gray.
    */
   template<typename Graph, 
-           typename Visitor, 
-           typename Color_Label = internal_label<Graph, color_t>>
+           typename Visitor,
+           typename Color_Label = internal_label<Graph, basic_color_t>>
   class rooted_bfs_algo
   {
   public:
@@ -129,6 +133,8 @@ namespace origin
     typedef typename graph_traits<graph_type>::edge edge;
 
     typedef vertex_label<Graph, Color_Label> color_label;
+    typedef color_traits<typename color_label::value_type> colors;
+
     typedef std::queue<vertex> search_queue;
     
     rooted_bfs_algo(Graph& g, Visitor vis)
@@ -142,7 +148,7 @@ namespace origin
     void init()
     {
       for(auto v : graph.vertices()) {
-        color(v) = white;
+        color(v) = colors::white();
         visitor.initialized_vertex(graph, v);
       }
     }
@@ -150,7 +156,7 @@ namespace origin
     // Perform search
     void operator()(vertex v)
     {
-      color(v) = gray;
+      color(v) = colors::gray();
       queue.push(v);
       visitor.discovered_vertex(graph, v);
       visitor.root_vertex(graph, v);
@@ -164,8 +170,8 @@ namespace origin
           visitor.started_edge(graph, e);
           vertex v = graph.target(e);
           
-          if(color(v) == white) {
-            color(v) = gray;
+          if(color(v) == colors::white()) {
+            color(v) = colors::gray();
             queue.push(v);
             visitor.tree_edge(graph, e);
             visitor.discovered_vertex(graph, v);
@@ -174,7 +180,7 @@ namespace origin
           }
         }
         
-        color(v) = black;
+        color(v) = colors::black();
         visitor.finished_vertex(graph, u);
       }
     }
@@ -191,7 +197,7 @@ namespace origin
    */
   template<typename Graph, 
            typename Visitor,
-           typename Color_Label = internal_label<Graph, color_t>>
+           typename Color_Label = internal_label<Graph, basic_color_t>>
   struct bfs_algo 
     : private rooted_bfs_algo<Graph, Visitor, Color_Label>
   {
@@ -201,6 +207,7 @@ namespace origin
     typedef Graph graph_type;
     typedef typename base_type::type vertex;
     typedef typename base_type::type edge;
+    typedef typename base_type::colors colors;
     
     bfs_algo(Graph& g, Visitor vis)
       : base_type(g, vis)
@@ -213,7 +220,7 @@ namespace origin
     void operator()()
     {
       for(auto v : this->graph.vertices()) {
-        if(this->color(v) == white) {
+        if(this->color(v) == colors::white()) {
           this->search(v);
         }
       }
@@ -370,7 +377,7 @@ namespace origin
    * range, allowing iteration.
    */
   template<typename Graph, 
-           typename Color_Label = internal_label<Graph, color_t>>
+           typename Color_Label = internal_label<Graph, basic_color_t>>
   struct rooted_bfs_range
   {
     typedef Graph graph_type;
@@ -378,6 +385,8 @@ namespace origin
     typedef typename graph_traits<graph_type>::edge edge;
 
     typedef vertex_label<Graph, Color_Label> color_label;
+    typedef color_traits<typename color_label::value_type> colors;
+
     typedef std::queue<vertex> search_queue;
     
     typedef bfs_iterator<rooted_bfs_range<Graph, Color_Label>> iterator;
@@ -401,7 +410,7 @@ namespace origin
     void init(vertex start) 
     {
       for(auto v : graph.vertices()) {
-        color(v) = white;
+        color(v) = colors::white();
       }
       search_vertex(start);
     }
@@ -419,7 +428,7 @@ namespace origin
     void search_vertex(vertex v) 
     {
       queue.push(v);
-      color(v) = gray;
+      color(v) = colors::gray();
     }
 
     /** 
@@ -431,11 +440,11 @@ namespace origin
       queue.pop();
       for(auto e : out_edges(graph, current)) {
         vertex v = graph.target(e);
-        if(color(v) == white) {
+        if(color(v) == colors::white()) {
           search_vertex(v);
         }
       }
-      color(current) = black;
+      color(current) = colors::black();
     }
 
     Graph& graph;
@@ -450,7 +459,7 @@ namespace origin
    * Constructs a traversable range over a graph. All vertices are visited.
    */
   template<typename Graph, 
-           typename Color_Label = internal_label<Graph, color_t>>
+           typename Color_Label = internal_label<Graph, basic_color_t>>
   struct bfs_range
   {
     typedef Graph graph_type;
@@ -459,6 +468,8 @@ namespace origin
     typedef typename graph_traits<graph_type>::vertex_iterator vertex_iterator;    
     
     typedef vertex_label<Graph, Color_Label> color_label;
+    typedef color_traits<typename color_label::value_type> colors;
+
     typedef std::queue<vertex> search_queue;
     
     typedef bfs_iterator<bfs_range<Graph, Color_Label>> iterator;
@@ -484,7 +495,7 @@ namespace origin
     void init(vertex start) 
     {
       for(auto v : graph.vertices()) {
-        color(v) = white;
+        color(v) = colors::white();
       }
       search_vertex(start);
     }
@@ -502,7 +513,7 @@ namespace origin
     void search_vertex(vertex v) 
     {
       queue.push(v);
-      color(v) = gray;
+      color(v) = colors::gray();
     }
 
     /** 
@@ -515,14 +526,14 @@ namespace origin
       queue.pop();
       for(auto e : out_edges(graph, current)) {
         vertex v = graph.target(e);
-        if(color(v) == white) {
+        if(color(v) == colors::white()) {
           search_vertex(v);
         }
       }
-      color(current) = black;
+      color(current) = colors::black();
       
       // Move to the next undiscovered root.
-      while(iter != fini && color(*iter) != white) {
+      while(iter != fini && color(*iter) != colors::white()) {
         ++iter;
       }
       
