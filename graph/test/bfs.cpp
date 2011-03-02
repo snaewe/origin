@@ -79,7 +79,11 @@ int main()
     auto v = g.add_vertex('b');
     g.add_edge(u, v);
     
-    for(auto x : rooted_bfs(g, v)) {
+    for(auto x : bfs(g, v)) {
+      cout << g[x] << "\n";
+    }
+    
+    for(auto x : bfs(g)) {
       cout << g[x] << "\n";
     }
   }

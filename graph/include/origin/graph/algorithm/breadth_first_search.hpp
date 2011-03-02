@@ -74,7 +74,7 @@ namespace origin
    * instatiated over a constant graph type, then the graph, vertex, and
    * edge parameters will also be constant.
    */
-  struct breadth_first_search_visitor
+  struct bfs_visitor
   {
     // Called after a vertex has been initialized
     template<typename Graph, typename Vertex>
@@ -119,21 +119,23 @@ namespace origin
   template<typename Graph, 
            typename Visitor, 
            typename Color_Label = internal_label<Graph, color_t>>
-  class breadth_first_search_from_algorithm
+  class rooted_bfs_algo
   {
   public:
     typedef Visitor visitor_type;
+
     typedef Graph graph_type;
-    typedef typename vertex_type<graph_type>::type vertex;
-    typedef typename edge_type<graph_type>::type edge;
-    typedef std::queue<vertex> search_queue;
+    typedef typename graph_traits<graph_type>::vertex vertex;
+    typedef typename graph_traits<graph_type>::edge edge;
+
     typedef vertex_label<Graph, Color_Label> color_label;
+    typedef std::queue<vertex> search_queue;
     
-    breadth_first_search_from_algorithm(Graph& g, Visitor vis)
+    rooted_bfs_algo(Graph& g, Visitor vis)
       : graph(g), visitor(vis), queue(), color(g)
     { }
     
-    breadth_first_search_from_algorithm(Graph& g, Visitor vis, Color_Label color)
+    rooted_bfs_algo(Graph& g, Visitor vis, Color_Label color)
       : graph(g), visitor(vis), queue(), color(color)
     { }
 
@@ -187,51 +189,54 @@ namespace origin
    * The breadth first search algorithm performs a breadth first search on
    * the entire graph. All vertices are visited.
    */
-  template<typename Graph, typename Visitor>
-  struct breadth_first_search_algorithm 
-    : private breadth_first_search_from_algorithm<Graph, Visitor>
+  template<typename Graph, 
+           typename Visitor,
+           typename Color_Label = internal_label<Graph, color_t>>
+  struct bfs_algo 
+    : private rooted_bfs_algo<Graph, Visitor, Color_Label>
   {
-    typedef breadth_first_search_from_algorithm<Graph, Visitor> base_type;
+    typedef rooted_bfs_algo<Graph, Visitor, Color_Label> base_type;
     
     typedef Visitor visitor_type;
     typedef Graph graph_type;
     typedef typename base_type::type vertex;
     typedef typename base_type::type edge;
     
-    breadth_first_search_algorithm(Graph& g, Visitor vis)
+    bfs_algo(Graph& g, Visitor vis)
       : base_type(g, vis)
+    { }
+
+    bfs_algo(Graph& g, Visitor vis, Color_Label label)
+      : base_type(g, vis, label)
     { }
 
     void operator()()
     {
-      for(auto v : graph.vertices()) {
-        if(color(v) == white) {
-          base_type::search(v);
+      for(auto v : this->graph.vertices()) {
+        if(this->color(v) == white) {
+          this->search(v);
         }
       }
     }
-    
-    using base_type::color;
-    using base_type::colors;
-    using base_type::graph;
   };
   
   /**
-   * Perform a breadth first search on the graph, starting at the given vertex.
+   * Perform a breadth first search on the graph starting from the given
+   * vertex. This is an overloaded name.
    */
   //@{
   template<typename Graph, typename Vertex, typename Visitor>
-  void breadth_first_search_from(Graph& g,  Vertex v,  Visitor vis)
+  void breadth_first_search(Graph& g, Vertex v, Visitor vis)
   {
-    breadth_first_search_from_algorithm<Graph, Visitor> algo(g, vis);
+    rooted_bfs_algo<Graph, Visitor> algo(g, vis);
     algo(v);
   }
 
   // Const version of above.
   template<typename Graph, typename Vertex, typename Visitor>
-  void breadth_first_search_from(Graph const& g,  Vertex v,  Visitor vis)
+  void breadth_first_search_from(Graph const& g, Vertex v, Visitor vis)
   {
-    breadth_first_search_from_algorithm<Graph const, Visitor> algo(g, vis);
+    rooted_bfs_algo<Graph const, Visitor> algo(g, vis);
     algo(v);
   }
   
@@ -245,8 +250,7 @@ namespace origin
                                  Visitor vis,
                                  Color_Label color)
   {
-    breadth_first_search_from_algorithm<Graph, Visitor, Color_Label> 
-      algo(g, vis, color);
+    rooted_bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
   }
 
@@ -260,8 +264,44 @@ namespace origin
                                  Visitor vis,
                                  Color_Label color)
   {
-    breadth_first_search_from_algorithm<Graph const, Visitor, Color_Label> 
-      algo(g, vis, color);
+    rooted_bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
+    algo(v);
+  }
+  //@}
+
+  /**
+   * Perform a breadth first search on the graph. All vertices in the graph
+   * are visited.
+   */
+  //@{
+  template<typename Graph, typename Visitor>
+  void breadth_first_search(Graph& g, Visitor vis)
+  {
+    bfs_algo<Graph, Visitor> algo(g, vis);
+    algo();
+  }
+
+  // Const version of above.
+  template<typename Graph, typename Visitor>
+  void breadth_first_search(Graph const& g, Visitor vis)
+  {
+    bfs_algo<Graph const, Visitor> algo(g, vis);
+    algo();
+  }
+  
+  // This variant takes an additional color label parameter.
+  template<typename Graph, typename Visitor, typename Color_Label>
+  void breadth_first_search(Graph& g, Visitor vis, Color_Label color)
+  {
+    bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
+    algo(v);
+  }
+
+  // Const version of above.
+  template<typename Graph, typename Visitor, typename Color_Label>
+  void breadth_first_search(Graph const& g, Visitor vis, Color_Label color)
+  {
+    bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
   }
   //@}
@@ -334,19 +374,20 @@ namespace origin
   struct rooted_bfs_range
   {
     typedef Graph graph_type;
-    typedef typename vertex_type<graph_type>::type vertex;
-    typedef typename edge_type<graph_type>::type edge;
+    typedef typename graph_traits<graph_type>::vertex vertex;
+    typedef typename graph_traits<graph_type>::edge edge;
+
     typedef vertex_label<Graph, Color_Label> color_label;
     typedef std::queue<vertex> search_queue;
     
     typedef bfs_iterator<rooted_bfs_range<Graph, Color_Label>> iterator;
 
     rooted_bfs_range(Graph& g, vertex v)
-      : graph(g), current(v), colors(g)
+      : graph(g), current(v), color(g)
     { init(v); }
 
     rooted_bfs_range(Graph& g, vertex v, Color_Label label)
-      : graph(g), current(v), colors(label)
+      : graph(g), current(v), color(label)
     { init(v); }
     
     iterator begin()
@@ -360,7 +401,7 @@ namespace origin
     void init(vertex start) 
     {
       for(auto v : graph.vertices()) {
-        colors(v) = white;
+        color(v) = white;
       }
       search_vertex(start);
     }
@@ -378,7 +419,7 @@ namespace origin
     void search_vertex(vertex v) 
     {
       queue.push(v);
-      colors(v) = gray;
+      color(v) = gray;
     }
 
     /** 
@@ -390,27 +431,156 @@ namespace origin
       queue.pop();
       for(auto e : out_edges(graph, current)) {
         vertex v = graph.target(e);
-        if(colors(v) == white) {
+        if(color(v) == white) {
           search_vertex(v);
         }
       }
-      colors(current) = black;
+      color(current) = black;
     }
 
     Graph& graph;
     vertex current;
     search_queue queue;
-    color_label colors;
+    color_label color;
   };
 
+  // FIXME: Rewrite this in terms of the previous rooted range.
+
+  /**
+   * Constructs a traversable range over a graph. All vertices are visited.
+   */
+  template<typename Graph, 
+           typename Color_Label = internal_label<Graph, color_t>>
+  struct bfs_range
+  {
+    typedef Graph graph_type;
+    typedef typename graph_traits<graph_type>::vertex vertex;
+    typedef typename graph_traits<graph_type>::edge edge;
+    typedef typename graph_traits<graph_type>::vertex_iterator vertex_iterator;    
+    
+    typedef vertex_label<Graph, Color_Label> color_label;
+    typedef std::queue<vertex> search_queue;
+    
+    typedef bfs_iterator<bfs_range<Graph, Color_Label>> iterator;
+
+    // FIXME: This is not a valid constructor for empty graphs.
+    bfs_range(Graph& g)
+      : graph(g), current(*begin_vertex(g)), color(g)
+      , iter(begin_vertex(g)), fini(end_vertex(g))
+    { init(current); }
+
+    bfs_range(Graph& g, Color_Label label)
+      : graph(g), current(*begin_vertex(g)), color(label)
+      , iter(begin_vertex(g)), fini(end_vertex(g))
+    { init(current); }
+    
+    iterator begin()
+    { return iterator{this}; }
+    
+    iterator end()
+    { return iterator{}; }
+
+    /** Initialize the traversal by marking all vertices as unvisited. */
+    void init(vertex start) 
+    {
+      for(auto v : graph.vertices()) {
+        color(v) = white;
+      }
+      search_vertex(start);
+    }
+
+    /** 
+     * Return true if the search queue is empty. 
+     */
+    bool empty() const {
+      return queue.empty();
+    }
+
+    /** 
+     * Enqueue the given vertex so that it will be searched later.
+     */
+    void search_vertex(vertex v) 
+    {
+      queue.push(v);
+      color(v) = gray;
+    }
+
+    /** 
+     * Move to the next vertex in the search buffer and search its incident
+     * edges for undiscovered vertices.
+     */
+    void next_vertex() {
+      // Perform the standard BFS search activity.
+      current = queue.front();
+      queue.pop();
+      for(auto e : out_edges(graph, current)) {
+        vertex v = graph.target(e);
+        if(color(v) == white) {
+          search_vertex(v);
+        }
+      }
+      color(current) = black;
+      
+      // Move to the next undiscovered root.
+      while(iter != fini && color(*iter) != white) {
+        ++iter;
+      }
+      
+      // If we haven't reached the end, then we should queue up the vertex for
+      // the next round of searching.
+      if(iter != fini) {
+        search_vertex(*iter);
+      }
+    }
+    
+    Graph& graph;
+    vertex current;
+    search_queue queue;
+    color_label color;
+    vertex_iterator iter;   // Points to the current search tree root
+    vertex_iterator fini;   // PTE of the vertex range
+  };
+
+  /**
+   * Construct a BFS range, supporting iterative traversal of the graph. This 
+   * is an overloaded name.
+   */
+  // Construct a rooted BFS range
   template<typename Graph, typename Vertex>
-  rooted_bfs_range<Graph> rooted_bfs(Graph& g, Vertex v)
+  rooted_bfs_range<Graph> bfs(Graph& g, Vertex v)
   { return {g, v}; }
   
   template<typename Graph, typename Vertex>
-  rooted_bfs_range<Graph const> rooted_bfs(Graph const& g, Vertex v)
+  rooted_bfs_range<Graph const> bfs(Graph const& g, Vertex v)
   { return {g, v}; }
+
+  // Construct a rooted BFS range with a custom color label.
+  template<typename Graph, typename Vertex, typename Color_Label>
+  rooted_bfs_range<Graph> bfs(Graph& g, Vertex v, Color_Label color)
+  { return {g, v, color}; }
   
+  template<typename Graph, typename Vertex, typename Color_Label>
+  rooted_bfs_range<Graph const> bfs(Graph const& g, Vertex v, Color_Label label)
+  { return {g, v, label}; }
+  
+  // Construct a complete BFS range
+  template<typename Graph>
+  bfs_range<Graph> bfs(Graph& g)
+  { return {g}; }
+  
+  template<typename Graph>
+  bfs_range<Graph const> bfs(Graph const& g)
+  { return {g}; }
+
+  // Construct a complete BFS range with a custom color label.
+  template<typename Graph, typename Vertex, typename Color_Label>
+  bfs_range<Graph> bfs(Graph& g, Color_Label color)
+  { return {g, color}; }
+  
+  template<typename Graph, typename Vertex, typename Color_Label>
+  bfs_range<Graph const> bfs(Graph const& g, Color_Label label)
+  { return {g, label}; }
+
 
 } // namespace origin
 
