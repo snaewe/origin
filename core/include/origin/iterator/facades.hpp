@@ -16,6 +16,24 @@ namespace origin
 {
   /**
    * @ingroup iter
+   * The input iterator facade aggregates a number of facades that comprise
+   * the implementation of the IntputIterator concept.
+   *
+   * @tparam Derived The derive iterator implementation
+   * @tparam Reference The iterator reference type
+   */
+  template<typename Derived, typename Reference>
+  struct input_iterator_facade
+    : dereference_facade<Derived, Reference>
+    , increment_facade<Derived>
+  {
+    typedef std::input_iterator_tag iterator_category;
+    typedef Reference reference;
+  };
+
+
+  /**
+   * @ingroup iter
    * The forward iterator facade aggregates a number of facades that comprise
    * the implementation of the ForwardIterator concept.
    *

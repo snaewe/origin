@@ -11,6 +11,8 @@
 #include <queue>
 #include <unordered_map>
 
+#include <origin/iterator/facades.hpp>
+
 #include <origin/graph/color.hpp>
 #include <origin/graph/label.hpp>
 #include <origin/graph/edge.hpp>
@@ -263,10 +265,152 @@ namespace origin
     algo(v);
   }
   //@}
+  
+  // FIXME: This should be able to work for DFS ranges also.
+  // FIXME: There seem to be a lot of issues with this concept... Namely that
+  // it's only really easy to implement input iterators. Even the concept of
+  // equality is extremely weak. Two iterator referring to the same state
+  // are equivalent, but that's about it.
+  template<typename Range>
+  struct bfs_iterator
+    : input_iterator_facade<bfs_iterator<Range>, typename Range::vertex>
+  {
+    typedef typename Range::graph_type graph_type;
+    typedef typename Range::vertex vertex;
+    
+    // Initialize the iterator to PTE
+    bfs_iterator()
+      : range_(0)
+    { }
+    
+    // Initialze over a range. Must be non-null.
+    explicit bfs_iterator(Range* rng)
+      : range_(rng)
+    {
+      assert(( range_ ));
+      
+      // Start by moving to the next (first) vertex.
+      if(!range_->empty()) {
+        range_->next_vertex();
+      }
+    }
+    
+    bool equal(bfs_iterator const& x) const
+    { return range_ == x.range_; }
+    
+    vertex dereference() const
+    { 
+      assert(( range_ ));
+      return range_->current; 
+    }
+    
+    void increment()
+    {
+      // If we're already PTE or about to be PTE, make sure that we don't
+      // move to a bad state.
+      if(!range_) {
+        return;
+      } else if(range_->empty()) {
+        range_ = nullptr;
+        return;
+      }
+      
+      // Update the state of the search.
+      range_->next_vertex();
+    }
+    
+  private:
+    Range* range_;
+  };
 
+
+  // FIXME: Make Do a better job with access protection.
   /**
-   * 
+   * The breadth-first range class abstracts a rooted breadth-first search as a
+   * range, allowing iteration.
    */
+  template<typename Graph, 
+           typename Color_Label = internal_label<Graph, color_t>>
+  struct rooted_bfs_range
+  {
+    typedef Graph graph_type;
+    typedef typename vertex_type<graph_type>::type vertex;
+    typedef typename edge_type<graph_type>::type edge;
+    typedef vertex_label<Graph, Color_Label> color_label;
+    typedef std::queue<vertex> search_queue;
+    
+    typedef bfs_iterator<rooted_bfs_range<Graph, Color_Label>> iterator;
+
+    rooted_bfs_range(Graph& g, vertex v)
+      : graph(g), current(v), colors(g)
+    { init(v); }
+
+    rooted_bfs_range(Graph& g, vertex v, Color_Label label)
+      : graph(g), current(v), colors(label)
+    { init(v); }
+    
+    iterator begin()
+    { return iterator{this}; }
+    
+    iterator end()
+    { return iterator{}; }
+
+
+    /** Initialize the traversal by marking all vertices as unvisited. */
+    void init(vertex start) 
+    {
+      for(auto v : graph.vertices()) {
+        colors(v) = white;
+      }
+      search_vertex(start);
+    }
+
+    /** 
+     * Return true if the search queue is empty. 
+     */
+    bool empty() const {
+      return queue.empty();
+    }
+
+    /** 
+     * Enqueue the given vertex so that it will be searched later.
+     */
+    void search_vertex(vertex v) 
+    {
+      queue.push(v);
+      colors(v) = gray;
+    }
+
+    /** 
+     * Move to the next vertex in the search buffer and search its incident
+     * edges for undiscovered vertices.
+     */
+    void next_vertex() {
+      current = queue.front();
+      queue.pop();
+      for(auto e : out_edges(graph, current)) {
+        vertex v = graph.target(e);
+        if(colors(v) == white) {
+          search_vertex(v);
+        }
+      }
+      colors(current) = black;
+    }
+
+    Graph& graph;
+    vertex current;
+    search_queue queue;
+    color_label colors;
+  };
+
+  template<typename Graph, typename Vertex>
+  rooted_bfs_range<Graph> rooted_bfs(Graph& g, Vertex v)
+  { return {g, v}; }
+  
+  template<typename Graph, typename Vertex>
+  rooted_bfs_range<Graph const> rooted_bfs(Graph const& g, Vertex v)
+  { return {g, v}; }
+  
 
 } // namespace origin
 

@@ -69,4 +69,18 @@ int main()
     auto color = [&colors](Graph::const_vertex v) -> color_t& { return colors[v]; };
     breadth_first_search_from(cg, v, vis, color);
   }
+  
+  {
+    typedef undirected_adjacency_list<char> Graph;
+    typedef breadth_first_search_visitor Visitor;
+
+    Graph g;
+    auto u = g.add_vertex('a');
+    auto v = g.add_vertex('b');
+    g.add_edge(u, v);
+    
+    for(auto x : rooted_bfs(g, v)) {
+      cout << g[x] << "\n";
+    }
+  }
 }
