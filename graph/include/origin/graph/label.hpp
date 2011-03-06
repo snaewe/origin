@@ -26,14 +26,23 @@ namespace origin
   template<typename Graph, typename Value>
   struct internal_label { };
   
+  // FIXME: I really dislike the name of this type. It's not a property. It
+  // wraps a lapel, possibly adding data to it.
+
   /**
-   * The vertex label class wraps a label and provides a (empty) constructor 
-   * over a graph. This is primarily used to support interoperability with
-   * builtin labels (see the specialization below).
+   * The vertex property class provides a uniform interface for internally
+   * and externally defined labels. For labels that refer to data stored
+   * externally, this class simply wraps the label. For internal properties
+   * a specialization also declares storage for the property.
+   *
+   * The label, the actual data accessor, is available via a member variable
+   * named label.
    */
   template<typename Graph, typename Label>
-  struct vertex_label
+  struct vertex_property
   {
+    typedef Label label_type;
+  
     // FIXME: This should be the same as decay<T>, I think. Basically, we're
     // just getting the value type with cv-qualifiers removed. Also note that
     // we're explicitly generating the result type over the non-const vertex
@@ -41,46 +50,63 @@ namespace origin
     // and maybe a reference, both of which are removed here.
     typedef typename std::remove_reference<
       typename std::remove_const<
-        typename std::result_of<Label(typename Graph::vertex)>::type
+        typename std::result_of<label_type(typename Graph::vertex)>::type
       >::type
     >::type value_type;
   
-    vertex_label(Label l)
+    // Explicitly suppress copy construction. This vertex need to be wrapped
+    // with a functor for use as a real label.
+    vertex_property(vertex_property const&) = delete;
+    vertex_property& operator=(vertex_property const&) = delete;
+  
+    vertex_property(Label l)
       : label(l)
     { }
     
-    // FIXME: Try to use decltype. May not be easy since I can't access the
-    // label as a member
-    template<typename Vertex>
-    typename std::result_of<Label(Vertex)>::type 
-    operator()(Vertex v) const
-    { return label(v); }
-    
-    Label label;
+    label_type label;
   };
   
   // Specialization over internal labels. This actually owns the data that
   // the label references.
   template<typename Graph, typename Value>
-  struct vertex_label<Graph, internal_label<Graph, Value>>
+  struct vertex_property<Graph, internal_label<Graph, Value>>
   {
     typedef typename vertex_type<Graph>::type vertex;
     typedef Value value_type;
     typedef Value& reference;
     typedef Value const& const_reference;
     
-    vertex_label(Graph const& g)
-      : label(g.order())
+    // FIXME: Select an optional mapping type based on the graph kind. 
+    typedef std::unordered_map<vertex, value_type> mapping_type;
+
+    // The label is a function object that abstracts access to the data.
+    struct label_type
+    {
+      label_type(mapping_type& map)
+        : map(map)
+      { }
+      
+      reference operator()(vertex v)
+      { return map[v]; }
+      
+      const_reference operator()(vertex v) const
+      { return map[v]; }
+      
+      mapping_type& map;
+    };
+
+    
+    // Explicitly suppress copy construction. This vertex need to be wrapped
+    // with a functor for use as a real label.
+    vertex_property(vertex_property const&) = delete;
+    vertex_property& operator=(vertex_property const&) = delete;
+    
+    vertex_property(Graph const& g)
+      : data(g.order()), label(data)
     { }
     
-    reference operator()(vertex v)
-    { return label[v]; }
-    
-    const_reference operator()(vertex v) const
-    { return label[v]; }
-    
-    // FIXME: Select an optional mapping type based on the graph kind. 
-    std::unordered_map<vertex, value_type> label;
+    mapping_type data;
+    label_type label;
   };
 
 

@@ -28,7 +28,7 @@ namespace origin
     magenta_color,
     yellow_color
   };
-    
+
   /**
    * The color group template associates a set of names (actually static 
    * functions) with an integral value type. Note that the color template is 
@@ -66,20 +66,56 @@ namespace origin
     static constexpr bool white() { return true; }
     static constexpr bool black() { return false; }
   };
+
+  /**
+   * Return the next color.
+   */
+  template<typename Color>
+  inline Color next_color(Color x)
+  { return (Color)((int)x + 1) % color_traits<Color>::num_colors; }
   
   /**
-   * Common operations for two-color systems, specifically the ability to
-   * access an inverse color.
+   * Return the previous color.
    */
-  template<typename T>
+  template<typename Color>
+  inline Color prev_color(Color x)
+  {
+    if((int)x == 0)
+      return (Color)(color_traits<Color>::num_colors - 1);
+    else
+      return (Color)((int)x - 1);
+  }
+  
+  // Specializations for boolean types. 
+  inline bool next_color(bool x)
+  { return !x; }
+  
+  inline bool prev_color(bool x)
+  { return !x; }
+  
+  /**
+   * A two-color system restricts the set of colors to black and white. The
+   * traits class provides a single operator, opposite, that inverts the
+   * given color selection.
+   */
+  template<typename Color>
   struct two_color_traits
   {
-    typedef color_traits<T> colors;
+    typedef color_traits<Color> Traits;
 
-    static constexpr T inv(T c)
-    { return c == colors::white() ? colors::black() : colors::white(); }
+    static Color opposite(Color c)
+    { return c == Traits::white() ? Traits::black() : Traits::white(); }
   };
-
+  
+  // A specialization for boolean values simply inverts the boolean value.
+  template<>
+  struct two_color_traits<bool>
+  {
+    static bool opposite(bool b)
+    { return !b; }
+  };
+  
+  
 } // namespace origin
 
 #endif

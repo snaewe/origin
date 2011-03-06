@@ -12,4 +12,6 @@ origin_executable(graph graph.cpp)
 origin_executable(adjacency_graph adjacency_matrix.cpp)
 origin_executable(bfs bfs.cpp)
 
+origin_executable(bipartite bipartite.cpp)
+
 add_subdirectory(io)

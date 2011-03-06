@@ -9,7 +9,7 @@
 
 #include <origin/utility/typestr.hpp>
 #include <origin/graph/adjacency_list.hpp>
-#include <origin/graph/algorithm/breadth_first_search.hpp>
+#include <origin/graph/algorithm/search/breadth_first.hpp>
 
 using namespace std;
 using namespace origin;
@@ -78,7 +78,7 @@ int main()
     auto v = g.add_vertex('b');
     g.add_edge(u, v);
     
-    for(auto x : bfs(g, v)) {
+    for(auto x : bfs_from(g, v)) {
       cout << g[x] << "\n";
     }
     
