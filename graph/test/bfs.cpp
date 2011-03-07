@@ -28,6 +28,17 @@ void test()
   breadth_first_search_from(g, u, vis);  
 }
 
+// FIXME: This has nothing to do with BFS. It's more of a conceptual assertion
+// that -1 + 1 == 0, even for unsigned integers (i.e., -1 being the same
+// as numeric_limits<Int>::max.
+template<typename Int>
+void test_int()
+{
+  Int x{-1};
+  ++x;
+  assert(( x == 0 ));
+}
+
 int main()
 {
   test<directed_adjacency_list<>>();
@@ -85,5 +96,18 @@ int main()
     for(auto x : bfs(g)) {
       cout << g[x] << "\n";
     }
+  }
+  
+  // FIXME: This is a concept check.  Move it somewhere more appropriate.
+  {
+    test_int<char>();
+    test_int<signed char>();
+    test_int<unsigned char>();
+    test_int<short>();
+    test_int<unsigned short>();
+    test_int<int>();
+    test_int<unsigned int>();
+    test_int<long>();
+    test_int<unsigned long>();
   }
 }

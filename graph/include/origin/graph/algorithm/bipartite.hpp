@@ -32,38 +32,42 @@ namespace origin
     typedef typename color_property::label_type color_label;
 
     typedef two_color_visitor<Graph, color_label> visitor_type;
+    
+    // FIXME: The BFS uses the default color label for its internal state.
+    // Is there any graceful way to override this? Yes... another color
+    // label parameter at the top-level. This is actually quite easy to
+    // implement.
+    //
+    // Why would you want to do this? Your graph's vertex type has a state
+    // member that defines a bitfield, recording 3 bits of state for the color
+    // in the underlying BFS and 1 bit of state for the two-coloring.
+    typedef bfs_algo<graph_type, visitor_type> bfs_type;
   
-    // Construct the algorithm with a default label.
+    // Construct the algorithm with a default two-color label.
     is_bipartite_algo(Graph& g)
-      : graph(g), color(g), visitor(color.label)
+      : color(g), visitor(color.label), bfs(g, visitor)
     { }
   
-    // Construct the algorithm with a custom label.
+    // Construct the algorithm with a custom two-color label.
     is_bipartite_algo(Graph& g, Color_Label label)
-      : graph(g), color(label), visitor(color.label)
+      : color(label), visitor(color.label), bfs(g, visitor)
     { }
 
     bool operator()()
     {
       try {
-        breadth_first_search(graph, visitor);
+        bfs();
       } catch(...) {
         return false;
       }
       return true;
     }
     
-    graph_type& graph;
     color_property color;
     visitor_type visitor;
+    bfs_type bfs;
   };
-
-  // FIXME: How do you access the color map, if you just want to use the 
-  // default? I suspect that the best answer would be to simply use the
-  // is_bipartite algorithm object since it retains state after the completion
-  // of the algorithm.
-  //
-  // FIXME: Write this as a kind of recipe in the documentation.
+  
 
   /**
    * @function is_biparite(g)
@@ -107,6 +111,64 @@ namespace origin
     return algo();
   }
   //@}
+
+  // HOWTO: How do I get the two-coloring of the graph when using is_bipartite
+  // with an color label?
+  //
+  // Instead of using the is_bipartite algorithm, create an is_bipartite_algo
+  // object and call it as a function. For example::
+  //
+  //    is_bipartite_algo<Graph> algo(g);
+  //    algo();
+  //    ... algo.color(v) 
+  //
+  // The color member of the algorithm object is a label that desribes the
+  // two-coloring. 
+  //
+  // Interestingly, the algo.color is also effectively a Predicate on the 
+  // vertices of g that classifies them into the bipartite sets described by
+  // the graph.
+
+
+  // HOWTO: How do I access the color labels of the underlying breadth-first
+  // search used by the is_bipartite algorithm?
+  //
+  // The breadth-first search used by the is_bipartite algorithm object is 
+  // stored as a member of the is_bipartite_algo object. It can be accessed
+  // in the following manner::
+  //
+  //    is_bipartite<Graph> algo(g);
+  //    algo();
+  //    ... algo.bfs.color(v)
+  //
+  // The bfs member provides access to the underlying search object. It's
+  // color member is a label that describes the states of vertices resulting
+  // from the breadth first search.
+  
+  
+  // HOWTO: Can I use a custom color label for the underlying breadth-first
+  // search used by the is_bipartite algorith?
+  //
+  // FIXME: This is not currently implemented, but it shouldn't be terribly
+  // difficult.
+  
+  
+  // HOWTO: How do I find out which edge caused the graph to be non-bipartite?
+  // 
+  // Use the two_coloring algorithm like so::
+  //
+  //    try {
+  //      two_coloring(g, color);
+  //    } catch(coloring_error& err) {
+  //      // FIXME: You can't actually do anything here.
+  //    }
+  //
+  // FIXME: This is the basic strategy, but it's incomplete snce the two
+  // coloring algrithm loses all of its state when an exception is thrown.
+  // The best answer is to probably rewrite the two-coloring algorithm to use
+  // an algorithm object.
+
+
 } // namespace origin
 
 #endif

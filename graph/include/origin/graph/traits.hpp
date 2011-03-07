@@ -13,38 +13,6 @@
 namespace origin
 {
   /**
-   * The vertex type trait selects the vertex type of a graph. For non-const
-   * graph types, this is the nested vertex type. For const graph types, this 
-   * is the const vertex type.
-   *
-   * @invariant vertex_type<Graph>::type == Graph::vertex
-   * @invariant vertex_type<Graph const>::type == Graph::const_vertex
-   */
-  template<typename Graph>
-  struct vertex_type 
-  { typedef typename Graph::vertex type; };
-  
-  template<typename Graph>
-  struct vertex_type<Graph const>
-  { typedef typename Graph::const_vertex type; };
-
-  /**
-   * The edge type trait selects the edge type of a graph. For non-const
-   * graph types, this is the nested edge type. For const graph types, this is 
-   * the const edge type.
-   *
-   * @invariant edge_type<Graph>::type == Graph::edge
-   * @invariant edge_type<Graph const>::type == Graph::const_edge
-   */
-  template<typename Graph>
-  struct edge_type
-  { typedef typename Graph::edge type; };
-  
-  template<typename Graph>
-  struct edge_type<Graph const>
-  { typedef typename Graph::const_edge type; };
-
-  /**
    * The graph traits class abstracts the access to associated types of a graph
    * class, providing a uniform and simplified abstraction. The traits class
    * effetively hides the difference between graphs and const graphs.
@@ -52,6 +20,8 @@ namespace origin
   template<typename Graph>
   struct graph_traits
   {
+    typedef typename Graph::size_type size_type;
+
     typedef typename Graph::vertex vertex;
     typedef typename Graph::edge edge;
     typedef typename Graph::vertex_range vertex_range;
@@ -65,6 +35,8 @@ namespace origin
   template<typename Graph>
   struct graph_traits<Graph const>
   {
+    typedef typename Graph::size_type size_type;
+
     typedef typename Graph::const_vertex vertex;
     typedef typename Graph::const_edge edge;
     typedef typename Graph::const_vertex_range vertex_range;

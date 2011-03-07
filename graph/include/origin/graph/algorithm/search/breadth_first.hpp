@@ -80,7 +80,7 @@ namespace origin
     template<typename Graph, typename Vertex>
     void initialized_vertex(Graph& g, Vertex v) { }
     
-    // Called after a vertex has been discovered
+    // Called after a vertex has been discovered.
     template<typename Graph, typename Vertex>
     void discovered_vertex(Graph& g, Vertex v) { }
     
@@ -93,8 +93,9 @@ namespace origin
     template<typename Graph, typename Vertex>
     void finished_vertex(Graph& g, Vertex v) { }
     
-    // Called when a discovered vertex is the root of a search tree in the
-    // search forest.
+    // Called when a new search tree root is encountered. This is called 
+    // before the vertex is discovered, allowing derived visitors to perform
+    // search-tree initialization before the discovery of the root vertex.
     template<typename Graph, typename Vertex>
     void root_vertex(Graph& g, Vertex v) { }
     
@@ -158,8 +159,8 @@ namespace origin
     {
       color.label(v) = colors::gray();
       queue.push(v);
-      visitor.discovered_vertex(graph, v);
       visitor.root_vertex(graph, v);
+      visitor.discovered_vertex(graph, v);
 
       while(!queue.empty()) {
         vertex u = queue.front();
