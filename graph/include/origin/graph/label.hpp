@@ -17,7 +17,6 @@
 
 namespace origin
 {
-
   /**
    * @internal
    * A placeholder type that is used to indicate that the use of an internal
@@ -71,7 +70,7 @@ namespace origin
   template<typename Graph, typename Value>
   struct vertex_property<Graph, internal_label<Graph, Value>>
   {
-    typedef typename vertex_type<Graph>::type vertex;
+    typedef typename graph_traits<Graph>::vertex vertex;
     typedef Value value_type;
     typedef Value& reference;
     typedef Value const& const_reference;

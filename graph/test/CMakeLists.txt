@@ -9,7 +9,8 @@ origin_executable(graph graph.cpp)
 
 # Scratch Work. This will not be integrated into the library
 
-origin_executable(adjacency_graph adjacency_matrix.cpp)
+origin_executable(adjacency_matrix adjacency_matrix.cpp)
+origin_executable(adjacency_vector adjacency_vector.cpp)
 origin_executable(bfs bfs.cpp)
 
 origin_executable(bipartite bipartite.cpp)
