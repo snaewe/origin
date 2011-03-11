@@ -55,7 +55,6 @@ namespace origin
     { return static_cast<Derived const*>(this)->dereference(); }
   };
 
-
   /**
    * The increment facade provides implementations of then pre- and pos-
    * decrement operators for the Derived type.

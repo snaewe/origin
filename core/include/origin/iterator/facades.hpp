@@ -14,39 +14,75 @@
 
 namespace origin
 {
+  // FIXME: Make sure that the template parameter names don't collide with
+  // concepts. I'm looking at you Pointer and Difference.
+
   /**
    * @ingroup iter
    * The input iterator facade aggregates a number of facades that comprise
    * the implementation of the IntputIterator concept.
    *
-   * @tparam Derived The derive iterator implementation
-   * @tparam Reference The iterator reference type
+   * @tparam Derived    The derive iterator implementation
+   * @tparam Value      The value type of the iterator.
+   * @tparam Reference  The type returned when the iterator is dereference.
+   *                    This must be a Reference type and defaults to Value&.
+   * @tparam Pointer    The type returned when the arrow operator is used with
+   *                    the iterator. This must be a Pointer type and defaults
+   *                    to Value*.
+   *                    reference to the value type.
+   * @tparam Difference The difference type of the iterator. This must be a
+   *                    Signed_Integral type and defaults to std::ptrdiff_t.
    */
-  template<typename Derived, typename Reference>
+  template<typename Derived,
+           typename Value
+           typename Reference = Value&,
+           typename Pointer = Value*,
+           typename Difference = std::ptrdiff_t>
   struct input_iterator_facade
     : dereference_facade<Derived, Reference>
     , increment_facade<Derived>
   {
-    typedef std::input_iterator_tag iterator_category;
+    typedef std::forward_iterator_tag iterator_category;
+    typedef Value value_type;
     typedef Reference reference;
+    typedef Pointer pointer;
+    typedef Difference difference_type;
   };
-
 
   /**
    * @ingroup iter
    * The forward iterator facade aggregates a number of facades that comprise
    * the implementation of the ForwardIterator concept.
    *
-   * @tparam Derived The derive iterator implementation
-   * @tparam Reference The iterator reference type
+   * @tparam Derived    The derive iterator implementation
+   * @tparam Value      The value type of the iterator.
+   * @tparam Reference  The type returned when the iterator is dereference.
+   *                    This must be a Reference type and defaults to Value&.
+   * @tparam Pointer    The type returned when the arrow operator is used with
+   *                    the iterator. This must be a Pointer type and defaults
+   *                    to Value*.
+   *                    reference to the value type.
+   * @tparam Difference The difference type of the iterator. This must be a
+   *                    Signed_Integral type and defaults to std::ptrdiff_t.
    */
-  template<typename Derived, typename Reference>
+  template<typename Derived,
+           typename Value
+           typename Reference = Value&,
+           typename Pointer = Value*,
+           typename Difference = std::ptrdiff_t>
   struct forward_iterator_facade
     : dereference_facade<Derived, Reference>
     , increment_facade<Derived>
   {
     typedef std::forward_iterator_tag iterator_category;
+    typedef Value value_type;
     typedef Reference reference;
+    typedef Pointer pointer;
+    typedef Difference difference_type;
+
+    // FIXME: requires Class<Value> && Pointer<Ptr>
+    Pointer operator->() const
+    { return &(*this); }
   };
 
   /**
@@ -54,12 +90,26 @@ namespace origin
    * The bidirectional facade aggregates facades that comprise the
    * implementation of the BidirectionalIterator concept.
    *
-   * @tparam Derived The derive iterator implementation
-   * @tparam Reference The iterator reference type
+   * @tparam Derived    The derive iterator implementation
+   * @tparam Value      The value type of the iterator.
+   * @tparam Reference  The type returned when the iterator is dereference.
+   *                    This must be a Reference type and defaults to Value&.
+   * @tparam Pointer    The type returned when the arrow operator is used with
+   *                    the iterator. This must be a Pointer type and defaults
+   *                    to Value*.
+   *                    reference to the value type.
+   * @tparam Difference The difference type of the iterator. This must be a
+   *                    Signed_Integral type and defaults to std::ptrdiff_t.
    */
-  template<typename Derived, typename Reference>
+  template<typename Derived,
+           typename Value
+           typename Reference = Value&,
+           typename Pointer = Value*,
+           typename Difference = std::ptrdiff_t>
   struct bidirectional_iterator_facade
-    : forward_iterator_facade<Derived, Reference>
+    : forward_iterator_facade<
+        Derived, Value, Reference, Pointer, Difference, Reference
+      >
     , decrement_facade<Derived>
   {
     typedef std::bidirectional_iterator_tag iterator_category;
@@ -71,15 +121,27 @@ namespace origin
    * operations required for a Derived implementation to be treated as a
    * random access iterator.
    *
-   * @tparam Derived The derive iterator implementation
-   * @tparam Reference The iterator reference type
-   * @tparam Distance The iterator difference type
+   * @tparam Derived    The derive iterator implementation
+   * @tparam Value      The value type of the iterator.
+   * @tparam Reference  The type returned when the iterator is dereference.
+   *                    This must be a Reference type and defaults to Value&.
+   * @tparam Pointer    The type returned when the arrow operator is used with
+   *                    the iterator. This must be a Pointer type and defaults
+   *                    to Value*.
+   *                    reference to the value type.
+   * @tparam Difference The difference type of the iterator. This must be a
+   *                    Signed_Integral type and defaults to std::ptrdiff_t.
    */
-  template<typename Derived, typename Reference, typename Distance>
+  template<typename Derived,
+           typename Value
+           typename Reference = Value&,
+           typename Pointer = Value*,
+           typename Difference = std::ptrdiff_t>
   struct random_access_iterator_facade
-    : forward_iterator_facade<Derived, Reference>
+    : bidirectional_iterator_facade<
+        Derived, Value, Reference, Pointer, Difference, Reference
+      >
   {
-    typedef Distance difference_type;
     typedef std::random_access_iterator_tag iterator_category;
 
     // NOTE: These aren't facades because the operations are between different

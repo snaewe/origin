@@ -12,6 +12,35 @@
 
 namespace origin
 {
+  /** @internal */
+  namespace transform_iterator_
+  {
+    template<typename F, typename Iter>
+    struct reference
+    {
+      typedef typename std::result_of<
+        F(typename std::iterator_traits<Iter>::reference)
+      >::type type;
+    };
+
+    template<typename F, typename Iter>
+    struct value_type
+    {
+      typedef typename std::remove_reference<
+        typename reference<F, Iter>::type
+      >::type type;
+    };
+
+    template<typename F, typename Iter>
+    struct pointer
+    {
+      typedef typename std::add_pointer<
+        typename value_type<F, Iter>::type
+      >::type type;
+    };
+  };
+
+
   /**
    * A trasnform iterator applies a transform function to the result type of
    * its underlying iterator when derefenced
@@ -25,9 +54,9 @@ namespace origin
   class transform_iterator
     : public random_access_iterator_facade<
         transform_iterator<Iter, Transform>,
-        typename std::result_of<
-          Transform(typename std::iterator_traits<Iter>::reference)
-        >::type,
+        typename transform_iterator_::value_type<Transform, Iter>::type,
+        typename transform_iterator_::reference<Transform, Iter>::type,
+        typename transform_iterator_::pointer<Transform, Iter>::type,
         typename std::iterator_traits<Iter>::difference_type
       >
   {

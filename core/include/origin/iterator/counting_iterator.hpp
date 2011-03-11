@@ -18,6 +18,8 @@ namespace origin
   // could be any other iterator, although that doesn't really make a lot of
   // sense since this would basically just be the identity operator.
 
+  // FIXME: Should a counting iterator just be called a counter?
+
   /**
    * A counting iterator is an iterator that, when dereferenced, simply returns
    * the current count. Note that the count could actually be any forward
@@ -28,7 +30,11 @@ namespace origin
   template<typename Count>
   class counting_iterator
     : public random_access_iterator_facade<
-        counting_iterator<Count>, Count, Count
+        counting_iterator<Count>,
+        Count,                                  // value type
+        Count const&,                           // reference
+        Count const*,                           // pointer
+        typename std::make_signed<Count>::type  // difference
       >
   {
   public:

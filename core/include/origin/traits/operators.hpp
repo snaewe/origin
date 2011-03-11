@@ -228,6 +228,7 @@ namespace origin
    * @name Assignment oeprators
    * Traits for querying common assignment expressions.
    */
+  //@{
   /**
    * Deduce the result type of the x = y for the types of x and y.
    */
@@ -248,6 +249,128 @@ namespace origin
   template<typename T, typename U>
   struct has_assign
     : substitution_succeeded<typename deduce_assign<T, U>::type>
+  { };
+  //@}
+
+  /**
+   * @ingroup traits
+   * @name Arithmetic Operators
+   */
+  //@{
+  /**
+   * Deduce the result type of the expression ++x for the type of x.
+   */
+  template<typename T>
+  struct deduce_pre_increment
+  {
+  private:
+    template<typename X>
+    static auto check(X& x) -> decltype(++x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>())) type;
+  };
+
+  /**
+   * Return true if the expression ++x is valid for the type of x.
+   */
+  template<typename T>
+  struct has_pre_increment
+    : substitution_succeeded<typename deduce_pre_increment<T>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x++ for the type of x.
+   */
+  template<typename T>
+  struct deduce_post_increment
+  {
+  private:
+    template<typename X>
+    static auto check(X& x) -> decltype(x++);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>())) type;
+  };
+
+  /**
+   * Return true if the expression x++ is valid for the type of x.
+   */
+  template<typename T>
+  struct has_post_increment
+    : substitution_succeeded<typename deduce_post_increment<T>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression --x for the type of x.
+   */
+  template<typename T>
+  struct deduce_pre_decrement
+  {
+  private:
+    template<typename X>
+    static auto check(X& x) -> decltype(--x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>())) type;
+  };
+
+  /**
+   * Return true if the expression --x is valid for the type of x.
+   */
+  template<typename T>
+  struct has_pre_decrement
+    : substitution_succeeded<typename deduce_pre_decrement<T>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x-- for the type of x.
+   */
+  template<typename T>
+  struct deduce_post_decrement
+  {
+  private:
+    template<typename X>
+    static auto check(X& x) -> decltype(x--);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>())) type;
+  };
+
+  /**
+   * Return true if the expression x-- is valid for the type of x.
+   */
+  template<typename T>
+  struct has_post_decrement
+    : substitution_succeeded<typename deduce_post_decrement<T>::type>
+  { };
+  //@}
+
+  /**
+   * @ingroup traits
+   * @name Miscellaneous Operators
+   */
+  //@{
+  /**
+   * Deduce the result type of the *x for the type of x.
+   */
+  template<typename T>
+  struct deduce_dereference
+  {
+  private:
+    template<typename X>
+    static auto check(X& x) -> decltype(*x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>())) type;
+  };
+
+  /**
+   * Return true if the expression *x is valid for the type of x.
+   */
+  template<typename T>
+  struct has_dereference
+    : substitution_succeeded<typename deduce_dereference<T>::type>
   { };
   //@}
 

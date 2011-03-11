@@ -24,23 +24,18 @@ struct not_ordered { };
 struct not_default { not_default() = delete; };
 struct not_copyable { not_copyable(not_copyable const&) = delete; };
 
+struct part_equal
+{
+  bool operator==(part_equal const& x) const
+  { return true; }
+};
+
 int main()
 {
   // FIXME: Test exhuastively. I should Make sure that these are valid for all
   // builtin types, standard types, containers, etc.
 
-  // Equality tests
-  {
-    check<Equal<bool>>{true};
-    check<Equal<string>>{true};
-    check<Equal<not_equal>>{false};
-
-    // Spot-checking with axioms
-    assert(( Equal<int>::axioms::Reflexive(1) ));
-    assert(( Equal<int>::axioms::Symmetric(1, 2) ));
-    assert(( Equal<int>::axioms::Transitive(1, 1, 1) ));
-  }
-
+/*
   // Order tests
   {
     check<Ordered<bool>>{true};
@@ -68,4 +63,13 @@ int main()
     check<Regular<not_default>>{false};
     check<Regular<not_copyable>>{false};
   }
+
+  // Boolean types
+  {
+    check<Boolean<bool>>{true};
+    check<Bool<bool>>{true};
+
+    check<Bool<void*>>{true};   // Pointers are Bool-like
+  }
+*/
 }

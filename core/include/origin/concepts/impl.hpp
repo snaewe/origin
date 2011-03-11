@@ -64,6 +64,23 @@ namespace origin
     : concept_check<Args...>::type
   { };
 
+  /**
+   * @ingroup Concepts
+   * The concept map template is used as the base class for explicit concept
+   * maps. This simply renders the concept true and specifies empty concepts.
+   */
+  template<typename Concept>
+  struct Concept_Map
+    : std::true_type
+  { typedef std::tuple<> requirements; };
+
+  /**
+   * @internal
+   * @ingroup concepts
+   * The unspecified type is a placeholder used to indicate that a template
+   * parameter has been left unspecified.
+   */
+  struct unspecified { };
 
   /**
    * @ingroup concepts
@@ -107,6 +124,30 @@ namespace origin
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
+
+  /**
+   * @ingroup concepts
+   * The assignable concept determines whether an object of type U can be
+   * assigned to an object of type T.
+   */
+  template<typename T, typename U>
+  struct Assignable
+  {
+    Assignable()
+    { auto p = constraints; }
+
+    static void constraints(T& x, U y)
+    { x = y; }
+
+    typedef std::tuple<
+      has_assign<T, U>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+
+
 } // namespace origin
 
 #endif

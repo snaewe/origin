@@ -8,6 +8,11 @@
 #ifndef CHECK_HPP
 #define CHECK_HPP
 
+#include <stdexcept>
+
+void check_(bool x)
+{ if (!x) throw std::runtime_error("failed check"); }
+
 /**
  * The check class is used to evaluate both the compile-time and run-time
  * checks of a concept. The boolean value passed to the constructor specifies

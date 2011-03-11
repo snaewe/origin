@@ -12,16 +12,25 @@
 
 namespace origin
 {
+  // FIXME: Should this just be called an enumerator? I think so. The same
+  // question applies for counting iterator and counter. It is possible that
+  // counters are more sophisticated than iterators, but I doubt it.
+
   /**
    * An enumerating iterator is an iterator that enumerates (counts) the items
    * it iterates over. Enumerators, when dereferences, return a pair containing
-   * the current count and the dereferenced reseult.
+   * the current count and the dereferenced reseult, in that order.
    *
    * Enumerators are maximally random acccess iterators.
    *
    * Note that the equality of these iterators is implemented only in terms of
    * the underlying iterator, not the actual count. One side effect of this is
    * that PTE iterators, have an unspecified count value.
+   *
+   * @tparam Iter   The iterator being enumerated
+   * @tparam Count  The type encoding the count. This is required to be an
+   *                Incrementable type. By default, this is the same as the
+   *                difference type of Iter.
    *
    * @note This is roughly equivalent to a zip iterator comprised of the
    * underlying iterator and a counting iterator.
@@ -31,7 +40,9 @@ namespace origin
   class enumerating_iterator
     : public random_access_iterator_facade<
         enumerating_iterator<Iter, Count>,
+        std::pair<Count, typename std::iterator_traits<Iter>::value_type>,
         std::pair<Count, typename std::iterator_traits<Iter>::reference>,
+        std::pair<Count, typename std::iterator_traits<Iter>::pointer>,
         typename std::iterator_traits<Iter>::difference_type
       >
   {
@@ -77,7 +88,9 @@ namespace origin
     difference_type count_;
   };
 
-  /** Make an enumerating_iterator over the given iterator. */
+  /**
+   * Make an enumerating_iterator over the given iterator.
+   */
   template<typename Iter,
            typename Count = typename std::iterator_traits<Iter>::difference_type>
   inline enumerating_iterator<Iter, Count>

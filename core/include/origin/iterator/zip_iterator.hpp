@@ -68,7 +68,10 @@ namespace origin
   class zip_iterator
     : public bidirectional_iterator_facade<
         zip_iterator<Iters...>,
-        std::tuple<typename std::iterator_traits<Iters>::reference...>
+        std::tuple<typename std::iterator_traits<Iters>::value_type...>,
+        std::tuple<typename std::iterator_traits<Iters>::reference...>,
+        std::tuple<typename std::iterator_traits<Iters>::pointer...>,
+        std::tuple<typename std::iterator_traits<Iters>::difference_type...>
       >
   {
   public:

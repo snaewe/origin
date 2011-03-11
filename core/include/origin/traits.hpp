@@ -11,9 +11,10 @@
 #include <origin/traits/constructors.hpp>
 #include <origin/traits/operators.hpp>
 
-namespace origin {
-
+namespace origin
+{
   /**
+   * @ingroup traits
    * Deduce the result type of the expression f(arg...) where f is a callable
    * type and args... is a sequence of arguments or arbitrary type.
    */
@@ -31,6 +32,7 @@ namespace origin {
   };
 
   /**
+   * @ingroup traits
    * Return true if the expression f(args...) is valid where f is a callable
    * type and args... is a sequence of arguments or arbitrary type.
    */

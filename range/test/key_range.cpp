@@ -9,6 +9,8 @@
 #include <iostream>
 
 #include <origin/range/key_range.hpp>
+#include <origin/range/value_range.hpp>
+#include <origin/range/zip_range.hpp>
 
 using namespace std;
 using namespace origin;
@@ -22,5 +24,15 @@ int main()
     cout << x << " ";
   }
   cout << "\n";
+
+  for(auto x : values(m)) {
+    cout << x << " ";
+  }
+  cout << "\n";
+
+  for(auto x : zip(keys(m), values(m))) {
+    cout << get<0>(x) << ":" << get<1>(x) << "\n";
+  }
+
 }
 

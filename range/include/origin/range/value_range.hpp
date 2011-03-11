@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_RANGE_KEY_RANGE_HPP
-#define ORIGIN_RANGE_KEY_RANGE_HPP
+#ifndef ORIGIN_RANGE_VALUE_RANGE_HPP
+#define ORIGIN_RANGE_VALUE_RANGE_HPP
 
 #include <iterator>
 
@@ -14,40 +14,34 @@
 
 namespace origin
 {
-  // NOTE: This module introduces a new concept: An Associative_Range. This
-  // is a range who's value type is a key/value pair.
-  // FIXME: Would it be useful to develop key/value abstractions over pairs?
-  // Maybe...
-
   /**
-   * The key iterator...
-   *
-   * The reference type of the key iteartor is a reference to the map's key
-   * type (which is a const type).
+   * The value iterator is a Bidirectional_Iterator that wraps an iterator from
+   * an Associative_Container. When dereferenced, the value_iterator returns a
+   * reference to the value type stored in the association.
    */
   template<typename Iter>
-  class key_iterator
+  class value_iterator
     : public bidirectional_iterator_facade<
-        key_iterator<Iter>,
-        typename std::iterator_traits<Iter>::value_type::first_type const&
+        value_iterator<Iter>,
+        typename std::iterator_traits<Iter>::value_type::second_type&
       >
   {
     typedef Iter base_iterator;
   public:
-    typedef typename std::iterator_traits<Iter>::value_type::first_type value_type;
-    typedef value_type const& reference;
-    typedef value_type const* pointer;
+    typedef typename std::iterator_traits<Iter>::value_type::second_type value_type;
+    typedef value_type& reference;
+    typedef value_type* pointer;
     typedef typename std::iterator_traits<Iter>::difference_type difference_type;
 
-    key_iterator(Iter i = base_iterator{})
+    value_iterator(Iter i = base_iterator{})
       : iter_{i}
     { }
 
-    bool equal(key_iterator const& x) const
+    bool equal(value_iterator const& x) const
     { return iter_ == x.iter_; }
 
     reference dereference() const
-    { return (*iter_).first; }
+    { return (*iter_).second; }
 
     void increment()
     { ++iter_; }
@@ -59,19 +53,18 @@ namespace origin
     base_iterator iter_;
   };
 
-
   /**
-   * The key range adapts a range of key/value pairs to one that selects only
+   * The value range adapts a range of key/value pairs to one that selects only
    * the keys of the underlying range.
    */
   template<typename Range>
-  class key_range
+  class value_range
   {
     typedef typename range_traits<Range>::iterator base_iterator;
   public:
-    typedef key_iterator<base_iterator> iterator;
+    typedef value_iterator<base_iterator> iterator;
 
-    key_range(Range& rng)
+    value_range(Range& rng)
       : range_(rng)
     { }
 
@@ -95,11 +88,11 @@ namespace origin
    * Return a range of keys over the given associative range.
    */
   template<typename Range>
-  key_range<Range> keys(Range& rng)
+  value_range<Range> values(Range& rng)
   { return rng; }
 
   template<typename Range>
-  key_range<Range const> keys(Range const& rng)
+  value_range<Range const> values(Range const& rng)
   { return rng; }
 }
 
