@@ -31,7 +31,8 @@ namespace origin
         typename std::iterator_traits<Iter>::value_type,
         typename std::iterator_traits<Iter>::reference,
         typename std::iterator_traits<Iter>::pointer,
-        typename std::iterator_traits<Iter>::difference_type
+        typename std::iterator_traits<Iter>::difference_type,
+        typename std::iterator_traits<Iter>::iterator_category
       >
   {
     typedef Range base_range;
@@ -67,7 +68,11 @@ namespace origin
     }
 
     void increment()
-    { next(stride_, iterator_category{}); }
+    { 
+      std::cout << typestr<iterator_category>() << "\n";
+      assert(false);
+      // next(stride_, iterator_category{}); 
+    }
 
     void decrement()
     { prev(stride_, iterator_category{}); }

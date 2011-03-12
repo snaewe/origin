@@ -5,9 +5,10 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
+#include <origin/utility/typestr.hpp>
 #include <origin/range/stride_range.hpp>
 
 using namespace std;
