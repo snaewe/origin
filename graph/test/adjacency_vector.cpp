@@ -29,5 +29,8 @@ int main()
   for(auto x : g.edges()) {
     cout << g[x] << "\n";
   }
+  for(auto x : g.out_edges(u)) {
+    cout << g[x] << "\n";
+  }
   
 }

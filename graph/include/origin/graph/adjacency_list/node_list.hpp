@@ -287,9 +287,8 @@ namespace origin {
     template<typename, typename> class const_node_iterator;
 
     /**
-     * The node iterator adapts a node list into an iterator by providing
-     * increment and decrement operators. Dereferencing a node list iterator
-     * results in a node pointer.
+     * The node iterator adapts a node pointer into a bidirectional iterator.
+     * Dereferencing a node list iterator results in a node pointer.
      *
      * @tparam List An instance of the node_list type.
      * @tparam Node The most derived type of node in the list.
@@ -303,7 +302,9 @@ namespace origin {
      */
     template<typename List, typename Node>
     class node_iterator
-      : public bidirectional_iterator_facade<node_iterator<List, Node>, Node*>
+      : public bidirectional_iterator_facade<
+          node_iterator<List, Node>, Node*, Node*, Node*
+        >
     {
       friend class const_node_iterator<List, Node>;
     public:
@@ -341,7 +342,7 @@ namespace origin {
     template<typename List, typename Node>
     class const_node_iterator
       : public bidirectional_iterator_facade<
-          const_node_iterator<List, Node>, Node const*
+          node_iterator<List, Node>, Node*, Node*, Node*
         >
     {
     public:

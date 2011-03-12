@@ -67,10 +67,12 @@ namespace origin
    * types. The result of dereferencing an edge iterator is an edge_t object.
    */
   class edge_iterator
-    : public random_access_iterator_facade<edge_iterator, edge_t, std::size_t>
+    : public random_access_iterator_facade<
+        edge_iterator, edge_t, edge_t, void, std::make_signed<std::size_t>::type
+      >
   {
     typedef random_access_iterator_facade<
-      edge_iterator, edge_t, std::size_t
+        edge_iterator, edge_t, edge_t, void, std::make_signed<std::size_t>::type
     > base_type;
   public:
     typedef typename base_type::reference reference;
@@ -154,6 +156,13 @@ namespace origin
   out_edges(Graph const& g, typename Graph::const_vertex v) 
   { return g.incident_edges(v); }
   //@}
+  
+  /**
+   * Return the opposite end of the given edge.
+   */
+  template<typename Graph, typename Edge, typename Vertex>
+  Vertex opposite(Graph& g, Edge e, Vertex v)
+  { return g.source(e) == v ? g.target(e) : v; }
 
 } // namesapce origin
 

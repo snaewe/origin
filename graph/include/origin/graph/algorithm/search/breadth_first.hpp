@@ -372,9 +372,15 @@ namespace origin
    * search ranges.
    */
   template<typename Range>
-  struct bfs_iterator
-    : input_iterator_facade<bfs_iterator<Range>, typename Range::vertex>
+  class bfs_iterator
+    : public input_iterator_facade<
+        bfs_iterator<Range>, 
+        typename Range::vertex,
+        typename Range::vertex,
+        typename Range::vertex
+      >
   {
+  public:
     typedef typename Range::graph_type graph_type;
     typedef typename Range::vertex vertex;
     

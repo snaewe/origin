@@ -65,10 +65,12 @@ namespace origin
    * index. Dereferencing a vertex iterator yields a vertex_t object.
    */
   class vertex_iterator
-    : public random_access_iterator_facade<vertex_iterator, vertex_t, std::size_t>
+    : public random_access_iterator_facade<
+        vertex_iterator, vertex_t, vertex_t, void, std::make_signed<std::size_t>::type
+      >
   {
     typedef random_access_iterator_facade<
-      vertex_iterator, vertex_t, std::size_t
+      vertex_iterator, vertex_t, vertex_t, void, std::make_signed<std::size_t>::type
     > base_type;
   public:
     typedef typename base_type::reference reference;

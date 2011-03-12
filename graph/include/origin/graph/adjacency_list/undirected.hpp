@@ -70,6 +70,8 @@ namespace origin
     class undirected_edge_iterator
       : public bidirectional_iterator_facade<
           undirected_edge_iterator<Iter, Edge, Vertex>,
+          undirected_edge<Edge, Vertex>,
+          undirected_edge<Edge, Vertex>,
           undirected_edge<Edge, Vertex>
         >
     {
@@ -119,6 +121,8 @@ namespace origin
     class incident_edge_iterator
       : public bidirectional_iterator_facade<
           incident_edge_iterator<Out, In, Edge, Vertex>,
+          undirected_edge<Edge, Vertex>,
+          undirected_edge<Edge, Vertex>,
           undirected_edge<Edge, Vertex>
         >
     {
