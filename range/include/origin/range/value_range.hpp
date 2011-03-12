@@ -17,21 +17,28 @@ namespace origin
   /**
    * The value iterator is a Bidirectional_Iterator that wraps an iterator from
    * an Associative_Container. When dereferenced, the value_iterator returns a
-   * reference to the value type stored in the association.
+   * reference to the mapped type stored in the association.
    */
   template<typename Iter>
   class value_iterator
     : public bidirectional_iterator_facade<
         value_iterator<Iter>,
-        typename std::iterator_traits<Iter>::value_type::second_type&
+        typename std::iterator_traits<Iter>::value_type::second_type,
+        typename std::iterator_traits<Iter>::value_type::second_type&,
+        typename std::iterator_traits<Iter>::value_type::second_type*,
+        typename std::iterator_traits<Iter>::difference_type
       >
   {
     typedef Iter base_iterator;
+    typedef bidirectional_iterator_facade<
+        value_iterator<Iter>,
+        typename std::iterator_traits<Iter>::value_type::second_type,
+        typename std::iterator_traits<Iter>::value_type::second_type&,
+        typename std::iterator_traits<Iter>::value_type::second_type*,
+        typename std::iterator_traits<Iter>::difference_type
+      > base_type;
   public:
-    typedef typename std::iterator_traits<Iter>::value_type::second_type value_type;
-    typedef value_type& reference;
-    typedef value_type* pointer;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+    typedef typename base_type::reference reference;
 
     value_iterator(Iter i = base_iterator{})
       : iter_{i}

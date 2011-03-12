@@ -27,7 +27,10 @@ namespace origin
   class filter_range_iterator_
     : public bidirectional_iterator_facade<
         filter_range_iterator_<Range, Iter, Pred>,
-        typename std::iterator_traits<Iter>::reference
+        typename std::iterator_traits<Iter>::value_type,
+        typename std::iterator_traits<Iter>::reference,
+        typename std::iterator_traits<Iter>::pointer,
+        typename std::iterator_traits<Iter>::difference_type
       >
   {
     typedef Range base_range;

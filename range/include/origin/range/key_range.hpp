@@ -20,24 +20,31 @@ namespace origin
   // Maybe...
 
   /**
-   * The key iterator...
-   *
-   * The reference type of the key iteartor is a reference to the map's key
-   * type (which is a const type).
+   * The value iterator is a Bidirectional_Iterator that wraps an iterator from
+   * an Associative_Container. When dereferenced, the value_iterator returns a
+   * reference to the key type stored in the association. Note that the key 
+   * type in associative containers is const.
    */
   template<typename Iter>
   class key_iterator
     : public bidirectional_iterator_facade<
         key_iterator<Iter>,
-        typename std::iterator_traits<Iter>::value_type::first_type const&
+        typename std::iterator_traits<Iter>::value_type::first_type,
+        typename std::iterator_traits<Iter>::value_type::first_type&,
+        typename std::iterator_traits<Iter>::value_type::first_type*,
+        typename std::iterator_traits<Iter>::difference_type
       >
   {
     typedef Iter base_iterator;
+    typedef bidirectional_iterator_facade<
+      key_iterator<Iter>,
+      typename std::iterator_traits<Iter>::value_type::first_type,
+      typename std::iterator_traits<Iter>::value_type::first_type&,
+      typename std::iterator_traits<Iter>::value_type::first_type*,
+      typename std::iterator_traits<Iter>::difference_type
+    > base_type;
   public:
-    typedef typename std::iterator_traits<Iter>::value_type::first_type value_type;
-    typedef value_type const& reference;
-    typedef value_type const* pointer;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+    typedef typename base_type::reference reference;
 
     key_iterator(Iter i = base_iterator{})
       : iter_{i}

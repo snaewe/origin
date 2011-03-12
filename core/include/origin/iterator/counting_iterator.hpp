@@ -39,8 +39,8 @@ namespace origin
   {
   public:
     typedef Count value_type;
-    typedef value_type reference;
-    typedef value_type pointer;
+    typedef value_type const& reference;
+    typedef value_type const* pointer;
     typedef Count difference_type;
 
     // FIXME: GCC seems to have a problem accepting brace initializers on

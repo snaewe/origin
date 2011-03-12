@@ -6,6 +6,6 @@
 # and conditions.
 
 add_executable(concepts concepts.cpp)
-add_executable(equal equal.cpp)
-add_executable(iterator iterator.cpp)
-add_executable(proto proto.cpp)
+# add_executable(equal equal.cpp)
+# add_executable(iterator iterator.cpp)
+# add_executable(proto proto.cpp)

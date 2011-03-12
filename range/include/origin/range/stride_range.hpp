@@ -15,41 +15,42 @@
 
 namespace origin
 {
-  /** @internal
+  /** 
+   * @internal
    * The stride iterator performs multiple increments in a single step. Note
    * that you can only compare and subtract two stride iterators with the same
    * stride value.
    *
-   * @tparam Range The Range into which the iterator refers
-   * @tparam Iter The underlying Iterator type
-   *
-   * @todo Consider implementing an actual stride iterator that's independent
-   * of the parent range.
-   *
-   * @todo We could define a stride iterator where the stride is a constexpr.
-   * I don't think that we can make the stride iterator itself a constexpr
-   * object since the underlying range and iterators will never be constant
-   * expressions.
+   * @tparam Range  The Range into which the iterator refers
+   * @tparam Iter   The underlying Iterator type
    */
   template<typename Range, typename Iter>
   class stride_range_iterator_
     : public random_access_iterator_facade<
         stride_range_iterator_<Range, Iter>,
+        typename std::iterator_traits<Iter>::value_type,
         typename std::iterator_traits<Iter>::reference,
+        typename std::iterator_traits<Iter>::pointer,
         typename std::iterator_traits<Iter>::difference_type
       >
   {
     typedef Range base_range;
     typedef Iter base_iterator;
+    typedef random_access_iterator_facade<
+      stride_range_iterator_<Range, Iter>,
+      typename std::iterator_traits<Iter>::value_type,
+      typename std::iterator_traits<Iter>::reference,
+      typename std::iterator_traits<Iter>::pointer,
+      typename std::iterator_traits<Iter>::difference_type
+    > base_type;
   public:
-    typedef typename std::iterator_traits<Iter>::value_type value_type;
-    typedef typename std::iterator_traits<Iter>::reference reference;
-    typedef typename std::iterator_traits<Iter>::pointer pointer;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
-    typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     // FIXME: GCC seems to have a problem accepting brace initializers on
-    // the range_member. Update this when GCC is fixed.
+    // the range_ member. Perhapns because its a reference type? Update this 
+    // when GCC is fixed.
     stride_range_iterator_(base_range& r,
                            base_iterator i = base_iterator{},
                            difference_type n = 1)
@@ -89,8 +90,8 @@ namespace origin
     // NOTE: that these are kind of like "safe" next, prev, and advance
     // functions. I wonder if there isn't some value in making these top-level
     // algorithms for the range library (e.g., next(i, rng)). Note that this
-    // also speaks to the concept of "safe" iterators, that explicitly refer
-    // to their parent range.
+    // also speaks to the concept of "safe" iterators that explicitly refer
+    // to their parent container.
     void next(difference_type n, std::input_iterator_tag)
     {
       for(difference_type i = n; iter_ != end(range_) && i != 0; --i)
