@@ -124,7 +124,7 @@ namespace origin
   template<typename Graph, 
            typename Visitor,
            typename Color_Label = internal_label<Graph, basic_color_t>>
-  class rooted_bfs_algo
+  class bf_search_algo
   {
   public:
     typedef Visitor visitor_type;
@@ -138,11 +138,11 @@ namespace origin
 
     typedef std::queue<vertex> search_queue;
     
-    rooted_bfs_algo(Graph& g, Visitor vis)
+    bf_search_algo(Graph& g, Visitor vis)
       : graph(g), visitor(vis), queue(), color(g)
     { }
     
-    rooted_bfs_algo(Graph& g, Visitor vis, Color_Label color)
+    bf_search_algo(Graph& g, Visitor vis, Color_Label color)
       : graph(g), visitor(vis), queue(), color(color)
     { }
 
@@ -199,10 +199,10 @@ namespace origin
   template<typename Graph, 
            typename Visitor,
            typename Color_Label = internal_label<Graph, basic_color_t>>
-  struct bfs_algo 
-    : private rooted_bfs_algo<Graph, Visitor, Color_Label>
+  struct bf_traversal_algo 
+    : private bf_search_algo<Graph, Visitor, Color_Label>
   {
-    typedef rooted_bfs_algo<Graph, Visitor, Color_Label> base_type;
+    typedef bf_search_algo<Graph, Visitor, Color_Label> base_type;
     
     typedef Visitor visitor_type;
     typedef Graph graph_type;
@@ -210,11 +210,11 @@ namespace origin
     typedef typename base_type::edge edge;
     typedef typename base_type::colors colors;
     
-    bfs_algo(Graph& g, Visitor vis)
+    bf_traversal_algo(Graph& g, Visitor vis)
       : base_type(g, vis)
     { }
 
-    bfs_algo(Graph& g, Visitor vis, Color_Label label)
+    bf_traversal_algo(Graph& g, Visitor vis, Color_Label label)
       : base_type(g, vis, label)
     { }
 
@@ -253,8 +253,6 @@ namespace origin
    * traversal.
    *
    * @tparam Graph        A Graph type.
-   * @tparam Vertex       A vertex of the Graph type. Must be the same as 
-   *                      graph_traits<Graph>::vertex.
    * @tparam Visitor      A Breadth_First_Visitor type.
    * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
    *                      type supporting at least three colors.
@@ -265,40 +263,47 @@ namespace origin
    * @param color   A color label.
    */
   //@{
-  template<typename Graph, typename Vertex, typename Visitor>
-  void breadth_first_search_from(Graph& g, Vertex v, Visitor vis)
+  template<typename Graph, typename Visitor>
+  void breadth_first_search_from(Graph& g, 
+                                 typename Graph::vertex v, 
+                                 Visitor vis)
   {
-    rooted_bfs_algo<Graph, Visitor> algo(g, vis);
+    bf_search_algo<Graph, Visitor> algo(g, vis);
     algo(v);
   }
 
   // Const version of above.
-  template<typename Graph, typename Vertex, typename Visitor>
-  void breadth_first_search_from(Graph const& g, Vertex v, Visitor vis)
+  // FIXME: Should I be using graph_traits?
+  template<typename Graph, typename Visitor>
+  void breadth_first_search_from(Graph const& g, 
+                                 typename Graph::const_vertex v, 
+                                 Visitor vis)
   {
-    rooted_bfs_algo<Graph const, Visitor> algo(g, vis);
+    bf_search_algo<Graph const, Visitor> algo(g, vis);
     algo(v);
   }
 
   // Color label version
-  template<typename Graph, typename Vertex, typename Visitor, typename Color_Label>
+  template<typename Graph, typename Visitor, typename Color_Label>
   void breadth_first_search_from(Graph& g, 
-                                 Vertex v, 
+                                 typename Graph::vertex v, 
                                  Visitor vis,
                                  Color_Label color)
   {
-    rooted_bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
+    bf_search_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
   }
 
   // Const version of above.
-  template<typename Graph, typename Vertex, typename Visitor, typename Color_Label>
+  template<typename Graph, 
+           typename Visitor, 
+           typename Color_Label>
   void breadth_first_search_from(Graph const& g, 
-                                 Vertex v, 
+                                 typename Graph::const_vertex v, 
                                  Visitor vis,
                                  Color_Label color)
   {
-    rooted_bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
+    bf_search_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
   }
   //@}
@@ -313,8 +318,6 @@ namespace origin
    * traversal.
    *
    * @tparam Graph        A Graph type.
-   * @tparam Vertex       A vertex of the Graph type. Must be the same as 
-   *                      graph_traits<Graph>::vertex.
    * @tparam Visitor      A Breadth_First_Visitor type.
    * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
    *                      type supporting at least three colors.
@@ -328,7 +331,7 @@ namespace origin
   template<typename Graph, typename Visitor>
   void breadth_first_search(Graph& g, Visitor vis)
   {
-    bfs_algo<Graph, Visitor> algo(g, vis);
+    bf_traversal_algo<Graph, Visitor> algo(g, vis);
     algo();
   }
 
@@ -336,7 +339,7 @@ namespace origin
   template<typename Graph, typename Visitor>
   void breadth_first_search(Graph const& g, Visitor vis)
   {
-    bfs_algo<Graph const, Visitor> algo(g, vis);
+    bf_traversal_algo<Graph const, Visitor> algo(g, vis);
     algo();
   }
 
@@ -344,7 +347,7 @@ namespace origin
   template<typename Graph, typename Visitor, typename Color_Label>
   void breadth_first_search(Graph& g, Visitor vis, Color_Label color)
   {
-    bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
+    bf_traversal_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
     algo();
   }
 
@@ -352,7 +355,7 @@ namespace origin
   template<typename Graph, typename Visitor, typename Color_Label>
   void breadth_first_search(Graph const& g, Visitor vis, Color_Label color)
   {
-    bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
+    bf_traversal_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
     algo();
   }
   //@}
@@ -445,8 +448,10 @@ namespace origin
    */
   template<typename Graph, 
            typename Color_Label = internal_label<Graph, basic_color_t>>
-  struct rooted_bfs_range
+  class bf_search_range
   {
+    typedef bf_search_range<Graph, Color_Label> this_type;
+  public:
     typedef Graph graph_type;
     typedef typename graph_traits<graph_type>::vertex vertex;
     typedef typename graph_traits<graph_type>::edge edge;
@@ -456,13 +461,13 @@ namespace origin
 
     typedef std::queue<vertex> search_queue;
     
-    typedef bfs_iterator<rooted_bfs_range<Graph, Color_Label>> iterator;
+    typedef bfs_iterator<this_type> iterator;
 
-    rooted_bfs_range(Graph& g, vertex v)
+    bf_search_range(Graph& g, vertex v)
       : graph(g), current(v), color(g)
     { init(v); }
 
-    rooted_bfs_range(Graph& g, vertex v, Color_Label label)
+    bf_search_range(Graph& g, vertex v, Color_Label label)
       : graph(g), current(v), color(label)
     { init(v); }
     
@@ -526,8 +531,10 @@ namespace origin
    */
   template<typename Graph, 
            typename Color_Label = internal_label<Graph, basic_color_t>>
-  struct bfs_range
+  class bf_traversal_range
   {
+    typedef bf_traversal_range<Graph, Color_Label> this_type;
+  public:
     typedef Graph graph_type;
     typedef typename graph_traits<graph_type>::vertex vertex;
     typedef typename graph_traits<graph_type>::edge edge;
@@ -538,15 +545,15 @@ namespace origin
 
     typedef std::queue<vertex> search_queue;
     
-    typedef bfs_iterator<bfs_range<Graph, Color_Label>> iterator;
+    typedef bfs_iterator<this_type> iterator;
 
     // FIXME: This is not a valid constructor for empty graphs.
-    bfs_range(Graph& g)
+    bf_traversal_range(Graph& g)
       : graph(g), current(*begin_vertex(g)), color(g)
       , iter(begin_vertex(g)), fini(end_vertex(g))
     { init(current); }
 
-    bfs_range(Graph& g, Color_Label label)
+    bf_traversal_range(Graph& g, Color_Label label)
       : graph(g), current(*begin_vertex(g)), color(label)
       , iter(begin_vertex(g)), fini(end_vertex(g))
     { init(current); }
@@ -632,7 +639,6 @@ namespace origin
    * traversal.
    *
    * @tparam Graph        A Graph type.
-   * @tparam Visitor      A Breadth_First_Visitor type.
    * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
    *                      type supporting at least three colors.
    *
@@ -641,20 +647,24 @@ namespace origin
    * @param color   A color label.
    */
   //@{
-  template<typename Graph, typename Vertex>
-  rooted_bfs_range<Graph> bfs_from(Graph& g, Vertex v)
+  template<typename Graph>
+  inline bf_search_range<Graph> 
+  bfs_from(Graph& g, typename Graph::vertex v)
   { return {g, v}; }
   
-  template<typename Graph, typename Vertex>
-  rooted_bfs_range<Graph const> bfs_from(Graph const& g, Vertex v)
+  template<typename Graph>
+  bf_search_range<Graph const> 
+  bfs_from(Graph const& g, typename Graph::const_vertex v)
   { return {g, v}; }
 
-  template<typename Graph, typename Vertex, typename Color_Label>
-  rooted_bfs_range<Graph> bfs_from(Graph& g, Vertex v, Color_Label color)
+  template<typename Graph, typename Color_Label>
+  inline bf_search_range<Graph> 
+  bfs_from(Graph& g, typename Graph::vertex v, Color_Label color)
   { return {g, v, color}; }
   
-  template<typename Graph, typename Vertex, typename Color_Label>
-  rooted_bfs_range<Graph const> bfs_from(Graph const& g, Vertex v, Color_Label label)
+  template<typename Graph, typename Color_Label>
+  inline bf_search_range<Graph const> 
+  bfs_from(Graph const& g, typename Graph::cosnt_vertex v, Color_Label label)
   { return {g, v, label}; }
   //@}
   
@@ -677,20 +687,22 @@ namespace origin
    */
   //@{
   template<typename Graph>
-  inline bfs_range<Graph> bfs(Graph& g)
+  inline bf_traversal_range<Graph> bfs(Graph& g)
   { return {g}; }
   
   template<typename Graph>
-  inline bfs_range<Graph const> bfs(Graph const& g)
+  inline bf_traversal_range<Graph const> bfs(Graph const& g)
   { return {g}; }
 
   // Construct a complete BFS range with a custom color label.
   template<typename Graph, typename Color_Label>
-  inline bfs_range<Graph, Color_Label> bfs(Graph& g, Color_Label color)
+  inline bf_traversal_range<Graph, Color_Label> 
+  bfs(Graph& g, Color_Label color)
   { return {g, color}; }
   
   template<typename Graph, typename Color_Label>
-  inline bfs_range<Graph const> bfs(Graph const& g, Color_Label color)
+  inline bf_traversal_range<Graph const> 
+  bfs(Graph const& g, Color_Label color)
   { return {g, color}; }
   //@}
 

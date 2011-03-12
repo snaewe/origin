@@ -41,7 +41,10 @@ namespace origin
     // Why would you want to do this? Your graph's vertex type has a state
     // member that defines a bitfield, recording 3 bits of state for the color
     // in the underlying BFS and 1 bit of state for the two-coloring.
-    typedef bfs_algo<graph_type, visitor_type> bfs_type;
+    //
+    // FIXME: Would it be worthwhile to parameterize the search over the
+    // the traversal?
+    typedef bf_traversal_algo<graph_type, visitor_type> bfs_type;
   
     // Construct the algorithm with a default two-color label.
     is_bipartite_algo(Graph& g)
@@ -167,7 +170,6 @@ namespace origin
   // coloring algrithm loses all of its state when an exception is thrown.
   // The best answer is to probably rewrite the two-coloring algorithm to use
   // an algorithm object.
-
 
 } // namespace origin
 
