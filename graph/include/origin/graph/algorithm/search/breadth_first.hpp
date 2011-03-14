@@ -243,8 +243,8 @@ namespace origin
   // should be relatively easy.
   
   /**
-   * @function breadth_first_search_from(g, v, vis)
-   * @function breadth_first_search_from(g, v, vis, color)
+   * @fn breadth_first_search(g, v, vis)
+   * @fn breadth_first_search(g, v, vis, color)
    *
    * Perform a breadth-first search on the graph starting from the given
    * vertex and using the given visitor.
@@ -264,9 +264,8 @@ namespace origin
    */
   //@{
   template<typename Graph, typename Visitor>
-  void breadth_first_search_from(Graph& g, 
-                                 typename Graph::vertex v, 
-                                 Visitor vis)
+  inline void 
+  breadth_first_search(Graph& g, typename Graph::vertex v, Visitor vis)
   {
     bf_search_algo<Graph, Visitor> algo(g, vis);
     algo(v);
@@ -275,9 +274,10 @@ namespace origin
   // Const version of above.
   // FIXME: Should I be using graph_traits?
   template<typename Graph, typename Visitor>
-  void breadth_first_search_from(Graph const& g, 
-                                 typename Graph::const_vertex v, 
-                                 Visitor vis)
+  inline void 
+  breadth_first_search(Graph const& g, 
+                       typename Graph::const_vertex v, 
+                       Visitor vis)
   {
     bf_search_algo<Graph const, Visitor> algo(g, vis);
     algo(v);
@@ -285,10 +285,11 @@ namespace origin
 
   // Color label version
   template<typename Graph, typename Visitor, typename Color_Label>
-  void breadth_first_search_from(Graph& g, 
-                                 typename Graph::vertex v, 
-                                 Visitor vis,
-                                 Color_Label color)
+  inline void 
+  breadth_first_search(Graph& g, 
+                      typename Graph::vertex v, 
+                      Visitor vis,
+                      Color_Label color)
   {
     bf_search_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
@@ -298,10 +299,11 @@ namespace origin
   template<typename Graph, 
            typename Visitor, 
            typename Color_Label>
-  void breadth_first_search_from(Graph const& g, 
-                                 typename Graph::const_vertex v, 
-                                 Visitor vis,
-                                 Color_Label color)
+  inline void 
+  breadth_first_search(Graph const& g, 
+                       typename Graph::const_vertex v, 
+                       Visitor vis,
+                       Color_Label color)
   {
     bf_search_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
     algo(v);
@@ -309,12 +311,12 @@ namespace origin
   //@}
 
   /**
-   * @function breadth_first_search(g, vis)
-   * @funciton breadth_first_search(g, vis, color)
+   * @function breadth_first_traverse(g, vis)
+   * @funciton breadth_first_traverse(g, vis, color)
    *
-   * Perform a breadth-first search on the graph, visiting all vertices.
+   * Perform a breadth-first traversal on the graph, visiting all vertices.
    *
-   * The color label, if specified records the states of vertices during 
+   * The color label, if specified, records the states of vertices during 
    * traversal.
    *
    * @tparam Graph        A Graph type.
@@ -329,7 +331,8 @@ namespace origin
    */
   //@{
   template<typename Graph, typename Visitor>
-  void breadth_first_search(Graph& g, Visitor vis)
+  inline void 
+  breadth_first_traverse(Graph& g, Visitor vis)
   {
     bf_traversal_algo<Graph, Visitor> algo(g, vis);
     algo();
@@ -337,7 +340,8 @@ namespace origin
 
   // Const version of above.
   template<typename Graph, typename Visitor>
-  void breadth_first_search(Graph const& g, Visitor vis)
+  inline void 
+  breadth_first_traverse(Graph const& g, Visitor vis)
   {
     bf_traversal_algo<Graph const, Visitor> algo(g, vis);
     algo();
@@ -345,7 +349,8 @@ namespace origin
 
   // Color label variant
   template<typename Graph, typename Visitor, typename Color_Label>
-  void breadth_first_search(Graph& g, Visitor vis, Color_Label color)
+  inline void 
+  breadth_first_traverse(Graph& g, Visitor vis, Color_Label color)
   {
     bf_traversal_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
     algo();
@@ -353,7 +358,8 @@ namespace origin
 
   // Const version of above.
   template<typename Graph, typename Visitor, typename Color_Label>
-  void breadth_first_search(Graph const& g, Visitor vis, Color_Label color)
+  inline void
+  breadth_first_traverse(Graph const& g, Visitor vis, Color_Label color)
   {
     bf_traversal_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
     algo();
@@ -474,7 +480,7 @@ namespace origin
     iterator begin()
     { return iterator{this}; }
     
-    iterator end()
+    iterator end() const
     { return iterator{}; }
 
     /** Initialize the traversal by marking all vertices as unvisited. */
@@ -649,22 +655,22 @@ namespace origin
   //@{
   template<typename Graph>
   inline bf_search_range<Graph> 
-  bfs_from(Graph& g, typename Graph::vertex v)
+  bfs(Graph& g, typename Graph::vertex v)
   { return {g, v}; }
   
   template<typename Graph>
   bf_search_range<Graph const> 
-  bfs_from(Graph const& g, typename Graph::const_vertex v)
+  bfs(Graph const& g, typename Graph::const_vertex v)
   { return {g, v}; }
 
   template<typename Graph, typename Color_Label>
   inline bf_search_range<Graph> 
-  bfs_from(Graph& g, typename Graph::vertex v, Color_Label color)
+  bfs(Graph& g, typename Graph::vertex v, Color_Label color)
   { return {g, v, color}; }
   
   template<typename Graph, typename Color_Label>
   inline bf_search_range<Graph const> 
-  bfs_from(Graph const& g, typename Graph::cosnt_vertex v, Color_Label label)
+  bfs(Graph const& g, typename Graph::cosnt_vertex v, Color_Label label)
   { return {g, v, label}; }
   //@}
   
@@ -686,6 +692,7 @@ namespace origin
    * @param color   A color label.
    */
   //@{
+  /*
   template<typename Graph>
   inline bf_traversal_range<Graph> bfs(Graph& g)
   { return {g}; }
@@ -696,14 +703,21 @@ namespace origin
 
   // Construct a complete BFS range with a custom color label.
   template<typename Graph, typename Color_Label>
-  inline bf_traversal_range<Graph, Color_Label> 
+  inline typename std::enable_if<
+    !std::is_same<Color_Label, typename Graph::vertex>::value,
+    bf_traversal_range<Graph, Color_Label> 
+  >::type
   bfs(Graph& g, Color_Label color)
   { return {g, color}; }
-  
+
   template<typename Graph, typename Color_Label>
-  inline bf_traversal_range<Graph const> 
+  inline typename std::enable_if<
+    !std::is_same<Color_Label, typename Graph::const_vertex>::value,
+    bf_traversal_range<Graph const, Color_Label> 
+  >::type
   bfs(Graph const& g, Color_Label color)
   { return {g, color}; }
+  */
   //@}
 
 } // namespace origin

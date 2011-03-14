@@ -17,33 +17,59 @@ using namespace origin;
 template<typename Graph>
 void test() 
 {
+  typedef typename Graph::vertex Vertex;
+  typedef typename Graph::const_vertex Const_Vertex;
+  typedef typename Graph::edge Edge;
+  typedef typename Graph::const_edge Const_Edge;
   typedef bfs_visitor Visitor;
-  
+
   Graph g;
   auto u = g.add_vertex();
   auto v = g.add_vertex();
   g.add_edge(u, v);
+  
+  // Get some const objects for const instantiations.
+  Graph const& cg = g;
+  Vertex const& cu = u;
 
   Visitor vis;
-  breadth_first_search_from(g, u, vis);  
-}
+  
+  // Build a custom color map for various instantiations.
+  // I think that keys in these maps HAVE to be const in order to be generic.
+  // Note that the underlying map will actually make the key const, but that
+  // constness has to preserved in the label argument. Otherwise, we can end
+  // up with situations where a visitor over a const graph tries to call into
+  // a non-const label. That is a compiler error.
+  unordered_map<Const_Vertex, basic_color_t> cm;
+  auto color = [&](Const_Vertex v) -> basic_color_t& { return cm[v]; };
 
-// FIXME: This has nothing to do with BFS. It's more of a conceptual assertion
-// that -1 + 1 == 0, even for unsigned integers (i.e., -1 being the same
-// as numeric_limits<Int>::max.
-template<typename Int>
-void test_int()
-{
-  Int x{-1};
-  ++x;
-  assert(( x == 0 ));
+  // Check search instantiations
+  breadth_first_search(g, u, vis); 
+  breadth_first_search(g, u, vis, color);
+  breadth_first_search(cg, cu, vis);
+  breadth_first_search(cg, cu, vis, color);
+
+  // Check traversal instantiations
+  breadth_first_traverse(g, vis);
+  breadth_first_traverse(cg, vis);
+  breadth_first_traverse(g, vis, color);
+  breadth_first_traverse(cg, vis, color);
+  
+  // Check bfs range implementations.
+  for(auto x : bfs(g, u)) ;
+  // for(auto x : bfs(cg, cu)) ;
+  
+  auto&& x = bfs(cg, cu);
+  cout << typestr<decltype(x)>() << "\n";
+  // auto x = bfs(cg, cu);
 }
 
 int main()
 {
   test<directed_adjacency_list<>>();
-  test<undirected_adjacency_list<>>();
+  // test<undirected_adjacency_list<>>();
 
+  // Test a case where the graph owns its own coloring. 
   {
     typedef directed_adjacency_list<basic_color_t> Graph;
     typedef bfs_visitor Visitor;
@@ -53,9 +79,14 @@ int main()
     auto v = g.add_vertex();
     g.add_edge(u, v);
 
+    // Note that the label here is *needs* non-const label arguments. Otherwise,
+    // we might might end up trying to return a const reference to the stored
+    // color property, which will result in a compiler error. Futhermore, note
+    // that if the graph owns its own label, then you can't instantiate the
+    // algorithm over a const value.
     Visitor vis;
     auto color = [&g](Graph::vertex v) -> basic_color_t& { return g[v]; };
-    breadth_first_search_from(g, v, vis, color);
+    breadth_first_search(g, v, vis, color);
   }
 
 
@@ -77,9 +108,10 @@ int main()
     Visitor vis;
     unordered_map<Graph::const_vertex, basic_color_t> colors;
     auto color = [&colors](Graph::const_vertex v) -> basic_color_t& { return colors[v]; };
-    breadth_first_search_from(cg, v, vis, color);
+    breadth_first_search(cg, v, vis, color);
   }
   
+  /*
   {
     typedef undirected_adjacency_list<char> Graph;
     typedef bfs_visitor Visitor;
@@ -89,7 +121,7 @@ int main()
     auto v = g.add_vertex('b');
     g.add_edge(u, v);
     
-    for(auto x : bfs_from(g, v)) {
+    for(auto x : bfs(g, v)) {
       cout << g[x] << "\n";
     }
     
@@ -97,17 +129,5 @@ int main()
       cout << g[x] << "\n";
     }
   }
-  
-  // FIXME: This is a concept check.  Move it somewhere more appropriate.
-  {
-    test_int<char>();
-    test_int<signed char>();
-    test_int<unsigned char>();
-    test_int<short>();
-    test_int<unsigned short>();
-    test_int<int>();
-    test_int<unsigned int>();
-    test_int<long>();
-    test_int<unsigned long>();
-  }
+  */
 }
