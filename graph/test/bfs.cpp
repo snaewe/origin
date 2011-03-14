@@ -15,7 +15,7 @@ using namespace std;
 using namespace origin;
 
 template<typename Graph>
-void test() 
+void test()
 {
   typedef typename Graph::vertex Vertex;
   typedef typename Graph::const_vertex Const_Vertex;
@@ -27,13 +27,13 @@ void test()
   auto u = g.add_vertex();
   auto v = g.add_vertex();
   g.add_edge(u, v);
-  
+
   // Get some const objects for const instantiations.
   Graph const& cg = g;
-  Vertex const& cu = u;
+  Const_Vertex cu = u;
 
   Visitor vis;
-  
+
   // Build a custom color map for various instantiations.
   // I think that keys in these maps HAVE to be const in order to be generic.
   // Note that the underlying map will actually make the key const, but that
@@ -44,7 +44,7 @@ void test()
   auto color = [&](Const_Vertex v) -> basic_color_t& { return cm[v]; };
 
   // Check search instantiations
-  breadth_first_search(g, u, vis); 
+  breadth_first_search(g, u, vis);
   breadth_first_search(g, u, vis, color);
   breadth_first_search(cg, cu, vis);
   breadth_first_search(cg, cu, vis, color);
@@ -54,14 +54,18 @@ void test()
   breadth_first_traverse(cg, vis);
   breadth_first_traverse(g, vis, color);
   breadth_first_traverse(cg, vis, color);
-  
+
   // Check bfs range implementations.
+  // FIXME: Add visitor-specific instantiations.
   for(auto x : bfs(g, u)) ;
-  // for(auto x : bfs(cg, cu)) ;
-  
-  auto&& x = bfs(cg, cu);
-  cout << typestr<decltype(x)>() << "\n";
-  // auto x = bfs(cg, cu);
+  for(auto x : bfs(g, u, color));
+  for(auto x : bfs(cg, cu)) ;
+  for(auto x : bfs(cg, cu, color));
+
+  for(auto x : bfs(g));
+  for(auto x : bfs(cg));
+  for(auto x : bfs(g, color));
+  for(auto x : bfs(cg, color));
 }
 
 int main()
@@ -69,7 +73,7 @@ int main()
   test<directed_adjacency_list<>>();
   // test<undirected_adjacency_list<>>();
 
-  // Test a case where the graph owns its own coloring. 
+  // Test a case where the graph owns its own coloring.
   {
     typedef directed_adjacency_list<basic_color_t> Graph;
     typedef bfs_visitor Visitor;
@@ -110,7 +114,7 @@ int main()
     auto color = [&colors](Graph::const_vertex v) -> basic_color_t& { return colors[v]; };
     breadth_first_search(cg, v, vis, color);
   }
-  
+
   /*
   {
     typedef undirected_adjacency_list<char> Graph;
@@ -120,11 +124,11 @@ int main()
     auto u = g.add_vertex('a');
     auto v = g.add_vertex('b');
     g.add_edge(u, v);
-    
+
     for(auto x : bfs(g, v)) {
       cout << g[x] << "\n";
     }
-    
+
     for(auto x : bfs(g)) {
       cout << g[x] << "\n";
     }
