@@ -11,6 +11,7 @@
 #include <origin/utility/meta.hpp>
 #include <origin/traits.hpp>
 #include <origin/logic.hpp>
+#include <origin/concepts/fwd.hpp>
 
 namespace origin
 {
@@ -127,6 +128,28 @@ namespace origin
 
   /**
    * @ingroup concepts
+   * Determine if the type T can be constructed over the given argument types.
+   */
+  template<typename T, typename... Args>
+  struct Constructible
+  {
+    Constructible()
+    { auto p = constraints; }
+
+    static void constraints(Args&&... args)
+    {
+      T{std::forward<Args>(args)...};
+    }
+
+    typedef std::tuple<
+      is_constructible<T, Args...>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @ingroup concepts
    * The assignable concept determines whether an object of type U can be
    * assigned to an object of type T.
    */
@@ -145,8 +168,6 @@ namespace origin
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
-
-
 
 } // namespace origin
 

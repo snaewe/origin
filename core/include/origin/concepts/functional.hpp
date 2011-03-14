@@ -12,8 +12,6 @@
 
 #include <origin/concepts/impl.hpp>
 
-// FIXME: This module is fundamentally broken and need to be rewritten.
-
 namespace origin
 {
   /**

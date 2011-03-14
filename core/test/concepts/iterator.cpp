@@ -11,14 +11,17 @@
 
 #include <origin/utility/typestr.hpp>
 #include <origin/concepts.hpp>
+#include <origin/iterator/concepts.hpp>
 
 #include "check.hpp"
 
 using namespace std;
 using namespace origin;
 
-
 int main()
 {
-
+    check<Iterator<int*>>{true};
+    check<Input_Iterator<int*>>{true};
+    check<Input_Iterator<int*, long>>{true};
+    check<Forward_Iterator<int*>>{true};
 }

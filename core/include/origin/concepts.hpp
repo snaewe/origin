@@ -8,9 +8,8 @@
 #ifndef ORIGIN_CONCEPTS_HPP
 #define ORIGIN_CONCEPTS_HPP
 
-// #include <origin/concepts/functional.hpp>
-// #include <origin/concepts/algebraic.hpp>
-
+#include <origin/concepts/impl.hpp>
+#include <origin/concepts/operator.hpp>
 #include <origin/concepts/regular.hpp>
 
 #endif

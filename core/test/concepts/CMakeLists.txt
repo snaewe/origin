@@ -5,7 +5,11 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-add_executable(concepts concepts.cpp)
-# add_executable(equal equal.cpp)
+origin_executable(concepts concepts.cpp)
+origin_executable(equal equal.cpp)
+origin_executable(ordered ordered.cpp)
+
+add_test(test_ordered ordered)
+
 # add_executable(iterator iterator.cpp)
 # add_executable(proto proto.cpp)
