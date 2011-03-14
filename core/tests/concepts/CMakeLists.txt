@@ -5,11 +5,6 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_executable(concepts concepts.cpp)
-origin_executable(equal equal.cpp)
-origin_executable(ordered ordered.cpp)
-
-add_test(test_ordered ordered)
-
-# add_executable(iterator iterator.cpp)
-# add_executable(proto proto.cpp)
+origin_run_test(arithmetic arithmetic.cpp)
+origin_run_test(equal equal.cpp)
+origin_run_test(ordered ordered.cpp)

@@ -14,6 +14,307 @@ namespace origin
 {
   /**
    * @ingroup traits
+   * @name Arithmetic Operators
+   */
+  //@{
+  /**
+   * Deduce the result type of the expression x + y.
+   */
+  template<typename T, typename U>
+  struct deduce_plus
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x + y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x + y is valid for the types of x and  y.
+   */
+  template<typename T, typename U>
+  struct has_plus
+    : substitution_succeeded<typename deduce_plus<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x - y.
+   */
+  template<typename T, typename U>
+  struct deduce_minus
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x - y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x - y is valid for the types of x and  y.
+   */
+  template<typename T, typename U>
+  struct has_minus
+    : substitution_succeeded<typename deduce_minus<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x * y.
+   */
+  template<typename T, typename U>
+  struct deduce_multiplies
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x * y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x * y is valid for the types of x and  y.
+   */
+  template<typename T, typename U>
+  struct has_multiplies
+    : substitution_succeeded<typename deduce_multiplies<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x / y.
+   */
+  template<typename T, typename U>
+  struct deduce_divides
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x / y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x / y is valid for the types of x and  y.
+   */
+  template<typename T, typename U>
+  struct has_divides
+    : substitution_succeeded<typename deduce_divides<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x % y.
+   */
+  template<typename T, typename U>
+  struct deduce_modulus
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x % y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x % y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_modulus
+    : substitution_succeeded<typename deduce_modulus<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the unary expression +x.
+   */
+  template<typename T>
+  struct deduce_unary_plus
+  {
+  private:
+    template<typename X>
+    static auto check(X const& x) -> decltype(+x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>())) type;
+  };
+
+  /**
+   * Return true if the expression +x is valid for the types of x.
+   */
+  template<typename T>
+  struct has_unary_plus
+    : substitution_succeeded<typename deduce_unary_plus<T>::type>
+  { };
+
+  /**
+   * Deduce the result type of the unary expression -x.
+   */
+  template<typename T>
+  struct deduce_unary_minus
+  {
+  private:
+    template<typename X>
+    static auto check(X const& x) -> decltype(-x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>())) type;
+  };
+
+  /**
+   * Return true if the expression -x is valid for the types of x.
+   */
+  template<typename T>
+  struct has_unary_minus
+    : substitution_succeeded<typename deduce_unary_minus<T>::type>
+  { };
+  //@}
+
+  /**
+   * @ingroup traits
+   * @name Bitwise Operators
+   */
+  //@{
+  /**
+   * Deduce the result type of the expression x & y.
+   */
+  template<typename T, typename U>
+  struct deduce_bit_and
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x & y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x & y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_bit_and
+    : substitution_succeeded<typename deduce_bit_and<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x | y.
+   */
+  template<typename T, typename U>
+  struct deduce_bit_or
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x | y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x | y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_bit_or
+    : substitution_succeeded<typename deduce_bit_or<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x % y.^
+   */
+  template<typename T, typename U>
+  struct deduce_bit_xor
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X const& x, Y const& y) -> decltype(x ^ y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x ^ y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_bit_xor
+    : substitution_succeeded<typename deduce_bit_xor<T, U>::type>
+  { };
+
+  // NOTE: The check functions accept rvalue references so that we can match
+  // more loosely when lvalue references are required. Essentially, this is
+  // loosened so that we can write checks against I/O streams.
+  /**
+   * Deduce the result type of the expression x << y.
+   */
+  template<typename T, typename U>
+  struct deduce_left_shift
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X&& x, Y&& y) -> decltype(x << y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x << y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_left_shift
+    : substitution_succeeded<typename deduce_left_shift<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x >> y.
+   */
+  template<typename T, typename U>
+  struct deduce_right_shift
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X&& x, Y&& y) -> decltype(x >> y);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Return true if the expression x >> y is valid for the types of x and y.
+   */
+  template<typename T, typename U>
+  struct has_right_shift
+    : substitution_succeeded<typename deduce_right_shift<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the unary expression ~x.
+   */
+  template<typename T>
+  struct deduce_complement
+  {
+  private:
+    template<typename X>
+    static auto check(X const& x) -> decltype(~x);
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>())) type;
+  };
+
+  /**
+   * Return true if the expression ~x is valid for the types of x.
+   */
+  template<typename T>
+  struct has_complement
+    : substitution_succeeded<typename deduce_complement<T>::type>
+  { };
+  //@}
+
+  /**
+   * @ingroup traits
    * @name Logical Operators
    */
   //@{

@@ -14,12 +14,6 @@ using namespace origin;
 
 struct not_equal { };
 
-struct part_equal
-{
-  bool operator==(part_equal const& x) const
-  { return true; }
-};
-
 struct left_equal { };
 struct right_equal { };
 
@@ -29,15 +23,29 @@ bool operator==(left_equal const& x, right_equal const& y)
 bool operator==(right_equal const& x, left_equal const& y)
 { return true; }
 
+// Check that all default overloads work, assuming a valid order.
+template<typename T, typename U = T>
+struct Ordered_Defaults
+  : Ordered<T, U>
+{
+  Ordered_Defaults()
+  { auto p = constraints; }
+
+  static void constraints(T x, U y)
+  {
+    x == y;
+    x != y;
+    y == x;
+    y != x;
+  }
+};
 
 int main()
 {
-  // Equality tests
   check<Equal<bool>>{true};
+  check<Equal<int>>{true};
   check<Equal<string>>{true};
   check<Equal<not_equal>>{false};
-
-  check<Equal<part_equal>>{true};
 
   check<Equal<left_equal, right_equal>>{true};
   check<Equal<right_equal, left_equal>>{true};

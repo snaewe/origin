@@ -10,8 +10,407 @@
 
 #include <origin/concepts/impl.hpp>
 
+// FIXME: I'm doing this wrong. Start by searching for abstraction and THEN
+// refactoring to smaller pieces. That should either help reduce the weirdness
+// of the bitwise and logical concepts. Technically, the functional module
+// DOES require a concept for each operator.
+
 namespace origin
 {
+
+  // FIXME: I'm not sure what to do about assignability requirements. They
+  // seem to be a little bit different than just plus. Consider:
+  //
+  //    operator+=(string&, char cont*)
+  //
+  // Obviously, we can't make the operation symmetric even though we'd like
+  // to. Maybe the compound assignment operators would be more like Addable
+  // than anything else.
+
+  /**
+   * @class Plus<T, U>
+   * @class Plus<T>
+   *
+   * Determine if two types T and U can be added using operator+. The result
+   * type of the expression is unconstrained.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Plus
+  {
+    Plus()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      // FIXME: Are there ANY kinds of result types I can write here?
+      x + y;
+      y + x;
+    }
+
+    typedef std::tuple<
+      has_plus<T, U>,
+      has_plus<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Plus<T, T>
+  {
+    Plus()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    { x + y; }
+
+    typedef std::tuple<
+      has_plus<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+  //@}
+
+  //@}
+  /**
+   * @class Minus<T, U>
+   * @class Minus<T>
+   *
+   * Determine if two types T and U can be subtractied using operator-. The
+   * result type of the expression is unconstrained.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Minus
+  {
+    Minus()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      x - y;
+      y - x;
+    }
+
+    typedef std::tuple<
+      has_minus<T, U>,
+      has_minus<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Minus<T, T>
+  {
+    Minus()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    { x - y; }
+
+    typedef std::tuple<
+      has_minus<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };  //@}
+
+  /**
+   * @class Multiplies<T, U>
+   * @class Multiplies<T>
+   *
+   * Determine if two types T and U can be multiplied using operator*. The
+   * result type of the expression is unconstrained.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Multiplies
+  {
+    Multiplies()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      x * y;
+      y * x;
+    }
+
+    typedef std::tuple<
+      has_multiplies<T, U>,
+      has_multiplies<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Multiplies<T, T>
+  {
+    Multiplies()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    { x * y; }
+
+    typedef std::tuple<
+      has_multiplies<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+  //@}
+
+  /**
+   * @class Divides<T, U>
+   * @class Divides<T>
+   *
+   * Determine if two types T and U can be divided using operator/. The result
+   * type of the expression is unconstrained.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Divides
+  {
+    Divides()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      x / y;
+      y / x;
+    }
+
+    typedef std::tuple<
+      has_divides<T, U>,
+      has_divides<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Divides<T, T>
+  {
+    Divides()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    { x / y; }
+
+    typedef std::tuple<
+      has_divides<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+  //@}
+
+  /**
+   * @class Modulus<T, U>
+   * @class Modulus<T>
+   *
+   * Determine if the remainder of two types T and U can be found using
+   * operator%. The result type of the expression is unconstrained.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Modulus
+  {
+    Modulus()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      // FIXME: Are there ANY kinds of result types I can write here?
+      x % y;
+      y % x;
+    }
+
+    typedef std::tuple<
+      has_modulus<T, U>,
+      has_modulus<U, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Modulus<T, T>
+  {
+    Modulus()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    { x % y; }
+
+    typedef std::tuple<
+      has_modulus<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+  //@}
+
+  /**
+   * @class Unary_Plus<T>
+   *
+   * Determine if a type T is operable with unary operator+. The result type of
+   * this expression is unconstrained.
+   */
+  template<typename T>
+  struct Unary_Plus
+  {
+    Unary_Plus()
+    { auto p = constraints; }
+
+    static void constraints(T x)
+    { +x; }
+
+    typedef std::tuple<
+      has_unary_plus<T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @class Unary_Minus<T>
+   *
+   * Determine if a type T is operable with unary operator-. The result type of
+   * this expression is unconstrained.
+   */
+  template<typename T>
+  struct Unary_Minus
+  {
+    Unary_Minus()
+    { auto p = constraints; }
+
+    static void constraints(T x)
+    { -x; }
+
+    typedef std::tuple<
+      has_unary_minus<T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @class Bitset<T, U>
+   * @class Bitset<T>
+   *
+   * Determine if two types T and U can be operated on with operator&,
+   * operator|, and operator^. These are the so-called bitset operations.
+   */
+  //@{
+  template<typename T, typename U>
+  struct Bitset
+  {
+    Bitset()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      x & y;
+      x | y;
+      x ^ y;
+
+      y & x;
+      y | x;
+      y ^ x;
+    }
+
+    typedef std::tuple<
+      has_bit_and<T, U>,
+      has_bit_or<T, U>,
+      has_bit_xor<T, U>,
+      has_bit_and<T, U>,
+      has_bit_or<T, U>,
+      has_bit_xor<T, U>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Bitset<T, T>
+  {
+    Bitset()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    {
+      x & y;
+      x | y;
+      x ^ y;
+    }
+
+    typedef std::tuple<
+      has_bit_and<T, T>,
+      has_bit_or<T, T>,
+      has_bit_xor<T, T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+  //@}
+
+  // FIXME: Are these expressions expected to be symmetric or something else.
+  // Overloads that actually perform binary shifts require U to be integral,
+  // but maybe not the same as T. Note that I/O Streamable is NOT the same as
+  // Shift. That has very specific requirements. This is far more general.
+  /**
+   * @class Shift<T, U>
+   *
+   * Determine if an object of type T can be left- or right-shifted by an
+   * object of type U using operator<< or operator>>, respectively.
+   */
+  template<typename T, typename U>
+  struct Shift
+  {
+    Shift()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      x << y;
+      x >> y;
+    }
+
+    typedef std::tuple<
+      has_left_shift<T, U>,
+      has_right_shift<T, U>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @class Complement<T>
+   *
+   * Determine if an object of type T is operable with unary operator~.
+   */
+  template<typename T>
+  struct Complement
+  {
+    Complement()
+    { auto p = constraints; }
+
+    static void constraints(T x)
+    {
+      ~x;
+    }
+
+    typedef std::tuple<
+      has_complement<T>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
   /**
    * @class Equal<T, U>
    * @class Equal<T>
@@ -151,7 +550,7 @@ namespace origin
     Ordered()
     { auto p = constraints; }
 
-    static void constraints(T x, T y)
+    static void constraints(T x, U y)
     {
       Boolean<decltype(x < y)>{};
       Boolean<decltype(y < x)>{};
@@ -223,12 +622,12 @@ namespace origin
    * and U such that Ordered<T, U> is a valid model.
    */
   template<typename T, typename U>
-  auto operator<=(T const& x, U const& y)
+  auto operator>=(T const& x, U const& y)
     -> typename std::enable_if<Ordered<T, U>::value, decltype(!(y < x))>::type
   { return !(x < y); }
 
   template<typename T>
-  auto operator<=(T const& x, T const& y)
+  auto operator>=(T const& x, T const& y)
     -> typename std::enable_if<Ordered<T>::value, decltype(!(y < x))>::type
   { return !(y < x); }
   //@}
@@ -253,6 +652,71 @@ namespace origin
   { return implies(x < y && y < z, x == z); }
   //@}
   //@}
+
+  // FIXME: I'm fairly certain that this isn't entirely correct. Why am I
+  // trying to build these piecemeal without knowing a larger abstraction.
+  /**
+   * @ingroup concepts
+   * @class Logical<T, U>
+   *
+   * Determine if the types T and U can be operated on using the logical
+   * operators operator&& and operator||. If T and U are the same type, then
+   * the type T must also be operable on by the unary operator, operator!.
+   */
+  template<typename T, typename U>
+  struct Logical
+  {
+    Logical()
+    { auto p = constraints; }
+
+    static void constraints(T x, U y)
+    {
+      Boolean<decltype(x && y)>{};
+      Boolean<decltype(x || y)>{};
+
+      Boolean<decltype(y && x)>{};
+      Boolean<decltype(y || x)>{};
+    }
+
+    typedef std::tuple<
+      has_logical_and<T, U>,
+      Boolean<typename deduce_logical_and<T, U>::type>,
+      has_logical_or<T, U>,
+      Boolean<typename deduce_logical_or<T, U>::type>,
+      has_logical_and<U, T>,
+      Boolean<typename deduce_logical_and<U, T>::type>,
+      has_logical_or<U, T>,
+      Boolean<typename deduce_logical_or<U, T>::type>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
+  template<typename T>
+  struct Logical<T, T>
+  {
+    Logical()
+    { auto p = constraints; }
+
+    static void constraints(T x, T y)
+    {
+      Boolean<decltype(x && y)>{};
+      Boolean<decltype(x || y)>{};
+      Boolean<decltype(!x)>{};
+    }
+
+    typedef std::tuple<
+      has_logical_and<T, T>,
+      Boolean<typename deduce_logical_and<T, T>::type>,
+      has_logical_or<T, T>,
+      Boolean<typename deduce_logical_or<T, T>::type>,
+      has_logical_not<T>,
+      Boolean<typename deduce_logical_not<T>::type>
+    > requirements;
+    typedef concept_check<requirements> type;
+    static constexpr bool value = type::value;
+  };
+
 
 
 } // namespace origin
