@@ -13,6 +13,11 @@
 
 namespace origin
 {
+  // FIXME: Write a coloring visitor that invokes a callback when a vertex
+  // is assigned a color! Consider specialized visitors such as two-color
+  // visitors, etc. Note that this probably applies to the coloring module
+  // rahter than the search module.
+
   /**
    * @internal
    *

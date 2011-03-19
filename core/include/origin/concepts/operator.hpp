@@ -10,11 +10,6 @@
 
 #include <origin/concepts/impl.hpp>
 
-// FIXME: I'm doing this wrong. Start by searching for abstraction and THEN
-// refactoring to smaller pieces. That should either help reduce the weirdness
-// of the bitwise and logical concepts. Technically, the functional module
-// DOES require a concept for each operator.
-
 namespace origin
 {
 
@@ -298,118 +293,6 @@ namespace origin
     static constexpr bool value = type::value;
   };
 
-  /**
-   * @class Bitset<T, U>
-   * @class Bitset<T>
-   *
-   * Determine if two types T and U can be operated on with operator&,
-   * operator|, and operator^. These are the so-called bitset operations.
-   */
-  //@{
-  template<typename T, typename U>
-  struct Bitset
-  {
-    Bitset()
-    { auto p = constraints; }
-
-    static void constraints(T x, U y)
-    {
-      x & y;
-      x | y;
-      x ^ y;
-
-      y & x;
-      y | x;
-      y ^ x;
-    }
-
-    typedef std::tuple<
-      has_bit_and<T, U>,
-      has_bit_or<T, U>,
-      has_bit_xor<T, U>,
-      has_bit_and<T, U>,
-      has_bit_or<T, U>,
-      has_bit_xor<T, U>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
-
-  template<typename T>
-  struct Bitset<T, T>
-  {
-    Bitset()
-    { auto p = constraints; }
-
-    static void constraints(T x, T y)
-    {
-      x & y;
-      x | y;
-      x ^ y;
-    }
-
-    typedef std::tuple<
-      has_bit_and<T, T>,
-      has_bit_or<T, T>,
-      has_bit_xor<T, T>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
-  //@}
-
-  // FIXME: Are these expressions expected to be symmetric or something else.
-  // Overloads that actually perform binary shifts require U to be integral,
-  // but maybe not the same as T. Note that I/O Streamable is NOT the same as
-  // Shift. That has very specific requirements. This is far more general.
-  /**
-   * @class Shift<T, U>
-   *
-   * Determine if an object of type T can be left- or right-shifted by an
-   * object of type U using operator<< or operator>>, respectively.
-   */
-  template<typename T, typename U>
-  struct Shift
-  {
-    Shift()
-    { auto p = constraints; }
-
-    static void constraints(T x, U y)
-    {
-      x << y;
-      x >> y;
-    }
-
-    typedef std::tuple<
-      has_left_shift<T, U>,
-      has_right_shift<T, U>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
-
-  /**
-   * @class Complement<T>
-   *
-   * Determine if an object of type T is operable with unary operator~.
-   */
-  template<typename T>
-  struct Complement
-  {
-    Complement()
-    { auto p = constraints; }
-
-    static void constraints(T x)
-    {
-      ~x;
-    }
-
-    typedef std::tuple<
-      has_complement<T>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
 
   /**
    * @class Equal<T, U>
@@ -653,8 +536,10 @@ namespace origin
   //@}
   //@}
 
-  // FIXME: I'm fairly certain that this isn't entirely correct. Why am I
-  // trying to build these piecemeal without knowing a larger abstraction.
+  // FIXME: The logical concept seems a little half-baked since it has different
+  // syntactic requirements depending on whether or not the two types are the
+  // the same. This seems like its more of a convenience than a legitimate
+  // requirement, but maybe it's right.
   /**
    * @ingroup concepts
    * @class Logical<T, U>
@@ -662,6 +547,10 @@ namespace origin
    * Determine if the types T and U can be operated on using the logical
    * operators operator&& and operator||. If T and U are the same type, then
    * the type T must also be operable on by the unary operator, operator!.
+   *
+   * @note Boost.Tribool overloads operator&& and operator|| ways that would
+   * support this usage. Logical<tribool> and Logical<tribool, bool> are both
+   * models (as are Equal<tribool> and Equal<tribool, bool>.
    */
   template<typename T, typename U>
   struct Logical
@@ -716,8 +605,6 @@ namespace origin
     typedef concept_check<requirements> type;
     static constexpr bool value = type::value;
   };
-
-
 
 } // namespace origin
 

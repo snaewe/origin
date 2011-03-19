@@ -11,6 +11,7 @@
 #include <functional>
 
 #include <origin/iterator/facades.hpp>
+#include <origin/range/support.hpp>
 #include <origin/graph/traits.hpp>
 
 namespace origin
@@ -27,7 +28,7 @@ namespace origin
     edge_t()
       : value(-1)
     { }
-    
+
     edge_t(std::size_t x)
       : value(x)
     { }
@@ -46,7 +47,7 @@ namespace origin
 } // namespace origin
 
 // Support std::hash interoperability.
-namespace std 
+namespace std
 {
   template<>
   struct hash<origin::edge_t>
@@ -84,34 +85,36 @@ namespace origin
 
     reference dereference() const
     { return edge_; }
-    
+
     bool equal(edge_iterator iter) const
     { return edge_.value == iter.edge_.value; }
-    
+
     bool less(edge_iterator iter) const
     { return edge_.value < iter.edge_.value; }
 
     void increment()
     { ++edge_.value; }
-    
+
     void decrement()
     { --edge_.value; }
-    
+
     void advance(difference_type n)
     { edge_.value += n; }
-    
+
     difference_type distance(edge_iterator iter)
     { return iter.edge_.value - edge_.value ; }
-    
+
   private:
     edge_t edge_;
   };
 
+  // FIXME: The following functions do not belong in this file. I'm not
+  // quite sure where they go, but it's not here.
 
   // NOTE: We could *amlost* get the directed/undirected selection to work
   // without enable_if if undirected graphs don't derive from directed graphs.
   // Unfortunately, access violations don't count as SFINAE errors.
-  
+
   // NOTE: If a graph is somehow both directed and undirected, then we're going
   // to have ambiguity problems.
 
@@ -128,7 +131,7 @@ namespace origin
     is_directed_graph<Graph>::value,
     typename Graph::out_edge_range
   >::type
-  out_edges(Graph& g, typename Graph::vertex v) 
+  out_edges(Graph& g, typename Graph::vertex v)
   { return g.out_edges(v); }
 
   template<typename Graph>
@@ -136,7 +139,7 @@ namespace origin
     is_directed_graph<Graph>::value,
     typename Graph::const_out_edge_range
   >::type
-  out_edges(Graph const& g, typename Graph::const_vertex v) 
+  out_edges(Graph const& g, typename Graph::const_vertex v)
   { return g.out_edges(v); }
 
   // Specializations for undirected graphs
@@ -145,7 +148,7 @@ namespace origin
     is_undirected_graph<Graph>::value,
     typename Graph::incident_edge_range
   >::type
-  out_edges(Graph& g, typename Graph::vertex v) 
+  out_edges(Graph& g, typename Graph::vertex v)
   { return g.incident_edges(v); }
 
   template<typename Graph>
@@ -153,10 +156,28 @@ namespace origin
     is_undirected_graph<Graph>::value,
     typename Graph::const_incident_edge_range
   >::type
-  out_edges(Graph const& g, typename Graph::const_vertex v) 
+  out_edges(Graph const& g, typename Graph::const_vertex v)
   { return g.incident_edges(v); }
   //@}
-  
+
+  // FIXME: This is pretty hinky. It works, but I'm not terribly proud of it.
+  /**
+   * The range traits class provides a mechanism for accessing the results of
+   * the out_edges function.
+   */
+  template<typename Graph>
+  struct outward_graph_traits
+  {
+    typedef Graph graph_type;
+    typedef typename graph_traits<Graph>::vertex vertex;
+    typedef typename graph_traits<Graph>::edge edge;
+
+    typedef decltype(
+      out_edges(std::declval<Graph&>(), std::declval<vertex>())
+    ) range;
+    typedef typename range_traits<range>::iterator iterator;
+  };
+
   /**
    * Return the opposite end of the given edge.
    */

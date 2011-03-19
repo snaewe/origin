@@ -8,6 +8,7 @@
 #ifndef ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_RANGE_HPP
 #define ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_RANGE_HPP
 
+#include <origin/iterator/facades.hpp>
 #include <origin/graph/algorithm/search/breadth_first_common.hpp>
 
 namespace origin

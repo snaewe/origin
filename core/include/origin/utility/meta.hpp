@@ -14,10 +14,28 @@ namespace origin
 {
   /**
    * @defgroup meta Metaprogramming Support
+   *
    * The metaprogramming module contains a number of metafunctions, constants,
    * and type traits that complement the suite of type traits and
    * metaprogramming utilities provided in the C++ standard.
    */
+
+  /**
+   * @ingroup meta
+   *
+   * The default_t type is a tag class used to indicate the selection of a
+   * default value. This is only used to support class template specialization.
+   */
+  struct default_t { };
+
+  /**
+   * @ingroup meta
+   *
+   * The unspecified_t type is a tag class used to indicate that an argument
+   * for a template parameter has not been specified.
+   */
+  struct uspecified_t { };
+
 
   /**
    * @ingroup meta
@@ -64,27 +82,7 @@ namespace origin
     : bool_constant<!std::is_same<T, U>::value>
   { };
 
-  /**
-   * @ingroup meta
-   * This trait returns true if all of the argument types are the same type.
-   */
-  template<typename... Args> struct are_same;
 
-  // For a single type, this is trivially true.
-  template<typename T> struct are_same<T> : std::true_type { };
-
-  // The recursive implementation is true if is_same<T, head_type<Args...>>
-  // and are_same<Args...> Otherwise, this is false.
-  // FIXME: Does && properly short-circuit the instantiation, or do I need to
-  // use std::conditional to make sure thta it's done correctly. How do you
-  // test this?
-  template<typename T, typename... Args>
-  struct are_same<T, Args...>
-    : bool_constant<
-           std::is_same<T, typename front_type<Args...>::type>::value
-        && are_same<Args...>::value
-      >
-  { };
 
   /**
    * @defgroup sfinae

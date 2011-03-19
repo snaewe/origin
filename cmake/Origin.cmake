@@ -8,35 +8,35 @@
 # Note that this is only ever included once. It prevents multiple inclusions
 # and checks when building from the top-level.
 if(NOT ORIGIN_INCLUDED)
-    set(ORIGIN_INCLUDED TRUE)
+  set(ORIGIN_INCLUDED TRUE)
 
-    # The ORIGIN_CMAKE_DIR is the path to the directory containing the Origin
-    # CMake build extensions.
-    get_filename_component(ORIGIN_CMAKE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+  # The ORIGIN_CMAKE_DIR is the path to the directory containing the Origin
+  # CMake build extensions.
+  get_filename_component(ORIGIN_CMAKE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-    # Define ORIGIN_ROOT as either the current build, or the user has specified
-    # an alternative in the environemnt. This variable is used in various
-    # macros to affect the build environment.
-    set(root $ENV{ORIGIN_ROOT})
-    if(root)
-        set(ORIGIN_ROOT ${root})
-    else()
-        set(ORIGIN_ROOT ${CMAKE_SOURCE_DIR})
-    endif()
+  # Define ORIGIN_ROOT as either the current build, or the user has specified
+  # an alternative in the environemnt. This variable is used in various
+  # macros to affect the build environment.
+  set(root $ENV{ORIGIN_ROOT})
+  if(root)
+      set(ORIGIN_ROOT ${root})
+  else()
+      set(ORIGIN_ROOT ${CMAKE_SOURCE_DIR})
+  endif()
 
-    # This file contains all of the build macros necessary to build, test, and
-    # install Origin libraries. Note that much of this is actually based on the
-    # Boost.CMake environment.
+  # This file contains all of the build macros necessary to build, test, and
+  # install Origin libraries. Note that much of this is actually based on the
+  # Boost.CMake environment.
 
-    # Include Origin-specific macros.
-    include(BoostUtils)
-    include(OriginVersion)
-    include(OriginConfig)
-    include(OriginProject)
-    include(OriginDepend)
-    include(OriginExecutable)
-    include(OriginTest)
-    include(OriginDocument)
-    include(OriginInstall)
-    include(OriginPackage)
+  # Include Origin-specific macros.
+  include(BoostUtils)
+  include(OriginVersion)
+  include(OriginConfig)
+  include(OriginProject)
+  include(OriginDepend)
+  include(OriginExecutable)
+  include(OriginTest)
+  include(OriginDocument)
+  include(OriginInstall)
+  include(OriginPackage)
 endif()

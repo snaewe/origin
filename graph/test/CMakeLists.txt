@@ -7,12 +7,12 @@
 
 origin_executable(graph graph.cpp)
 
-# Scratch Work. This will not be integrated into the library
-
 origin_executable(adjacency_matrix adjacency_matrix.cpp)
 origin_executable(adjacency_vector adjacency_vector.cpp)
-origin_executable(bfs bfs.cpp)
 
-origin_executable(bipartite bipartite.cpp)
+origin_run_test(bfs bfs.cpp)
+origin_run_test(dfs dfs.cpp)
+origin_run_test(dfs_check dfs_check.cpp)
+origin_run_test(bipartite bipartite.cpp)
 
 add_subdirectory(io)

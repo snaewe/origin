@@ -11,6 +11,8 @@
 #include <origin/utility/meta.hpp>
 #include <origin/iterator/facades.hpp>
 
+// FIXME: Rename this file to "traits.hpp"
+
 namespace origin
 {
   /**
