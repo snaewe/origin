@@ -18,64 +18,40 @@
 namespace origin
 {
   /**
-   * @internal
-   * A placeholder type that is used to indicate that the use of an internal
-   * label.
+   * The label traits class provides access to the result type of the label
+   * function and its associated value type. The value type is typically the
+   * result type with any reference qualifier removed.
+   *
+   * @tparam Label    A function moeling Callable<Label, Arg>
+   * @tparam Arg      A graph vertex or edge handle
    */
-  template<typename Graph, typename Value>
-  struct internal_label { };
-  
-  // FIXME: I really dislike the name of this type. It's not a property. It
-  // wraps a lapel, possibly adding data to it.
+  template<typename Label, typename Arg>
+  struct label_traits
+  {
+    typedef typename std::result_of<Label(Arg)>::type result_type;
+    typedef typename std::remove_reference<result_type>::type value_type;
+  };
+
 
   /**
-   * The vertex property class provides a uniform interface for internally
-   * and externally defined labels. For labels that refer to data stored
-   * externally, this class simply wraps the label. For internal properties
-   * a specialization also declares storage for the property.
+   * The vertex map implements an association between a graph's vertices
+   * and some value type. A label function, accessible via the label member
+   * variable, provides access to the map.
    *
-   * The label, the actual data accessor, is available via a member variable
-   * named label.
+   * Note that vertex maps are not copyable.
+   *
+   * @tparam Graph    A Graph type
+   * @tparam Value    An Object type
    */
-  template<typename Graph, typename Label>
-  struct vertex_property
-  {
-    typedef Label label_type;
-  
-    // FIXME: This should be the same as decay<T>, I think. Basically, we're
-    // just getting the value type with cv-qualifiers removed. Also note that
-    // we're explicitly generating the result type over the non-const vertex
-    // type. The const and non-const result types should only vary by a const
-    // and maybe a reference, both of which are removed here.
-    typedef typename std::remove_reference<
-      typename std::remove_const<
-        typename std::result_of<label_type(typename Graph::vertex)>::type
-      >::type
-    >::type value_type;
-  
-    // Explicitly suppress copy construction. This vertex need to be wrapped
-    // with a functor for use as a real label.
-    vertex_property(vertex_property const&) = delete;
-    vertex_property& operator=(vertex_property const&) = delete;
-  
-    vertex_property(Label l)
-      : label(l)
-    { }
-    
-    label_type label;
-  };
-  
-  // Specialization over internal labels. This actually owns the data that
-  // the label references.
   template<typename Graph, typename Value>
-  struct vertex_property<Graph, internal_label<Graph, Value>>
+  struct vertex_map
   {
     typedef typename graph_traits<Graph>::vertex vertex;
     typedef Value value_type;
     typedef Value& reference;
     typedef Value const& const_reference;
-    
-    // FIXME: Select an optional mapping type based on the graph kind. 
+
+    // FIXME: Select an optimal mapping type based on the graph kind.
     typedef std::unordered_map<vertex, value_type> mapping_type;
 
     // The label is a function object that abstracts access to the data.
@@ -84,26 +60,25 @@ namespace origin
       label_type(mapping_type& map)
         : map(map)
       { }
-      
+
       reference operator()(vertex v)
       { return map[v]; }
-      
+
       const_reference operator()(vertex v) const
       { return map[v]; }
-      
+
       mapping_type& map;
     };
 
-    
     // Explicitly suppress copy construction. This vertex need to be wrapped
     // with a functor for use as a real label.
-    vertex_property(vertex_property const&) = delete;
-    vertex_property& operator=(vertex_property const&) = delete;
-    
-    vertex_property(Graph const& g)
+    vertex_map(vertex_map const&) = delete;
+    vertex_map& operator=(vertex_map const&) = delete;
+
+    vertex_map(Graph const& g)
       : data(g.order()), label(data)
     { }
-    
+
     mapping_type data;
     label_type label;
   };

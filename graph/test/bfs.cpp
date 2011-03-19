@@ -56,7 +56,6 @@ void test()
   breadth_first_traverse(cg, vis, color);
 
   // Check bfs range implementations.
-  // FIXME: Add visitor-specific instantiations.
   for(auto x : bfs(g, u)) ;
   for(auto x : bfs(g, u, color));
   for(auto x : bfs(cg, cu)) ;
@@ -89,7 +88,9 @@ int main()
     // that if the graph owns its own label, then you can't instantiate the
     // algorithm over a const value.
     Visitor vis;
-    auto color = [&g](Graph::vertex v) -> basic_color_t& { return g[v]; };
+    auto color = [&g](Graph::vertex v) -> basic_color_t& {
+      return g[v];
+    };
     breadth_first_search(g, v, vis, color);
   }
 

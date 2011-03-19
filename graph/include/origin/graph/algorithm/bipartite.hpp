@@ -14,25 +14,23 @@
 namespace origin
 {
   /**
-   * The is-bipartite algoirthm object determines if a graph is bipartite, 
-   * i.e., that it can be colored with two colors.
+   * @internal
    *
-   * @tparam Graph A graph type
-   * @tparam Color_Label A Read_Write_Label mapping vertices to a Color type.
-   *         This defaults to an internal label mapping vertices to bool 
-   *         values.
+   * Implementation of the is_bipartite algorithm.
+   *
+   * @tparam Graph        An Outward_Graph type
+   * @tparam Color_Label  A Vertex_Label associating vertices with a Two_Color,
+   *                      minimally. Higher-valued color values may also be
+   *                      used.
    */
-  template<typename Graph, 
-           typename Color_Label = internal_label<Graph, bool>>
-  struct is_bipartite_algo
+  template<typename Graph, typename Color_Label>
+  struct is_bipartite_impl
   {
     typedef Graph graph_type;
+    typedef Color_Label color_label;
 
-    typedef vertex_property<Graph, Color_Label> color_property;
-    typedef typename color_property::label_type color_label;
+    typedef two_color_visitor<graph_type, color_label> visitor_type;
 
-    typedef two_color_visitor<Graph, color_label> visitor_type;
-    
     // FIXME: The BFS uses the default color label for its internal state.
     // Is there any graceful way to override this? Yes... another color
     // label parameter at the top-level. This is actually quite easy to
@@ -44,19 +42,13 @@ namespace origin
     //
     // FIXME: Would it be worthwhile to parameterize the search over the
     // the traversal?
-    typedef bf_traversal_algo<graph_type, visitor_type> bfs_type;
-  
-    // Construct the algorithm with a default two-color label.
-    is_bipartite_algo(Graph& g)
-      : color(g), visitor(color.label), bfs(g, visitor)
-    { }
-  
-    // Construct the algorithm with a custom two-color label.
-    is_bipartite_algo(Graph& g, Color_Label label)
-      : color(label), visitor(color.label), bfs(g, visitor)
+    typedef bft_algo<graph_type, visitor_type> search_type;
+
+    is_bipartite_impl(Graph& g, Color_Label label)
+      : visitor(label), bfs(g, visitor)
     { }
 
-    bool operator()()
+    bool run()
     {
       try {
         bfs();
@@ -65,17 +57,76 @@ namespace origin
       }
       return true;
     }
-    
-    color_property color;
+
     visitor_type visitor;
-    bfs_type bfs;
+    search_type bfs;
   };
-  
 
   /**
-   * @function is_biparite(g)
+   * @ingroup graph_algo
+   *
+   * The is_bipartite algoirthm object determines if a graph is bipartite. A
+   * bipartite graph can be colored using only two colors. Note that any graph
+   * containing an odd cycle is not a biparatite graph.
+   *
+   * @tparam Graph        An Outward_Graph type
+   * @tparam Color_Label  A Vertex_Label associating vertices with a Two_Color
+   */
+  //@{
+  template<typename Graph, typename Color_Label = default_t>
+  struct is_bipartite_algo
+  {
+    typedef Graph graph_type;
+    typedef Color_Label color_label;
+
+    typedef is_bipartite_impl<graph_type, color_label> impl_type;
+
+    // Construct the algorithm with a custom two-color label.
+    is_bipartite_algo(Graph& g, Color_Label label)
+      : impl(g, label)
+    { }
+
+    bool operator()()
+    { return impl.run(); }
+
+    impl_type impl;
+  };
+
+  // Specialization for a default color map.
+  template<typename Graph>
+  struct is_bipartite_algo<Graph, default_t>
+  {
+    typedef Graph graph_type;
+    typedef vertex_map<Graph, bool> color_map;
+    typedef typename color_map::label_type color_label;
+
+    typedef is_bipartite_impl<graph_type, color_label> impl_type;
+
+    // Construct the algorithm with a custom two-color label.
+    is_bipartite_algo(Graph& g)
+      : colors(g), impl(g, colors.label)
+    { }
+
+    bool operator()()
+    { return impl.run(); }
+
+    color_map colors;
+    impl_type impl;
+  };
+  //@}
+
+  /**
+   * @fn is_biparite(g)
+   * @fn is_biparite(g, color)
    *
    * Return true if the graph is bipartite.
+   *
+   * @tparam Graph        An Outward_Graph type
+   * @tparam Color_Label  If present, a Vertex_Label associating vertices with
+   *                      a Two_Color (minimally).
+   *
+   * @param g       A Graph object
+   * @param color   If specified, a Color_Label
    */
   //@{
   template<typename Graph>
@@ -84,7 +135,7 @@ namespace origin
     is_bipartite_algo<Graph> algo(g);
     return algo();
   }
-  
+
   template<typename Graph>
   bool is_bipartite(Graph const& g)
   {
@@ -123,12 +174,12 @@ namespace origin
   //
   //    is_bipartite_algo<Graph> algo(g);
   //    algo();
-  //    ... algo.color(v) 
+  //    ... algo.color(v)
   //
   // The color member of the algorithm object is a label that desribes the
-  // two-coloring. 
+  // two-coloring.
   //
-  // Interestingly, the algo.color is also effectively a Predicate on the 
+  // Interestingly, the algo.color is also effectively a Predicate on the
   // vertices of g that classifies them into the bipartite sets described by
   // the graph.
 
@@ -136,7 +187,7 @@ namespace origin
   // HOWTO: How do I access the color labels of the underlying breadth-first
   // search used by the is_bipartite algorithm?
   //
-  // The breadth-first search used by the is_bipartite algorithm object is 
+  // The breadth-first search used by the is_bipartite algorithm object is
   // stored as a member of the is_bipartite_algo object. It can be accessed
   // in the following manner::
   //
@@ -147,17 +198,17 @@ namespace origin
   // The bfs member provides access to the underlying search object. It's
   // color member is a label that describes the states of vertices resulting
   // from the breadth first search.
-  
-  
+
+
   // HOWTO: Can I use a custom color label for the underlying breadth-first
   // search used by the is_bipartite algorith?
   //
   // FIXME: This is not currently implemented, but it shouldn't be terribly
   // difficult.
-  
-  
+
+
   // HOWTO: How do I find out which edge caused the graph to be non-bipartite?
-  // 
+  //
   // Use the two_coloring algorithm like so::
   //
   //    try {

@@ -13,6 +13,8 @@
 namespace origin
 {
   /**
+   * @ingroup graph_color
+   *
    * The two-color visitor attempts to assign a two-color assignment to each
    * vertex in a graph, as visited by a breadth- or depth-first search. If the
    * graph is not connected, then each root vertex is initially colored white.
@@ -23,7 +25,7 @@ namespace origin
     typedef Graph graph_type;
     typedef typename graph_traits<Graph>::vertex vertex;
     typedef typename graph_traits<Graph>::edge edge;
-    
+
     // FIXME: This is gross. Isn't there simpler way of getting the value
     // type from the result of a function? Maybe I should just break down and
     // write a value_type trait, if that's really what's needed. Maybe remove
@@ -33,23 +35,23 @@ namespace origin
         typename std::result_of<Color_Label(vertex)>::type
       >::type
     >::type color_value;
-    
+
     two_color_visitor(Color_Label label)
       : color(label)
     { }
-   
+
     // Color each search tree root white.
     void root_vertex(Graph& g, vertex v)
     { color(v) = color_traits<color_value>::white(); }
 
     // Color the end of each edge as the opposite color of the source.
     void tree_edge(Graph& g, edge e)
-    { 
+    {
       vertex u = g.source(e);
       vertex v = g.target(e);
       color(v) = two_color_traits<color_value>::opposite(color(u));
     }
-    
+
     // If the target of a nontree edge is colored the same as the source vertex
     // then the a two-coloring cannot be computed.
     void nontree_edge(Graph& g, edge e)
@@ -60,21 +62,22 @@ namespace origin
         throw graph_coloring_error("cannot compute two-coloring");
       }
     }
-    
+
     Color_Label color;
   };
-  
+
   // FIXME: It might be nice to have a couple of functions that return the
   // coloring. I'm not sure what this would look like, just yet, and it doesn't
   // really match the style set forth by any other algorithms.
 
   /**
-   * @function two_coloring(g, color)
+   * @ingroup graph_color
+   * @fn two_coloring(g, color)
    *
    * Compute a two-coloring of the given graph, assigning the results through
    * the given color label.
    *
-   * An exception is thrown if the graph is not two-colorable (a.k.a., 
+   * An exception is thrown if the graph is not two-colorable (a.k.a.,
    * bipartite).
    */
   //@{

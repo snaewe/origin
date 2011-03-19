@@ -13,10 +13,16 @@
 namespace origin
 {
   /**
-   * A graph coloring error is a runtime error that indicates that a requested 
+   * @defgroup graph_color
+   *
+   * Types and functions associated with assignment of colors to vertices.
+   */
+
+  /**
+   * A graph coloring error is a runtime error that indicates that a requested
    * graph coloring cannot be computed.
    */
-  class graph_coloring_error 
+  class graph_coloring_error
     : public std::runtime_error
   {
   public:
