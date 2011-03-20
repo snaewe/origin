@@ -8,6 +8,7 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_VECTOR_DIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACENCY_VECTOR_DIRECTED_HPP
 
+#include <algorithm>
 #include <vector>
 
 #include <origin/utility/empty.hpp>
@@ -20,7 +21,9 @@ namespace origin
   /** @internal */
   namespace adcacency_vector_
   {
-    // FIXME: Optimize using EBO.
+    // FIXME: Consider splitting on dependent, non-dependent features and 
+    // optimize using EBO.
+
     /**
      * The edge node for a directed adjacency list stores the source and vertex
      * indices of the graph.
@@ -30,14 +33,16 @@ namespace origin
     {
       typedef E value_type;
       
-      edge_node(value_type const& x = value_type{})
-        : value{x}
+      edge_node(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
+        : source(src), target(tgt), value{x}
       { }
 
       vertex_t source;
       vertex_t target;
       value_type value;
     };
+    
+    // FIXME: Split dependent and non-dependent features. Optimize using EBO.
     
     /**
      * The vertex node of an adjacency vector stores the out edge and in edge
@@ -133,16 +138,16 @@ namespace origin
     bool empty() const
     { return !size(); }
     
-    vertex_value_type& operator[](vertex_t v)
+    vertex_value_type& operator[](vertex v)
     { return get(v).value; }
     
-    vertex_value_type const& operator[](vertex_t v) const
+    vertex_value_type const& operator[](vertex v) const
     { return get(v).value; }
     
-    edge_value_type& operator[](edge_t e)
+    edge_value_type& operator[](edge e)
     { return get(e).value; }
     
-    edge_value_type const& operator[](edge_t e) const
+    edge_value_type const& operator[](edge e) const
     { return get(e).value; }
     
     vertex add_vertex(vertex_value_type const& x = vertex_value_type{})
@@ -170,24 +175,21 @@ namespace origin
     //@{
     edge add_edge(vertex u, vertex v, edge_value_type const& x = edge_value_type{})
     {
-      edges_.push_back(edge_type{x});
+      edges_.push_back(edge_type{u, v, x});
       edge e = edges_.size() - 1;
       get(u).add_out(e);
       get(v).add_in(e);
       return e;
     }
     
-    edge get_edge(std::size_t e)
+    edge get_edge(size_type e)
     { return e; }
     
-    const_edge get_edge(std::size_t e) const
+    const_edge get_edge(size_type e) const
     { return e; }
 
-    edge get_edge(vertex u, vertex v)
-    { return -1; }
-    
-    const_edge get_edge(vertex u, vertex v) const
-    { return -1; }
+    edge get_edge(vertex u, vertex v);    
+    const_edge get_edge(vertex u, vertex v) const;
         
     vertex source(edge e)
     { return get(e).source; }
@@ -270,6 +272,30 @@ namespace origin
     vertex_list vertices_;
     edge_list edges_;
   };
+
+  template<typename V, typename E, typename A>
+  inline auto directed_adjacency_vector<V, E, A>::get_edge(vertex u, vertex v)
+    -> edge
+  {
+    auto& out = get(u).out;
+    auto iter = find_if(out.begin(), out.end(), [v, this](edge e) { 
+      return this->target(e) == v; 
+    });
+    return iter == out.end() ? edge{} : *iter;
+  }
+
+  template<typename V, typename E, typename A>
+  inline auto 
+  directed_adjacency_vector<V, E, A>::get_edge(const_vertex u, 
+                                               const_vertex v) const
+    -> const_edge
+  {
+    auto& out = get(u).out;
+    auto iter = find_if(out.begin(), out.end(), [v, this](edge e) { 
+      return this->target(e) == v; 
+    });
+    return iter == out.end() ? edge{} : *iter;
+  }
 
 } // namespace origin
 

@@ -703,14 +703,13 @@ namespace origin {
       }
     }
 
-    /** Return the first edge (if any) connecting the vertex u to v. */
+    /** 
+     * Return the first edge (if any) connecting the vertex u to v. 
+     */
     template<typename V, typename E, typename A>
     auto
     impl<V, E, A>::get_edge(vertex_type* u, vertex_type* v) -> edge_type*
     {
-      // FIXME: It's probably more efficient to search from the vertex with
-      // the smaller degree. For example if deg(u) == 100 and deg(v) == 3,
-      // then the cost of iteration is clearly in v's favor.
       edge_base_type* e = u->out.head();
       while(e) {
         if(e->target == v) {
@@ -726,8 +725,14 @@ namespace origin {
     impl<V, E, A>::get_edge(vertex_type const* u, vertex_type const* v) const
       -> edge_type const*
     {
-      return const_cast<this_type>(this)->edge(const_cast<vertex_type*>(u),
-                                               const_cast<vertex_type*>(v));
+      edge_base_type const* e = u->out.head();
+      while(e) {
+        if(e->target == v) {
+          return cast(e);
+        }
+        e = u->out.next(e);
+      }
+      return nullptr;
     }
 
     template<typename V, typename E, typename A>

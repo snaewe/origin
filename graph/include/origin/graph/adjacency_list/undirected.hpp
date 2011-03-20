@@ -380,6 +380,8 @@ namespace origin
     // Edge access
     // Note that the resulting edge will have the source vertex rooted at the
     // vertex for which the edge was actually found.
+    // FIXME: Ths can probably be optimized by searching the vertex with the
+    // smaller degree first.
     edge get_edge(vertex u, vertex v)
     {
       auto e = base_type::get_edge(u, v);
@@ -389,7 +391,7 @@ namespace origin
     const_edge get_edge(const_vertex u, const_vertex v) const
     {
       auto e = base_type::get_edge(u, v);
-      return e ? edge{e, u} : edge{base_type::get_edge(v, u), v};
+      return e ? const_edge{e, u} : const_edge{base_type::get_edge(v, u), v};
     }
 
     vertex source(edge e)

@@ -218,7 +218,7 @@ namespace origin
     edge get_edge(vertex u, vertex v)
     { return base_type::get_edge(u, v); }
 
-    const_edge get_edge(vertex u, vertex v) const
+    const_edge get_edge(const_vertex u, const_vertex v) const
     { return base_type::get_edge(u, v); }
 
     vertex source(edge e)

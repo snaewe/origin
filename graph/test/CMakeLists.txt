@@ -10,6 +10,8 @@ origin_executable(graph graph.cpp)
 origin_executable(adjacency_matrix adjacency_matrix.cpp)
 origin_executable(adjacency_vector adjacency_vector.cpp)
 
+origin_executable(undirected undirected.cpp)
+
 origin_run_test(bfs bfs.cpp)
 origin_run_test(dfs dfs.cpp)
 origin_run_test(dfs_check dfs_check.cpp)

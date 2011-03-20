@@ -10,13 +10,19 @@
 
 #include <vector>
 
+#include <origin/utility/facades.hpp>
 #include <origin/graph/adjacency_vector/directed.hpp>
 
 namespace origin
 {
   /** @internal */
-  namespace adcacency_vector_
+  namespace adjacency_vector_
   {
+    // FIXME: The undirected edge_t has both dependent and dependent parts.
+    // Is it worth separating them? The non-dependent version can only operate
+    // on the edge and source vertices. Returning the target and comparing for
+    // equality are not possible.
+
     /**
      * An undirected edge_t is a triple consisting of a graph pointer, an edge
      * index and a vertex index. The vertex index represents the source vertex
@@ -25,36 +31,32 @@ namespace origin
      */
     template<typename Graph>
     class undirected_edge_t
-      : public implicit_bool_facade<undirected_edge_t>
+      : public implicit_bool_facade<undirected_edge_t<Graph>>
     {
     public:
-      typedef typename graph_traits<Graph>::vertex vertex;
-      typedef typename graph_traits<Graph>::edge edge;
-    
-      undirected_edge(Graph& g)
-        : graph(&g), edge(), source()
-      { }
-
-      undirected_edge(Graph& g, edge e, vertex v)
-        : graph(g), edge(e), source(v)
+      undirected_edge_t(Graph& g = nullptr, 
+                        edge_t e = edge_t{},
+                        vertex_t v = vertex_t{})
+        : graph_(g), edge_(e), source_(v)
       { }
 
       bool valid() const
       { return edge_; }
 
       // Two undirected edges are equivalent if they refer to the same edge in
-      // the same graph.
-      bool equal(undirected_edge const& x) const
-      { return graph_ == x.graph_ && edge_ == x.edge_; }
+      // the same graph. Note that the source vertex is irrelevant in this
+      // comparison.
+      bool equal(undirected_edge_t const& x) const
+      { return &graph_ == &x.graph_ && edge_ == x.edge_; }
       
-      edge get_edge() const
+      edge_t get_edge() const
       { return edge_; }
       
-      vertex source() const
-      { return _source; }
+      vertex_t source() const
+      { return source_; }
       
-      vertex target() const
-      { return opposite(graph_, edge_, source_); }
+      vertex_t target() const
+      { return opposite(graph_.base(), edge_, source_); }
 
     private:
       Graph& graph_;
@@ -62,31 +64,49 @@ namespace origin
       vertex_t source_;
     };
     
+    // FIXME: As with above, we can split the iterator into dependent and 
+    // non-dependent parts.
+    
     /**
-     * The undirected edge iterator implements an iterator 
+     * The undirected edge iterator implements a random access iterator over 
+     * undirected edges. Dereferencing an undirected edge iterator results in 
+     * an undirected edge.
+     *
+     * The iterator is constructed over a pointer to the underlying graph
+     * and an edge index into the implementation. The dereferenced edge 
+     * iterator is constructed from that data.
      */
-    class edge_iterator
-      : public random_access_iterator_facade<edge_iterator, edge_t, std::size_t>
+    template<typename Graph>
+    class undirected_edge_iterator
+      : public random_access_iterator_facade<
+          undirected_edge_iterator<Graph>, 
+          undirected_edge_t<Graph>, 
+          undirected_edge_t<Graph>, 
+          undirected_edge_t<Graph>
+        >
     {
       typedef random_access_iterator_facade<
-        edge_iterator, edge_t, std::size_t
-      > base_type;
+          undirected_edge_iterator<Graph>, 
+          undirected_edge_t<Graph>, 
+          undirected_edge_t<Graph>, 
+          undirected_edge_t<Graph>
+        > base_type;
     public:
       typedef typename base_type::reference reference;
       typedef typename base_type::difference_type difference_type;
 
-      edge_iterator(edge_t v)
-        : edge_(v)
+      undirected_edge_iterator(Graph& g, edge_t v)
+        : graph_(&g), edge_(v)
       { }
 
       reference dereference() const
-      { return edge_; }
+      { return {graph_, edge_, graph_.base().source(edge_)}; }
       
-      bool equal(edge_iterator iter) const
-      { return edge_.value == iter.edge_.value; }
+      bool equal(undirected_edge_iterator x) const
+      { return &graph_ == &x.graph_ && edge_.value == x.edge_.value; }
       
-      bool less(edge_iterator iter) const
-      { return edge_.value < iter.edge_.value; }
+      bool less(undirected_edge_iterator x) const
+      { return edge_.value < x.edge_.value; }
 
       void increment()
       { ++edge_.value; }
@@ -97,13 +117,14 @@ namespace origin
       void advance(difference_type n)
       { edge_.value += n; }
       
-      difference_type distance(edge_iterator iter)
+      difference_type distance(undirected_edge_iterator iter) const
       { return iter.edge_.value - edge_.value ; }
-      
+
     private:
-      undirected_edge_t edge_;
+      Graph& graph_;
+      edge_t edge_;
     };
-  } // namespace adjacency_vector
+  } // namespace adjacency_vector_
   
   /** 
    * The directed adjacency vector implements an Adjacency List. The vertex
@@ -114,180 +135,189 @@ namespace origin
            typename Alloc = std::allocator<Vertex>>
   class undirected_adjacency_vector
   {
+    typedef directed_adjacency_vector<Vertex, Edge, Alloc> base_type;
+    typedef undirected_adjacency_vector<Vertex, Edge, Alloc> this_type;
   public:
-    // FIXME: Clean these guys up...
     typedef Alloc allocator_type;
     typedef std::size_t size_type;
     
     typedef Vertex vertex_value_type;
     typedef Edge edge_value_type;
 
-    typedef adcacency_vector_::vertex_node<vertex_value_type> vertex_type;
-    typedef adcacency_vector_::edge_node<edge_value_type> edge_type;
-
-    typedef std::vector<vertex_type> vertex_list;
-    typedef std::vector<edge_type> edge_list;
-    
     typedef vertex_t vertex;
     typedef vertex_t const_vertex;
-    typedef edge_t edge;
-    typedef edge_t const_edge;
-    
+    typedef adjacency_vector_::undirected_edge_t<this_type> edge;
+    typedef adjacency_vector_::undirected_edge_t<this_type const> const_edge;
+  private:
+    typedef adjacency_vector_::undirected_edge_iterator<this_type> 
+      edge_iterator;
+    typedef adjacency_vector_::undirected_edge_iterator<this_type const> 
+      const_edge_iterator;
   public:
     typedef iterator_range<vertex_iterator> vertex_range;
     typedef iterator_range<vertex_iterator> const_vertex_range;
     
     typedef iterator_range<edge_iterator> edge_range;
-    typedef iterator_range<edge_iterator> const_edge_range;
+    typedef iterator_range<const_edge_iterator> const_edge_range;
     
-    typedef iterator_range<edge_iterator> out_edge_range;
-    typedef iterator_range<edge_iterator> const_out_edge_range;
-    typedef iterator_range<edge_iterator> in_edge_range;
-    typedef iterator_range<edge_iterator> const_in_edge_range;
+    // FIXME: This isn't right at all.
+    typedef iterator_range<edge_iterator> incident_edge_range;
+    typedef iterator_range<edge_iterator> const_incident_edge_range;
     
     /** @name Initialization and Assignment. */
     //@{
-    directed_adjacency_vector()
-      : vertices_(), edges_()
+    undirected_adjacency_vector()
+      : base_()
     { }
     //@}
+
+    /**
+     * Return the undirected graph as its directed implementation.     
+     */
+    base_type& base()
+    { return base_; }
+    
+    base_type const& base() const
+    { return base_; }
     
     size_type order() const
-    { return vertices_.size(); }
+    { return base_.order(); }
     
     bool null() const
-    { return !order(); }
+    { return base_.null(); }
     
     size_type size() const
-    { return edges_.size(); }
+    { return base_.size(); }
     
     bool empty() const
-    { return !size(); }
+    { return base_.empty(); }
     
-    vertex_value_type& operator[](vertex_t v)
-    { return get(v).value; }
+    vertex_value_type& operator[](vertex v)
+    { return base_[v]; }
     
-    vertex_value_type const& operator[](vertex_t v) const
-    { return get(v).value; }
+    vertex_value_type const& operator[](vertex v) const
+    { return base_[v]; }
     
-    edge_value_type& operator[](edge_t e)
-    { return get(e).value; }
+    edge_value_type& operator[](edge e)
+    { return base_[e.get_edge()]; }
     
-    edge_value_type const& operator[](edge_t e) const
-    { return get(e).value; }
+    edge_value_type const& operator[](edge e) const
+    { return base_[e.get_edge()]; }
     
     vertex add_vertex(vertex_value_type const& x = vertex_value_type{})
-    {
-      vertices_.push_back(vertex_type{x});
-      return vertices_.size() - 1;
-    }
+    { return base_.add_vertex(x); }
 
-    vertex get_vertex(std::size_t n)
-    { return n; }
+    vertex get_vertex(size_type n)
+    { 
+      assert(( n < order() ));
+      return n; 
+    }
     
-    const_vertex get_vertex(std::size_t n) const
-    { return n; }
+    const_vertex get_vertex(size_type n) const
+    { 
+      assert(( n < order() ));
+      return n; 
+    }
    
     size_type degree(const_vertex v) const
-    { return get(v).degree(); }
-
-    size_type out_degree(const_vertex v) const
-    { return get(v).out_degree(); }
-
-    size_type in_degree(const_vertex v) const
-    { return get(v).in_degree(); }    
+    { return base_.degree(v); }
       
     /** @name Edge Operations */
     //@{
     edge add_edge(vertex u, vertex v, edge_value_type const& x = edge_value_type{})
+    { return make_edge(base_.add_edge(u, v, x), u); }
+    
+    edge get_edge(size_type n)
     {
-      edges_.push_back(edge_type{x});
-      edge e = edges_.size() - 1;
-      get(u).add_out(e);
-      get(v).add_in(e);
-      return e;
+      assert(( n < size() ));
+      return make_edge(edge_t{n});
     }
     
-    edge get_edge(std::size_t e)
-    { return e; }
-    
-    const_edge get_edge(std::size_t e) const
-    { return e; }
+    const_edge get_edge(size_type n) const
+    {
+      assert(( n < size() ));
+      return make_edge(edge_t{n});
+    }
 
+    // FIXME: I think that this might be optimized by searching the vertex
+    // with the smaller degree first.
     edge get_edge(vertex u, vertex v)
-    { return -1; }
+    {
+      typename base_type::edge e = base_.get_edge(u, v);
+      return e ? make_edge(e, u) : make_edge(base_.get_edge(v, u), v);
+    }
     
     const_edge get_edge(vertex u, vertex v) const
-    { return -1; }
+    {
+      typename base_type::edge e = base_.get_edge(u, v);
+      return e ? make_edge(e, u) : make_edge(base_.get_edge(v, u), v);
+    }
         
     vertex source(edge e)
-    { return get(e).source; }
+    { return e.source(); }
     
     const_vertex source(const_edge e) const
-    { return get(e).source; }
+    { return e.source(); }
     
     vertex target(edge e)
-    { return get(e).target; }
+    { return e.target(); }
     
     const_vertex target(edge e) const
-    { return get(e).target; }
+    { return e.target(); }
     //@}
 
     /** @name Vertex and Edge Ranges */
     //@{
     vertex_range vertices()
-    { 
-      vertex_iterator f{0}, e{order()};
-      return {f, e};
-    }
+    { return base_.vertices(); }
 
     const_vertex_range vertices() const
-    { 
-      vertex_iterator f{0}, e{order()};
-      return {f, e};
-    }
+    { return base_.vertices(); }
     
     edge_range edges()
     { 
-      edge_iterator f{0}, e{size()};
-      return {f, e};
+      edge_iterator f{this, edge_t{0}}, l{this};
+      return {f, l};
     }
     
     const_edge_range edges() const
     { 
-      edge_iterator f{0}, e{size()};
-      return {f, e};
+      edge_iterator f{this, edge_t{0}}, l{this};
+      return {f, l};
     }
     
-    out_edge_range out_edges(vertex v)
-    { return {0, vertices_[v.value].out_degree()}; }
+    incident_edge_range out_edges(vertex v)
+    { return {}; }
     
-    const_out_edge_range out_edges(vertex v) const
-    { return {0, vertices_[v.value].out_degree()}; }
-    
-    in_edge_range in_edges(vertex v)
-    { return {0, vertices_[v.value].in_degree()}; }
-
-    const_in_edge_range in_edges(vertex v) const
-    { return {0, vertices_[v.value].in_degree()}; }
+    const_incident_edge_range out_edges(vertex v) const
+    { return {}; }
     //@}
 
   private:
-    vertex_type& get(vertex v)
-    { return vertices_[v.value]; }
-    
-    vertex_type const& get(const_vertex v) const
-    { return vertices_[v.value]; }
-    
-    edge_type& get(edge e)
-    { return edges_[e.value]; }
-    
-    edge_type const& get(const_edge e) const
-    { return edges_[e.value]; }
+    // Create an empty edge
+    edge make_edge()
+    { return {*this}; }
+
+    const_edge make_edge() const
+    { return {*this}; }
   
+    // Create an undirected edge over the underlying edge type. Use underlying
+    // source of the edge as the source vertex.
+    edge make_edge(edge_t e)
+    { return {*this, e, base_.source(e)}; }
+    
+    const_edge make_edge(edge_t e) const
+    { return {*this, e, base_.source(e)}; }
+    
+    // Create an undirected edge using the underlying edge and source vertex.
+    edge make_edge(edge_t e, vertex_t v)
+    { return {*this, e, v}; }
+
+    const_edge make_edge(edge_t e, vertex_t v) const
+    { return {*this, e, v}; }
+
   private:
-    vertex_list vertices_;
-    edge_list edges_;
+    base_type base_;
   };
 
 } // namespace origin
