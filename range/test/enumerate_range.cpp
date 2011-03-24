@@ -9,7 +9,6 @@
 #include <iostream>
 
 #include <origin/utility/typestr.hpp>
-#include <origin/iterator/counting_iterator.hpp>
 #include <origin/range/filter_range.hpp>
 #include <origin/range/enumerate_range.hpp>
 #include <origin/range/container_range.hpp>
@@ -49,13 +48,6 @@ int main()
       cout << x.first << "," << x.second << '-';
     }
     cout << '\n';
-  }
-
-  {
-    auto x = make_counting_iterator(0), y = make_counting_iterator(10);
-    for( ; x != y; ++x) {
-      cout << *x << "\n";
-    }
   }
 }
 

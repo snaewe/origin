@@ -5,11 +5,4 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-# FIXME: Make these real tests!
-add_executable(tuple tuple.cpp)
-add_executable(optional optional.cpp)
-
-add_subdirectory(iterator)
-
-# FIXME: Re-enable concept testing when I backport the concepts
-# add_subdirectory(concepts)
+origin_run_test(counter counter.cpp)

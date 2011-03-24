@@ -26,7 +26,7 @@ namespace origin
    * pattern (CRTP), and are parameterized over the the derived iterator type
    * and their associated types.
    *
-   * The different facade classes are used to generate the "maximal" kind of 
+   * The different facade classes are used to generate the "maximal" kind of
    * iterator being defined. For example, a filter iterator is maximally a
    * bidirectional iterator but only if the underlying iterator is also
    * bidirectional. If the underlying iterator is a forward iterator, then the
@@ -54,11 +54,11 @@ namespace origin
   /** @internal */
   namespace iterator_
   {
-    /** 
+    /**
      * Clamp the iterator tag to the given maximum value. If the given Tag is
      * convertible to Max, then return Max. Otherwise, return Tag. For
      * example, if Tag is a forward iterator tag and Max is a bidirectional
-     * iterator tag, then the result is the forward iterator tag. If 
+     * iterator tag, then the result is the forward iterator tag. If
      */
     template<typename Tag, typename Max>
     struct max_tag
@@ -72,7 +72,7 @@ namespace origin
   /**
    * @ingroup iter_facades
    * The input iterator facade aggregates a number of facades that comprise
-   * the implementation of the Intput_Iterator concept. 
+   * the implementation of the Intput_Iterator concept.
    */
   template<typename Derived,
            typename Value,
@@ -102,7 +102,7 @@ namespace origin
   /**
    * @ingroup iter_facades
    * The output iterator facade aggregates a number of facades that comprise
-   * the implementation of the Output_Iterator concept. 
+   * the implementation of the Output_Iterator concept.
    */
   template<typename Derived,
            typename Value,
@@ -124,7 +124,7 @@ namespace origin
   /**
    * @ingroup iter_facades
    * The forward iterator facade aggregates a number of facades that comprise
-   * the implementation of the Forward_Iterator concept. 
+   * the implementation of the Forward_Iterator concept.
    */
   template<typename Derived,
            typename Value,
