@@ -18,4 +18,5 @@ origin_component(
   AUTHORS
     Andrew Sutton <andrew.n.sutton -at- gmail.com>
 )
-add_subdirectory(test)
+
+add_subdirectory(tests)
