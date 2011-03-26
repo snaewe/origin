@@ -104,6 +104,14 @@ namespace origin
     typedef typename std::iterator_traits<iterator>::difference_type difference_type;
   };
 
+  // FIXME: This is probably required, but I'm not entirely sure.
+  template<typename T, std::size_t N>
+  struct range_traits<T[N]>
+  {
+    typedef T* iterator;
+    typedef std::ptrdiff_t difference_type;
+  };
+
 } // namespace origin
 
 #endif

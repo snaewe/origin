@@ -14,6 +14,12 @@
 
 namespace origin
 {
+  // FIXME: Is int really the best type for the count? It's certainly the
+  // easiest. I can actually write it so that the type of the ICE parameter
+  // is derived from count (as make_signed<Count>::type, that actually works),
+  // but I can't easily do the same for the accessor function, which is really
+  // too bad. I'm not so sure that it's really worth the effort.
+
   /**
    * @ingroup iter
    *
@@ -115,6 +121,10 @@ namespace origin
   // pos/neg to guarantee the optimal performance. Of course, this requires
   // that we actually write the pos/neg qualifier classes.
 
+  // NOTE: The step doesn't _really_ need to be signed, only if it's negative.
+  // In other words, its possible to write a count with an unsigned step and
+  // then give it a negative value.
+
   /**
    * @ingroup iter
    *
@@ -180,7 +190,7 @@ namespace origin
       if(step_ > 0) {
         return (count_ - x.count_) / step_;
       } else {
-        return (x.count_ - count_) / step_;
+        return (x.count_ - count_) / -step_;
       }
     }
 

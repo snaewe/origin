@@ -6,9 +6,7 @@
 // and conditions.
 
 #include <cassert>
-#include <iostream>
 
-#include <origin/utility/typestr.hpp>
 #include <origin/iterator/counter.hpp>
 
 using namespace std;

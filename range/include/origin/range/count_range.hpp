@@ -38,8 +38,12 @@ namespace origin
   public:
     typedef counter<Count, Step> iterator;
 
+    count_range(Count f)
+      : first_{0}, last_{f}
+    { adjust(pos_type{}); }
+
     count_range(Count f, Count l)
-      : first_(initial(f, l)), last_(final(f, l))
+      : first_{f}, last_{final(f, l, pos_type{})}
     { }
 
     iterator begin() const
@@ -49,39 +53,42 @@ namespace origin
     { return last_; }
 
   private:
-    // Compute the actual first iterator. If the last iterator is not reachable
-    // from the first, then set the initial iterator to the final iterator,
-    // creating an empty range.
-    static Count initial(Count f, Count l)
-    { return initial(f, l, pos_type{}); }
-
-    static Count initial(Count f, Count l, std::true_type)
-    { return f < l ? f : final(f, l); }
-
-    static Count initial(Count f, Count l, std::false_type)
-    { return f > l ? f : final(f, l); }
-
-
     // Compute the actual last iterator. The final iterator is adjusted so that
     // that a running iterator will land exactly on the final ending iterator.
     // The number of iterations (per step) is guaranteed to be the same. Note
     // that these counts are adjusted for negative counters.
-    static Count final(Count f, Count l)
-    { return final(f, l, pos_type{}); }
-
+    //
+    // If last is not reachable from first, then first as the final count value,
+    // producing an empty range.
     static Count final(Count f, Count l, std::true_type)
-    { return f + (1 + (l - 1 - f) / Step) * Step; }
+    {
+      if(f > l)
+        return f;
+      else
+        return f + (1 + (l - 1 - f) / Step) * Step;
+    }
 
     static Count final(Count f, Count l, std::false_type)
-    { return f + (1 + (f - 1 - l) / -Step) * Step; }
+    {
+      if(f < l)
+        return f;
+      else
+        return f + (1 + (f - 1 - l) / -Step) * Step;
+    }
 
-    // Check the relative order of the f and l counts. The invariant depends
-    // on whether Step is > 0 or not.
-    static void check(Count f, Count l, std::true_type)
-    { assert(( f <= l )); }
+    // Adjust the initialized last value according to the step and its sign.
+    // This supports partially initialized ranges. For positive sign, we
+    // simply compute the final value.
+    void adjust(std::true_type)
+    { last_ = final(first_, last_, pos_type{}); }
 
-    static void check(Count f, Count l, std::false_type)
-    { assert(( f >= l )); }
+    // For negative sign, swap first and last (so that 0 becomes the last
+    // value) and then readjust the final count value.
+    void adjust(std::false_type)
+    {
+      std::swap(first_, last_);
+      last_ = final(first_, last_, pos_type{});
+    }
 
   private:
     Count first_;
@@ -109,26 +116,19 @@ namespace origin
   //@{
   template<int Step = 1, typename Count>
   inline count_range<Count, Step> range(Count first, Count last)
-  { return {first, last};
-  }
+  { return {first, last}; }
 
   template<int Step = 1, typename Count>
   inline count_range<Count, Step> range(Count last)
-  {
-    // Swap the ordering for negative step.
-    // FIXME: Should this delegate to the range constructor? Probably.
-    if(Step > 0)
-      return range<Step>(0, last);
-    else
-      return range<Step>(last, 0);
-  }
+  { return {last}; }
   //@}
 
 
   /**
    * @ingroup range
    *
-   * The step range...
+   * The step range defines a count range with a variable, but immutable step
+   * or inrement (in contrast to the count_range's integral constant step).
    */
   template<typename Count,
            typename Step = typename std::make_signed<Count>::type>
@@ -137,43 +137,76 @@ namespace origin
   public:
     typedef step_counter<Count, Step> iterator;
 
-    step_range(Count f, Count l, Step s)
-      : first_(initial(f, l, s)), last_(final(f, l, s)), step_(s)
+    // FIXME: Write a single-count constructor to implictly iterate the
+    // range [0, l) or [l, 0) (if Count is signed and negative). This is going
+    // to require some nifty metaprogramming.
+
+    step_range(Count f, Count l)
+      : step_{step(f, l)}, first_{f}, last_{final(f, l, step_)}
     { }
 
+    step_range(Count f, Count l, Step s)
+      : step_{s}, first_{f}, last_{final(f, l, s)}
+    { assert(( s != 0 )); }
+
     iterator begin() const
-    { return first_; }
+    { return {first_, step_}; }
 
     iterator end() const
-    { return last_; }
+    { return {last_, step_}; }
 
   private:
-    Count initial(Count f, Count l, Step s)
+    // Deduce the step from the range. It's either -1 or +1. Note that if
+    // f - l is zero, this is still a valid and empty range.
+    Step step(Count f, Count l)
     {
-      assert(( s != 0 ));
-      if(s > 0)
-        return f < l ? f : final(f, l, s);
+      if(f < l)
+        return 1;
       else
-        return f > l ? f : final(f, l, s);
+        return -1;
     }
 
+    // Return the actual last count value, depending on the step value and
+    // sign. Note that if l is not reachable from s, then return f, creating
+    // an empty range.
     Count final(Count f, Count l, Step s)
     {
-      assert(( s != 0 ));
-      if(s > 0)
-        return f + (1 + (l - 1 - f) / s) * s;
-      else
-        return f + (1 + (f - 1 - l) / -s) * s;
+      if(s > 0) {
+        if(f > l)
+          return f;
+        else
+          return f + (1 + (l - 1 - f) / s) * s;
+      } else {
+        if(f < l)
+          return f;
+        else
+          return f + (1 + (f - 1 - l) / -s) * s;
+      }
     }
 
   private:
+    Step step_;
     Count first_;
     Count last_;
-    Step step_;
   };
+
+  // FIXME: If I only I could overload on constexpr, I could have the function
+  // return a count_range with parameterized over the constexpr step. Alas,
+  // I have no such capability.
 
   /**
    * @fn range(f, l, s)
+   *
+   * Return a stepped range over the range [f, l) with the increment s.
+   *
+   * @tparam Count  The underlying counted type. An integral type
+   * @tparam Step   The increment type. A signed integral type
+   *
+   * @param first   The first value in the range
+   * @param last    A value past the end of the range
+   * @param step    The increment or decrement value
+   *
+   * @return A step range.
    */
   template<typename Count, typename Step>
   inline step_range<Count, Step> range(Count first, Count last, Step step)

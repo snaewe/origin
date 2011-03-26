@@ -5,49 +5,25 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <vector>
-#include <iostream>
+#include <cassert>
 
-#include <origin/utility/typestr.hpp>
-#include <origin/range/filter_range.hpp>
 #include <origin/range/enumerate_range.hpp>
-#include <origin/range/container_range.hpp>
+
+#include "range_test.hpp"
 
 using namespace std;
 using namespace origin;
 
 int main()
 {
-  vector<int> v = {1, 0, 2, 0, 3, 0, 4, 0, 5};
+  // Note that the type here must agree with the enumerator's value type,
+  // otherwise you can get some weird type errors. Note long == ptrdiff_t
+  typedef pair<long, string> Pair;
 
-  { // Standard test with a vector
-    for(auto x : enumerate(v)) {
-      cout << x.first << "," << x.second << '-';
-    }
-    cout << '\n';
-  }
+  string str[3] = {"a", "b", "c"};
 
-  { // Test with const iterator
-    vector<int> const& cv = v;
-    for(auto x : enumerate(cv)) {
-      cout << x.first << ' ';
-    }
-    cout << '\n';
-  }
+  assert((check(enumerate(str), {Pair{0, "a"}, Pair{1, "b"}, Pair{2, "c"}}) ));
 
-  { // Test const ranges
-    auto const cr = get_range(v);
-    for(auto x : enumerate(cr)) {
-      cout << x.first << ' ';
-    }
-    cout << '\n';
-  }
-
- { // Layering.
-    for(auto x : enumerate(filter(v, [](int x) { return x != 0; }))) {
-      cout << x.first << "," << x.second << '-';
-    }
-    cout << '\n';
-  }
+  // FIXME: Write more tests
 }
 

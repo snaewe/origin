@@ -5,5 +5,13 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(counter counter.cpp)
-origin_run_test(enumerator enumerator.cpp)
+cmake_minimum_required(VERSION 2.8)
+
+set(ORIGIN_ROOT $ENV{ORIGIN_ROOT})
+list(APPEND CMAKE_MODULE_PATH ${ORIGIN_ROOT}/cmake)
+include(Origin)
+
+add_subdirectory(core)
+add_subdirectory(range)
+add_subdirectory(data)
+add_subdirectory(graph)
