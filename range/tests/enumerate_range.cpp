@@ -18,7 +18,7 @@ int main()
 {
   // Note that the type here must agree with the enumerator's value type,
   // otherwise you can get some weird type errors. Note long == ptrdiff_t
-  typedef pair<long, string> Pair;
+  typedef pair<ptrdiff_t, string> Pair;
 
   string str[3] = {"a", "b", "c"};
 
