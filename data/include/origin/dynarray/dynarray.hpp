@@ -5,15 +5,16 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_DYNARRAY_DYNARRAY_HPP
-#define ORIGIN_DYNARRAY_DYNARRAY_HPP
+#ifndef ORIGIN_DATA_DYNARRAY_HPP
+#define ORIGIN_DATA_DYNARRAY_HPP
 
 #include <memory>
 
 #include <origin/exception.hpp>
 
-namespace origin 
+namespace origin
 {
+  // FIXME: Rewrite this in terms of a dynarray base.
 
   /**
    * The dynarray (dynamic array) class implements a dynamically allocated
@@ -26,7 +27,7 @@ namespace origin
    * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2648.html
    */
   template<typename T, typename Allocator = std::allocator<T>>
-  class dynarray 
+  class dynarray
   {
   public:
     typedef Allocator allocator_type;
@@ -44,12 +45,12 @@ namespace origin
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-    /** 
+    /**
      * @name Construction, Assignment, and Destruction
      */
     //@{
     dynarray(allocator_type const& alloc = allocator_type{})
-      : data_{allocate(1)}, size_{1}, alloc_{alloc}
+      : data_{}, size_{}, alloc_{alloc}
     { }
 
     // Copy semantics.
@@ -64,7 +65,7 @@ namespace origin
     dynarray(dynarray&& x, allocator_type const& alloc = allocator_type{})
       : data_{}, size_{}, alloc_{alloc}
     { swap(data_, x.data_); }
-    
+
     dynarray& operator=(dynarray&& x)
     { swap(data_, x.data_); return *this; }
 
@@ -78,23 +79,25 @@ namespace origin
       : data_{allocate(n)}, size_{n}
     { }
 
+    // FIXME: Implement a fill constructor
+
     ~dynarray()
     { delete [] data_; }
     //@}
-    
+
     /**
      * @name Equality and Ordering
      */
     //@{
     bool equal(dynarray const& x) const
     { return std::equal(begin(), end(), x.begin()); }
-    
+
     bool less(dynarray const& x) const
     { return std::lexicographical_compare(begin(), end(), x.begin(), x.end()); }
     //@}
 
     /**
-     * @name Iterators 
+     * @name Iterators
      */
     //@{
     iterator begin()
@@ -141,46 +144,46 @@ namespace origin
 
     /** @name Capacity */
     //@{
-    size_type size() const 
+    size_type size() const
     { return size_; }
 
-    constexpr size_type max_size() const 
+    constexpr size_type max_size() const
     { return alloc_.max_size(); }
 
-    bool empty() const 
+    bool empty() const
     { return data_; }
     //@}
 
     /** @name Accessors */
     //@{
-    reference operator[](size_type n) 
+    reference operator[](size_type n)
     { return data_[n]; }
 
-    const_reference operator[](size_type n) const 
-    { return data_[n]; } 
-    
-    reference front() 
+    const_reference operator[](size_type n) const
+    { return data_[n]; }
+
+    reference front()
     { return *data_; }
 
-    const_reference front() const 
+    const_reference front() const
     { return *data_; }
 
-    reference back() 
-    { return data_[size_ - 1]; }
-        
-    const_reference back() const 
+    reference back()
     { return data_[size_ - 1]; }
 
-    reference at(size_type n) 
+    const_reference back() const
+    { return data_[size_ - 1]; }
+
+    reference at(size_type n)
     { range_check(n); return data_[n]; }
 
-    const_reference at(size_type n) const 
+    const_reference at(size_type n) const
     { range_check(n); return data_[n]; }
 
-    T* data() 
+    T* data()
     { return data_; }
 
-    const T* data() const 
+    const T* data() const
     { return data_; }
     //@}
 
@@ -206,13 +209,15 @@ namespace origin
     // FIXME: Use two pointers.
     pointer data_;
     size_type size_;
-    
+
     // FIXME: Optimize storage costs using EBO.
     allocator_type alloc_;
   };
 
+  // FIXME: Do we need this if swap uses Move? I don't think so, but I'm
+  // hesitant to remove it.
   template<typename T>
-  void swap(dynarray<T>& a, dynarray<T>& b) 
+  void swap(dynarray<T>& a, dynarray<T>& b)
   { a.swap(b); }
 
 } // namespace origin

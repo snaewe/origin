@@ -6,3 +6,4 @@
 # and conditions.
 
 origin_executable(dynarray dynarray.cpp)
+origin_executable(square_dynarray square_dynarray.cpp)
