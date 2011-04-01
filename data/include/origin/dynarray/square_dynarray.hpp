@@ -114,7 +114,7 @@ namespace origin
     // Copy semantics
     square_dynarray(square_dynarray const& x)
       : base_type{x}
-    { std::copy(x.begin(), x.end(), begin()); }
+    { uninitialized_copy(this->get_alloc(), x.begin(), x.end(), begin()); }
 
     square_dynarray& operator=(square_dynarray const& x)
     { square_dynarray tmp(x); swap(tmp); return *this; }
@@ -139,7 +139,7 @@ namespace origin
                              value_type const& x = value_type{},
                              allocator_type alloc = allocator_type{})
       : base_type{n, alloc}
-    { std::fill(begin(), end(), x); }
+    { uninitialized_fill(this->get_alloc(), begin(), end(), x); }
 
     // FIXME: Write a 1d initializer list? The size of the list must be a
     // perfect square.
@@ -165,13 +165,13 @@ namespace origin
       iterator i = begin();
       for(auto const& r : list) {
         assert(( r.size() == order() ));
-        std::copy(r.begin(), r.end(), i);
+        uninitialized_copy(this->get_alloc(), r.begin(), r.end(), i);
         i += order();
       }
     }
 
     ~square_dynarray()
-    { destroy(begin(), end(), this->get_alloc()); }
+    { destroy(this->get_alloc(), begin(), end()); }
     //@}
 
     /** @name Properties */

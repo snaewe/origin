@@ -6,14 +6,24 @@
 // and conditions.
 
 #include <cassert>
+#include <string>
 
 #include <origin/dynarray/dynarray.hpp>
 
 using namespace std;
 using namespace origin;
 
+// FIXME: Write real test suites
+
 int main()
 {
-  dynarray<int> x;
-  assert(( x.empty() ));
+  {
+    dynarray<int> x;
+    assert(( x.empty() ));
+  }
+
+  {
+    dynarray<string> x(5);
+    assert(( x.size() == 5 ));
+  }
 }

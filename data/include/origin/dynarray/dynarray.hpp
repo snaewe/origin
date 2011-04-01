@@ -140,7 +140,7 @@ namespace origin
      * @brief Move constructor
      * Construct a dynarray by taking the state of the dynarray x.
      *
-     * @param x       The moved from dynarray
+     * @param x   The dynarray being moved
      */
     dynarray(dynarray&& x)
       : base_type{std::move(x)}
@@ -149,6 +149,8 @@ namespace origin
     /**
      * @brief Move assignment
      * Move the state of the dynarray x into this object.
+     *
+     * @param x   The dynarray being moved
      */
     dynarray& operator=(dynarray&& x)
     { dynarray tmp{std::move(x)}; swap(tmp); return *this; }
@@ -182,16 +184,16 @@ namespace origin
                       value_type const& x = value_type{},
                       allocator_type const& alloc = allocator_type{})
       : base_type{n, alloc}
-    { std::fill(begin(), end(), x); }
+    { uninitialized_fill(this->get_alloc(), begin(), end(), x); }
 
     ~dynarray()
-    { destroy(begin(), end(), this->get_alloc()); }
+    { destroy(this->get_alloc(), begin(), end()); }
     //@}
 
     /** @name Capacity */
     //@{
     size_type size() const
-    { return base_type::size; }
+    { return base_type::size(); }
 
     constexpr size_type max_size() const
     { return this->get_alloc.max_size(); }
