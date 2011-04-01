@@ -7,9 +7,9 @@
 #ifndef ORIGIN_DATA_SQUARE_DYNARRAY_HPP
 #define ORIGIN_DATA_SQUARE_DYNARRAY_HPP
 
-#include <algorithm>
 #include <stdexcept>
 
+#include <origin/memory.hpp>
 #include <origin/iterator/stride_iterator.hpp>
 #include <origin/range/iterator_range.hpp>
 
@@ -56,42 +56,19 @@ namespace origin
     ~square_dynarray_base()
     { deallocate(data); }
 
-    allocator_type& get_allocator()
+    allocator_type& get_alloc()
     { return *this; }
 
     // Allocate n * n elements
     pointer allocate(size_type n)
-    { return get_allocator().allocate(n * n); }
+    { return get_alloc().allocate(n * n); }
 
     void deallocate(pointer p)
-    { get_allocator().deallocate(p, order * order); }
+    { get_alloc().deallocate(p, order * order); }
 
     pointer data;
     size_type order;
   };
-
-  // FIXME: Move this into a memory module.
-  /**
-   * @fn destroy(f, l, alloc)
-   *
-   * Destroy the objects in the given iterator range.
-   *
-   * @tparam Iter
-   * @tparam Alloc
-   *
-   * @param f       The initial iterator
-   * @param l       The final iterator
-   * @param alloc   A reference to an allocator
-   */
-  //@{
-  // FIXME: Specialize this for trivially destructible types.
-  template<typename Iter, typename Alloc>
-  void destroy(Iter f, Iter l, Alloc& alloc)
-  {
-    for( ; f != l; ++f)
-      alloc.destroy(addressof(*f));
-  }
-  //@}
 
   /**
    * A general purpose, dynamically allocated, square array. An NxN square array
@@ -115,12 +92,11 @@ namespace origin
     typedef typename base_type::size_type size_type;
     typedef typename base_type::difference_type difference_type;
 
+    // FIXME: Do we need reverse iterators also?
     typedef T* iterator;
     typedef T const* const_iterator;
-
     typedef T* row_iterator;
     typedef T const* const_row_iterator;
-
     typedef stride_iterator<T*> col_iterator;
     typedef stride_iterator<T const*> const_col_iterator;
 
@@ -159,9 +135,9 @@ namespace origin
      * @param x       The initial value of the array elements
      * @param alloc   An allocator object
      */
-    square_dynarray(size_type n,
-                    value_type const& x = value_type{},
-                    allocator_type alloc = allocator_type{})
+    explicit square_dynarray(size_type n,
+                             value_type const& x = value_type{},
+                             allocator_type alloc = allocator_type{})
       : base_type{n, alloc}
     { std::fill(begin(), end(), x); }
 
@@ -195,7 +171,7 @@ namespace origin
     }
 
     ~square_dynarray()
-    { destroy(begin(), end(), base_type::get_allocator()); }
+    { destroy(begin(), end(), this->get_alloc()); }
     //@}
 
     /** @name Properties */
@@ -219,7 +195,7 @@ namespace origin
     { return m * base_type::order + n; }
 
     allocator_type get_allocator() const
-    { return base_type::get_allocator(); }
+    { return this->get_alloc(); }
     //@}
 
     /** @name Data Accessors */
@@ -260,6 +236,30 @@ namespace origin
 
     const_reference back() const
     { return *(base_type::data + size() - 1); }
+    //@}
+
+    /** @name Protocols */
+    //@{
+    /**
+     * @brief Equality protocol
+     * Return true if this square dynarray is equivalent to the other. Two
+     * square dynarrays are equal if they have the same order and have the same
+     * elements.
+     *
+     * @param x   A square dynarray.
+     */
+    bool equal(square_dynarray const& x) const
+    { return order() == x.order() && std::equal(begin(), end(), x.begin()); }
+
+    /**
+     * @brief Order protocol
+     * Return true if this square dynarray is less than the other. The order of
+     * dynarrays is computed lexicographically.
+     *
+     * @param x   A square dynarray
+     */
+    bool less(square_dynarray const& x) const
+    { return std::lexicographical_compare(begin(), end(), x.begin(), x.end()); }
     //@}
 
     /** @name Iterators */

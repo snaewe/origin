@@ -8,15 +8,69 @@
 #ifndef ORIGIN_DATA_DYNARRAY_HPP
 #define ORIGIN_DATA_DYNARRAY_HPP
 
-#include <memory>
 
 #include <origin/exception.hpp>
+#include <origin/memory.hpp>
 
 namespace origin
 {
-  // FIXME: Rewrite this in terms of a dynarray base.
+  /**
+   * The square dynarray base implements the basic structure and memory
+   * allocation requirements of a square dynarray. The dynarray is implemented
+   * in terms of a pointer its order.
+   */
+  template<typename T, typename Alloc>
+  struct dynarray_base : private Alloc
+  {
+    typedef Alloc allocator_type;
+    typedef T value_type;
+    typedef typename allocator_type::reference reference;
+    typedef typename allocator_type::const_reference const_reference;
+    typedef typename allocator_type::pointer pointer;
+    typedef typename allocator_type::const_pointer const_pointer;
+    typedef typename allocator_type::size_type size_type;
+    typedef typename allocator_type::difference_type difference_type;
+
+    // Copy semantics
+    dynarray_base(dynarray_base const& x)
+      : Alloc{x.alloc}, first{allocate(x.size())}, last{first + x.size()}
+    { }
+
+    // Move semantics
+    dynarray_base(dynarray_base&& x)
+      : Alloc{x.alloc}, first{x.first}, last{x.last}
+    { x.first = x.last = nullptr; }
+
+    dynarray_base(allocator_type const& alloc)
+      : Alloc{alloc}, first{nullptr}, last{nullptr}
+    { }
+
+    dynarray_base(size_type n, allocator_type const& alloc)
+      : Alloc{alloc}, first{allocate(n)}, last{first + n}
+    { }
+
+    ~dynarray_base()
+    { deallocate(first); }
+
+    size_type size() const
+    { return last - first; }
+
+    allocator_type& get_alloc()
+    { return *this; }
+
+    // Allocate n * n elements
+    pointer allocate(size_type n)
+    { return get_alloc().allocate(n); }
+
+    void deallocate(pointer p)
+    { get_alloc().deallocate(p, size()); }
+
+    pointer first;
+    pointer last;
+  };
 
   /**
+   * @brief A dynamically allocated array with fixed bounds
    * The dynarray (dynamic array) class implements a dynamically allocated
    * array.
    *
@@ -26,18 +80,20 @@ namespace origin
    *
    * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2648.html
    */
-  template<typename T, typename Allocator = std::allocator<T>>
+  template<typename T, typename Alloc = std::allocator<T>>
   class dynarray
+    : dynarray_base<T, Alloc>
   {
+    typedef dynarray_base<T, Alloc> base_type;
   public:
-    typedef Allocator allocator_type;
+    typedef Alloc allocator_type;
     typedef T value_type;
-    typedef typename allocator_type::reference reference;
-    typedef typename allocator_type::const_reference const_reference;
-    typedef typename allocator_type::pointer pointer;
-    typedef typename allocator_type::const_pointer const_pointer;
-    typedef typename allocator_type::size_type size_type;
-    typedef typename allocator_type::difference_type difference_type;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::const_reference const_reference;
+    typedef typename base_type::pointer pointer;
+    typedef typename base_type::const_pointer const_pointer;
+    typedef typename base_type::size_type size_type;
+    typedef typename base_type::difference_type difference_type;
 
     typedef pointer iterator;
     typedef const_pointer const_iterator;
@@ -49,77 +105,177 @@ namespace origin
      * @name Construction, Assignment, and Destruction
      */
     //@{
+    /**
+     * @brief Default constructor
+     * Construct an empty dynarray.
+     *
+     * @param alloc   An allocator object
+     */
     dynarray(allocator_type const& alloc = allocator_type{})
-      : data_{}, size_{}, alloc_{alloc}
+      : base_type{alloc}
     { }
 
-    // Copy semantics.
-    dynarray(dynarray const& x, allocator_type const& alloc = allocator_type{})
-      : data_{}, size_{}, alloc_{alloc}
+    // Copy semantics
+    /**
+     * @brief Copy constructor
+     * Construct a copy of the dynarray x.
+     *
+     * @param x       The copied dynarray
+     */
+    dynarray(dynarray const& x)
+      : base_type{x}
     { std::copy(x.begin(), x.end(), begin()); }
 
+    /**
+     * @brief Copy assignment
+     * Assign this object as a copy of the dynarray x.
+     *
+     * @param x   The copied dynarray
+     */
     dynarray& operator=(dynarray const& x)
     { dynarray tmp{x}; swap(tmp); return *this; }
 
     // Move semantics
-    dynarray(dynarray&& x, allocator_type const& alloc = allocator_type{})
-      : data_{}, size_{}, alloc_{alloc}
-    { swap(data_, x.data_); }
-
-    dynarray& operator=(dynarray&& x)
-    { swap(data_, x.data_); return *this; }
-
-
-    // FIXME: Implement a range-based constructor and assignment.
-
-    // FIXME: Implemnt an initializer-list constructor and assignment
-
-    // FIXME: Implement a corresponding assign() function.
-    explicit dynarray(size_type n, allocator_type const& alloc = allocator_type{})
-      : data_{allocate(n)}, size_{n}
+    /**
+     * @brief Move constructor
+     * Construct a dynarray by taking the state of the dynarray x.
+     *
+     * @param x       The moved from dynarray
+     */
+    dynarray(dynarray&& x)
+      : base_type{std::move(x)}
     { }
 
-    // FIXME: Implement a fill constructor
-
-    ~dynarray()
-    { delete [] data_; }
-    //@}
+    /**
+     * @brief Move assignment
+     * Move the state of the dynarray x into this object.
+     */
+    dynarray& operator=(dynarray&& x)
+    { dynarray tmp{std::move(x)}; swap(tmp); return *this; }
 
     /**
-     * @name Equality and Ordering
+     * @brief Initializer list constructor
+     * Construct a dynarray over an initializer list.
+     *
+     * @param list    An initializer list
+     * @param alloc   An allocator object
      */
-    //@{
-    bool equal(dynarray const& x) const
-    { return std::equal(begin(), end(), x.begin()); }
+    dynarray(std::initializer_list<value_type> list,
+             allocator_type const& alloc = allocator_type{})
+      : base_type{list.size(), alloc}
+    { std::copy(list.begin(), list.end(), begin()); }
 
+    // FIXME: Implement an iterator range constructor. This is going to have
+    // to be specialized for input and forward iterators. This is going to
+    // require the concepts library.
+
+    /**
+     * @brief Fill constructor
+     * Construct a dynarray with n elements all either default initialized
+     * or initialized to the value x.
+     *
+     * @param n       The required size of the dynarray
+     * @param x       The initial value
+     * @param alloc   An allocator object
+     */
+    explicit dynarray(size_type n,
+                      value_type const& x = value_type{},
+                      allocator_type const& alloc = allocator_type{})
+      : base_type{n, alloc}
+    { std::fill(begin(), end(), x); }
+
+    ~dynarray()
+    { destroy(begin(), end(), this->get_alloc()); }
+    //@}
+
+    /** @name Capacity */
+    //@{
+    size_type size() const
+    { return base_type::size; }
+
+    constexpr size_type max_size() const
+    { return this->get_alloc.max_size(); }
+
+    bool empty() const
+    { return base_type::size() == 0; }
+    //@}
+
+    /** @name Accessors */
+    //@{
+    reference operator[](size_type n)
+    { return *(this->first + n); }
+
+    const_reference operator[](size_type n) const
+    { return *(this->first + n); }
+
+    reference front()
+    { return *this->first; }
+
+    const_reference front() const
+    { return *this->first; }
+
+    reference back()
+    { return *(this->last - 1); }
+
+    const_reference back() const
+    { return *(this->last - 1); }
+
+    reference at(size_type n)
+    { range_check(n); return *(this->first + n); }
+
+    const_reference at(size_type n) const
+    { range_check(n); return *(this->first + n); }
+
+    T* data()
+    { return this->first; }
+
+    const T* data() const
+    { return this->first; }
+    //@}
+
+
+    /** @name Equality and Ordering */
+    //@{
+    /**
+     * @brief Equality protocol
+     * Return true if this dynarray is equivalent to the other. Two dynarrays
+     * are equal if they have the same size and have the same elements.
+     *
+     * @param x   A dynarray.
+     */
+    bool equal(dynarray const& x) const
+    { return size() == x.size() && std::equal(begin(), end(), x.begin()); }
+
+    /**
+     * @brief Order protocol
+     * Return true if this dynarray is less than the other. The order of
+     * dynarrays is computed lexicographically.
+     *
+     * @param x   A dynarray
+     */
     bool less(dynarray const& x) const
     { return std::lexicographical_compare(begin(), end(), x.begin(), x.end()); }
     //@}
 
-    /**
-     * @name Iterators
-     */
+    /** @name Iterators */
     //@{
     iterator begin()
-    { return data_; }
+    { return this->first; }
 
     iterator end()
-    { return data_ + size_; }
-
+    { return this->last; }
 
     const_iterator begin() const
-    { return data_; }
+    { return this->first; }
 
     const_iterator end() const
-    { return data_ + size_; }
-
+    { return this->last; }
 
     const_iterator cbegin() const
-    { return data_; }
+    { return this->first; }
 
     const_iterator cend() const
-    { return data_ + size_; }
-
+    { return this->last; }
 
     reverse_iterator rbegin()
     { return {end()}; }
@@ -127,13 +283,11 @@ namespace origin
     reverse_iterator rend()
     { return {begin()}; }
 
-
     const_reverse_iterator rbegin() const
     { return {cend()}; }
 
     const_reverse_iterator rend() const
     { return {cbegin()}; }
-
 
     const_reverse_iterator crbegin() const
     { return {cend()}; }
@@ -142,76 +296,20 @@ namespace origin
     { return {cbegin()}; }
     //@}
 
-    /** @name Capacity */
-    //@{
-    size_type size() const
-    { return size_; }
-
-    constexpr size_type max_size() const
-    { return alloc_.max_size(); }
-
-    bool empty() const
-    { return data_; }
-    //@}
-
-    /** @name Accessors */
-    //@{
-    reference operator[](size_type n)
-    { return data_[n]; }
-
-    const_reference operator[](size_type n) const
-    { return data_[n]; }
-
-    reference front()
-    { return *data_; }
-
-    const_reference front() const
-    { return *data_; }
-
-    reference back()
-    { return data_[size_ - 1]; }
-
-    const_reference back() const
-    { return data_[size_ - 1]; }
-
-    reference at(size_type n)
-    { range_check(n); return data_[n]; }
-
-    const_reference at(size_type n) const
-    { range_check(n); return data_[n]; }
-
-    T* data()
-    { return data_; }
-
-    const T* data() const
-    { return data_; }
-    //@}
 
     /** @name Swap */
     //@{
-    void swap(dynarray & x) {
-      std::swap(size_, x.size_);
-      std::swap(data_, x.data_);
+    void swap(dynarray & x)
+    {
+      std::swap(this->first, x.first);
+      std::swap(this->last, x.last);
     }
     //@}
 
   private:
     // Helper function for bounds checking
     void range_check(size_type n) const
-    { if(n >= size_) throw std::out_of_range("dynarray: out of range"); }
-
-    // Helper function to allocate data
-    // FIXME: n2648 uses new char[n * sizeof(T)]
-    pointer allocate(size_type n)
-    { return new T[n]; }
-
-  private:
-    // FIXME: Use two pointers.
-    pointer data_;
-    size_type size_;
-
-    // FIXME: Optimize storage costs using EBO.
-    allocator_type alloc_;
+    { if(n >= size()) throw std::out_of_range("dynarray: out of range"); }
   };
 
   // FIXME: Do we need this if swap uses Move? I don't think so, but I'm
