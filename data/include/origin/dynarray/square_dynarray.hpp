@@ -32,12 +32,12 @@ namespace origin
     typedef typename allocator_type::size_type size_type;
     typedef typename allocator_type::difference_type difference_type;
 
-    // Copy semantics
+    // Copy constructor
     square_dynarray_base(square_dynarray_base const& x)
       : Alloc{x.alloc}, data{allocate(x.order)}, order{x.order}
     { }
 
-    // Move semantics
+    // Move constructor
     square_dynarray_base(square_dynarray_base&& x)
       : Alloc{x.alloc}, data{x.data}, order{x.order}
     {
@@ -45,16 +45,21 @@ namespace origin
       x.order = 0;
     }
 
+    // Default constructor
     square_dynarray_base(allocator_type const& alloc)
       : Alloc{alloc}, data{nullptr}, order{0}
     { }
 
+    // Bounds constructor
     square_dynarray_base(size_type n, allocator_type const& alloc)
       : Alloc{alloc}, data{allocate(n)}, order{n}
     { }
 
     ~square_dynarray_base()
     { deallocate(data); }
+
+    size_type size() const
+    { return order * order; }
 
     allocator_type& get_alloc()
     { return *this; }
@@ -64,7 +69,7 @@ namespace origin
     { return get_alloc().allocate(n * n); }
 
     void deallocate(pointer p)
-    { get_alloc().deallocate(p, order * order); }
+    { get_alloc().deallocate(p, size()); }
 
     pointer data;
     size_type order;
@@ -108,7 +113,7 @@ namespace origin
     /** @name Construction and Destruction */
     //@{
     square_dynarray(allocator_type const& alloc = allocator_type{})
-      : base_type{0, alloc}
+      : base_type{alloc}
     { }
 
     // Copy semantics
@@ -151,9 +156,10 @@ namespace origin
      * @brief Initializer list constructor
      * Construct a square dynarray over nested initializer as lists::
      *
-     *    square_dynarray<T> = {
+     *    square_dynarray<T> x = {
      *      {a, b},
      *      {c, d}
+     *    };
      *
      * The size of each inner initializer list must be the same as the outer
      * initializer list.
@@ -180,7 +186,7 @@ namespace origin
     { return base_type::order == 0; }
 
     size_type size() const
-    { return base_type::order * base_type::order; }
+    { return base_type::size(); }
 
     size_type order() const
     { return base_type::order; }

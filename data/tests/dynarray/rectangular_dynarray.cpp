@@ -8,7 +8,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <origin/dynarray/square_dynarray.hpp>
+#include <origin/dynarray/rectangular_dynarray.hpp>
 
 using namespace std;
 using namespace origin;
@@ -16,28 +16,30 @@ using namespace origin;
 int main()
 {
   {
-    square_dynarray<int> x;
+    rectangular_dynarray<int> x;
     assert(( x.empty() ));
   }
 
   {
-    square_dynarray<int> x{5};
-    assert(( x.order() == 5 ));
-    assert(( x.size() == 25 ));
+    rectangular_dynarray<int> m{2, 3};
+    assert(( m.rows() == 2 ));
+    assert(( m.cols() == 3 ));
   }
-
 
   // Check 2d initializer list init
   {
-    square_dynarray<int> m = {
+    rectangular_dynarray<int> m = {
       {1, 2},
       {3, 4},
+      {5, 6}
     };
-    assert(( m.order() == 2 ));
-    assert(( m.size() == 4 ));
+    assert(( m.rows() == 3 ));
+    assert(( m.cols() == 2 ));
     assert(( m(0, 0) == 1 ));
     assert(( m(0, 1) == 2 ));
     assert(( m(1, 0) == 3 ));
     assert(( m(1, 1) == 4 ));
+    assert(( m(2, 0) == 5 ));
+    assert(( m(2, 1) == 6 ));
   }
 }

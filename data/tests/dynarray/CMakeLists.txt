@@ -7,3 +7,4 @@
 
 origin_run_test(dynarray dynarray.cpp)
 origin_run_test(square_dynarray square_dynarray.cpp)
+origin_run_test(rectangular_dynarray rectangular_dynarray.cpp)
