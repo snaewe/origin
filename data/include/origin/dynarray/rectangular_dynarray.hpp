@@ -174,8 +174,46 @@ namespace origin
       : base_type{m, n, alloc}
     { uninitialized_fill(this->get_alloc(), begin(), end(), x); }
 
+    // FIXME: Delegate to the range constructor whenever we get delegating
+    // constructors.
+
+    // FIXME: Write a range constructor. I think it needs to be specialized
+    // for input and random access iterators.
+
     /**
-     * @brief Initializer list constructor
+     * @brief Linear initializer list constructor
+     * Construct an m x n rectangular dynarray over an initializer as list::
+     *
+     *    rectangular_dynarray<T> x{
+     *      m, n,
+     *      {a, b, c, ...}
+     *    };
+     *
+     * The initializer list must have size m * n. The first n elements are
+     * allocated to the first row, the 2nd n elements to the second row, etc.
+     * An allocator may also be given.
+     *
+     * @param m       The number of columns
+     * @param n       The number of rows
+     * @param list    An initializer list
+     * @param alloc   An allocator object
+     */
+    rectangular_dynarray(size_type m,
+                         size_typen n,
+                         std::initializer_list<value_type> list,
+                         allocator_type const& alloc = allocator_type{})
+      : base_type{m, n, list.begin()->size(), alloc}
+    {
+      assert(( list.size() == size() ));
+      auto f = list.begin(), l = list.end();
+      iterator i = begin();
+      for( ; f != l; f += n, i += n) {
+        uninitialized_copy(f, f + n, i);
+      }
+    }
+
+    /**
+     * @brief Recangular initializer list constructor
      * Construct a rectangular dynarray over nested initializer as lists::
      *
      *    rectangular_dynarray<T> x = {
@@ -185,9 +223,12 @@ namespace origin
      *
      * This results in the construction of a 2x3 rectangular dynarray. The size
      * of all inner initializer lists must be the same length.
+     *
+     * @param list    A nested initializer list
+     * @param alloc   An allocator object
      */
     rectangular_dynarray(std::initializer_list<std::initializer_list<value_type>> list,
-                    allocator_type const& alloc = allocator_type{})
+                         allocator_type const& alloc = allocator_type{})
       : base_type{list.size(), list.begin()->size(), alloc}
     {
       iterator i = begin();
@@ -262,31 +303,64 @@ namespace origin
 
     /** @name Data Accessors */
     //@{
+    /**
+     * @brief Array subscript
+     * Return the nth element in the stored array.
+     *
+     * @param n   An index
+     * @pre n < size()
+     */
     reference operator[](size_type n)
     { return data()[n]; }
 
     const_reference operator[](size_type n) const
     { return data()[n]; }
 
+    /**
+     * @brief Row/column index
+     * Return the element at the mth row and nth column.
+     *
+     * @param m   A row index
+     * @param n   A column index
+     * @pre m < rows() and n < cols()
+     */
     reference operator()(size_type m, size_type n)
     { return data()[offset(m, n)]; }
 
     const_reference operator()(size_type m, size_type n) const
     { return data()[offset(m, n)]; }
 
+    /**
+     * @brief Checked array subscript
+     * Return the nth element in the stored array. The precondition is
+     * checked.
+     *
+     * @param n   An index
+     * @pre n < size()
+     */
     reference at(size_type n)
     { return get(n); }
 
     const_reference at(size_type n) const
     { return get(n); }
 
+    /**
+     * @brief Row/column index
+     * Return the element at the mth row and nth column. The precondition is
+     * checked.
+     *
+     * @param m   A row index
+     * @param n   A column index
+     * @pre m < rows() and n < cols()
+     */
     reference at(size_type m, size_type n)
     { return get(offset(m, n)); }
 
     const_reference at(size_type m, size_type n) const
     { return get(offset(m, n)); }
 
-    // FIXME: Do these really belong here?
+    // FIXME: Do we really want front and back accessors for non-sequential
+    // data? We do provide a sequential view of the data...
     reference front()
     { return *data(); }
 
@@ -331,9 +405,17 @@ namespace origin
 
     /** @name Iterators */
     //@{
+    /**
+     * @brief Begin iterator
+     * Return an iterator to the first stored element.
+     */
     iterator begin()
     { return data(); }
 
+    /**
+     * @brief End iterator
+     * Return an iterator past the last stored element.
+     */
     iterator end()
     { return data() + size(); }
 
@@ -345,12 +427,20 @@ namespace origin
 
 
     // Row access
+    /**
+     * @brief Begin row iterator
+     * Return an iterator to the fist element in the nth row.
+     */
     row_iterator begin_row(size_type n)
     { return data() + n * cols(); }
 
     row_iterator end_row(size_type n)
     { return data() + (n + 1) * cols(); }
 
+    /**
+     * @brief Begin row iterator
+     * Return an iterator past the last element in the nth row.
+     */
     const_row_iterator begin_row(size_type n) const
     { return data() + n * cols(); }
 
@@ -359,6 +449,10 @@ namespace origin
 
 
     // Row range access
+    /**
+     * @brief Row range
+     * Return an iterator range over the nth row.
+     */
     row_range row(size_type n)
     { return {begin_row(n), end_row(n)}; }
 
@@ -367,12 +461,20 @@ namespace origin
 
 
     // Column access
+    /**
+     * @brief Begin column iterator
+     * Return an iterator to the fist element in the nth column.
+     */
     col_iterator begin_column(size_type n)
     { return {data() + n, cols()}; }
 
     col_iterator end_column(size_type n)
     { return {data() + size() + n, cols()}; }
 
+    /**
+     * @brief Begin row iterator
+     * Return an iterator past the last element in the nth column.
+     */
     const_col_iterator begin_column(size_type n) const
     { return {data() + n, cols()}; }
 
@@ -380,7 +482,10 @@ namespace origin
     { return {data() + size() + n, cols()}; }
 
 
-    // Column range access
+    /**
+     * @brief Column range
+     * Return an iterator range over the nth column,
+     */
     col_range column(size_type n)
     { return {begin_column(n), end_column(n)}; }
 

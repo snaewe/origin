@@ -8,7 +8,9 @@
 #include <cassert>
 #include <iostream>
 
+#include <origin/utility/typestr.hpp>
 #include <origin/numeric/matrix.hpp>
+#include <origin/numeric/square_matrix.hpp>
 
 using namespace std;
 using namespace origin;
@@ -25,9 +27,32 @@ int main()
   }
 
   {
-    matrix<int> m{3, 2, 5};
+    matrix<int> m{5, 3, 3};
     assert(( m.rows() == 3 ));
-    assert(( m.cols() == 2 ));
+    assert(( m.cols() == 3 ));
+
+    auto r1 = m.row(0);
+    cout << r1[0] << " " << r1[1] << " " << r1[2] << "\n";
+
+    auto r2 = m.row(1);
+    cout << r2[0] << " " << r2[1] << " " << r2[2] << "\n";
+
+    auto r3 = m.row(2);
+    cout << r3[0] << " " << r3[1] << " " << r3[2] << "\n";
+
+//     for(size_t i = 0; i < m.rows(); ++i) {
+//       for(size_t j = 0; j < m.cols(); ++j) {
+//         cout << m(i, j) << " ";
+//       }
+//       cout << "\n";
+//     }
+  }
+
+  /*
+  {
+    square_matrix<int> m{5, 3};
+    assert(( m.rows() == 3 ));
+    assert(( m.cols() == 3 ));
     for(size_t i = 0; i < m.rows(); ++i) {
       for(size_t j = 0; j < m.cols(); ++j) {
         cout << m(i, j) << " ";
@@ -35,25 +60,7 @@ int main()
       cout << "\n";
     }
   }
+  */
 
-  {
-    typedef matrix<int, square_dynarray<int>> Matrix;
-    Matrix m{2};
-    assert(( m.rows() == 2 ));
-    assert(( m.cols() == 2 ));
-    for(auto x : m) {
-      assert(( x == 0 ));
-    }
-  }
-
-  {
-    matrix<int> m{4, 4, 5};
-    for(size_t i = 0; i < m.rows(); ++i) {
-      for(size_t j = 0; j < m.cols(); ++j) {
-        cout << m(i, j) << " ";
-      }
-      cout << "\n";
-    }
-  }
   return 0;
 }
