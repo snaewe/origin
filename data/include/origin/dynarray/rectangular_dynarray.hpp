@@ -247,11 +247,15 @@ namespace origin
 
     /**
      * @brief Array offset
-     * Given indexes m and n, return the offset of the array index.
+     * Given row and column m and n, return the offset into the array.
      */
     size_type offset(size_type m, size_type n) const
     { return m * cols() + n; }
 
+    /**
+     * @brief Allocator
+     * Return the allocator object used by this object.
+     */
     allocator_type get_allocator() const
     { return this->get_alloc(); }
     //@}

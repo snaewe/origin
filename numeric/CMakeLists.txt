@@ -11,8 +11,12 @@ set(ORIGIN_ROOT $ENV{ORIGIN_ROOT})
 list(APPEND CMAKE_MODULE_PATH ${ORIGIN_ROOT}/cmake)
 include(Origin)
 
-add_subdirectory(core)
-add_subdirectory(range)
-add_subdirectory(data)
-add_subdirectory(numeric)
-add_subdirectory(graph)
+origin_component(
+  linear
+  VERSION 0.1.0
+  DEPENDS core range data
+  AUTHORS
+    Andrew Sutton <asutton -at- cse.tamu.edu>
+)
+
+add_subdirectory(tests)

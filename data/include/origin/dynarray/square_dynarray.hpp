@@ -96,6 +96,7 @@ namespace origin
     typedef typename base_type::const_pointer const_pointer;
     typedef typename base_type::size_type size_type;
     typedef typename base_type::difference_type difference_type;
+    typedef std::pair<size_type, size_type> order_type;
 
     // FIXME: Do we need reverse iterators also?
     typedef T* iterator;
@@ -112,31 +113,63 @@ namespace origin
 
     /** @name Construction and Destruction */
     //@{
+    /**
+     * @brief Default constructor
+     * Cosntruct an empty square dynarray.
+     */
     square_dynarray(allocator_type const& alloc = allocator_type{})
       : base_type{alloc}
     { }
 
     // Copy semantics
+    /**
+     * @brief Default constructor
+     * Cosntruct a copy of the square dynarray x.
+     *
+     * @param x   A square dynarray
+     */
     square_dynarray(square_dynarray const& x)
       : base_type{x}
     { uninitialized_copy(this->get_alloc(), x.begin(), x.end(), begin()); }
 
+    /**
+     * @brief Default constructor
+     * Assign this as a copy of the square dynarray x.
+     *
+     * @param x   A square dynaray
+     */
     square_dynarray& operator=(square_dynarray const& x)
     { square_dynarray tmp(x); swap(tmp); return *this; }
 
     // Move semantics
+    /**
+     * @brief Default constructor
+     * Construct a square dynarray by moving data out of the square dynarray x.
+     * After construction x is left in a moved-from state.
+     *
+     * @param x   A square dynarray
+     */
     square_dynarray(square_dynarray&& x)
       : base_type{std::move(x)}
     { }
 
+    /**
+     * @brief Default constructor
+     * Move the state of the square dynarray x into this object. After
+     * assignment x is left in a moved-from state.
+     *
+     * @param x   A square dynarray
+     */
     square_dynarray& operator=(square_dynarray&& x)
     { square_dynarray tmp{std::move(x)}; swap(tmp); return *this; }
 
     /**
      * @brief Order constructor
-     * Construct a square dynarray with order n. Elements are initialized to
-     * the given value, or default initialized if not explicitly given.
+     * Construct a square dynarray with n rows and columns. Elements are
+     * default initialized or initialized to the given value. An allocator
+     * may be given.
      *
+     * @param n       The number of rows and columns
      * @param x       The initial value of the array elements
      * @param alloc   An allocator object
      */
@@ -145,12 +178,6 @@ namespace origin
                              allocator_type alloc = allocator_type{})
       : base_type{n, alloc}
     { uninitialized_fill(this->get_alloc(), begin(), end(), x); }
-
-    // FIXME: Write a 1d initializer list? The size of the list must be a
-    // perfect square.
-
-    // FIXME: Write a range constructor? The distance of the range must be
-    // a perfect square.
 
     /**
      * @brief Initializer list constructor
@@ -183,23 +210,61 @@ namespace origin
     /** @name Properties */
     //@{
     bool empty() const
-    { return base_type::order == 0; }
+    { return order() == 0; }
 
+    /**
+     * @brief Number of elements
+     * Return the total number of elements in the square dynarray. This is
+     * equivalent to m.rows() * m.rows().
+     */
     size_type size() const
     { return base_type::size(); }
 
+    /**
+     * @brief Matrix order
+     * Return the order of the square dynarray. The order is the number of
+     * rows and columns of a square dynarray.
+     */
     size_type order() const
     { return base_type::order; }
 
+    /**
+     * @brief Number of rows
+     * Return the number of rows in the square dynarray. This is equivalent to
+     * the m.order().
+     */
+    size_type rows() const
+    { return base_type::order; }
+
+    /**
+     * @brief Number of columns
+     * Return the number of columns in the square dynarray. This is equivalent
+     * to the m.order().
+     */
+    size_type cols() const
+    { return base_type::order; }
+
+    /**
+     * @brief Array data
+     * Return a pointer to the stored data.
+     */
     pointer data()
     { return base_type::data; }
 
     const_pointer data() const
     { return base_type::data; }
 
+    /**
+     * @brief Array offset
+     * Given indexes m and n, return the offset into the array.
+     */
     size_type offset(size_type m, size_type n) const
-    { return m * base_type::order + n; }
+    { return m * order() + n; }
 
+    /**
+     * @brief Allocator
+     * Return the allocator object used by this object.
+     */
     allocator_type get_allocator() const
     { return this->get_alloc(); }
     //@}
@@ -207,16 +272,16 @@ namespace origin
     /** @name Data Accessors */
     //@{
     reference operator[](size_type n)
-    { return base_type::data[n]; }
+    { return data()[n]; }
 
     const_reference operator[](size_type n) const
-    { return base_type::data[n]; }
+    { return data()[n]; }
 
     reference operator()(size_type m, size_type n)
-    { return base_type::data[offset(m, n)]; }
+    { return data()[offset(m, n)]; }
 
     const_reference operator()(size_type m, size_type n) const
-    { return base_type::data[offset(m, n)]; }
+    { return data()[offset(m, n)]; }
 
     reference at(size_type n)
     { return get(n); }
@@ -232,16 +297,16 @@ namespace origin
 
     // FIXME: Do these really belong here?
     reference front()
-    { return *base_type::data; }
+    { return *data(); }
 
     const_reference front() const
-    { return *base_type::data; }
+    { return *data(); }
 
     reference back()
-    { return *(base_type::data + size() - 1); }
+    { return *(data() + size() - 1); }
 
     const_reference back() const
-    { return *(base_type::data + size() - 1); }
+    { return *(data() + size() - 1); }
     //@}
 
     /** @name Protocols */
@@ -271,30 +336,30 @@ namespace origin
     /** @name Iterators */
     //@{
     iterator begin()
-    { return base_type::data; }
+    { return data(); }
 
     iterator end()
-    { return base_type::data + size(); }
+    { return data() + size(); }
 
     const_iterator begin() const
-    { return base_type::data; }
+    { return data(); }
 
     const_iterator end() const
-    { return base_type::data + size(); }
+    { return data() + size(); }
 
 
     // Row access
     row_iterator begin_row(size_type n)
-    { return base_type::data + n * base_type::order; }
+    { return data() + n * order(); }
 
     row_iterator end_row(size_type n)
-    { return base_type::data + (n + 1) * base_type::order; }
+    { return data() + (n + 1) * order(); }
 
     const_row_iterator begin_row(size_type n) const
-    { base_type::data + n * base_type::order; }
+    { data() + n * order(); }
 
     const_row_iterator end_row(size_type n) const
-    { base_type::data + (n + 1) * base_type::order; }
+    { data() + (n + 1) * order(); }
 
 
     // Row range access
@@ -307,16 +372,16 @@ namespace origin
 
     // Column access
     col_iterator begin_column(size_type n)
-    { return {base_type::data + n, base_type::order}; }
+    { return {data() + n, base_type::order}; }
 
     col_iterator end_column(size_type n)
-    { return {base_type::data + size() + n, base_type::order}; }
+    { return {data() + size() + n, base_type::order}; }
 
     const_col_iterator begin_column(size_type n) const
-    { return {base_type::data + n, base_type::order}; }
+    { return {data() + n, base_type::order}; }
 
     const_col_iterator end_column(size_type n) const
-    { return {base_type::data + size() + n, base_type::order}; }
+    { return {data() + size() + n, base_type::order}; }
 
 
     // Column range access
@@ -333,7 +398,7 @@ namespace origin
       if(n >= size()) {
         throw std::out_of_range("square_dynarray: out of range");
       }
-      return *(base_type::data_ + n);
+      return *(data() + n);
     }
   };
 

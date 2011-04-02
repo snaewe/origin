@@ -120,7 +120,7 @@ namespace origin
      * @brief Copy constructor
      * Construct a copy of the dynarray x.
      *
-     * @param x       The copied dynarray
+     * @param x   A dynarray
      */
     dynarray(dynarray const& x)
       : base_type{x}
@@ -130,7 +130,7 @@ namespace origin
      * @brief Copy assignment
      * Assign this object as a copy of the dynarray x.
      *
-     * @param x   The copied dynarray
+     * @param x   A dynarray
      */
     dynarray& operator=(dynarray const& x)
     { dynarray tmp{x}; swap(tmp); return *this; }
@@ -138,9 +138,10 @@ namespace origin
     // Move semantics
     /**
      * @brief Move constructor
-     * Construct a dynarray by taking the state of the dynarray x.
+     * Construct a dynarray by moving data out of the dynarray x. After
+     * construction x is left in a moved-from state.
      *
-     * @param x   The dynarray being moved
+     * @param x   A dynarray
      */
     dynarray(dynarray&& x)
       : base_type{std::move(x)}
@@ -148,9 +149,10 @@ namespace origin
 
     /**
      * @brief Move assignment
-     * Move the state of the dynarray x into this object.
+     * Move the state of the dynarray x into this object. After assignment
+     * x is left in a moved-from state.
      *
-     * @param x   The dynarray being moved
+     * @param x   A dynarray
      */
     dynarray& operator=(dynarray&& x)
     { dynarray tmp{std::move(x)}; swap(tmp); return *this; }
