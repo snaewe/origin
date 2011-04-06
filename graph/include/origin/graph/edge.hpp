@@ -69,11 +69,11 @@ namespace origin
    */
   class edge_iterator
     : public random_access_iterator_facade<
-        edge_iterator, edge_t, edge_t, void, std::make_signed<std::size_t>::type
+        edge_iterator, edge_t, edge_t, edge_t
       >
   {
     typedef random_access_iterator_facade<
-        edge_iterator, edge_t, edge_t, void, std::make_signed<std::size_t>::type
+        edge_iterator, edge_t, edge_t, edge_t
     > base_type;
   public:
     typedef typename base_type::reference reference;

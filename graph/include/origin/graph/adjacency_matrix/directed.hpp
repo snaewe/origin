@@ -12,116 +12,146 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_DIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACENCY_MATRIX_DIRECTED_HPP
 
-#include <origin/graph/adjacency_matrix/impl.hpp>
-
 #include <vector>
 #include <cassert>
 
-#include <boost/optional.hpp>
-
 #include <origin/utility/empty.hpp>
 #include <origin/range/iterator_range.hpp>
+#include <origin/optional.hpp>
+#include <origin/dynarray.hpp>
+#include <origin/graph/vertex.hpp>
+#include <origin/graph/edge.hpp>
 
 namespace origin
 {
+  // Use cases for an adjacency matrix are different than we had originally
+  // thought. Here are a couple...
+  //  * Boolean     Matrix elements are true or false indicating the adjacency 
+  //                of two vertices or not.
+  //  * Distance    Matrix elements are numeric and represent the distance or
+  //                cost between vertices
+  //  * Probability Matrix elements are reals in the range [0, 1], and can 
+  //                represent state transitions in, e.g., a Markov chain or an
+  //                adjacency function in Page Range (for example)
+  //  * Laplacian   Matrix elements are integral and encode information about
+  //                the adjacency and degree of graphs
+  // There are probably a ton of other kinds of adjacency matrices.
+  //
+  // The problem is that each particular kind of matrix imposes its own 
+  // interpretation of "missing" values. In a Boolean matrix, two vertices u
+  // and v are not adjacent if M(u, v) == false. In the distance matrix, u and
+  // v are not adjacent if M(u, v) == oo. For Probability, it's 0. For the
+  // Laplacian, it's -1.
 
-  template<typename Vertex_T = empty_t,
-           typename Edge_T = empty_t,
-           typename Alloc = std::allocator<Vertex_T>>
+  /**
+   * @ingroup graph
+   *
+   * The directed adjacency matrix...
+   */
+  template<typename Vertex = empty_t,
+           typename Edge = bool,
+           typename Alloc = std::allocator<Vertex>>
   class directed_adjacency_matrix
   {
-    typedef directed_adjacency_matrix<Vertex_T, Edge_T, Alloc> this_type;
-    typedef Vertex_T vertex_type;
-    typedef boost::optional<Edge_T> edge_type;
+    typedef directed_adjacency_matrix<Vertex, Edge, Alloc> this_type;    
   public:
-    typedef Vertex_T vertex_value_type;
-    typedef typename edge_type::value_type edge_value_type;
     typedef Alloc allocator_type;
-    // FIXME This will use dynarrays as soon as they are part of Origin
-    typedef std::vector<vertex_value_type, Alloc> vertex_list;
-    typedef std::vector<edge_value_type, Alloc> edge_matrix;
+    typedef Vertex vertex_value_type;
+    typedef Edge edge_value_type;
+  private:
+    typedef dynarray<vertex_value_type, Alloc> vertex_list;
+    typedef dynarray<edge_value_type, Alloc> edge_matrix;
+  public:
+    typedef typename allocator_type::size_type size_type;
+    typedef typename allocator_type::difference_type difference_type;
 
-    typedef typename vertex_list::size_type size_type;
-    typedef typename vertex_list::difference_type difference_type;
-    typedef typename adj_mtx_impl_::d_adj_mtx_tag graph_category;
+    // FIXME: Can we make this go away?
+    struct graph_category : directed_graph_tag { };
 
     // Vertex and Edge data types
-    typedef adj_mtx_impl_::vertex_t vertex;
-    typedef adj_mtx_impl_::vertex_t const_vertex;
-    typedef adj_mtx_impl_::edge_t edge;
-    typedef adj_mtx_impl_::edge_t const_edge;
-
-    // Iterator types
-    typedef adj_mtx_impl_::vertex_iter_t<this_type> vertex_iterator;
-    typedef adj_mtx_impl_::vertex_iter_t<this_type> const_vertex_iterator;
-    typedef adj_mtx_impl_::edge_iter<this_type> edge_iterator;
-    typedef adj_mtx_impl_::edge_iter<const this_type> const_edge_iterator;
-    typedef adj_mtx_impl_::in_edge_iter<this_type> in_edge_iterator;
-    typedef adj_mtx_impl_::in_edge_iter< const this_type> const_in_edge_iterator;
-    typedef adj_mtx_impl_::edge_iter<this_type> out_edge_iterator;
-    typedef adj_mtx_impl_::edge_iter<const this_type> const_out_edge_iterator;
-    //typedef int adjacent_edge_iterator;
+    typedef vertex_t vertex;
+    typedef vertex_t const_vertex;
+    typedef edge_t edge;
+    typedef edge_t const_edge;
 
     // Range types
     typedef iterator_range<vertex_iterator> vertex_range;
-    typedef iterator_range<const_vertex_iterator> const_vertex_range;
+    typedef iterator_range<vertex_iterator> const_vertex_range;
+    
     typedef iterator_range<edge_iterator> edge_range;
-    typedef iterator_range<const_edge_iterator> const_edge_range;
-    typedef iterator_range<in_edge_iterator> in_edge_range;
-    typedef iterator_range<const_in_edge_iterator> const_in_edge_range;
-    typedef iterator_range<out_edge_iterator> out_edge_range;
-    typedef iterator_range<const_out_edge_iterator> const_out_edge_range;
+    typedef iterator_range<edge_iterator> const_edge_range;
+    
+    typedef iterator_range<edge_iterator> in_edge_range;
+    typedef iterator_range<edge_iterator> const_in_edge_range;
+    
+    typedef iterator_range<edge_iterator> out_edge_range;
+    typedef iterator_range<edge_iterator> const_out_edge_range;
 
     /** @name Construction, Assignment and Destruction */
     //@{
     // Construction and destruction.
-    directed_adjacency_matrix(allocator_type const& alloc = allocator_type{});
+    directed_adjacency_matrix(allocator_type const& alloc = allocator_type{})
+      : vertices_(), edges_(), size_()
+    { }
+      
     directed_adjacency_matrix(size_type n,
-                              allocator_type const& alloc = allocator_type{});
-
-    // Copy semantics
-    directed_adjacency_matrix(directed_adjacency_matrix const&);
-    directed_adjacency_matrix& operator=(directed_adjacency_matrix const&);
-
-    // Move Semantics
-    directed_adjacency_matrix(directed_adjacency_matrix&&);
-    directed_adjacency_matrix& operator=(directed_adjacency_matrix&&);
+                              allocator_type const& alloc = allocator_type{})
+      : vertices_(n), edges_(n * n), size_(0)
+    { }
     //@}
 
-    /** @name Equality */
-    //@{
     bool equal(directed_adjacency_matrix const&) const;
-    //@}
 
     /** @name Data Structure Properties */
     //@{
-    allocator_type get_allocator() const;
-    inline constexpr size_type max_order() const;
-    inline constexpr size_type max_size() const;
+    allocator_type get_allocator() const
+    { return allocator_type(); }
+
+    // FIXME: Should probably return the isqrt of the max size
+    static constexpr size_type max_order() const
+    { return vertices_.max_size(); }
+    
+    static constexpr size_type max_size() const
+    { return edges_.max_size(); }
     //@}
 
     /** @name Graph Properties */
     //@{
-    inline bool null() const;
-    inline size_type order() const;
-    inline bool empty() const;
-    inline size_type size() const;
+    inline bool null() const
+    { return vertices_.empty(); }
+    
+    inline size_type order() const
+    { return vertices_.size(); }
+    
+    inline bool empty() const
+    { return size_ == 0; }
+    
+    inline size_type size() const
+    { return size_; }
     //@}
 
     /** Data Accessors */
     //@{
-    vertex_value_type& operator[](vertex v);
-    vertex_value_type const& operator[](const_vertex v) const;
-    edge_value_type& operator[](edge e);
-    edge_value_type const& operator[](const_edge e) const;
-    edge_value_type& operator()(size_type r, size_type c);
-    edge_value_type const& operator()(size_type r, size_type c) const;
-    //@}
+    vertex_value_type& operator[](vertex v)
+    { return vertices_[v.value]; }
 
-    /** @name Data Structure Operations */
-    //@{
-    void swap(directed_adjacency_matrix&);
-    //void clear();   // Clear edges? Vertices are fixed.
+    vertex_value_type const& operator[](const_vertex v) const
+    { return vertices_[v.value]; }
+
+    // FIXME: This won't be correct if we optimize the optional out of empty
+    // edge specifications
+    edge_value_type& operator[](edge e)
+    { return *edges_[e.value]; }
+
+    edge_value_type const& operator[](const_edge e) const
+    { return *edges_[e.value]; }
+
+    // Matrix edge access
+    edge operator()(vertex u, vertex v)
+    { return get_edge(u, v); }
+    
+    const_edge operator()(vetex u, vertex v) const
+    { return get_edge(u, v); }
     //@}
 
     /** @name Vertex Properties and Operations */
@@ -135,11 +165,14 @@ namespace origin
     //@{
     edge add_edge(vertex u, vertex v);
     edge add_edge(vertex u, vertex v, edge_value_type const& e);
+
     void remove_edge(edge e);
     void remove_edges(vertex u, vertex v);
     void remove_edges();
+
     edge get_edge(vertex u, vertex v);
     const_edge get_edge(const_vertex u, const_vertex v) const;
+
     vertex source(edge e);
     const_vertex source(const_edge e) const;
     vertex target(edge e);
@@ -158,79 +191,30 @@ namespace origin
     const_in_edge_range in_edges(const_vertex) const;
     //@}
 
+    /** @name Data Structure Operations */
+    //@{
+    void swap(directed_adjacency_matrix& x)
+    {
+      std::swap(vertices_, x.vertices_);
+      std::swap(edges_, x.edges_);
+      std::swap(num_edges_, x.num_edges_);
+    }
+    //@}
+
   private:
     vertex_list vertices_;
     edge_matrix edges_;
-    size_type num_edges_;
+    size_type size_;
   };
 
-  /** @Internal Member Definitions */
-  //@{
   template<typename V, typename E, typename A>
-  directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
-  (allocator_type const& alloc)
-    : vertices_(), edges_(), num_edges_()
-  { }
-
-  template<typename V, typename E, typename A>
-  directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
-  (size_type n, allocator_type const& alloc)
-    : vertices_(n), edges_(n * n), num_edges_(0)
-  { }
-
-  template<typename V, typename E, typename A>
-  directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
-  (directed_adjacency_matrix const& c)
-    : vertices_(c.vertices_), edges_(c.edges_), num_edges_(c.num_edges_)
-  { }
-
-  template<typename V, typename E, typename A>
-  auto directed_adjacency_matrix<V,E,A>::operator=
-  (directed_adjacency_matrix const& c) -> directed_adjacency_matrix&
+  bool
+  directed_adjacency_matrix<V,E,A>::equal(directed_adjacency_matrix const& x) const
   {
-    vertices_ = c.vertices_;
-    edges_ = c.edges_;
-    num_edges_ = c.num_edges_;
-    return *this;
+    return num_edges_ == d.num_edges_ 
+        && vertices_ == d.vertices 
+        && edges_ == d.edges_;
   }
-
-  template<typename V, typename E, typename A>
-  directed_adjacency_matrix<V,E,A>::directed_adjacency_matrix
-  (directed_adjacency_matrix&& c)
-    : vertices_(c.vertices_), edges_(c.edges_), num_edges_(c.num_edges_)
-  { }
-
-  template<typename V, typename E, typename A>
-  auto directed_adjacency_matrix<V,E,A>::operator=
-  (directed_adjacency_matrix&& c) -> directed_adjacency_matrix&
-  {
-    vertices_ = c.vertices_;
-    edges_ = c.edges_;
-    num_edges_ = c.num_edges_;
-    return *this;
-  }
-
-  template<typename V, typename E, typename A>
-  bool directed_adjacency_matrix<V,E,A>::equal
-  (directed_adjacency_matrix const& d) const
-  {
-    return num_edges_ == d.num_edges_ &&
-      vertices_ == d.vertices &&
-      edges_ == d.edges_;
-  }
-
-  template<typename V, typename E, typename A>
-  auto directed_adjacency_matrix<V,E,A>::get_allocator() const -> allocator_type
-  { return allocator_type{}; }
-
-  // Since the order of the graph is fixed, return size/capacity of verticies.
-  template<typename V, typename E, typename A>
-  constexpr auto directed_adjacency_matrix<V,E,A>::max_order() const -> size_type
-  { return vertices_.size(); }
-
-  template<typename V, typename E, typename A>
-  constexpr auto directed_adjacency_matrix<V,E,A>::max_size() const -> size_type
-  { return edges_.size(); }
 
   template<typename V, typename E, typename A>
   bool directed_adjacency_matrix<V,E,A>::null() const
@@ -287,9 +271,6 @@ namespace origin
   template<typename V, typename E, typename A>
   void directed_adjacency_matrix<V,E,A>::swap(directed_adjacency_matrix& c)
   {
-    std::swap(vertices_, c.vertices_);
-    std::swap(edges_, c.edges_);
-    std::swap(num_edges_, c.num_edges_);
   }
 
   template<typename V, typename E, typename A>

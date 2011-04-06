@@ -66,11 +66,11 @@ namespace origin
    */
   class vertex_iterator
     : public random_access_iterator_facade<
-        vertex_iterator, vertex_t, vertex_t, void, std::make_signed<std::size_t>::type
+        vertex_iterator, vertex_t, vertex_t, vertex_t
       >
   {
     typedef random_access_iterator_facade<
-      vertex_iterator, vertex_t, vertex_t, void, std::make_signed<std::size_t>::type
+      vertex_iterator, vertex_t, vertex_t, vertex_t
     > base_type;
   public:
     typedef typename base_type::reference reference;

@@ -116,8 +116,11 @@ namespace origin
     
     typedef iterator_range<edge_iterator> out_edge_range;
     typedef iterator_range<edge_iterator> const_out_edge_range;
+    
     typedef iterator_range<edge_iterator> in_edge_range;
     typedef iterator_range<edge_iterator> const_in_edge_range;
+    
+    // FIXME: Finish writing constructors
     
     /** @name Initialization and Assignment. */
     //@{
