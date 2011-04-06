@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_LINEAR_VECTOR_HPP
-#define ORIGIN_LINEAR_VECTOR_HPP
+#ifndef ORIGIN_MATH_VECTOR_HPP
+#define ORIGIN_MATH_VECTOR_HPP
 
 namespace origin
 {

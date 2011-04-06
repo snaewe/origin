@@ -5,34 +5,22 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_NUMERIC_MATRIX_HPP
-#define ORIGIN_NUMERIC_MATRIX_HPP
+#ifndef ORIGIN_MATH_SQUARE_MATRIX_HPP
+#define ORIGIN_MATH_SQUARE_MATRIX_HPP
 
 #include <valarray>
 
-#include <origin/numeric/slice.hpp>
-
 namespace origin
 {
-  // FIXME: Consider parameterizing over row-major/column-major access and
-  // 0-based/1-based offset access. That would allow the matrix type to
-  // interoperate with Fortran arrays.
-
-  // FIXME: Write actual matrix operations.
   /**
    * @brief A dynamically bounded matrix
-   * The matrix template defines a dynamically allocated, dynamically bounded,
-   * dense Matrix implementation. The implementation of the general matrix
-   * class is intended to support high performance computing. It is implemented
-   * in terms of the std::valarray class template.
-   *
-   * Note that value-initialization of matrices follows the valarray pattern.
-   * The value is specified before the dimensions.
+   * The square matrix template defines a dynamically allocated, dynamically
+   * bounded, dense, square Matrix implementation.
    *
    * @tparam T      A Ring type
    */
   template<typename T>
-  class matrix
+  class square_matrix
   {
     typedef std::valarray<T> array_type;
   public:
@@ -50,7 +38,7 @@ namespace origin
      * @brief Default constructor
      * Construct a 0 x 0 matrix.
      */
-    matrix()
+    square_matrix()
       : data_{}
     { }
 
@@ -58,14 +46,13 @@ namespace origin
 
     /**
      * @brief Matrix constructor
-     * Cosntruct an m x n rectangular matrix. All elements are default
+     * Cosntruct an n x n rectangular matrix. All elements are default
      * initialized.
      *
-     * @param m   The number of of rows
-     * @param n   The number of columns
+     * @param n   The order of the matrix
      */
-    matrix(size_type m, size_type n)
-      : data_(m * n), rows_(m), cols_(n)
+    square_matrix(size_type n)
+      : data_(n * n), order_(n)
     { }
 
     /**
@@ -74,14 +61,12 @@ namespace origin
      * initialized to the given value.
      *
      * @param x   The initial value of diagonal elements
-     * @param m   The number of of rows
-     * @param n   The number of columns
+     * @param n   The order of the matrix
      */
-    matrix(value_type const& x, size_type m, size_type n)
-      : data_(m * n), rows_(m), cols_(n)
+    square_matrix(value_type const& x, size_type n)
+      : data_(n * n), order_(n)
     {
-      size_type k = std::min(m, n);
-      for(size_type i = 0; i < k; ++i) {
+      for(size_type i = 0; i < n; ++i) {
         data_[offset(i, i)] = x;
       }
     }
@@ -90,18 +75,25 @@ namespace origin
     /** @name Properties */
     //@{
     /**
+     * @brief Matrix order
+     * Return the order of the matrix.
+     */
+    size_type order() const
+    { return order_; }
+
+    /**
      * @brief Number of rows
      * Return the number of rows in the matrix.
      */
     size_type rows() const
-    { return rows_; }
+    { return order_; }
 
     /**
      * @brief Number of columns
      * Return the number of columns in the matrix.
      */
     size_type cols() const
-    { return cols_; }
+    { return order_; }
 
     /**
      * @brief Matrix size
@@ -118,7 +110,7 @@ namespace origin
      * @param j   The jth column
      */
     size_type offset(size_type i, size_type j) const
-    { return i * cols() + j; }
+    { return i * order() + j; }
 
     /**
      * @brief Matrix array
@@ -129,7 +121,6 @@ namespace origin
 
     array_type const& array() const
     { return data_; }
-
     //@}
 
     /** @name Element access */
@@ -146,9 +137,20 @@ namespace origin
 
     const_reference operator()(size_type i, size_t j) const
     { return data_[offset(i, j)]; }
+    
+    /**
+     * @brief Row access
+     * Return the ith row of the matrix.
+     *
+     * @param i   A row index
+     */
+    slice_type operator[](size_type i)
+    { return row(i); }
+    
+    const_slice_type operator[](size_type i) const
+    { return row(i); }
 
     // FIXME: Write checked access.
-
     /**
      * @brief Row slice
      * Return a slice reference for the ith row in the matrix.
@@ -156,42 +158,42 @@ namespace origin
     slice_type row(size_type i)
     { return slice_type(data_, std::slice{i, rows(), cols()}); }
 
-    slice_type row(size_type i) const
+    const_slice_type row(size_type i) const
     { return slice_type(data_, std::slice{i, rows(), cols()}); }
 
     /**
      * @brief Column slice
      * Return a slice reference for the ith row in the matrix.
      */
-    slice_type column(size_type i)
+    slice_type col(size_type i)
     { return slice_type(data_, std::slice{i, rows(), cols()}); }
 
-    slice_type column(size_type i) const
-    { return slice_type(data_, std::slice{i, rows(), cols()}); }
+    const_slice_type column(size_type i) const
+    { return col(data_, std::slice{i, rows(), cols()}); }
     //@}
 
   private:
     array_type data_;
-    size_type rows_;
-    size_type cols_;
+    size_type order_;
   };
 
   // Range adaptation for matrices.
   template<typename T>
-  auto begin(matrix<T>& m) -> decltype(std::begin(m.array()))
+  auto begin(square_matrix<T>& m) -> decltype(std::begin(m.array()))
   { return std::begin(m.array()); }
 
   template<typename T>
-  auto end(matrix<T>& m) -> decltype(std::end(m.array()))
+  auto end(square_matrix<T>& m) -> decltype(std::end(m.array()))
   { return std::end(m.array()); }
 
   template<typename T>
-  auto begin(matrix<T> const& m) -> decltype(std::begin(m.array()))
+  auto begin(square_matrix<T> const& m) -> decltype(std::begin(m.array()))
   { return std::begin(m.array()); }
 
   template<typename T>
-  auto end(matrix<T> const& m) -> decltype(std::end(m.array()))
+  auto end(square_matrix<T> const& m) -> decltype(std::end(m.array()))
   { return std::end(m.array()); }
+
 }
 
 #endif

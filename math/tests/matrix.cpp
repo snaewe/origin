@@ -9,8 +9,8 @@
 #include <iostream>
 
 #include <origin/utility/typestr.hpp>
-#include <origin/numeric/matrix.hpp>
-#include <origin/numeric/square_matrix.hpp>
+#include <origin/math/matrix.hpp>
+#include <origin/math/square_matrix.hpp>
 
 using namespace std;
 using namespace origin;

@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_NUMERIC_SLICE_HPP
-#define ORIGIN_NUMERIC_SLICE_HPP
+#ifndef ORIGIN_MATH_SLICE_HPP
+#define ORIGIN_MATH_SLICE_HPP
 
 #include <valarray>
 
