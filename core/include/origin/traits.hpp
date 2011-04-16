@@ -8,6 +8,7 @@
 #ifndef ORIGIN_TRAITS_HPP
 #define ORIGIN_TRAITS_HPP
 
+#include <origin/traits/type.hpp>
 #include <origin/traits/constructors.hpp>
 #include <origin/traits/operators.hpp>
 

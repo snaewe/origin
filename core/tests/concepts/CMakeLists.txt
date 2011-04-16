@@ -5,6 +5,8 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(arithmetic arithmetic.cpp)
-origin_run_test(equal equal.cpp)
-origin_run_test(ordered ordered.cpp)
+origin_run_test(concepts concepts.cpp)
+
+# origin_run_test(arithmetic arithmetic.cpp)
+# origin_run_test(equal equal.cpp)
+# origin_run_test(ordered ordered.cpp)

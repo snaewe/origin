@@ -12,4 +12,4 @@ add_executable(optional optional.cpp)
 add_subdirectory(iterator)
 
 # FIXME: Re-enable concept testing when I backport the concepts
-# add_subdirectory(concepts)
+add_subdirectory(concepts)

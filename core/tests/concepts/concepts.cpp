@@ -10,15 +10,16 @@
 #include <iostream>
 
 #include <origin/utility/typestr.hpp>
-#include <origin/concepts.hpp>
+#include <origin/concepts/traits.hpp>
 
 #include "check.hpp"
 
 using namespace std;
 using namespace origin;
 
-
 int main()
 {
-
+  assert(( has_common_type<int, int, char>::value ));
+  assert(( !has_common_type<string, float>::value ));
 }
+  

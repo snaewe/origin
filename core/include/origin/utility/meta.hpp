@@ -72,6 +72,32 @@ namespace origin
     : std::integral_constant<bool, B>
   { };
 
+
+  /**
+   * @ingroup meta
+   * @class are_same<Args...>
+   *
+   * This trait returns true if all of the argument types are the same type.
+   */
+  //@{
+  template<typename... Args> struct are_same;
+
+  // For a single type, this is trivially true.
+  template<typename T> struct are_same<T> : std::true_type { };
+
+  // Recursively apply are_same (is_same) to T and Args...
+  // FIXME: Does && properly short-circuit the instantiation, or do I need to
+  // use std::conditional to make sure thta it's done correctly. How do you
+  // test this?
+  template<typename T, typename... Args>
+  struct are_same<T, Args...>
+    : bool_constant<
+           std::is_same<T, typename front_type<Args...>::type>::value
+        && are_same<Args...>::value
+      >
+  { };
+  //@}
+
   /**
    * @ingroup meta
    * This trait returns true if the types T and U are not the same. This
@@ -81,7 +107,6 @@ namespace origin
   struct is_different
     : bool_constant<!std::is_same<T, U>::value>
   { };
-
 
 
   /**
@@ -129,8 +154,6 @@ namespace origin
   struct substitution_succeeded<substitution_failure>
     : std::false_type
   { };
-
-
 
 } // namespace origin
 
