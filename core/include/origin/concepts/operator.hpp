@@ -581,30 +581,6 @@ namespace origin
     static constexpr bool value = type::value;
   };
 
-  template<typename T>
-  struct Logical<T, T>
-  {
-    Logical()
-    { auto p = constraints; }
-
-    static void constraints(T x, T y)
-    {
-      Boolean<decltype(x && y)>{};
-      Boolean<decltype(x || y)>{};
-      Boolean<decltype(!x)>{};
-    }
-
-    typedef std::tuple<
-      has_logical_and<T, T>,
-      Boolean<typename deduce_logical_and<T, T>::type>,
-      has_logical_or<T, T>,
-      Boolean<typename deduce_logical_or<T, T>::type>,
-      has_logical_not<T>,
-      Boolean<typename deduce_logical_not<T>::type>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
 
 } // namespace origin
 

@@ -5,15 +5,23 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_CONCEPTS_ALGEBRA_HPP
-#define ORIGIN_CONCEPTS_ALGEBRA_HPP
+#ifndef ORIGIN_CONCEPTS_ALGEBRAIC_HPP
+#define ORIGIN_CONCEPTS_ALGEBRAIC_HPP
 
-#include <origin/concepts/functional.hpp>
+#include <origin/concepts/impl.hpp>
+#include <origin/concepts/fwd.hpp>
 
 namespace origin
 {
   /**
-   * @ingroup algebraic_concepts
+   * @defgroup concepts_algebraic
+   *
+   * Algebraic concepts are constraints that define semantic relationships
+   * between types, operations, and relations.
+   */
+
+  /**
+   * @ingroup concepts_algebraic
    * A boolean algebra...
    */
   template<typename T,
@@ -23,29 +31,8 @@ namespace origin
            typename True,
            typename False>
   struct Boolean_Algebra
-    : Operation<And, T, T>
-    , Operation<Or, T, T>
-    , Operation<Not, T>
-    , Constant<True, T>
-    , Constant<False, T>
-  {
-    Boolean_Algebra()
-    { auto p = constraints; }
-
-    static void constraints()
-    {
-      Associative_Operation<And, T>{};
-      Associative_Operation<Or, T>{};
-      Commutative_Operation<And, T>{};
-      Commutative_Operation<Or, T>{};
-      Distributive_Property<And, Or, T>{};
-      Distributive_Property<Or, And, T>{};
-      Absorption_Law<And, Or, T>{};
-      Absorption_Law<Or, And, T>{};
-      Complement_Law<And, Not, False, T>{};
-      Complement_Law<Or, Not, True, T>{};
-    }
-  };
+    : std::true_type
+  { };
 
 } // namespace origin
 

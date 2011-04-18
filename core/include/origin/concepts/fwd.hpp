@@ -10,55 +10,52 @@
 
 namespace origin
 {
-  // Basic.
-  template<typename... Args> struct Same;
-  template<typename T, typename U> struct Convertible;
-  template<typename T, typename... Args> struct Constructible;
-  template<typename T, typename U> struct Assignable;
+  // Queries
+  template<typename... Args> struct tSame;
+  template<typename T, typename U> struct tDifferent;
+  template<typename T, typename U> struct tConvertible;
+
+  // Classifiers
+  template<typename T> struct tInt;
+  template<typename T> struct tSigned_Int;
+  template<typename T> struct tUnsigned_Int;
+
+  // Interfaces
+  template<typename T> struct tDestructible;
+  template<typename T, typename... Args> struct tConstructible;
+  template<typename T> struct tCopyable;
+  template<typename T> struct tMoveable;
+
+  // Operators
+  template<typename T, typename U = T> struct tLogical_And;
+  template<typename T, typename U = T> struct tLogical_Or;
+  template<typename T> struct tLogical_Not;
+  template<typename T, typename U = T> struct tEqual;
+  template<typename T, typename U = T> struct tLess;
+
+  // Function Traits
+  template<typename F, typename... Args> struct tCallable;
+  template<typename F, typename... Args> struct tProcecure;
+  template<typename F, typename... Args> struct tOracle;
 
 
-  // Operators (arithmetic)
-  // NOTE: We can't group these together because there is too algebraic
-  // "diversity" here. It would be great to assume that if an operator/ is
-  // defined then an operator% is also defined. Unfortunately, that's not the
-  // case---even for builtin types (floats). Even minus and unary minus have
-  // corresponding algebraic structures (the latter depending apparently
-  // depending on an inversion operators.
-  template<typename T, typename U = T> struct Plus;
-  template<typename T, typename U = T> struct Minus;
-  template<typename T, typename U = T> struct Multiplies;
-  template<typename T, typename U = T> struct Divides;
-  template<typename T, typename U = T> struct Modulus;
+  // Concepts
+  template<typename T> struct cComparable;
+  template<typename T> struct cCopyable;
+  template<typename T> struct cRegular;
+  template<typename T> struct cOrdered;
 
-  // NOTE: These can't be grouped with Plus and Minus either. Not all types
-  // supporting subtraction or multiplication define negation. Unary plus is
-  // just weird.
-  template<typename T> struct Unary_Plus;
-  template<typename T> struct Unary_Minus;
+  // Functions
+  template<typename F, typename... Args> struct cFunction;
+  template<typename F, typename... Args> struct cOperation;
+  template<typename F, typename... Args> struct cPredicate;
+  template<typename F, typename T, typename U> struct cRelation;
+  template<typename F, typename T, typename U> struct cEquivalence_Relation;
+  template<typename F, typename T, typename U> struct cStrict_Weak_Order;
 
-  // Operators (bitwise).
-  // FIXME: I don't like the name Bitset since valid interfaces may not be
-  // Binary at all (e.g., sets with overloaded operators). On the otherhand,
-  // it's just describing the operators, not the abstraction.
-  template<typename T, typename U = T> struct Bitset;
-  template<typename T, typename U = T> struct Shift;
-  template<typename T> struct Complement;
+  // Types
+  template<typename T> struct cBoolean;
 
-  // Operators (relational)
-  template<typename T, typename U = T> struct Equal;
-  template<typename T, typename U = T> struct Ordered;
-
-  // Operators (logical)
-  template<typename T, typename U = T> struct Logical;
-
-  // Regular types
-  template<typename T> struct Default;
-  template<typename T> struct Copyable;
-  template<typename T> struct Moveable;
-  template<typename T> struct Regular;
-
-  // Numeric/Algebraic
-  template<typename T> struct Boolean;
 
 } // namespace origin
 

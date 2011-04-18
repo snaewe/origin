@@ -10,123 +10,194 @@
 
 #include <functional>
 
-#include <origin/concepts/impl.hpp>
-#include <origin/concepts/operator.hpp>
+#include <origin/concepts/traits.hpp>
+#include <origin/concepts/algebraic.hpp>
 
 namespace origin
 {
   /**
-   * A default type can be default constructed.
+   * @defgroup concepts_regular
+   * @ingroup concepts
+   *
+   * Concepts in this group address fundamental notions of regularity: a
+   * fundamental set of operations supporting the value-oriented programming
+   * model of most generic libraries.
+   */
+
+  /**
+   * @ingroup concepts_axioms
+   *
+   * The Inequality axiom semantically connects the meaning of operator == to
+   * operator !=.
    */
   template<typename T>
-  struct Default
+  bool aInequality(T x, T y)
   {
-    Default()
-    { auto p = constraints; }
+    return (x != y) == !(x == y);
+  }
 
-    static void constraints()
+  /**
+   * @ingroup concepts_regular
+   *
+   * The cComparable concept is valid for types that can be compared for
+   * equivalence using the operators == and !=. Note that != is not explicitly
+   * required, but is always is the set of valid expressions for Equal types.
+   * Operator == must model an Equivalence_relation, and operator != must be
+   * the negation of ==.
+   */
+  template<typename T>
+  struct cComparable
+  {
+    cComparable()
     {
-      T{};
-      T x;
+      auto p = constraints;
     }
 
-    // FIXME: Use std::has_default_constructor when it becomes available.
+    static void constraints(T x, T y)
+    {
+      tEqual<T, T>{};
+      cEquivalence_Relation<std::equal_to<T>, T, T>{};
+      aInequality(x, y);
+    }
+
     typedef std::tuple<
-      is_constructible<T>
+      tEqual<T, T>,
+      cEquivalence_Relation<std::equal_to<T>, T, T>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
   /**
-   * A type is copyable if it can be copy constucted or copy assigned.
+   * @ingroup concepts_axiom
+   *
+   * Copy equivalence requires that a copy of an object compare equal to
+   * the original.
    */
   template<typename T>
-  struct Copyable
-    : Equal<T>
+  bool aCopy_Equivalence(T x)
   {
-    Copyable()
-    { auto p = constraints; }
+    return T{x} == x;
+  }
+
+  /**
+   * @ingroup concepts_regular
+   *
+   * The Copyable concept is valid for Comparable types that can be copy
+   * constructed. Copyable type exhibit the Copy_equivalence property: that
+   * a copy of an object is equivalent to the original.
+   */
+  template<typename T>
+  struct cCopyable
+    : cComparable<T>
+  {
+    cCopyable()
+    {
+      auto p = constraints;
+    }
 
     static void constraints(T x)
     {
-      T y{x};
-      x = y;
+      tCopyable<T>{};
+      aCopy_Equivalence(x);
     }
-
-    struct axioms
-    {
-      static auto copy_equivalence(T x, T y)
-        -> decltype(x == y)
-      { x = y; return x == y; }
-    };
 
     // FIXME: Use std::has_copy_constructor and std::has_copy_assign when they
     // become available.
     typedef std::tuple<
-      is_constructible<T, T const&>,
-      has_assign<T, T const&>
+      cComparable<T>, tCopyable<T>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
   /**
-   * @ingroup concepts
-   * A type is moveable if it can be constructed over or assigned to an rvalue
-   * reference. This is typically done by calling std::move to generate an
-   * rvalue reference.
+   * @ingroup concepts_regular
    *
-   * Note that, as a concept, moveability is unrelated to copyability even
-   * though all copyable types will generally satisfy the move syntax unless
-   * they explicitly delete those operations.
+   * The regular concept is valid for Copyable types that can be default
+   * constructed.
    */
   template<typename T>
-  struct Moveable
+  struct cRegular
+    : cCopyable<T>
   {
-    Moveable()
-    { auto p = constraints; }
-
-    static void constraints(T x)
+    cRegular()
     {
-      T y{std::move(x)};
-      x = std::move(y);
+      tDefault<T>{};
     }
 
-    // FIXME: Use std::has_move_constructor and std::has_move_assign when they
-    // become available.
     typedef std::tuple<
-      is_constructible<T, T&&>,
-      has_assign<T, T&&>
+      cCopyable<T>, tDefault<T>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
   /**
-   * @ingroup concepts
-   * A regular type is one that can be default constructed and copied, which
-   * also implies equality comparison.
+   * @ingroup concpepts_axioms
+   *
+   * The Greater axiom semantically connects the meaning of operator > to
+   * operator <.
    */
   template<typename T>
-  struct Regular
-    : Default<T>, Copyable<T>
-  {
-    Regular()
-    { auto p = constraints; }
+  bool aGreater(T x, T y)
+  { return (x > y) == (y < x); }
 
-    static void constraints()
-    { }
+  /**
+   * @ingroup concpepts_axioms
+   *
+   * The Less_Equal axiom semantically connects the meaning of operator <= to
+   * operator <.
+   */
+  template<typename T>
+  bool aLess_Equal(T x, T y)
+  { return (x <= y) == !(y < x); }
+
+  /**
+   * @ingroup concpepts_axioms
+   *
+   * The Greater_Equal axiom semantically connects the meaning of operator >=
+   * to operator <.
+   */
+  template<typename T>
+  bool aGreater_Equal(T x, T y)
+  { return (x >= y) == !(x < y); }
+
+  /**
+   * @ingroup concepts_regular
+   *
+   * The Ordered concept is valid for Regular types that can be orderd using
+   * the relational operators <, >, <=, and >=. Note that the operators >,
+   * <=, and >= are not explicitly required, but implicitly derived for any
+   * type satisfying the Less requirements. The operator < is required to
+   * model a Strict_Weak_Order. The meaning of these operators are defined by
+   * the axioms Greater, Less_Equal, and Greater_Equal.
+   */
+  template<typename T>
+  struct cOrdered
+    : cRegular<T>
+  {
+    cOrdered()
+    {
+      auto p = constraints;
+    }
+
+    static void constraints(T x, T y)
+    {
+      tLess<T>{};
+      cStrict_Weak_Order<std::less<T>, T, T>{};
+
+      aGreater(x, y);
+      aLess_Equal(x, y);
+      aGreater_Equal(x, y);
+    }
 
     typedef std::tuple<
-      Default<T>, Copyable<T>, Equal<T>
+      cRegular<T>, tLess<T>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
-
-  // FIXME: It's probably worthwhile to consider a refinement of Boolean, say
-  // Bool that does require evaluation in a Boolean context.
 
   /**
    * @ingroup concepts
@@ -140,16 +211,17 @@ namespace origin
    * evaluation in boolean contexts (e.g., if conditions).
    */
   template<typename T>
-  struct Boolean
+  struct cBoolean
   {
-    Boolean()
-    { auto p = constraints; }
+    cBoolean()
+    {
+    }
 
     static void constraints(T x, T y)
     {
-      !x;
-      x && y;
-      x || y;
+      tLogical_And<T>{};
+      tLogical_Or<T>{};
+      tLogical_Not<T>{};
     }
 
     // FIXME: Axioms! It's generally going to be the case that the Boolean
@@ -157,45 +229,15 @@ namespace origin
     // enforce these constraints
 
     typedef std::tuple<
-      has_logical_not<T>,
-      has_logical_and<T, T>,
-      has_logical_or<T, T>
+      tLogical_And<T>,
+      tLogical_Or<T>,
+      tLogical_Not<T>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
-  /**
-   * The Bool concept is a refinement of Boolean that adds the requirement
-   * that the type T and the result of all logical operations are implicitly
-   * convertible to bool. This allows models to be evaluated in a boolean
-   * context.
-   */
-  template<typename T>
-  struct Bool
-    : Boolean<T>
-  {
-    Bool()
-    { auto p = constraints; }
-
-    static void constraints(T x, T y)
-    {
-      if(x);
-      if(!x);
-      if(x && y);
-      if(x || y);
-    }
-
-    typedef std::tuple<
-      Boolean<T>,
-      Convertible<T, bool>,
-      Convertible<typename deduce_logical_not<T>::type, bool>,
-      Convertible<typename deduce_logical_and<T, T>::type, bool>,
-      Convertible<typename deduce_logical_or<T, T>::type, bool>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
+  template<> struct cBoolean<bool> : std::true_type { };
 
 } // namespace origin
 

@@ -319,10 +319,12 @@ namespace origin
    */
   //@{
   /**
-   * Deduce the result type of the expression x && y.
+   * Deduce the result type of the expression x && y where x has type T and y
+   * has type U. If no such operation is supported, the result type is
+   * substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_logical_and
+  struct get_logical_and_result
   {
   private:
     template<typename X, typename Y>
@@ -333,18 +335,21 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x && y is valid for the types of x and  y.
+   * Determine the validity of the expression x < y where x has type T and y
+   * has type U. Return true if valid, false otherwise.
    */
   template<typename T, typename U>
   struct has_logical_and
-    : substitution_succeeded<typename deduce_logical_and<T, U>::type>
+    : substitution_succeeded<typename get_logical_and_result<T, U>::type>
   { };
 
   /**
-   * Deduce the result type of the expression x || y.
+   * Deduce the result type of the expression x || y where x has type T and y
+   * has type U. If no such operation is supported, the result type is
+   * substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_logical_or
+  struct get_logical_or_result
   {
   private:
     template<typename X, typename Y>
@@ -355,18 +360,20 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x || y is valid for the types of x and  y.
+   * Determine the validity of the expression x < y where x has type T and y
+   * has type U. Return true if valid, false otherwise.
    */
   template<typename T, typename U>
   struct has_logical_or
-    : substitution_succeeded<typename deduce_logical_or<T, U>::type>
+    : substitution_succeeded<typename get_logical_or_result<T, U>::type>
   { };
 
   /**
-   * Deduce the result type of the expression !x.
+   * Deduce the result type of the expression !x where x has type T. If no
+   * such operation is supported, the result type is substitution_failure.
    */
   template<typename T>
-  struct deduce_logical_not
+  struct get_logical_not_result
   {
   private:
     template<typename X>
@@ -377,23 +384,30 @@ namespace origin
   };
 
   /**
-   * Return true if the expression !x is valid for the types of x.
+   * Determine the validity of the expression !x where x has type T. Return
+   * true if valid, false otherwise.
    */
   template<typename T>
   struct has_logical_not
-    : substitution_succeeded<typename deduce_logical_not<T>::type>
+    : substitution_succeeded<typename get_logical_not_result<T>::type>
   { };
   //@}
 
   /**
    * @ingroup traits
    * @name Relational Operators
+   *
    * Traits in this group evaluate the presence of the equality and ordering
    * relational operators.
    */
-  /** Deduce the result type of the expression x == y. */
+  //@{
+  /**
+   * Deduce the result type of the expression x == y where x has type
+   * T and y has type U. If no such operation is supported, the result type
+   * is substitution_failure.
+   */
   template<typename T, typename U>
-  struct deduce_equal
+  struct get_equal_result
   {
   private:
     template<typename X, typename Y>
@@ -404,14 +418,17 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x == y is valid for the types of x and  y.
+   * Determine the validity of the expression x == y where x has type T and y
+   * has type U. Return true if valid, false otherwise.
    */
   template<typename T, typename U>
   struct has_equal
-    : substitution_succeeded<typename deduce_equal<T, U>::type>
+    : substitution_succeeded<typename get_equal_result<T, U>::type>
   { };
 
-  /** Deduce the result type of the expression x != y. */
+  /**
+   * Deduce the result type of the expression x != y.
+   */
   template<typename T, typename U>
   struct deduce_not_equal
   {
@@ -432,10 +449,12 @@ namespace origin
   { };
 
   /**
-   * Deduce the result type of the expression x < y for the types of x and y.
+   * Deduce the result type of the expression x < y where x has type T and y
+   * has type U. If no such operation is supported, the result type is
+   * substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_less
+  struct get_less_result
   {
   private:
     template<typename X, typename Y>
@@ -446,11 +465,12 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x < y is valid for the types of x and y.
+   * Determine the validity of the expression x < y where x has type T and y
+   * has type U. Return true if valid, false otherwise.
    */
   template<typename T, typename U>
   struct has_less
-    : substitution_succeeded<typename deduce_less<T, U>::type>
+    : substitution_succeeded<typename get_less_result<T, U>::type>
   { };
 
   /**
