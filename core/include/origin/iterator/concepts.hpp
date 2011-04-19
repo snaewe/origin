@@ -16,141 +16,123 @@ namespace origin
 {
   /**
    * @defgroup iterator_concepts
+   * @ingroup iterator
    * @ingroup concepts
+   *
+   * The iterator concepts (and traits) define constraints on iterator types.
    */
+
+  // Forward declarations
+  template<typename Iter> struct cIterator;
+  template<typename Iter> struct cForward_Iterator;
+  template<typename Iter> struct cBidirectional_Iterator;
+  template<typename Iter> struct cRandom_Access_Iterator;
+
 
   /**
    * @ingroup iterator_concepts
-   * The iterator concept defines the most basic requirements for a type to
-   * be considered an iterator. It must be Regular, incrementable and
-   * dereferencable. Additionally, std::iterator_traits<Iter> must be a valid
-   * specialization.
+   *
+   * The Iterator concept is valid for all iterator types. An iterator is
+   * an object that can be incremented and dereferenced.
    */
   template<typename Iter>
-  struct Iterator
-    : Regular<Iter>
+  struct cIterator
+    : cRegular<Iter>
   {
-    Iterator()
-    { auto p = constraints; }
+    // NOTE: This will break concept checking if Iter is not actually an
+    // iterator type, however, this greatly simplifies the writing of traits
+    // involviong associated types.
+    typedef typename std::iterator_traits<Iter>::value_type value_type;
+    typedef typename std::iterator_traits<Iter>::reference reference;
+    typedef typename std::iterator_traits<Iter>::pointer pointer;
+    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+    typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
+
+    cIterator()
+    {
+      auto p = constraints;
+    }
 
     static void constraints(Iter i)
     {
-      // These are all required to be valid expressions.
-      typedef typename std::iterator_traits<Iter>::value_type Value_Type;
-      typedef typename std::iterator_traits<Iter>::reference Reference;
-      typedef typename std::iterator_traits<Iter>::pointer Pointer;
-      typedef typename std::iterator_traits<Iter>::difference_type Difference_Type;
-      typedef typename std::iterator_traits<Iter>::iterator_category Iterator_Category;
+      tMoveable<reference>{};
+      tSigned_Int<difference_type>{};
 
-      ++i;
+      tConvertible<reference, Iter&>{};
       i++;
       *i;
     }
 
     typedef std::tuple<
-      Regular<Iter>,
+      cRegular<Iter>,
+      tMoveable<reference>,
+      tSigned_Int<difference_type>,
       has_pre_increment<Iter>,
+      tConvertible<typename get_pre_increment_result<Iter>::type, Iter&>,
       has_post_increment<Iter>,
       has_dereference<Iter>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
   /**
    * @ingroup iterator_concepts
-   * The input iterator concept requires that the dereferenced value of an
-   * iterator is convertible to a given value type. If not explictily specified
-   * the result of dereferencing a value type must be convertible to the
-   * iterator's value type.
+   *
+   * The Input_Iterator trait is valid for Iterators whose reference type can
+   * be converted to the specified type. By default, an Input_Iterator's
+   * reference type must be able to bind to a const reference to the value
+   * type.
    */
-  template<typename Iter, typename Value = unspecified>
-  struct Input_Iterator
-    : Iterator<Iter>
+  template<
+    typename Iter,
+    typename Value = typename std::iterator_traits<Iter>::value_type const&
+  >
+  struct tInput_Iterator
   {
-    Input_Iterator()
-    { auto p = constraints; }
+    typedef typename std::iterator_traits<Iter>::reference reference;
 
-    static void constraints(Iter i)
+    tInput_Iterator()
     {
-      // This is explicitly an implicit conversion.
-      Value x = *i;
+      cIterator<Iter>{};
+      tConvertible<reference, Value>{};
     }
 
     typedef std::tuple<
-      Regular<Iter>,
-      Convertible<typename deduce_dereference<Iter>::type, Value>
+      tConvertible<reference, Value>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
-  // This specialization reduces the input iterator concept to a unary
-  // concept. Here, the value type is the iterator's value type.
-  template<typename Iter>
-  struct Input_Iterator<Iter, unspecified>
-    : Iterator<Iter>
-  {
-    Input_Iterator()
-    { auto p = constraints; }
-
-    static void constraints(Iter i)
-    {
-      typedef typename std::iterator_traits<Iter>::value_type Value_Type;
-      Value_Type x = *i;
-    }
-
-    typedef std::tuple<
-      Regular<Iter>,
-      Convertible<
-        typename deduce_dereference<Iter>::type,
-        typename std::iterator_traits<Iter>::value_type>
-    > requirements;
-    typedef concept_check<requirements> type;
-    static constexpr bool value = type::value;
-  };
 
   /**
    * @ingroup iterator_concepts
-   * An output iterator...
+   *
+   * The Output_Iterator trait is valid for Iterators whose reference type
+   * supports assignment to the specified type. By default an Ouput_Iterator's
+   * reference must move assignable to the iterator's value type.
    */
-  template<typename Iter, typename Value>
-  struct Output_Iterator
-    : Iterator<Iter>
+  template<
+    typename Iter,
+    typename Value = typename std::iterator_traits<Iter>::value_type&&>
+  struct tOutput_Iterator
   {
-    Output_Iterator()
-    { auto p = constraints; }
+    typedef typename std::iterator_traits<Iter>::reference reference;
 
-    static void constraints(Iter i, Value x)
+    tOutput_Iterator()
     {
-      *i = x;
+      cIterator<Iter>{};
+      tAssignable<reference, Value>{};
     }
 
     typedef std::tuple<
-      Regular<Iter>,
-      Assignable<typename deduce_dereference<Iter>::type, Value>
+      tAssignable<reference, Value>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 
-  /**
-   * @ingroup iterator_concepts
-   * This class encapsulates the compile-time requirements of the forward
-   * iterator class.
-   */
-  template<typename Iter>
-  struct Forward_Iterator_Requirements
-  {
-    typedef std::tuple<
-      Regular<Iter>,
-      has_pre_increment<Iter>,
-      has_post_increment<Iter>,
-      has_dereference<Iter>
-    > requirements;
-    typedef std::false_type type;
-    static constexpr bool value = type::value;
-  };
 
   /**
    * @ingroup iterator_concepts
@@ -163,71 +145,120 @@ namespace origin
    * the same sequence of objects.
    */
   template<typename Iter>
-  struct Forward_Iterator
-    : Iterator<Iter>
+  struct cForward_Iterator
+    : cIterator<Iter>
   {
-    Forward_Iterator()
-    { auto p = constraints; }
+    typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
+
+    cForward_Iterator()
+    {
+      auto p = constraints;
+    }
 
     static void constraints(Iter i)
     {
-      // NOTE: We can't just static_assert the value since its not dependent.
-      // The common_type trait makes expression dependent.
-      typedef typename std::common_type<Iter>::type T;
-      static_assert(Forward_Iterator<T>::value,
-                    "no explicit model for Forward_Iterator");
-      *i++;
+      tInput_Iterator<Iter>{};
+      tConvertible<iterator_category, std::forward_iterator_tag>{};
+
+      // Strengthen requirements on the postincrement result.
+      tConvertible<decltype(i++), Iter const&>{};
     }
 
-    struct axioms {
-      // Given two equivalent iterators, they will still be equivalent when
-      // both have been incremented.
-      static auto Increment_Equivalence(Iter x, Iter y)
-        -> decltype(implies(x == y, ++x == ++y))
-      { return implies(x == y, ++x == ++y); }
-
-      // Incrementing an iterator does not consume its state.
-      static auto Increment_Stability(Iter x)
-        -> decltype(*x == *x)
-      { (void)++Iter(x), *x == *x; }
-    };
-
-    // FIXME: If these constraints were specified outside the body of the
-    // concept checking class, then I could actually have checked concept
-    // maps. As it is, this is virtually inaccessible from specializations.
+    typedef std::tuple<
+      tInput_Iterator<Iter>,
+      tConvertible<iterator_category, std::forward_iterator_tag>,
+      tConvertible<typename get_post_increment_result<Iter>::type, Iter const&>
+    > requirements;
   };
-
-  template<typename T>
-  struct Forward_Iterator<T*>
-    : Concept_Map<Forward_Iterator_Requirements<T*>>
-  { };
-
-  template<typename T>
-  struct Forward_Iterator<T const*>
-    : Concept_Map<Forward_Iterator_Requirements<T const*>>
-  { };
 
   /**
    * @ingroup concepts
    * A bidirectional iterator...
    */
   template<typename Iter>
-  struct Bidirectional_Iterator
-    : Forward_Iterator<Iter>
+  struct cBidirectional_Iterator
+    : cForward_Iterator<Iter>
   {
-    Bidirectional_Iterator()
-    { auto p = constraints; }
+    cBidirectional_Iterator()
+    {
+      auto p = constraints;
+    }
 
     static void constraints(Iter i)
     {
-      --i;
-      i--;
+      tConvertible<decltype(--i), Iter&>{};
+      tConvertible<decltype(i--), Iter const&>{};
     }
 
+    // FIXME: Write in terms of tPre_Decrement, tPost_Decrement?
     typedef std::tuple<
-      Forward_Iterator<Iter>
+      cForward_Iterator<Iter>,
+      has_pre_decrement<Iter>,
+      tConvertible<typename get_pre_decrement_result<Iter>::type, Iter&>,
+      has_post_decrement<Iter>,
+      tConvertible<typename get_post_decrement_result<Iter>::type, Iter const&>
     > requirements;
-    typedef concept_check<requirements> type;
+    typedef typename requires_all<requirements>::type type;
+    static constexpr bool value = type::value;
+  };
+
+  /**
+   * @ingroup conceps
+   *
+   * The Random_Access_Iterator is valid for Bidirectional iterators that
+   * support constant-time, random access traversal.
+   */
+  template<typename Iter>
+  struct cRandom_Access_Iterator
+  {
+    typedef typename std::iterator_traits<Iter>::reference reference;
+    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+
+    cRandom_Access_Iterator()
+    {
+      auto p = constraints;
+    }
+
+    static void constraints(Iter i, difference_type n)
+    {
+      tConvertible<decltype(i += n), Iter&>{};
+      tConvertible<decltype(i + n), Iter>{};
+      tConvertible<decltype(n + i), Iter>{};
+
+      tConvertible<decltype(i -= n), Iter&>{};
+      tConvertible<decltype(i - n), Iter>{};
+
+      tConvertible<decltype(i - i), difference_type>{};
+
+      tConvertible<decltype(i[n]), reference>{};
+    }
+
+    // FIXME: Write in terms of actual traits (tPlus_assign?)
+    typedef std::tuple<
+      cBidirectional_Iterator<Iter>,
+
+      has_plus_assign<Iter, difference_type>,
+      tConvertible<typename get_plus_assign_result<Iter, difference_type>::type, Iter&>,
+
+      has_plus<Iter, difference_type>,
+      tConvertible<typename get_plus_result<Iter, difference_type>::type, Iter>,
+
+      has_plus<difference_type, Iter>,
+      tConvertible<typename get_plus_result<difference_type, Iter>::type, Iter>,
+
+      has_minus_assign<Iter, difference_type>,
+      tConvertible<typename get_minus_assign_result<Iter, difference_type>::type, Iter&>,
+
+      has_minus<Iter, difference_type>,
+      tConvertible<typename get_minus_result<Iter, difference_type>::type, Iter>,
+
+      has_minus<Iter, Iter>,
+      tConvertible<typename get_minus_result<Iter, Iter>::type, difference_type>,
+
+      has_subscript<Iter, difference_type>,
+      tConvertible<typename get_subscript_result<Iter, difference_type>::type, reference>
+    > requirements;
+    typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
 

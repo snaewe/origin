@@ -144,9 +144,9 @@ namespace origin
    * The Signed_int trait is true for all built-in signed integral types.
    */
   template<typename T>
-  struct tSigned_int
+  struct tSigned_Int
   {
-    tSigned_int()
+    tSigned_Int()
     {
       static_assert(value, "Type is not standard signed integral type");
     }
@@ -162,9 +162,9 @@ namespace origin
    * The Unsigned_int trait is true for all built-in unsigned integral types.
    */
   template<typename T>
-  struct tUnsigned_int
+  struct tUnsigned_Int
   {
-    tUnsigned_int()
+    tUnsigned_Int()
     {
       static_assert(value, "Type is not standard unsigned integral type");
     }
@@ -304,8 +304,11 @@ namespace origin
   /**
    * @ingroup concepts_interface_traits
    *
-   * The Assignable trait is valid for a T that supports assignment to a type
-   * U.
+   * The Assignable trait is valid for a T (the assignee) that supports
+   * assignment to an object type U (the assigned). The result of the
+   * expression must be convertible to the assignee type. Note that if the
+   * assigned type is an rvalue reference, the trait is interpreted as a
+   * requirement for move assignment.
    */
   template<typename T, typename U>
   struct tAssignable
@@ -317,10 +320,35 @@ namespace origin
 
     static void constraints(T& x, U y)
     {
-      x = y;
+      tConvertible<decltype(x = y), T&>{};
     }
 
-    typedef std::tuple<has_assign<T, U>> requirements;
+    typedef std::tuple<
+      has_assign<T, U>,
+      tConvertible<typename get_assign_result<T, U>::type, T&>
+    > requirements;
+    typedef typename requires_all<requirements>::type type;
+    static constexpr bool value = type::value;
+  };
+
+  // The specialization restates a requirement on move assignment.
+  template<typename T, typename U>
+  struct tAssignable<T, U&&>
+  {
+    tAssignable()
+    {
+      auto p = constraints;
+    }
+
+    static void constraints(T& x, U y)
+    {
+      tConvertible<decltype(x = std::move(y)), T&>{};
+    }
+
+    typedef std::tuple<
+      has_assign<T, U&&>,
+      tConvertible<typename get_assign_result<T, U&&>::type, T&>
+    > requirements;
     typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };

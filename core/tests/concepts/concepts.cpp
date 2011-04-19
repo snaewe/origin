@@ -7,10 +7,13 @@
 
 #include <cassert>
 #include <string>
+#include <complex>
 #include <iostream>
 
 #include <origin/utility/typestr.hpp>
-#include <origin/concepts/traits.hpp>
+#include <origin/concepts.hpp>
+
+#include <boost/logic/tribool.hpp>
 
 #include "check.hpp"
 
@@ -19,7 +22,27 @@ using namespace origin;
 
 int main()
 {
-  assert(( has_common_type<int, int, char>::value ));
-  assert(( !has_common_type<string, float>::value ));
+  static_assert(tSame<int, int>::value, "");
+  static_assert(!tSame<int, int const>::value, "");
+
+  static_assert(tCommon<int, int, char>::value, "");
+  static_assert(!tCommon<string, float>::value, "");
+
+  static_assert(tInt<int>::value, "");
+  static_assert(!tInt<float>::value, "");
+
+  static_assert(tLogical_And<bool>::value, "");
+  static_assert(tLogical_And<boost::tribool>::value, "");
+  static_assert(!tLogical_And<string>::value, "");
+
+  static_assert(cRegular<char>::value, "");
+  static_assert(cRegular<char const>::value, "");
+
+  static_assert(cOrdered<int>::value, "");
+  static_assert(!cOrdered<complex<float>>::value, "");
+
+  static_assert(cBoolean<bool>::value, "");
+  static_assert(cBoolean<boost::tribool>::value, "");
+  static_assert(!cBoolean<string>::value, "");
 }
-  
+

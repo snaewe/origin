@@ -75,12 +75,43 @@ namespace origin
 
   /**
    * @ingroup traits
+   *
    * Determine the validity of the expression f(args...) where f has type F
    * and args is a parameter pack.
    */
   template<typename F, typename... Args>
   struct is_callable
     : substitution_succeeded<typename get_call_result<F, Args...>::type>
+  { };
+
+
+  /**
+   * @ingroup traits
+   *
+   * Deduce the result of the expression x[y] where x has type T and y has type
+   * U. If the expression is invalid, return substitution_failure.
+   */
+  template<typename T, typename U>
+  struct get_subscript_result
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X x, Y y) -> decltype(x[y]);
+
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T>(), std::declval<U>())) type;
+  };
+
+  /**
+   * @ingroup traits
+   *
+   * Determine the validity of the expression x[y] where x has type T and y
+   * has type U. Return true if valid, false otherwise.
+   */
+  template<typename T, typename U>
+  struct has_subscript
+    : substitution_succeeded<typename get_subscript_result<T, U>::type>
   { };
 
 } // namespace origin

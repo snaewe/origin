@@ -13,15 +13,17 @@
 namespace origin
 {
   /**
-   * @ingroup traits
    * @name Arithmetic Operators
+   * @ingroup traits
    */
   //@{
   /**
-   * Deduce the result type of the expression x + y.
+   * Deduce the result type of the expression x + y where x has type T and
+   * y has type U. If the operation is not supported for the tyeps T and U,
+   * the result type is substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_plus
+  struct get_plus_result
   {
   private:
     template<typename X, typename Y>
@@ -32,18 +34,21 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x + y is valid for the types of x and  y.
+   * Determine the validity of the expression x + y. Return true if valid,
+   * false otherwise.
    */
   template<typename T, typename U>
   struct has_plus
-    : substitution_succeeded<typename deduce_plus<T, U>::type>
+    : substitution_succeeded<typename get_plus_result<T, U>::type>
   { };
 
   /**
-   * Deduce the result type of the expression x - y.
+   * Deduce the result type of the expression x - y where x has type T and
+   * y has type U. If the operation is not supported for the tyeps T and U,
+   * the result type is substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_minus
+  struct get_minus_result
   {
   private:
     template<typename X, typename Y>
@@ -54,11 +59,12 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x - y is valid for the types of x and  y.
+   * Determine the validity of the expression x - y. Return true if valid,
+   * false otherwise.
    */
   template<typename T, typename U>
   struct has_minus
-    : substitution_succeeded<typename deduce_minus<T, U>::type>
+    : substitution_succeeded<typename get_minus_result<T, U>::type>
   { };
 
   /**
@@ -551,38 +557,91 @@ namespace origin
    */
   //@{
   /**
-   * Deduce the result type of the x = y for the types of x and y.
+   * Deduce the result type of the expression x = y where x has type T and
+   * y has type U. If the operation is not supported for the tyeps T and U,
+   * the result type is substitution_failure.
    */
   template<typename T, typename U>
-  struct deduce_assign
+  struct get_assign_result
   {
   private:
     template<typename X, typename Y>
     static auto check(X& x, Y const& y) -> decltype(x = y);
+
     static substitution_failure check(...);
   public:
     typedef decltype(check(std::declval<T&>(), std::declval<U>())) type;
   };
 
   /**
-   * Return true if the expression x = y is valid for the types of x and y.
+   * Determin the validity of the expression x = y where x has type T and y
+   * has type U.
    */
   template<typename T, typename U>
   struct has_assign
-    : substitution_succeeded<typename deduce_assign<T, U>::type>
+    : substitution_succeeded<typename get_assign_result<T, U>::type>
   { };
-  //@}
 
   /**
-   * @ingroup traits
-   * @name Arithmetic Operators
+   * Deduce the result type of the expression x += y where x has type T and
+   * y has type U. If the operation is not supported for the tyeps T and U,
+   * the result type is substitution_failure.
    */
-  //@{
+  template<typename T, typename U>
+  struct get_plus_assign_result
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X& x, Y const& y) -> decltype(x += y);
+
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>(), std::declval<U>())) type;
+  };
+
   /**
-   * Deduce the result type of the expression ++x for the type of x.
+   * Determin the validity of the expression x = y where x has type T and y
+   * has type U.
+   */
+  template<typename T, typename U>
+  struct has_plus_assign
+    : substitution_succeeded<typename get_plus_assign_result<T, U>::type>
+  { };
+
+  /**
+   * Deduce the result type of the expression x -= y where x has type T and
+   * y has type U. If the operation is not supported for the tyeps T and U,
+   * the result type is substitution_failure.
+   */
+  template<typename T, typename U>
+  struct get_minus_assign_result
+  {
+  private:
+    template<typename X, typename Y>
+    static auto check(X& x, Y const& y) -> decltype(x += y);
+
+    static substitution_failure check(...);
+  public:
+    typedef decltype(check(std::declval<T&>(), std::declval<U>())) type;
+  };
+
+  /**
+   * Determin the validity of the expression x -= y where x has type T and y
+   * has type U.
+   */
+  template<typename T, typename U>
+  struct has_minus_assign
+    : substitution_succeeded<typename get_minus_assign_result<T, U>::type>
+  { };
+
+  // FIXME: Traits for other compound operators?
+
+  /**
+   * Deduce the result type of the expression ++x where x has type T. If no
+   * such operation is supported, the result type is substitution_failure.
    */
   template<typename T>
-  struct deduce_pre_increment
+  struct get_pre_increment_result
   {
   private:
     template<typename X>
@@ -593,18 +652,20 @@ namespace origin
   };
 
   /**
-   * Return true if the expression ++x is valid for the type of x.
+   * Determine the validity of the expression ++x where x has type T. Return
+   * true if valid, false otherwise.
    */
   template<typename T>
   struct has_pre_increment
-    : substitution_succeeded<typename deduce_pre_increment<T>::type>
+    : substitution_succeeded<typename get_pre_increment_result<T>::type>
   { };
 
   /**
-   * Deduce the result type of the expression x++ for the type of x.
+   * Deduce the result type of the expression x++ where x has type T. If no
+   * such operation is supported, the result type is substitution_failure.
    */
   template<typename T>
-  struct deduce_post_increment
+  struct get_post_increment_result
   {
   private:
     template<typename X>
@@ -615,18 +676,20 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x++ is valid for the type of x.
+   * Determine the validity of the expression x++ where x has type T. Return
+   * true if valid, false otherwise.
    */
   template<typename T>
   struct has_post_increment
-    : substitution_succeeded<typename deduce_post_increment<T>::type>
+    : substitution_succeeded<typename get_post_increment_result<T>::type>
   { };
 
   /**
-   * Deduce the result type of the expression --x for the type of x.
+   * Deduce the result type of the expression --x where x has type T. If no
+   * such operation is supported, the result type is substitution_failure.
    */
   template<typename T>
-  struct deduce_pre_decrement
+  struct get_pre_decrement_result
   {
   private:
     template<typename X>
@@ -637,18 +700,20 @@ namespace origin
   };
 
   /**
-   * Return true if the expression --x is valid for the type of x.
+   * Determine the validity of the expression --x where x has type T. Return
+   * true if valid, false otherwise.
    */
   template<typename T>
   struct has_pre_decrement
-    : substitution_succeeded<typename deduce_pre_decrement<T>::type>
+    : substitution_succeeded<typename get_pre_decrement_result<T>::type>
   { };
 
   /**
-   * Deduce the result type of the expression x-- for the type of x.
+   * Deduce the result type of the expression x-- where x has type T. If no
+   * such operation is supported, the result type is substitution_failure.
    */
   template<typename T>
-  struct deduce_post_decrement
+  struct get_post_decrement_result
   {
   private:
     template<typename X>
@@ -659,11 +724,12 @@ namespace origin
   };
 
   /**
-   * Return true if the expression x-- is valid for the type of x.
+   * Determine the validity of the expression x-- where x has type T. Return
+   * true if valid, false otherwise.
    */
   template<typename T>
   struct has_post_decrement
-    : substitution_succeeded<typename deduce_post_decrement<T>::type>
+    : substitution_succeeded<typename get_post_decrement_result<T>::type>
   { };
   //@}
 
