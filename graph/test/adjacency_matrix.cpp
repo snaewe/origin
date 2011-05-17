@@ -1,22 +1,44 @@
-#include <iostream>
-#include <cassert>
+// Copyright (c) 2008-2011 Kent State University
+//
+// This file is distributed under the MIT License. See the accompanying file
+// LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
+// and conditions.
 
-#include <origin/graph/adjacency_matrix.hpp>
+
+#include <iostream>
+
+//#include <origin/graph/adjacency_matrix.hpp>
+
+//#include "test_adjacency_matrix/test_create.hpp"
+
+using namespace std;
+//using namespace origin;
+
+/**
+ * A simple harness for running a test model. Note that setup and teardown are
+ * performed in the (default) constructors of the test model.
+ */
+/*template<typename Test>
+void test()
+{
+  Test t;
+  t.test();
+};
+
+void test_graph()
+{
+  test<copy_graph<directed_adjacency_matrix<char, int>>>();
+}
 
 typedef origin::directed_adjacency_matrix<int, float> g_type;
 const g_type::size_type g_size = 5;
 
 g_type r_copy(g_type g) { return g; }
-
+*/
 int main()
 {
-  // Testing: 
-  //  directed_adjacency_matrix(allocator_type const& alloc = allocator_type{});
-  //  
-  //  directed_adjacency_matrix::null()
-  //  directed_adjacency_matrix::empty()
-  //  directed_adjacency_matrix::order()
-  //  directed_adjacency_matrix::size()
+  /*test_graph();
+
   g_type null_g;
 
   assert(null_g.null());
@@ -48,7 +70,7 @@ int main()
       break;
     }
     assert(found_edge);
-  }
+  }*/
 
   return 0;
 }

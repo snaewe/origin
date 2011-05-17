@@ -9,7 +9,7 @@
 
 #include <origin/utility/typestr.hpp>
 
-// FIXME: I shouldn't have to explictly ionclude edge.hpp!
+// FIXME: I shouldn't have to explictly include edge.hpp!
 #include <origin/graph/edge.hpp>
 
 #include <origin/graph/adjacency_list/directed.hpp>
