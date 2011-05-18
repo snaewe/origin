@@ -17,10 +17,10 @@ namespace origin
   // it's only really easy to implement input iterators. Even the concept of
   // equality is extremely weak for these iterators. Two iterator referring to
   // the same range are equivalent, but that's about it. Since you can't
-  // actually have two active BFS iterators, equality comparison probably
+  // actually have two active dfs iterators, equality comparison probably
   // doesn't need to be defined too strictly.
   //
-  // What if you have 2 BFS ranges? Can you compare iterators drawn from
+  // What if you have 2 dfs ranges? Can you compare iterators drawn from
   // different ranges? It's technically possible, but I'm not sure if its
   // sound. You don't compare iterators from different containers...
 
@@ -31,7 +31,7 @@ namespace origin
    * @internal
    * @ingroup graph_dfs
    *
-   * The bfs_iterator provides an Input_Iterator abstraction for breadth-first
+   * The dfs_iterator provides an Input_Iterator abstraction for breadth-first
    * search ranges.
    */
   template<typename Range>
@@ -48,12 +48,12 @@ namespace origin
     typedef typename Range::vertex vertex;
 
     // Initialize the iterator to PTE
-    bfs_iterator()
+    dfs_iterator()
       : range_(0)
     { }
 
     // Initialze over a range. Must be non-null.
-    bfs_iterator(Range* rng)
+    dfs_iterator(Range* rng)
       : range_(rng)
     {
       assert(( range_ ));
@@ -102,7 +102,7 @@ namespace origin
 
   /**
    * @internal
-   * @ingroup graph_bfs
+   * @ingroup graph_dfs
    *
    * Implementation of the DFS range.
    *
@@ -125,9 +125,9 @@ namespace origin
     typedef std::stack<vertex> search_stack;
     typedef std::pair<vertex, out_edge_range> vertex_state;
 
-    typedef bfs_iterator<this_type> iterator;
+    typedef dfs_iterator<this_type> iterator;
 
-    bfs_range_impl(Graph& g, vertex v, Color_Label label)
+    dfs_range_impl(Graph& g, vertex v, Color_Label label)
       : graph(g), current(v), stack(), color(label)
     { init(v); }
 
@@ -171,11 +171,11 @@ namespace origin
           }
           else
             ++i;
-          // Finished current vertex
-          color(current_vertex) = color_traits::black();
-          if(!stack.empty())
-            current_vertex = stack.top().first;
         }
+        // Finished current vertex
+        color(current_vertex) = color_traits::black();
+        if(!stack.empty())
+          current_vertex = stack.top().first;
       }
     }
 
@@ -261,12 +261,12 @@ namespace origin
    * @tparam Graph        An Outward_Graph
    * @tparam Color_Label  A Vertex_Label<Graph, Color>
    */
-/*  template<typename Graph, typename Color_Label>
+  template<typename Graph, typename Color_Label>
   class dft_range_impl
-    : private bfs_range_impl<Graph, Color_Label>
+    : private dfs_range_impl<Graph, Color_Label>
   {
-    typedef bfs_range_impl<Graph, Color_Label> base_type;
-    typedef bft_range_impl<Graph, Color_Label> this_type;
+    typedef dfs_range_impl<Graph, Color_Label> base_type;
+    typedef dft_range_impl<Graph, Color_Label> this_type;
   public:
     typedef Graph graph_type;
     typedef typename graph_traits<graph_type>::vertex vertex;
@@ -293,7 +293,195 @@ namespace origin
     using base_type::empty;
     using base_type::init;
     using base_type::search;
-};*/
+
+    // Move to the next vertex in the search buffer and search its incident
+    // edges for undiscovered vertices.
+    void next()
+    {
+      // Algorithm is already in base_type
+      base_type::next();
+      // Find new vertex if stack is empty
+      if(empty())
+        while(iter != last && color(*iter) != color_traits::white()) { 
+          ++iter;
+        }
+        if(iter != last) {
+          current_vertex = *iter;
+          search(*iter);
+        }
+    }
+
+  private:
+    // Return either the first vertex or a default initialized vertex. Note
+    // that default initialized vertices are required to be invalid. This
+    // allows the range to be constructed on a null graph.
+    vertex first_vertex(Graph& g)
+    { return g.null() ? vertex() : *begin_vertex(g); }
+
+  public:
+    using base_type::graph;
+    using base_type::current;
+    using base_type::stack;
+    using base_type::color;
+
+    vertex_iterator iter;   // Points to the current search tree root
+    vertex_iterator last;   // PTE of the vertex range
+  };
+
+  /**
+   * @ingroup graph_dfs
+   * @class dft_range<Graph, Color_Label>
+   * @class dft_range<Graph>
+   *
+   * The depth-first traveral range describes a breadth-first ordering of
+   * the vertices of a graph. All vertices in the graph are visited by the
+   * traversal.
+   *
+   * @tparam Graph        An Outward_Graph
+   * @tparam Color_Label  A Vertex_Label<Graph, Color>
+   */
+  //@{
+  template<typename Graph, typename Color_Label = default_t>
+  class dft_range
+  {
+    typedef dft_range_impl<Graph, Color_Label> range_impl;
+  public:
+    typedef dfs_iterator<range_impl> iterator;
+
+    dft_range(Graph& g)
+      : impl(g)
+    { }
+
+    dft_range(Graph& g, Color_Label color)
+      : impl(g, color)
+    { }
+
+    iterator begin()
+    { return {&impl}; }
+
+    iterator end()
+    { return {}; }
+
+  private:
+    range_impl impl;
+  };
+
+  // Specialization for the default color map
+  template<typename Graph>
+  class dft_range<Graph, default_t>
+  {
+    typedef typename graph_traits<Graph>::vertex vertex;
+
+    typedef vertex_map<Graph, basic_color_t> color_map;
+    typedef typename color_map::label_type color_label;
+
+    typedef dft_range_impl<Graph, color_label> range_impl;
+  public:
+    typedef dfs_iterator<range_impl> iterator;
+
+    dft_range(Graph& g)
+      : colors(g), impl(g, colors.label)
+    { }
+
+    iterator begin()
+    { return {&impl}; }
+
+    iterator end() const
+    { return {}; }
+
+  private:
+    color_map colors;
+    range_impl impl;
+  };
+  //@}
+
+  // FIXME: Write overloads that accept a visitor for the dfs_range objects.
+
+  /**
+   * @fn dfs_from(g, v)
+   * @fn dfs_from(g, v, color)
+   *
+   * Construct an iterable depth-first search range on the graph, starting
+   * from the given vertex. Only vertices in the same connected component are
+   * visited by the search.
+   *
+   * The color label, if given, records the states of vertices during the
+   * traversal.
+   *
+   * @tparam Graph        A Graph type.
+   * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
+   *                      type supporting at least three colors.
+   *
+   * @param g       A Graph object.
+   * @param vis     A visitor.
+   * @param color   A color label.
+   */
+  //@{
+  template<typename Graph>
+  inline dfs_range<Graph> dfs(Graph& g, typename Graph::vertex v)
+  { return {g, v}; }
+
+  template<typename Graph>
+  dfs_range<Graph const> dfs(Graph const& g, typename Graph::const_vertex v)
+  { return {g, v}; }
+
+  template<typename Graph, typename Color_Label>
+  inline dfs_range<Graph, Color_Label>
+  dfs(Graph& g, typename Graph::vertex v, Color_Label color)
+  { return {g, v, color}; }
+
+  template<typename Graph, typename Color_Label>
+  inline dfs_range<Graph const, Color_Label>
+  dfs(Graph const& g, typename Graph::const_vertex v, Color_Label color)
+  { return {g, v, color}; }
+  //@}
+
+  /**
+   * @fn dfs(g)
+   * @fn dfs(g, color)
+   *
+   * Construct an iterable depth-first search range on the graph. All
+   * vertices in the graph are visited.
+   *
+   * The color label, if given, records the states of vertices during the
+   * traversal. The type of the color label must be Vertex_Label<Graph, Color>.
+   *
+   * @tparam Graph        An Outward_Graph type.
+   * @tparam Color_Label  A Vertex_Label<Graph, Color>.
+   *
+   * @param g       A Graph object.
+   * @param color   A color label.
+   */
+  //@{
+  template<typename Graph>
+  inline dft_range<Graph> dfs(Graph& g)
+  { return {g}; }
+
+  template<typename Graph>
+  inline dft_range<Graph const> dfs(Graph const& g)
+  { return {g}; }
+
+  // Construct a complete dfs range with a custom color label. This collides
+  // with dfs(g, v) and needs to be explicitly specialized.
+  // FIXME: The correct specialization is to check that Color_Label is a
+  // Read/Write label, not that it's not the same as the vertex type. Update
+  // this to use a real concept check when I have real concepts.
+  template<typename Graph, typename Color_Label>
+  inline typename std::enable_if<
+    !std::is_same<Color_Label, typename Graph::vertex>::value,
+    dft_range<Graph, Color_Label>
+  >::type
+  dfs(Graph& g, Color_Label color)
+  { return {g, color}; }
+
+  template<typename Graph, typename Color_Label>
+  inline typename std::enable_if<
+    !std::is_same<Color_Label, typename Graph::const_vertex>::value,
+    dft_range<Graph const, Color_Label>
+  >::type
+  dfs(Graph const& g, Color_Label color)
+  { return {g, color}; }
+  //@}
 
 } // namespace origin
 
