@@ -7,12 +7,14 @@
 
 #include <iostream>
 
-//#include <origin/graph/adjacency_matrix.hpp>
+#include <origin/graph/adjacency_matrix.hpp>
+#include <origin/dynarray/square_dynarray.hpp>
+#include <cassert>
 
 //#include "test_adjacency_matrix/test_create.hpp"
 
 using namespace std;
-//using namespace origin;
+using namespace origin;
 
 /**
  * A simple harness for running a test model. Note that setup and teardown are
@@ -37,40 +39,19 @@ g_type r_copy(g_type g) { return g; }
 */
 int main()
 {
-  /*test_graph();
-
-  g_type null_g;
-
-  assert(null_g.null());
-  assert(null_g.empty());
-  assert(null_g.order() == 0u);
-  assert(null_g.size() == 0u);
-
-  g_type g(g_size);
-
-  assert(!g.null());
-  assert(g.empty());
-  assert(g.order() == g_size);
-  assert(g.size() == 0u);
-
-  // Testing: Add edges
-  g.add_edge(g_type::vertex(1), g_type::vertex(2));
-  assert(g.size() == 1);
-
-  // Testing additional constructors.
-
-  // Testing ranges.
-
+  boolean_adjacency_matrix<char> g(3, square_dynarray<bool>(3));
   {
-    bool found_edge = false;
-    auto edges = g.edges();
-    for(; edges.begin() != edges.end(); ++edges.begin())
-    {
-      found_edge = true;
-      break;
-    }
-    assert(found_edge);
-  }*/
+    auto i = begin(g.vertices());
+    g[i] = 'a';
+    g[++i] = 'b';
+    g[++i] = 'c';
+  }
+  for(auto i : g.vertices())
+    cout << g[i];
+  cout << '\n';
+
+  boolean_adjacency_matrix<char> h(3, square_dynarray<bool>(3));
+  cout << h.size() << '\n';
 
   return 0;
 }

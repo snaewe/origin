@@ -15,7 +15,7 @@ namespace origin
 
   /**
    * The connected components visitor assigns a component number to each
-   * verex.
+   * vertex.
    */
   template<typename Graph, typename Component_Label>
   struct connected_components_visitor

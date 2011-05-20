@@ -34,12 +34,12 @@ namespace origin
 
     // Copy constructor
     square_dynarray_base(square_dynarray_base const& x)
-      : Alloc{x.alloc}, data{allocate(x.order)}, order{x.order}
+      : Alloc{x.get_alloc()}, data{allocate(x.order)}, order{x.order}
     { }
 
     // Move constructor
     square_dynarray_base(square_dynarray_base&& x)
-      : Alloc{x.alloc}, data{x.data}, order{x.order}
+      : Alloc{x.get_alloc()}, data{x.data}, order{x.order}
     {
       x.data = nullptr;
       x.order = 0;
@@ -62,6 +62,9 @@ namespace origin
     { return order * order; }
 
     allocator_type& get_alloc()
+    { return *this; }
+    // FIXME Added because of const complaints
+    allocator_type const& get_alloc() const
     { return *this; }
 
     // Allocate n * n elements
