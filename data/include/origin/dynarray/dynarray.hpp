@@ -33,12 +33,12 @@ namespace origin
 
     // Copy semantics
     dynarray_base(dynarray_base const& x)
-      : Alloc{x.alloc}, first{allocate(x.size())}, last{first + x.size()}
+      : Alloc{x.get_alloc()}, first{allocate(x.size())}, last{first + x.size()}
     { }
 
     // Move semantics
     dynarray_base(dynarray_base&& x)
-      : Alloc{x.alloc}, first{x.first}, last{x.last}
+      : Alloc{x.get_alloc()}, first{x.first}, last{x.last}
     { x.first = x.last = nullptr; }
 
     dynarray_base(allocator_type const& alloc)
@@ -56,6 +56,9 @@ namespace origin
     { return last - first; }
 
     allocator_type& get_alloc()
+    { return *this; }
+    // FIXME Added because of const complaints
+    allocator_type const& get_alloc() const
     { return *this; }
 
     // Allocate n * n elements
@@ -198,7 +201,7 @@ namespace origin
     { return base_type::size(); }
 
     constexpr size_type max_size() const
-    { return this->get_alloc.max_size(); }
+    { return this->get_alloc().max_size(); }
 
     bool empty() const
     { return base_type::size() == 0; }

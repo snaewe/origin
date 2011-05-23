@@ -8,6 +8,7 @@
 #define ORIGIN_DATA_SQUARE_DYNARRAY_HPP
 
 #include <stdexcept>
+#include <utility>
 
 #include <origin/memory.hpp>
 #include <origin/iterator/stride_iterator.hpp>
@@ -393,6 +394,14 @@ namespace origin
 
     const_col_range column(size_type n) const
     { return {begin_column(n), end_column(n)}; }
+    //@}
+
+    /** @name Swap */
+    //@{
+    void swap(square_dynarray& x) {
+      std::swap(base_type::data, x.base_type::data);
+      std::swap(base_type::order, x.base_type::order);
+    }
     //@}
 
   private:

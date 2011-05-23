@@ -6,52 +6,42 @@
 
 
 #include <iostream>
-
-#include <origin/graph/adjacency_matrix.hpp>
-#include <origin/dynarray/square_dynarray.hpp>
 #include <cassert>
 
-//#include "test_adjacency_matrix/test_create.hpp"
+#include <origin/range/zip_range.hpp>
+#include <origin/graph/adjacency_matrix.hpp>
+#include <origin/dynarray/square_dynarray.hpp>
 
-using namespace std;
-using namespace origin;
+// Test suite
+#include "test_adjacency_matrix/test_create.hpp"
+#include "test_adjacency_matrix/test_size.hpp"
 
 /**
  * A simple harness for running a test model. Note that setup and teardown are
  * performed in the (default) constructors of the test model.
  */
-/*template<typename Test>
-void test()
-{
-  Test t;
-  t.test();
+template<typename Matrix = origin::square_dynarray<bool>>
+void test_copy_create() {
+  using namespace origin;
+
+  create_copy_graph_boolean<boolean_adjacency_matrix<char, Matrix>> t_bool;
+
+  t_bool.test();
 };
 
-void test_graph()
-{
-  test<copy_graph<directed_adjacency_matrix<char, int>>>();
-}
+template<typename Matrix = origin::square_dynarray<bool>>
+void test_sizes() {
+  using namespace origin;
 
-typedef origin::directed_adjacency_matrix<int, float> g_type;
-const g_type::size_type g_size = 5;
+  graph_sizes_boolean<boolean_adjacency_matrix<char, Matrix>> t_bool;
 
-g_type r_copy(g_type g) { return g; }
-*/
+  t_bool.test();
+};
+
 int main()
 {
-  boolean_adjacency_matrix<char> g(3, square_dynarray<bool>(3));
-  {
-    auto i = begin(g.vertices());
-    g[i] = 'a';
-    g[++i] = 'b';
-    g[++i] = 'c';
-  }
-  for(auto i : g.vertices())
-    cout << g[i];
-  cout << '\n';
-
-  boolean_adjacency_matrix<char> h(3, square_dynarray<bool>(3));
-  cout << h.size() << '\n';
+  test_copy_create();
+  test_sizes();
 
   return 0;
 }
