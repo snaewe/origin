@@ -6,6 +6,7 @@
 # and conditions.
 
 origin_run_test(concepts concepts.cpp)
+origin_run_test(explicit explicit.cpp)
 
 # origin_run_test(arithmetic arithmetic.cpp)
 # origin_run_test(equal equal.cpp)

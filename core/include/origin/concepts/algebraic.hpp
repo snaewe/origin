@@ -27,10 +27,10 @@ namespace origin
    * of evaluation does not affect the result.
    */
   template<typename Op, typename T>
-  bool aAssociative(Op op, T x, T y, T z)
-  {
-    return op(x, op(y, z)) == op(op(x, y), z);
-  }
+    bool aAssociative(Op op, T x, T y, T z)
+    {
+      return op(x, op(y, z)) == op(op(x, y), z);
+    }
 
   /**
    * @ingroup concepts_axioms
@@ -39,10 +39,10 @@ namespace origin
    * order of operands does not affect the result.
    */
   template<typename Op, typename T>
-  bool aCommutative(Op op, T x, T y)
-  {
-    return op(x, y) == op(y, x);
-  }
+    bool aCommutative(Op op, T x, T y)
+    {
+      return op(x, y) == op(y, x);
+    }
 
   /**
    * @ingroup concepts_axim
@@ -51,10 +51,10 @@ namespace origin
    * op2 iff, for any objects x and y having type T, op1(x, op2(x, y)) == x.
    */
   template<typename Op1, typename Op2, typename T>
-  bool aAbsorption(Op1 op1, Op2 op2, T x, T y)
-  {
-    return op1(x, op2(x, y)) == x;
-  }
+    bool aAbsorption(Op1 op1, Op2 op2, T x, T y)
+    {
+      return op1(x, op2(x, y)) == x;
+    }
 
   /**
    * @ingroup concepts_axiom
@@ -64,10 +64,10 @@ namespace origin
    * op1(x, op2(y, z)) == op2(op1(x, y), op1(x, z))
    */
   template<typename Op1, typename Op2, typename T>
-  bool aDistributive(Op1 op1, Op2 op2, T x, T y, T z)
-  {
-    return op1(x, op2(y, z)) == op2(op1(x, y), op1(x, z));
-  }
+    bool aDistributive(Op1 op1, Op2 op2, T x, T y, T z)
+    {
+      return op1(x, op2(y, z)) == op2(op1(x, y), op1(x, z));
+    }
 
   /**
    * @ingroup concepts_axiom
@@ -76,10 +76,10 @@ namespace origin
    * (complement) and a value in the domain.
    */
   template<typename Op, typename Comp, typename Value, typename T>
-  bool aComplement(Op op, Comp comp, Value val, T x)
-  {
-    return op(x, comp(x)) == val;
-  }
+    bool aComplement(Op op, Comp comp, Value val, T x)
+    {
+      return op(x, comp(x)) == val;
+    }
 
 
   /**
@@ -96,34 +96,35 @@ namespace origin
            typename Not,
            typename True,
            typename False>
-  struct cBoolean_Algebra
-    : std::true_type
-  {
-    cBoolean_Algebra()
+    struct aBoolean_Algebra
     {
-      auto p = constraints;
-    }
+      aBoolean_Algebra()
+      {
+        auto p = constraints;
+      }
 
-    static void constraints(And a, Or o, Not n, True t, False f, T x, T y, T z)
-    {
-      cRegular<T>{};
+      static void constraints(And a, Or o, Not n, True t, False f, T x, T y, T z)
+      {
+        cOperation<And, T, T>{};
+        cOperation<Or, T, T>{};
+        cOperation<Not, T>{};
 
-      aAssociative(a, x, y, z);     // x and (y and z) == (x and y) and z
-      aAssociative(o, x, y, z);     // x or (y or z) == (x or y) or z
+        aAssociative(a, x, y, z);     // x and (y and z) == (x and y) and z
+        aAssociative(o, x, y, z);     // x or (y or z) == (x or y) or z
 
-      aCommutative(a, x, y);        // x and y == y and x
-      aCommutative(o, x, y);        // x or y == y or x
+        aCommutative(a, x, y);        // x and y == y and x
+        aCommutative(o, x, y);        // x or y == y or x
 
-      aAbsorption(a, o, x, y);      // x and (x or y) == x
-      aAbsoprtion(o, a, x, y);      // x or (x and y) == x
+        aAbsorption(a, o, x, y);      // x and (x or y) == x
+        aAbsoprtion(o, a, x, y);      // x or (x and y) == x
 
-      aDistributive(a, o, x, y, z); // x and (y or z) == (x and y) or (y and z)
-      aDistributuve(o, a, x, y, z); // x or (y and z) == (x or y) and (y or z)
+        aDistributive(a, o, x, y, z); // x and (y or z) == (x and y) or (y and z)
+        aDistributuve(o, a, x, y, z); // x or (y and z) == (x or y) and (y or z)
 
-      aComplement(a, n, f, x);      // x and not x == f
-      aComplement(o, n, t, x);      // x or not x == t
-    }
-  };
+        aComplement(a, n, f, x);      // x and not x == f
+        aComplement(o, n, t, x);      // x or not x == t
+      }
+    };
 
 } // namespace origin
 

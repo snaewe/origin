@@ -32,22 +32,70 @@ namespace origin
   template<> struct requires_all<> : std::true_type { };
 
   template<typename Model>
-  struct requires_all<Model>
-    : bool_constant<Model::value>
-  { };
+    struct requires_all<Model>
+      : bool_constant<Model::value>
+    { };
 
   template<typename Model, typename... Args>
-  struct requires_all<Model, Args...>
-    : std::conditional<
-        Model::value, typename requires_all<Args...>::type, std::false_type
-      >::type
-  { };
+    struct requires_all<Model, Args...>
+      : std::conditional<
+          Model::value, typename requires_all<Args...>::type, std::false_type
+        >::type
+    { };
 
   // A specialization for tuples, just to help out.
   template<typename... Args>
-  struct requires_all<std::tuple<Args...>>
-    : requires_all<Args...>::type
-  { };
+    struct requires_all<std::tuple<Args...>>
+      : requires_all<Args...>::type
+    { };
+  
+
+  /**
+   * @internal
+   * 
+   * This metafunction always returns false. It is useful when a static 
+   * assertion must be made dependent.
+   * 
+   * @todo Move this into meta. This seems like it could be useful in other
+   * places.
+   */
+  template<typename T>
+    struct always_false
+      : bool_constant<!std::is_same<T, T>::value>
+    { };
+    
+    
+  /**
+   * @ingroup concepts
+   * 
+   * The cExplicit concept implements a concept that is always invalid for the 
+   * given argument. In essence, it forces a programmer to create a 
+   * specialization to satisfy any requirements that depend on this concept.
+   */
+  template<typename T>
+    struct cExplicit
+    {
+      cExplicit()
+      {
+        static_assert(always_false<T>::value, "Explicit concept required");
+      }
+      
+      typedef std::tuple<always_false<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+  /**
+   * @ingroup concepts
+   * 
+   * The cModel class is always a valid model. This is intended to be used as
+   * a base class for specializations of Explicit requirements.
+   */
+  struct cModel
+    : std::true_type
+  {
+    typedef std::tuple<> requirements;
+  };
 
 } // namespace origin
 

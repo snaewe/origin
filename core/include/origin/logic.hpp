@@ -31,19 +31,21 @@ namespace origin
    * true. Note that ff x is false, then the result is also trivially true.
    */
   template<typename T>
-  inline auto implies(T const& p, T const& q)
-    -> decltype(!p || q)
-  {
-    cBoolean<T>{};
-    return !p || q;
-  }
+    inline auto implies(T const& p, T const& q)
+      -> decltype(!p || q)
+    {
+      cBoolean<T>{};
+      return !p || q;
+    }
 
   // This version satisfies requirements for expression templates.
   // FIXME: Constrain this template using a trait.
   template<typename T, typename U>
-  inline auto implies(T const& p, U const& q)
-    -> decltype(!p || q)
-  { return !p || q; }
+    inline auto implies(T const& p, U const& q)
+      -> decltype(!p || q)
+    { 
+      return !p || q; 
+    }
 
   /**
    * @ingroup logic
@@ -52,19 +54,21 @@ namespace origin
    * logically equal to y if x equals y.
    */
   template<typename T>
-  inline auto iff(T const& p, T const& q)
-    -> decltype((p && q) || (!p && !q))
-  {
-    cBoolean<T>{};
-    return (p && q) || (!p && !q);
-  }
+    inline auto iff(T const& p, T const& q)
+      -> decltype((p && q) || (!p && !q))
+    {
+      cBoolean<T>{};
+      return (p && q) || (!p && !q);
+    }
 
   // This overload satsifies requirements for expression templates.
   // FIXME: Constrain this template using a trait.
   template<typename T, typename U>
-  inline auto iff(T const& p, T const& q)
-    -> decltype((p && q) || (!p && !q))
-  { return (p && q) || (!p && !q); }
+    inline auto iff(T const& p, T const& q)
+      -> decltype((p && q) || (!p && !q))
+    { 
+      return (p && q) || (!p && !q); 
+    }
 
 
   /**
@@ -77,14 +81,14 @@ namespace origin
    * to simply Constructible<T, bool> to avoid recursive definitions.
    */
   template<typename T>
-  struct truth
-    : tConstructible<T, bool>
-  {
-    T operator()() const
+    struct truth
+      : tConstructible<T, bool>
     {
-      return T{true};
-    }
-  };
+      T operator()() const
+      {
+        return T{true};
+      }
+    };
 
   /**
    * @ingroup logic
@@ -96,14 +100,14 @@ namespace origin
    * to simply Constructible<T, bool> to avoid recursive definitions.
    */
   template<typename T>
-  struct falsity
-    : tConstructible<T, bool>
-  {
-    T operator()() const
+    struct falsity
+      : tConstructible<T, bool>
     {
-      return T{false};
-    }
-  };
+      T operator()() const
+      {
+        return T{false};
+      }
+    };
 
 } // namespace origin
 

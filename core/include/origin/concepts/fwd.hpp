@@ -10,23 +10,22 @@
 
 namespace origin
 {
-  // Queries
+  // Type Traits
   template<typename... Args> struct tSame;
   template<typename T, typename U> struct tDifferent;
   template<typename T, typename U> struct tConvertible;
-
-  // Classifiers
+  
+  // Type Classification
   template<typename T> struct tInt;
   template<typename T> struct tSigned_Int;
   template<typename T> struct tUnsigned_Int;
 
-  // Interfaces
+  // Object Properties
   template<typename T> struct tDestructible;
   template<typename T, typename... Args> struct tConstructible;
-  template<typename T> struct tCopyable;
-  template<typename T> struct tMoveable;
+  template<typename T, typename U> struct tAssignable;
 
-  // Operators
+  // Operator Traits
   template<typename T, typename U = T> struct tLogical_And;
   template<typename T, typename U = T> struct tLogical_Or;
   template<typename T> struct tLogical_Not;
@@ -36,12 +35,12 @@ namespace origin
   // Function Traits
   template<typename F, typename... Args> struct tCallable;
   template<typename F, typename... Args> struct tProcecure;
-  template<typename F, typename... Args> struct tOracle;
 
 
   // Concepts
   template<typename T> struct cComparable;
   template<typename T> struct cCopyable;
+  template<typename T> struct cMoveable;
   template<typename T> struct cRegular;
   template<typename T> struct cOrdered;
 
@@ -50,8 +49,11 @@ namespace origin
   template<typename F, typename... Args> struct cOperation;
   template<typename F, typename... Args> struct cPredicate;
   template<typename F, typename T, typename U> struct cRelation;
-  template<typename F, typename T, typename U> struct cEquivalence_Relation;
-  template<typename F, typename T, typename U> struct cStrict_Weak_Order;
+  
+  template<typename F, typename T> struct aEquivalence_Relation;
+  template<typename R, typename T> struct aStrict_Partial_Order;
+  template<typename R, typename T> struct aStrict_Weak_Order;
+  template<typename R, typename T> struct asStrict_Total_Order;
 
   // Types
   template<typename T> struct cBoolean;

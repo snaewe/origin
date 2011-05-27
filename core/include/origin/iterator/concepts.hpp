@@ -55,9 +55,8 @@ namespace origin
 
     static void constraints(Iter i)
     {
-      tMoveable<reference>{};
+      cMoveable<reference>{};
       tSigned_Int<difference_type>{};
-
       tConvertible<reference, Iter&>{};
       i++;
       *i;
@@ -65,7 +64,7 @@ namespace origin
 
     typedef std::tuple<
       cRegular<Iter>,
-      tMoveable<reference>,
+      cMoveable<reference>,
       tSigned_Int<difference_type>,
       has_pre_increment<Iter>,
       tConvertible<typename get_pre_increment_result<Iter>::type, Iter&>,

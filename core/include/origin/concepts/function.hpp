@@ -27,25 +27,25 @@ namespace origin
    * The Callable trait is valid for any type that can be called (as a
    * function) over the given sequence of argument types.
    */
-  template<typename F, typename... Args>
-  struct tCallable
-  {
-    tCallable()
+    template<typename F, typename... Args>
+    struct tCallable
     {
-      auto p = constraints;
-    }
+      tCallable()
+      {
+        auto p = constraints;
+      }
 
-    static void constraints(F f, Args&&... args)
-    {
-      f(std::forward<Args>(args)...);
-    }
+      static void constraints(F f, Args&&... args)
+      {
+        f(std::forward<Args>(args)...);
+      }
 
-    typedef std::tuple<
-      is_callable<F, Args...>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      typedef std::tuple<
+        is_callable<F, Args...>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup concepts_function_traits
@@ -59,44 +59,22 @@ namespace origin
    * not equality comparable. Otherwise, this should be a concept.
    */
   template<typename Proc, typename... Args>
-  struct tProcedure
-  {
-    tProcedure()
+    struct tProcedure
     {
-      tCopyable<Proc>{};
-      tCallable<Proc, Args...>{};
-    }
+      tProcedure()
+      {
+        tConstructible<Proc, Proc const&>{};
+        tCallable<Proc, Args...>{};
+      }
 
-    typedef std::tuple<
-      tCopyable<Proc>,
-      tCallable<Proc, Args...>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      typedef std::tuple<
+        tConstructible<Proc, Proc const&>,
+        tCallable<Proc, Args...>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
-  /**
-   * @ingroup concepts_function_traits
-   *
-   * The Oracle trait is valid for any Procedure whose result type models
-   * the Boolean concept.
-   */
-  template<typename Proc, typename... Args>
-  struct tOracle
-  {
-    tOracle()
-    {
-      tProcedure<Proc>{};
-      cBoolean<typename std::result_of<Proc(Args...)>::type>{};
-    }
-
-    typedef std::tuple<
-      tProcedure<Proc, Args...>,
-      cBoolean<typename std::result_of<Proc(Args...)>::type>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
 
   /**
    * @defgroup concepts_function
@@ -112,11 +90,10 @@ namespace origin
    * arguments produce equivalent results.
    */
   template<typename F, typename... Args>
-  bool
-  aApplication_Equivalence(F f, std::tuple<Args...> x, std::tuple<Args...> y)
-  {
-    return implies(x == y, tuple_invoke(f, x) == tuple_invoke(f, y));
-  }
+    bool aApplication_Equality(F f, std::tuple<Args...> x, std::tuple<Args...> y)
+    {
+      return implies(x == y, tuple_invoke(f, x) == tuple_invoke(f, y));
+    }
 
   /**
    * @ingroup concepts_function
@@ -125,29 +102,29 @@ namespace origin
    * satisfy the Application_Equivalence requirements.
    */
   template<typename Func, typename... Args>
-  struct cFunction
-    : tProcedure<Func, Args...>
-  {
-    cFunction()
+    struct cFunction
     {
-      auto p = constriants;
-    }
+      cFunction()
+      {
+        auto p = constriants;
+      }
 
-    static void constriants(Func func,
-                            std::tuple<Args...> x,
-                            std::tuple<Args...> y)
-    {
-      tDifferent<typename std::result_of<Func(Args...)>::type, void>{};
-      aApplication_Equivalence(func, x, y);
-    }
+      static void constriants(Func func,
+                              std::tuple<Args...> x,
+                              std::tuple<Args...> y)
+      {
+        tProcedure<Func, Args...>{};
+        tDifferent<typename std::result_of<Func(Args...)>::type, void>{};
+        aApplication_Equality(func, x, y);
+      }
 
-    typedef std::tuple<
-      tProcedure<Func, Args...>,
-      tDifferent<typename std::result_of<Func(Args...)>::type, void>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      typedef std::tuple<
+        tProcedure<Func, Args...>,
+        tDifferent<typename std::result_of<Func(Args...)>::type, void>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup concepts_function
@@ -157,61 +134,63 @@ namespace origin
    * a Common type.
    */
   template<typename Op, typename... Args>
-  struct cOperation
-    : cFunction<Op, Args...>
-  {
-    cOperation()
+    struct cOperation
+      : cFunction<Op, Args...>
     {
-      tCommon<Args...>{};
-      tConvertible<
-        typename get_conditional_result<Args...>::type,
-        typename std::result_of<Op(Args...)>::type
-      >{};
-    }
+      cOperation()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints()
+      {
+        tCommon<Args...>{};
+        tConvertible<
+          typename get_conditional_result<Args...>::type,
+          typename std::result_of<Op(Args...)>::type
+        >{};
+      }
 
-    typedef std::tuple<
-      cFunction<Op, Args...>,
-      tCommon<Args...>,
-      tConvertible<
-        typename get_conditional_result<Args...>::type,
-        typename std::result_of<Op(Args...)>::type
-      >
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      typedef std::tuple<
+        cFunction<Op, Args...>,
+        tCommon<Args...>,
+        tConvertible<
+          typename get_conditional_result<Args...>::type,
+          typename std::result_of<Op(Args...)>::type
+        >
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup concepts_function
    *
-   * The Predicate concept is valid for Procedures that whose result types
-   * are Boolean. Predicates exhibit the Application_Equivalence property.
+   * A Predicate is a Function whose result type is Boolean.
    */
   template<typename Pred, typename... Args>
-  struct cPredicate
-    : tProcedure<Pred, Args...>
-  {
-    cPredicate()
+    struct cPredicate
+      :cFunction<Pred, Args...>
     {
-      auto p = constraints;
-    }
+      cPredicate()
+      {
+        auto p = constraints;
+      }
 
-    static void constraints(Pred p,
-                            std::tuple<Args...> x,
-                            std::tuple<Args...> y)
-    {
-      cBoolean<typename std::result_of<Pred(Args...)>::type>{};
-      aApplication_Equivalence(p, x, y);
-    }
+      static void constraints(Pred p,
+                              std::tuple<Args...> x,
+                              std::tuple<Args...> y)
+      {
+        cBoolean<typename std::result_of<Pred(Args...)>::type>{};
+      }
 
-    typedef std::tuple<
-      tProcedure<Pred, Args...>,
-      cBoolean<typename std::result_of<Pred(Args...)>::type>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
-
+      typedef std::tuple<
+        cFunction<Pred, Args...>,
+        cBoolean<typename std::result_of<Pred(Args...)>::type>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
 } // namespace origin
 

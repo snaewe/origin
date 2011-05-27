@@ -8,35 +8,44 @@
 #ifndef ORIGIN_RELATION_HPP
 #define ORIGIN_RELATION_HPP
 
-#include <origin/concepts/traits.hpp>
+#include <functional>
 
 namespace origin
 {
-  // FIXME: Should this go somewhere else? Should this be in an Order module
-  // as opposed to general relations.
+  template<typename, typename> struct aStrict_Partial_Order;
 
+  // FIXME: Optimize with EBO?
   /**
-   * The indifferent_to function object defines an "indifference" operation
-   * built in terms of an Ordered type T. Two objects x and y are indifferent
-   * (or incomparable) if neither x < y nor y < x.
+   * The incomparable operation is defined in terms of a strict ordering
+   * comparison on T, less by default. The operation returns true if, for
+   * objects x and y, it is neither the case that x < y, nor y < x. 
+   * 
+   * Note that if the  template parameter T is a total order, then this is 
+   * equivalent to the equal_to function.
    *
-   * Note that for totally ordered types, indifference is the same as
-   * equivalence.
-   *
-   * @note The requirement (Less) for this type is purely syntactic. We do not
-   * need to specify order semantics for this function template. That is
-   * typically the purpose of some other component.
+   * @tparam T      A type
+   * @tparam Comp   A Strict Partial Order on T
    */
-  template<typename T>
-  struct indifferent_to
-    : tLess<T>
+  template<typename T, typename Comp = std::less<T>>
+  class incomparable
+    : aStrict_Partial_Order<Comp, T>
   {
+  public:
+    incomparable(Comp c)
+      : comp{c}
+    { }
+    
     bool operator()(T const& x, T const& y) const
     {
-      return !(x < y) && !(y < x);
+      return !comp(x, y) && !comp(y, x);
     }
+    
+  private:
+    Comp comp;
   };
 
 } // namespace origin
+
+#include <origin/concepts/relation.hpp>
 
 #endif
