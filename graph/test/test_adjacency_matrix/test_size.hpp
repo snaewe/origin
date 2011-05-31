@@ -29,7 +29,7 @@
  * @tparam Graph An adjacency matrix
  */
 template<typename Graph>
-struct graph_sizes_boolean
+struct graph_sizes
 {
   typedef typename Graph::vertex Vertex;
   //typedef typename Graph::edge Edge;
@@ -46,28 +46,25 @@ struct graph_sizes_boolean
       assert(( g.empty() ));
       assert(( g.size() == 0u ));
       assert(( g.order() == 0u ));
-      assert(( g.max_order() == 0u ));
-      assert(( g.max_size() == 0u ));
     }
 
     // Test the first 5 positive integers.
     for(auto i = 1u; i < 6u; ++i) {
-      Graph g(i, Matrix(i));
+      Graph g(i);
       assert(( !g.null() ));
       assert(( g.empty() ));
       assert(( g.order() == i ));
-      assert(( g.max_order() == i ));
-      assert(( g.max_size() == i*i ));
       for(auto j = 0u; j < i; ++j) {
         g.add_edge(Vertex(j), Vertex(j));
         assert(( g.size() == j + 1 ));
       }
       Graph h = g;
       for(auto j = 0u; j < i; ++j) {
-        h.remove_edge(Vertex(j), Vertex(j));
+        h.remove_edges(Vertex(j), Vertex(j));
         assert(( h.size() == i - j - 1 ));
       }
       assert(( h.empty() ));
+      assert(( !g.empty() ));
     }
   }
 };

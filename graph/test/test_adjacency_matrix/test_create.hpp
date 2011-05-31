@@ -4,8 +4,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef TEST_ADJACENCY_MATRIX_CREATE_COPY_GRAPH_HPP
-#define TEST_ADJACENCY_MATRIX_CREATE_COPY_GRAPH_HPP
+#ifndef TEST_ADJACENCY_MATRIX_CREATE_GRAPH_HPP
+#define TEST_ADJACENCY_MATRIX_CREATE_GRAPH_HPP
 
 #include <origin/utility/typestr.hpp>
 #include <origin/range/zip_range.hpp>
@@ -31,7 +31,7 @@
  * @tparam Graph A Directed or Undirected Graph. The graph must be dynamic.
  */
 template<typename Graph>
-struct create_copy_graph_boolean
+struct create_copy_graph
 {
   typedef typename Graph::vertex Vertex;
   typedef typename Graph::edge Edge;
@@ -49,7 +49,7 @@ struct create_copy_graph_boolean
     }
 
     {
-      Graph g(3, Matrix(3));
+      Graph g(3);
       
       Vertex v[] = {
         Vertex(0), Vertex(1), Vertex(2)
@@ -92,7 +92,5 @@ struct create_copy_graph_boolean
     }
   }
 };
-
-
 
 #endif

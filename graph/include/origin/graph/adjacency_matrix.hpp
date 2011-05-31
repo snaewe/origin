@@ -10,7 +10,6 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
 #define ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
 
-#include <origin/graph/adjacency_matrix/directed.hpp>
-//#include <origin/graph/adjacency_matrix/undirected.hpp>
+#include <origin/graph/adjacency_matrix/adjacency_matrix.hpp>
 
 #endif

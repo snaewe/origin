@@ -15,6 +15,7 @@
 // Test suite
 #include "test_adjacency_matrix/test_create.hpp"
 #include "test_adjacency_matrix/test_size.hpp"
+#include "test_adjacency_matrix/test_data_access.hpp"
 
 /**
  * A simple harness for running a test model. Note that setup and teardown are
@@ -24,24 +25,34 @@ template<typename Matrix = origin::square_dynarray<bool>>
 void test_copy_create() {
   using namespace origin;
 
-  create_copy_graph_boolean<boolean_adjacency_matrix<char, Matrix>> t_bool;
+  create_copy_graph<adjacency_matrix<char, Matrix>> t;
 
-  t_bool.test();
+  t.test();
 };
 
 template<typename Matrix = origin::square_dynarray<bool>>
 void test_sizes() {
   using namespace origin;
 
-  graph_sizes_boolean<boolean_adjacency_matrix<char, Matrix>> t_bool;
+  graph_sizes<adjacency_matrix<char, Matrix>> t;
 
-  t_bool.test();
+  t.test();
+};
+
+template<typename Matrix = origin::square_dynarray<bool>>
+void test_data_access() {
+  using namespace origin;
+
+  graph_data_access<adjacency_matrix<char, Matrix>> t;
+
+  t.test();
 };
 
 int main()
 {
   test_copy_create();
   test_sizes();
+  test_data_access();
 
   return 0;
 }

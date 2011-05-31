@@ -100,7 +100,7 @@ namespace origin
      * Return the number of elements in the matrix.
      */
     size_type size() const
-    { return data_.sise(); }
+    { return data_.size(); }
 
     /**
      * @brief Array offset
