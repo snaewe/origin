@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_GRAPH_distance_matrix_DISTANCE_MATRIX_HPP
-#define ORIGIN_GRAPH_distance_matrix_DISTANCE_MATRIX_HPP
+#ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_DISTANCE_MATRIX_HPP
+#define ORIGIN_GRAPH_ADJACENCY_MATRIX_DISTANCE_MATRIX_HPP
 
 #include <cassert>
 
@@ -16,6 +16,7 @@
 #include <origin/utility/empty.hpp>
 #include <origin/dynarray/dynarray.hpp>
 #include <origin/dynarray/square_dynarray.hpp>
+
 
 namespace origin
 {
@@ -31,21 +32,23 @@ namespace origin
    */
   template<typename Vertex = empty_t,
            typename Matrix = square_dynarray<float>,
-           typename Edge_Predicate = 
            typename Alloc = std::allocator<Vertex>>
-  class distance_matrix
+  class adjacency_matrix
   {
-    typedef distance_matrix<Vertex, Matrix, Alloc> this_type;
+    typedef adjacency_matrix<Vertex, Matrix, Alloc> this_type;
   public:
     typedef Matrix matrix_type;
     typedef Alloc vertex_allocator_type;
     typedef Vertex vertex_value_type;
     typedef typename Matrix::value_type edge_value_type;
   private:
-    typedef dynarray<vertex_value_type> vertex_list;
+    typedef dynarray<vertex_value_type, Alloc> vertex_list;
   public:
     typedef typename vertex_allocator_type::size_type size_type;
     typedef typename vertex_allocator_type::difference_type difference_type;
+
+    // FIXME The matrix decides the directedness.
+    //struct graph_category : directed_graph_tag { };
 
     // Vertex and Edge data types
     typedef vertex_t vertex;
@@ -75,24 +78,24 @@ namespace origin
 
     /** @name Construction, Assignment and Destruction */
     //@{
-    distance_matrix()
-      : matrix_(), vertices_(), size_()
+    adjacency_matrix()
+      : matrix_(), vertices_()
     { }
 
-    distance_matrix(matrix_type&& m)
-      : matrix_(move(m)), vertices_(get_order(m)), size_(count_edges(m))
+    adjacency_matrix(matrix_type&& m)
+      : matrix_(move(m)), vertices_(get_order(m))
     { }
 
-    distance_matrix(size_type n)
-      : matrix_(n), vertices_(n), size_(0)
+    adjacency_matrix(size_type n)
+      : matrix_(n), vertices_(n)
     { }
 
     // Enable if matrix is constructed by # rows and # columns
-    /*distance_matrix(size_type n)
-      : matrix_{n, n}, vertices_{n}, size_{0}
+    /*adjacency_matrix(size_type n)
+      : matrix_(n, n), vertices_(n)
     { assert((n == m)); }*/
 
-    distance_matrix& operator=(distance_matrix const& x);
+    adjacency_matrix& operator=(adjacency_matrix const& x);
     //@}
 
     /** @name Data Structure Properties */
@@ -112,11 +115,9 @@ namespace origin
     inline size_type order() const
     { return vertices_.size(); }
     
-    inline bool empty() const
-    { return size_ == 0; }
+    inline bool empty() const;
     
-    inline size_type size() const
-    { return size_; }
+    inline size_type size() const;
     //@}
 
     /** Data Accessors */
@@ -154,7 +155,6 @@ namespace origin
 
     /** @name Edge Properties and Operations */
     //@{
-    //  Must be enable if'd. This does not work with bool types!
     edge add_edge(vertex u, vertex v);
     edge add_edge(vertex u, vertex v, edge_value_type const& e);
 
@@ -185,34 +185,54 @@ namespace origin
 
     /** @name Data Structure Operations */
     //@{
-    void swap(distance_matrix& x);
-    bool equal(distance_matrix const& x) const;
+    void swap(adjacency_matrix& x);
+    bool equal(adjacency_matrix const& x) const;
     //@}
 
   private:
     /** @internal Helper functions. */
     size_type count_edges(matrix_type const& m) { return 0u; }
-    size_type get_order(matrix_type const& m) { return m.order(); }
 
     matrix_type matrix_;
     vertex_list vertices_;
-    size_type size_;
   };
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::operator=(distance_matrix const& x)
-    -> distance_matrix&
+  auto adjacency_matrix<V,M,A>::operator=(adjacency_matrix const& x)
+    -> adjacency_matrix&
   {
     if(this == &x) {
       matrix_ = x.matrix_;
       vertices_ = x.vertices_;
-      size_ = x.size_;
     }
     return *this;
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::out_degree(const_vertex v) const -> size_type
+  auto adjacency_matrix<V,M,A>::size() const -> size_type
+  {
+    const size_type mtx_order = order();
+    size_type edge_count = 0;
+
+    for(auto i = 0u; i < mtx_order; ++i)
+      for(auto j = 0u; j < mtx_order; ++j)
+        if(matrix_(i,j)) ++edge_count;
+
+    return edge_count;
+  }
+
+  template<typename V, typename M, typename A>
+  auto adjacency_matrix<V,M,A>::empty() const -> bool
+  {
+    const size_type mtx_order = order();
+    for(auto i = 0u; i < mtx_order; ++i)
+      for(auto j = 0u; j < mtx_order; ++j)
+        if(matrix_(i,j)) return false;
+    return true;
+  }
+
+  template<typename V, typename M, typename A>
+  auto adjacency_matrix<V,M,A>::out_degree(const_vertex v) const -> size_type
   {
     size_type out_edge_count = 0;
     for(auto i = 0u; i < order(); ++i) {
@@ -222,7 +242,7 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::in_degree(const_vertex v) const -> size_type
+  auto adjacency_matrix<V,M,A>::in_degree(const_vertex v) const -> size_type
   {
     size_type in_edge_count = 0;
     for(auto i = 0u; i < order(); ++i) {
@@ -232,7 +252,7 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::degree(const_vertex v) const -> size_type
+  auto adjacency_matrix<V,M,A>::degree(const_vertex v) const -> size_type
   {
     size_type in_edge_count = 0;
     for(auto i = 0u; i < order(); ++i) {
@@ -243,107 +263,103 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::add_edge(vertex v, vertex u) -> edge
+  auto adjacency_matrix<V,M,A>::add_edge(vertex v, vertex u) -> edge
   {
     edge_value_type& ev = matrix_(v.value, u.value);
-    if(!ev) {
-      ++size_;
-      ev = true;
-    }
-    return {v.value, u.value};
+
+    assert(( !ev ));
+
+    ev = edge_value_type{true};
+
+    return edge(v.value, u.value);
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::add_edge
+  auto adjacency_matrix<V,M,A>::add_edge
   (vertex v, vertex u, edge_value_type const& e) -> edge
   {
-    assert((e != edge_value_type()));
+    assert(( e != edge_value_type{false} ));
 
     edge_value_type& ev = matrix_(v.value, u.value);
-    if(!ev) {
-      ++size_;
-      ev = e;
-    }
-    return {v.value, u.value};
+
+    assert(( !ev ));
+
+    ev = e;
+    return edge(v.value, u.value);
   }
 
-  // Consider soft remove edges...
   template<typename V, typename M, typename A>
-  void distance_matrix<V,M,A>::remove_edge(edge e)
+  void adjacency_matrix<V,M,A>::remove_edge(edge e)
   {
     edge_value_type& ev = matrix_(e.source, e.target);
 
-    assert((ev != edge_value_type()));
+    assert(( ev ));
 
-    --size_;
-    ev = edge_value_type();
+    ev = edge_value_type{false};
   }
 
   template<typename V, typename M, typename A>
-  void distance_matrix<V,M,A>::remove_edges(vertex v, vertex u)
+  void adjacency_matrix<V,M,A>::remove_edges(vertex v, vertex u)
   {
     edge_value_type& ev = matrix_(v.value, u.value);
 
-    assert((ev != edge_value_type()));
+    assert(( ev ));
 
-    --size_;
-    ev = edge_value_type();
+    ev = edge_value_type{false};
   }
 
   template<typename V, typename M, typename A>
-  void distance_matrix<V,M,A>::remove_edges()
+  void adjacency_matrix<V,M,A>::remove_edges()
   {
-    size_ = 0;
-
-    edge_value_type ev_init = edge_value_type();
+    edge_value_type e_false = edge_value_type{false};
     for(auto i = 0u; i < vertices_.size(); ++i)
       for(auto j = 0u; j < vertices_.size(); ++j)
-        matrix_(i,j) = ev_init;
+        matrix_(i,j) = e_false;
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::get_edge(vertex u, vertex v) -> edge
+  auto adjacency_matrix<V,M,A>::get_edge(vertex u, vertex v) -> edge
   { return matrix_(u.value, v.value) ? edge{u.value, v.value} : edge{}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::get_edge(const_vertex u, const_vertex v) const
+  auto adjacency_matrix<V,M,A>::get_edge(const_vertex u, const_vertex v) const
     -> const_edge
   { return matrix_(u.value, v.value) ? edge{u.value, v.value} : edge{}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::source(edge e) -> vertex
+  auto adjacency_matrix<V,M,A>::source(edge e) -> vertex
   { return {e.source}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::source(const_edge e) const -> const_vertex
+  auto adjacency_matrix<V,M,A>::source(const_edge e) const -> const_vertex
   { return {e.source}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::target(edge e) -> vertex
+  auto adjacency_matrix<V,M,A>::target(edge e) -> vertex
   { return {e.target}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::target(const_edge e) const -> const_vertex
+  auto adjacency_matrix<V,M,A>::target(const_edge e) const -> const_vertex
   { return {e.target}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::vertices() -> vertex_range
+  auto adjacency_matrix<V,M,A>::vertices() -> vertex_range
   { return {vertex_iterator(0), vertex_iterator(order())}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::vertices() const -> const_vertex_range
+  auto adjacency_matrix<V,M,A>::vertices() const -> const_vertex_range
   { return {vertex_iterator(0), vertex_iterator(order())}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::edges() -> edge_range
+  auto adjacency_matrix<V,M,A>::edges() -> edge_range
   { return {edge_iterator(*this, 0), edge_iterator(*this, order() * order())}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::edges() const -> const_edge_range
+  auto adjacency_matrix<V,M,A>::edges() const -> const_edge_range
   { return {edge_iterator(*this, 0), edge_iterator(*this, order() * order())}; }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::out_edges(vertex v) -> out_edge_range
+  auto adjacency_matrix<V,M,A>::out_edges(vertex v) -> out_edge_range
   {
     return {
       edge_iterator(*this, v.value * order()),
@@ -352,7 +368,7 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::out_edges(const_vertex v) const 
+  auto adjacency_matrix<V,M,A>::out_edges(const_vertex v) const 
     -> const_out_edge_range
   {
     return {
@@ -362,7 +378,7 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::in_edges(vertex v) -> in_edge_range
+  auto adjacency_matrix<V,M,A>::in_edges(vertex v) -> in_edge_range
   {
     //std::cerr << v.value << ':';
     return const_in_edge_range(
@@ -372,7 +388,7 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  auto distance_matrix<V,M,A>::in_edges(const_vertex v) const
+  auto adjacency_matrix<V,M,A>::in_edges(const_vertex v) const
     -> const_in_edge_range
   {
     //std::cerr << v.value << ':';
@@ -383,17 +399,16 @@ namespace origin
   }
 
   template<typename V, typename M, typename A>
-  void distance_matrix<V,M,A>::swap(distance_matrix& x)
+  void adjacency_matrix<V,M,A>::swap(adjacency_matrix& x)
   {
     swap(matrix_, x.matrix_);
     std::swap(vertices_, x.vertices_);
-    std::swap(size_, x.size_);
   }
 
   template<typename V, typename M, typename A>
-  bool distance_matrix<V,M,A>::equal(distance_matrix const& x) const
+  bool adjacency_matrix<V,M,A>::equal(adjacency_matrix const& x) const
   {
-    return matrix_ == x.matrix_ && vertices_ == x.vertices_ && size_ == x.size_;
+    return matrix_ == x.matrix_ && vertices_ == x.vertices_;
   }
 
 } // origin

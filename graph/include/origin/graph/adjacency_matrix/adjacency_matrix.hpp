@@ -17,6 +17,7 @@
 #include <origin/dynarray/dynarray.hpp>
 #include <origin/dynarray/square_dynarray.hpp>
 
+
 namespace origin
 {
 
@@ -41,7 +42,7 @@ namespace origin
     typedef Vertex vertex_value_type;
     typedef typename Matrix::value_type edge_value_type;
   private:
-    typedef dynarray<vertex_value_type> vertex_list;
+    typedef dynarray<vertex_value_type, Alloc> vertex_list;
   public:
     typedef typename vertex_allocator_type::size_type size_type;
     typedef typename vertex_allocator_type::difference_type difference_type;
@@ -58,8 +59,10 @@ namespace origin
   private:
     // Iterator types
     typedef adj_mtx_impl_::vertex_iterator vertex_iterator;
-    typedef adj_mtx_impl_::edge_iterator<this_type> edge_iterator;
-    typedef adj_mtx_impl_::in_edge_iterator<this_type> in_edge_iterator;
+    typedef adj_mtx_impl_::edge_iterator<this_type, adj_mtx_impl_::bool_mtx>
+      edge_iterator;
+    typedef adj_mtx_impl_::in_edge_iterator<this_type, adj_mtx_impl_::bool_mtx>
+      in_edge_iterator;
 
   public:
     // Range types
@@ -78,20 +81,20 @@ namespace origin
     /** @name Construction, Assignment and Destruction */
     //@{
     adjacency_matrix()
-      : matrix_(), vertices_(), size_()
+      : matrix_(), vertices_()
     { }
 
     adjacency_matrix(matrix_type&& m)
-      : matrix_(move(m)), vertices_(get_order(m)), size_(count_edges(m))
+      : matrix_(move(m)), vertices_(get_order(m))
     { }
 
     adjacency_matrix(size_type n)
-      : matrix_(n), vertices_(n), size_(0)
+      : matrix_(n), vertices_(n)
     { }
 
     // Enable if matrix is constructed by # rows and # columns
     /*adjacency_matrix(size_type n)
-      : matrix_{n, n}, vertices_{n}, size_{0}
+      : matrix_(n, n), vertices_(n)
     { assert((n == m)); }*/
 
     adjacency_matrix& operator=(adjacency_matrix const& x);
@@ -114,11 +117,9 @@ namespace origin
     inline size_type order() const
     { return vertices_.size(); }
     
-    inline bool empty() const
-    { return size_ == 0; }
+    inline bool empty() const;
     
-    inline size_type size() const
-    { return size_; }
+    inline size_type size() const;
     //@}
 
     /** Data Accessors */
@@ -156,7 +157,6 @@ namespace origin
 
     /** @name Edge Properties and Operations */
     //@{
-    //  Must be enable if'd. This does not work with bool types!
     edge add_edge(vertex u, vertex v);
     edge add_edge(vertex u, vertex v, edge_value_type const& e);
 
@@ -194,11 +194,9 @@ namespace origin
   private:
     /** @internal Helper functions. */
     size_type count_edges(matrix_type const& m) { return 0u; }
-    size_type get_order(matrix_type const& m) { return m.order(); }
 
     matrix_type matrix_;
     vertex_list vertices_;
-    size_type size_;
   };
 
   template<typename V, typename M, typename A>
@@ -208,9 +206,31 @@ namespace origin
     if(this == &x) {
       matrix_ = x.matrix_;
       vertices_ = x.vertices_;
-      size_ = x.size_;
     }
     return *this;
+  }
+
+  template<typename V, typename M, typename A>
+  auto adjacency_matrix<V,M,A>::size() const -> size_type
+  {
+    const size_type mtx_order = order();
+    size_type edge_count = 0;
+
+    for(auto i = 0u; i < mtx_order; ++i)
+      for(auto j = 0u; j < mtx_order; ++j)
+        if(matrix_(i,j)) ++edge_count;
+
+    return edge_count;
+  }
+
+  template<typename V, typename M, typename A>
+  auto adjacency_matrix<V,M,A>::empty() const -> bool
+  {
+    const size_type mtx_order = order();
+    for(auto i = 0u; i < mtx_order; ++i)
+      for(auto j = 0u; j < mtx_order; ++j)
+        if(matrix_(i,j)) return false;
+    return true;
   }
 
   template<typename V, typename M, typename A>
@@ -248,37 +268,36 @@ namespace origin
   auto adjacency_matrix<V,M,A>::add_edge(vertex v, vertex u) -> edge
   {
     edge_value_type& ev = matrix_(v.value, u.value);
-    if(!ev) {
-      ++size_;
-      ev = true;
-    }
-    return {v.value, u.value};
+
+    assert(( !ev ));
+
+    ev = edge_value_type{true};
+
+    return edge(v.value, u.value);
   }
 
   template<typename V, typename M, typename A>
   auto adjacency_matrix<V,M,A>::add_edge
   (vertex v, vertex u, edge_value_type const& e) -> edge
   {
-    assert((e != edge_value_type()));
+    assert(( e != edge_value_type{false} ));
 
     edge_value_type& ev = matrix_(v.value, u.value);
-    if(!ev) {
-      ++size_;
-      ev = e;
-    }
-    return {v.value, u.value};
+
+    assert(( !ev ));
+
+    ev = e;
+    return edge(v.value, u.value);
   }
 
-  // Consider soft remove edges...
   template<typename V, typename M, typename A>
   void adjacency_matrix<V,M,A>::remove_edge(edge e)
   {
     edge_value_type& ev = matrix_(e.source, e.target);
 
-    assert((ev != edge_value_type()));
+    assert(( ev ));
 
-    --size_;
-    ev = edge_value_type();
+    ev = edge_value_type{false};
   }
 
   template<typename V, typename M, typename A>
@@ -286,21 +305,18 @@ namespace origin
   {
     edge_value_type& ev = matrix_(v.value, u.value);
 
-    assert((ev != edge_value_type()));
+    assert(( ev ));
 
-    --size_;
-    ev = edge_value_type();
+    ev = edge_value_type{false};
   }
 
   template<typename V, typename M, typename A>
   void adjacency_matrix<V,M,A>::remove_edges()
   {
-    size_ = 0;
-
-    edge_value_type ev_init = edge_value_type();
+    edge_value_type e_false = edge_value_type{false};
     for(auto i = 0u; i < vertices_.size(); ++i)
       for(auto j = 0u; j < vertices_.size(); ++j)
-        matrix_(i,j) = ev_init;
+        matrix_(i,j) = e_false;
   }
 
   template<typename V, typename M, typename A>
@@ -338,7 +354,12 @@ namespace origin
 
   template<typename V, typename M, typename A>
   auto adjacency_matrix<V,M,A>::edges() -> edge_range
-  { return {edge_iterator(*this, 0), edge_iterator(*this, order() * order())}; }
+  {
+    return edge_range(
+      edge_iterator(*this, 0),
+      edge_iterator(*this, order() * order())
+    );
+  }
 
   template<typename V, typename M, typename A>
   auto adjacency_matrix<V,M,A>::edges() const -> const_edge_range
@@ -389,13 +410,12 @@ namespace origin
   {
     swap(matrix_, x.matrix_);
     std::swap(vertices_, x.vertices_);
-    std::swap(size_, x.size_);
   }
 
   template<typename V, typename M, typename A>
   bool adjacency_matrix<V,M,A>::equal(adjacency_matrix const& x) const
   {
-    return matrix_ == x.matrix_ && vertices_ == x.vertices_ && size_ == x.size_;
+    return matrix_ == x.matrix_ && vertices_ == x.vertices_;
   }
 
 } // origin
