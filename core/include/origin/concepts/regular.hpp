@@ -301,10 +301,6 @@ namespace origin
       static constexpr bool value = type::value;
     };
 
-  // Prevent cyclic instantiations for (extremely) common argument types.
-  template<> struct cBoolean<bool> : std::true_type { };
-  template<> struct cBoolean<substitution_failure> : std::false_type{};
-
 } // namespace origin
 
 #endif

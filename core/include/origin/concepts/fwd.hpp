@@ -53,7 +53,7 @@ namespace origin
   template<typename F, typename T> struct aEquivalence_Relation;
   template<typename R, typename T> struct aStrict_Partial_Order;
   template<typename R, typename T> struct aStrict_Weak_Order;
-  template<typename R, typename T> struct asStrict_Total_Order;
+  template<typename R, typename T> struct aStrict_Total_Order;
 
   // Types
   template<typename T> struct cBoolean;

@@ -181,7 +181,7 @@ namespace origin
                               std::tuple<Args...> x,
                               std::tuple<Args...> y)
       {
-        cBoolean<typename std::result_of<Pred(Args...)>::type>{};
+        tConvertible<typename std::result_of<Pred(Args...)>::type, bool>{};
       }
 
       typedef std::tuple<
