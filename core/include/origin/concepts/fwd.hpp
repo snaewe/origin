@@ -26,12 +26,28 @@ namespace origin
   template<typename T, typename U> struct tAssignable;
 
   // Operator Traits
-  template<typename T, typename U = T> struct tLogical_And;
-  template<typename T, typename U = T> struct tLogical_Or;
-  template<typename T> struct tLogical_Not;
+  // FIXME: Traits for !=, >, <= and >=
   template<typename T, typename U = T> struct tEqual;
   template<typename T, typename U = T> struct tLess;
 
+  template<typename T, typename U = T> struct tPlus;
+  template<typename T, typename U = T> struct tMinus;
+  template<typename T, typename U = T> struct tMultiply;
+  template<typename T, typename U = T> struct tDivide;
+  template<typename T, typename U = T> struct tModulus;
+  template<typename T> struct tNegate;
+
+  template<typename T, typename U = T> struct tBit_And;
+  template<typename T, typename U = T> struct tBit_Or;
+  template<typename T, typename U = T> struct tBit_Xor;
+  template<typename T> struct tComplement;
+  
+  // FIXME: Traits for << and >>
+  
+  template<typename T, typename U = T> struct tLogical_And;
+  template<typename T, typename U = T> struct tLogical_Or;
+  template<typename T> struct tLogical_Not;
+  
   // Function Traits
   template<typename F, typename... Args> struct tCallable;
   template<typename F, typename... Args> struct tProcecure;
@@ -50,13 +66,9 @@ namespace origin
   template<typename F, typename... Args> struct cPredicate;
   template<typename F, typename T, typename U> struct cRelation;
   
-  template<typename F, typename T> struct aEquivalence_Relation;
-  template<typename R, typename T> struct aStrict_Partial_Order;
-  template<typename R, typename T> struct aStrict_Weak_Order;
-  template<typename R, typename T> struct aStrict_Total_Order;
-
   // Types
   template<typename T> struct cBoolean;
+  template<typename T> struct Integral;
 
 
 } // namespace origin

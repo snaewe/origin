@@ -21,59 +21,6 @@ namespace origin
    * function objects, and lambda expressions.
    */
 
-  /**
-   * @ingroup concepts_function_traits
-   *
-   * The Callable trait is valid for any type that can be called (as a
-   * function) over the given sequence of argument types.
-   */
-    template<typename F, typename... Args>
-    struct tCallable
-    {
-      tCallable()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(F f, Args&&... args)
-      {
-        f(std::forward<Args>(args)...);
-      }
-
-      typedef std::tuple<
-        is_callable<F, Args...>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
-
-  /**
-   * @ingroup concepts_function_traits
-   *
-   * The Procedure trait is valid for any Callable type that can be copy
-   * constructed. The value-oriented progrmaming style of generic libraries
-   * requires functions and function objects to be copy constructible.
-   *
-   * Note that the Copyable concept is not a requirement due to its additional
-   * requirement on Comparable. Function objects and lambda expressions are
-   * not equality comparable. Otherwise, this should be a concept.
-   */
-  template<typename Proc, typename... Args>
-    struct tProcedure
-    {
-      tProcedure()
-      {
-        tConstructible<Proc, Proc const&>{};
-        tCallable<Proc, Args...>{};
-      }
-
-      typedef std::tuple<
-        tConstructible<Proc, Proc const&>,
-        tCallable<Proc, Args...>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
 
 
   /**

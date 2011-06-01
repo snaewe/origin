@@ -12,8 +12,6 @@
 
 namespace origin
 {
-  template<typename, typename> struct aStrict_Partial_Order;
-
   // FIXME: Optimize with EBO?
   /**
    * The incomparable operation is defined in terms of a strict ordering
@@ -28,8 +26,9 @@ namespace origin
    */
   template<typename T, typename Comp = std::less<T>>
   class incomparable
-    : aStrict_Partial_Order<Comp, T>
+    : cRelation<Comp, T, T>
   {
+    // aStrict_Partial_Order<Comp, T>
   public:
     incomparable(Comp c)
       : comp{c}

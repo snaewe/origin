@@ -256,7 +256,7 @@ namespace origin
    * the result type is substitution_failure.
    */
   template<typename T, typename U>
-  struct get_bit_xor_resutlt
+  struct get_bit_xor_result
   {
   private:
     template<typename X, typename Y>
@@ -272,7 +272,7 @@ namespace origin
    */
   template<typename T, typename U>
   struct has_bit_xor
-    : substitution_succeeded<typename get_bit_xor_resutlt<T, U>::type>
+    : substitution_succeeded<typename get_bit_xor_result<T, U>::type>
   { };
 
   /**

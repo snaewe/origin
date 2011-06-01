@@ -90,41 +90,25 @@ namespace origin
    * (called "and" and "or"), a unary Operation (called "not"), and two
    * constant Functions (called "true" and "false").
    */
-  template<typename T,
-           typename And,
+  template<typename And,
            typename Or,
            typename Not,
            typename True,
-           typename False>
-    struct aBoolean_Algebra
+           typename False,
+           typename T>
+    bool aBoolean_Algebra(And a, Or o, Not n, True t, False f, T x, T y, T z)
     {
-      aBoolean_Algebra()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(And a, Or o, Not n, True t, False f, T x, T y, T z)
-      {
-        cOperation<And, T, T>{};
-        cOperation<Or, T, T>{};
-        cOperation<Not, T>{};
-
-        aAssociative(a, x, y, z);     // x and (y and z) == (x and y) and z
-        aAssociative(o, x, y, z);     // x or (y or z) == (x or y) or z
-
-        aCommutative(a, x, y);        // x and y == y and x
-        aCommutative(o, x, y);        // x or y == y or x
-
-        aAbsorption(a, o, x, y);      // x and (x or y) == x
-        aAbsoprtion(o, a, x, y);      // x or (x and y) == x
-
-        aDistributive(a, o, x, y, z); // x and (y or z) == (x and y) or (y and z)
-        aDistributuve(o, a, x, y, z); // x or (y and z) == (x or y) and (y or z)
-
-        aComplement(a, n, f, x);      // x and not x == f
-        aComplement(o, n, t, x);      // x or not x == t
-      }
-    };
+      return aAssociative(a, x, y, z)     // x and (y and z) == (x and y) and z
+          && aAssociative(o, x, y, z)     // x or (y or z) == (x or y) or z
+          && aCommutative(a, x, y)        // x and y == y and x
+          && aCommutative(o, x, y)        // x or y == y or x
+          && aAbsorption(a, o, x, y)      // x and (x or y) == x
+          && aAbsoprtion(o, a, x, y)      // x or (x and y) == x
+          && aDistributive(a, o, x, y, z) // x and (y or z) == (x and y) or (y and z)
+          && aDistributuve(o, a, x, y, z) // x or (y and z) == (x or y) and (y or z)
+          && aComplement(a, n, f, x)      // x and not x == f
+          && aComplement(o, n, t, x);     // x or not x == t
+    }
 
 } // namespace origin
 

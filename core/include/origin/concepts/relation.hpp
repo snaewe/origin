@@ -21,36 +21,62 @@ namespace origin
    * and order.
    */
 
+  /**
+   * A relation is Reflexive if, for any object x, r(x, x) is true. Examples
+   * include equality, equivalence, and non-strict orders.
+   */
   template<typename Rel, typename T>
     bool aReflexive(Rel r, T x)
     {
       return r(x, x);
     }
 
+  /**
+   * A relation is Irreflexive if, for any object x, r(x, x) is false, or
+   * equivalently that !r(x, x) is true. Examples include strict orders and
+   * the strict subset relation.
+   */
   template<typename Rel, typename T>
   bool aIrreflexive(Rel r, T x)
     {
       return !r(x, x);
     }
 
+  /**
+   * A relation is symmetric if, for any objects x and y, r(x, y) implies
+   * r(y, x). Examples include equality, equivalence, and non-strict orders.
+   */
   template<typename Rel, typename T>
   bool aSymmetric(Rel r, T x, T y)
     {
       return implies(r(x, y), r(y, x));
     }
 
+  /**
+   * A relation is asymmetric if, for any objects x and y, r(x, y) implies
+   * !r(y, x). Examples include strict orders (if x < y, it cannot be the
+   * case that y < x).
+   */
   template<typename Rel, typename T>
     bool aAsymmetric(Rel r, T x, T y)
     {
       return implies(r(x, y), !r(y, x));
     }
 
+  /**
+   * A relation is transitive if...
+   */
   template<typename Rel, typename T>
     bool aTransitive(Rel r, T x, T y, T z)
     {
       return implies(r(x, y) && r(y, z), r(x, y));
     }
 
+  /**
+   * A relation is total if, for any objects x and y, it is the case that 
+   * either r(x, y) is true or r(y, x) is true. Counterexamples include
+   * partial equivalences and partial orders.
+   */
   template<typename Rel, typename T>
     bool aTotal(Rel r, T x, T y)
     {
@@ -113,21 +139,12 @@ namespace origin
    * Reflexive, Symmetric, and Transitive.
    */
   template<typename Rel, typename T>
-    struct aEquivalence_Relation
+    bool aEquivalence_Relation(Rel r, T x, T y, T z)
     {
-      aEquivalence_Relation()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(Rel r, T x, T y, T z)
-      {
-        cRelation<Rel, T, T>{};
-        aReflexive(r, x);
-        aSymmetric(r, x, y);
-        aTransitive(r, x, y, z);
-      }
-    };
+      return aReflexive(r, x)
+          && aSymmetric(r, x, y)
+          && aTransitive(r, x, y, z);
+    }
   
   /**
    * @ingroup concepts_function
@@ -138,21 +155,12 @@ namespace origin
    * NaN returns false for every case.
    */
   template<typename Rel, typename T>
-    struct aStrict_Partial_Order
+    bool aStrict_Partial_Order(Rel r, T x, T y, T z) 
     {
-      aStrict_Partial_Order()
-      {
-        auto p = constraints;
-      }
-      
-      static void constraints(Rel r, T x, T y, T z)
-      {
-        cRelation<Rel, T, T>{};
-        aIrreflexive(r, x);
-        aAsymmetric(r, x, y);
-        aTransitive(r, x, y, z);
-      }
-    };
+      return aIrreflexive(r, x)
+          && aAsymmetric(r, x, y)
+          && aTransitive(r, x, y, z);
+    }
 
   /**
    * @ingroup concepts_function
@@ -162,20 +170,10 @@ namespace origin
    * !r(y, x) is true, to be transitive.
    */
   template<typename Rel, typename T>
-    struct aStrict_Weak_Order
-      : aStrict_Partial_Order<Rel, T>
+    bool aStrict_Weak_Order(Rel r, T x, T y, T z)
     {
-
-      aStrict_Weak_Order()
-      {
-        auto p = constraints;
-      }
-      
-      static void constraints(Rel r, T x, T y, T z)
-      {
-        aTransitive(incomparable<T, Rel>{r}, x, y, z); 
-      }
-    };
+      return aTransitive(incomparable<T, Rel>{r}, x, y, z); 
+    }
 
   /**
    * @ingroup concepts_function
@@ -186,22 +184,13 @@ namespace origin
    * one of the following is true: r(x, y), r(y, x), or x == y.
    */
   template<typename Rel, typename T>
-    struct aStrict_Total_Order
-      : aStrict_Weak_Order<Rel, T>
+    bool aStrict_Total_Order(Rel r, T x, T y, T z)
     {
+      // Note that transitvity of this operation is required by the strict
+      // weak order refinement.
+      return aTrichotomy(r, x, y); 
+    }
 
-      aStrict_Total_Order()
-      {
-        auto p = constraints;
-      }
-      
-      static void constraints(Rel r, T x, T y, T z)
-      {
-        // Note that transitvity of this operation is required by the strict
-        // weak order refinement.
-        aTrichotomy(r, x, y); 
-      }
-    };
 
 } // namespace origin
 
