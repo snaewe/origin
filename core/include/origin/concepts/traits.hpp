@@ -230,7 +230,16 @@ namespace origin
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
     };
+    
+  // Don't evaluate constructibility on lvalue reference types.
+  template<typename T, typename... Args>
+    struct tConstructible<T&, Args...> : tConstructible<T, Args...> 
+    { };
 
+  // Don't evaluate constructibility on rvalue reference types.
+  template<typename T, typename... Args>
+    struct tConstructible<T&&, Args...> : tConstructible<T, Args...> 
+    { };
 
   /**
    * @ingroup concepts_interface_traits

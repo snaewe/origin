@@ -35,16 +35,21 @@ int main()
   static_assert(tLogical_And<boost::tribool>::value, "");
   static_assert(!tLogical_And<string>::value, "");
 
+  static_assert(cOrdered<int>::value, "");
+  static_assert(cOrdered<float>::value, "");
+  static_assert(cOrdered<string>::value, "");
+  static_assert(!cOrdered<complex<float>>::value, "");  // No natural order
+  
+  static_assert(cMoveable<int>::value, "");
+  static_assert(cMoveable<int*>::value, "");
+
   static_assert(cRegular<char>::value, "");
   static_assert(!cRegular<char const>::value, "");
 
-  static_assert(cOrdered<int>::value, "");
-  static_assert(!cOrdered<complex<float>>::value, "");
-
   static_assert(cBoolean<bool>::value, "");
-  static_assert(cBoolean<boost::tribool>::value, "");
-  /*
   static_assert(!cBoolean<string>::value, "");
-  */
+  static_assert(!cBoolean<int*>::value, "");            // !Constructible<int*, bool>
+  static_assert(!cBoolean<boost::tribool>::value, "");  // tribool is not Ordered
+  
 }
 

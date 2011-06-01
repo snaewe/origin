@@ -22,12 +22,10 @@ namespace origin
    * The iterator concepts (and traits) define constraints on iterator types.
    */
 
-  // Forward declarations
   template<typename Iter> struct cIterator;
   template<typename Iter> struct cForward_Iterator;
   template<typename Iter> struct cBidirectional_Iterator;
   template<typename Iter> struct cRandom_Access_Iterator;
-
 
   /**
    * @ingroup iterator_concepts
@@ -36,44 +34,43 @@ namespace origin
    * an object that can be incremented and dereferenced.
    */
   template<typename Iter>
-  struct cIterator
-    : cRegular<Iter>
-  {
-    // NOTE: This will break concept checking if Iter is not actually an
-    // iterator type, however, this greatly simplifies the writing of traits
-    // involviong associated types.
-    typedef typename std::iterator_traits<Iter>::value_type value_type;
-    typedef typename std::iterator_traits<Iter>::reference reference;
-    typedef typename std::iterator_traits<Iter>::pointer pointer;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
-    typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
-
-    cIterator()
+    struct cIterator : cRegular<Iter>
     {
-      auto p = constraints;
-    }
+      // NOTE: This will break concept checking if Iter is not actually an
+      // iterator type, however, this greatly simplifies the writing of traits
+      // involviong associated types.
+      typedef typename std::iterator_traits<Iter>::value_type value_type;
+      typedef typename std::iterator_traits<Iter>::reference reference;
+      typedef typename std::iterator_traits<Iter>::pointer pointer;
+      typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+      typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
 
-    static void constraints(Iter i)
-    {
-      cMoveable<reference>{};
-      tSigned_Int<difference_type>{};
-      tConvertible<reference, Iter&>{};
-      i++;
-      *i;
-    }
+      cIterator()
+      {
+        auto p = constraints;
+      }
 
-    typedef std::tuple<
-      cRegular<Iter>,
-      cMoveable<reference>,
-      tSigned_Int<difference_type>,
-      has_pre_increment<Iter>,
-      tConvertible<typename get_pre_increment_result<Iter>::type, Iter&>,
-      has_post_increment<Iter>,
-      has_dereference<Iter>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      static void constraints(Iter i)
+      {
+        cMoveable<reference>{};
+        tSigned_Int<difference_type>{};
+        tConvertible<reference, Iter&>{};
+        i++;
+        *i;
+      }
+
+      typedef std::tuple<
+        cRegular<Iter>,
+        cMoveable<reference>,
+        tSigned_Int<difference_type>,
+        has_pre_increment<Iter>,
+        tConvertible<typename get_pre_increment_result<Iter>::type, Iter&>,
+        has_post_increment<Iter>,
+        has_dereference<Iter>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup iterator_concepts
@@ -83,26 +80,24 @@ namespace origin
    * reference type must be able to bind to a const reference to the value
    * type.
    */
-  template<
-    typename Iter,
-    typename Value = typename std::iterator_traits<Iter>::value_type const&
-  >
-  struct tInput_Iterator
-  {
-    typedef typename std::iterator_traits<Iter>::reference reference;
-
-    tInput_Iterator()
+  template<typename Iter,
+           typename Value = typename std::iterator_traits<Iter>::value_type const&>
+    struct tInput_Iterator
     {
-      cIterator<Iter>{};
-      tConvertible<reference, Value>{};
-    }
+      typedef typename std::iterator_traits<Iter>::reference reference;
 
-    typedef std::tuple<
-      tConvertible<reference, Value>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      tInput_Iterator()
+      {
+        cIterator<Iter>{};
+        tConvertible<reference, Value>{};
+      }
+
+      typedef std::tuple<
+        tConvertible<reference, Value>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
 
   /**
@@ -112,25 +107,24 @@ namespace origin
    * supports assignment to the specified type. By default an Ouput_Iterator's
    * reference must move assignable to the iterator's value type.
    */
-  template<
-    typename Iter,
-    typename Value = typename std::iterator_traits<Iter>::value_type&&>
-  struct tOutput_Iterator
-  {
-    typedef typename std::iterator_traits<Iter>::reference reference;
-
-    tOutput_Iterator()
+  template<typename Iter,
+           typename Value = typename std::iterator_traits<Iter>::value_type&&>
+    struct tOutput_Iterator
     {
-      cIterator<Iter>{};
-      tAssignable<reference, Value>{};
-    }
+      typedef typename std::iterator_traits<Iter>::reference reference;
 
-    typedef std::tuple<
-      tAssignable<reference, Value>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      tOutput_Iterator()
+      {
+        cIterator<Iter>{};
+        tAssignable<reference, Value>{};
+      }
+
+      typedef std::tuple<
+        tAssignable<reference, Value>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
 
   /**
@@ -168,6 +162,8 @@ namespace origin
       tConvertible<iterator_category, std::forward_iterator_tag>,
       tConvertible<typename get_post_increment_result<Iter>::type, Iter const&>
     > requirements;
+    typedef typename requires_all<requirements>::type type;
+    static constexpr bool value = type::value;
   };
 
   /**
@@ -260,7 +256,7 @@ namespace origin
     typedef typename requires_all<requirements>::type type;
     static constexpr bool value = type::value;
   };
-
+  
 } // namespace origin
 
 #endif
