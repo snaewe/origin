@@ -48,9 +48,17 @@ namespace origin
   template<typename T, typename U = T> struct tLogical_Or;
   template<typename T> struct tLogical_Not;
   
-  // Function Traits
+  template<typename T> struct tPre_Increment;
+  template<typename T> struct tPost_Increment;
+  template<typename T> struct tPre_Decrement;
+  template<typename T> struct tPost_Decrement;
+  
+  template<typename T> struct tDereference;
+  template<typename T, typename U> struct tSubscript;
   template<typename F, typename... Args> struct tCallable;
-  template<typename F, typename... Args> struct tProcecure;
+  
+  // FIXME: This should be a concept, but we can't guarantee copyability.
+  template<typename F, typename... Args> struct tProcedure;
 
 
   // Concepts

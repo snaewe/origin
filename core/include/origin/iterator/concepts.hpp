@@ -54,19 +54,29 @@ namespace origin
       {
         cMoveable<reference>{};
         tSigned_Int<difference_type>{};
-        tConvertible<reference, Iter&>{};
-        i++;
+
+        // Make sure that the names actually align with the deduced types.
+        // Otherwise, we can't be internally consistent.
         *i;
+        tSame<decltype(*i), reference>{};
+        
+        ++i;
+        tConvertible<decltype(++i), Iter&>{};
+        
+        i++;
+        *i++;
       }
 
       typedef std::tuple<
         cRegular<Iter>,
         cMoveable<reference>,
         tSigned_Int<difference_type>,
-        has_pre_increment<Iter>,
-        tConvertible<typename get_pre_increment_result<Iter>::type, Iter&>,
-        has_post_increment<Iter>,
-        has_dereference<Iter>
+        tDereference<Iter>,
+        tSame<typename tDereference<Iter>::result_type, reference>,
+        tPre_Increment<Iter>,
+        tConvertible<typename tPre_Increment<Iter>::result_type, Iter&>,
+        tPost_Increment<Iter>,
+        tDereference<typename tPost_Increment<Iter>::result_type>
       > requirements;
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
@@ -138,64 +148,62 @@ namespace origin
    * the same sequence of objects.
    */
   template<typename Iter>
-  struct cForward_Iterator
-    : cIterator<Iter>
-  {
-    typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
-
-    cForward_Iterator()
+    struct cForward_Iterator : cIterator<Iter>
     {
-      auto p = constraints;
-    }
+      typedef typename std::iterator_traits<Iter>::iterator_category iterator_category;
 
-    static void constraints(Iter i)
-    {
-      tInput_Iterator<Iter>{};
-      tConvertible<iterator_category, std::forward_iterator_tag>{};
+      cForward_Iterator()
+      {
+        auto p = constraints;
+      }
 
-      // Strengthen requirements on the postincrement result.
-      tConvertible<decltype(i++), Iter const&>{};
-    }
+      static void constraints(Iter i)
+      {
+        tInput_Iterator<Iter>{};
+        tConvertible<iterator_category, std::forward_iterator_tag>{};
 
-    typedef std::tuple<
-      tInput_Iterator<Iter>,
-      tConvertible<iterator_category, std::forward_iterator_tag>,
-      tConvertible<typename get_post_increment_result<Iter>::type, Iter const&>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+        // Strengthen requirements on the postincrement result.
+        tConvertible<decltype(i++), Iter const&>{};
+      }
+
+      typedef std::tuple<
+        tInput_Iterator<Iter>,
+        tConvertible<iterator_category, std::forward_iterator_tag>,
+        tConvertible<typename get_post_increment_result<Iter>::type, Iter const&>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup concepts
    * A bidirectional iterator...
    */
   template<typename Iter>
-  struct cBidirectional_Iterator
-    : cForward_Iterator<Iter>
-  {
-    cBidirectional_Iterator()
+    struct cBidirectional_Iterator : cForward_Iterator<Iter>
     {
-      auto p = constraints;
-    }
+      cBidirectional_Iterator()
+      {
+        auto p = constraints;
+      }
 
-    static void constraints(Iter i)
-    {
-      tConvertible<decltype(--i), Iter&>{};
-      tConvertible<decltype(i--), Iter const&>{};
-    }
+      static void constraints(Iter i)
+      {
+        tConvertible<decltype(--i), Iter&>{};
+        tConvertible<decltype(i--), Iter const&>{};
+      }
 
-    // FIXME: Write in terms of tPre_Decrement, tPost_Decrement?
-    typedef std::tuple<
-      cForward_Iterator<Iter>,
-      has_pre_decrement<Iter>,
-      tConvertible<typename get_pre_decrement_result<Iter>::type, Iter&>,
-      has_post_decrement<Iter>,
-      tConvertible<typename get_post_decrement_result<Iter>::type, Iter const&>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      // FIXME: Write in terms of tPre_Decrement, tPost_Decrement?
+      typedef std::tuple<
+        cForward_Iterator<Iter>,
+        has_pre_decrement<Iter>,
+        tConvertible<typename get_pre_decrement_result<Iter>::type, Iter&>,
+        has_post_decrement<Iter>,
+        tConvertible<typename get_post_decrement_result<Iter>::type, Iter const&>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
 
   /**
    * @ingroup conceps

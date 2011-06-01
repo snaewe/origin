@@ -948,6 +948,151 @@ namespace origin
       static constexpr bool value = type::value;
     };
 
+  // FIXME: Implement compound assignment.
+  /**
+   * The Pre_Increment constraint evaluates the ability of the pre-increment
+   * operator ++ for the type T.
+   */
+  template<typename T>
+    struct tPre_Increment
+    {
+      typedef typename get_pre_increment_result<T>::type result_type;
+
+      tPre_Increment()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x)
+      {
+        ++x;
+      }
+      
+      typedef std::tuple<has_pre_increment<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+  /**
+   * The Post_Increment constraint evaluates the ability of the post-increment
+   * operator ++ for the type T.
+   */
+  template<typename T>
+    struct tPost_Increment
+    {
+      typedef typename get_post_increment_result<T>::type result_type;
+      
+      tPost_Increment()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x)
+      {
+        x++;
+      }
+      
+      typedef std::tuple<has_post_increment<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+  /**
+   * The Pre_Decrement constraint evaluates the ability of the pre-decrement
+   * operator ++ for the type T.
+   */
+  template<typename T>
+    struct tPre_Decrement
+    {
+      typedef typename get_pre_decrement_result<T>::type result_type;
+
+      tPre_Decrement()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x)
+      {
+        --x;
+      }
+      
+      typedef std::tuple<has_pre_decrement<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+  /**
+   * The Post_Decrement constraint evaluates the ability of the post-decrement
+   * operator ++ for the type T.
+   */
+  template<typename T>
+    struct tPost_Decrement
+    {
+      typedef typename get_post_decrement_result<T>::type result_type;
+      
+      tPost_Decrement()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x)
+      {
+        x--;
+      }
+      
+      typedef std::tuple<has_post_decrement<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+
+    
+  /**
+   * The Dereference constraint evaluates the availability of a dereference
+   * operator (unary *) for the type T.
+   */
+  template<typename T>
+    struct tDereference
+    {
+      typedef typename get_dereference_result<T>::type result_type;
+      
+      tDereference()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T x)
+      {
+        *x;
+      }
+      
+      typedef std::tuple<has_dereference<T>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+
+  /**
+   * The subscript constraint evaluates the availability of a subscript
+   * operator for type T taking an argument of type U.
+   */
+  template<typename T, typename U>
+    struct tSubscript
+    {
+      typedef typename get_subscript_result<T, U>::type result_type;
+      
+      tSubscript()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T x, U y)
+      {
+        x[y];
+      }
+      
+      typedef std::tuple<has_subscript<T, U>> requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };    
     
   /**
    * @ingroup concepts_function_traits
