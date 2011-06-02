@@ -12,7 +12,6 @@
 
 #include <origin/utility/meta.hpp>
 #include <origin/traits.hpp>
-#include <origin/concepts/fwd.hpp>
 
 namespace origin
 {

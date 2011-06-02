@@ -8,11 +8,8 @@
 #ifndef ORIGIN_CONCEPTS_REGULAR_HPP
 #define ORIGIN_CONCEPTS_REGULAR_HPP
 
-#include <functional>
-
+#include <origin/functional.hpp>
 #include <origin/concepts/constraints.hpp>
-#include <origin/logic.hpp>
-#include <origin/relation.hpp>
 
 namespace origin
 {
@@ -336,7 +333,7 @@ namespace origin
   template<typename Rel, typename T>
     bool aStrict_Weak_Order(Rel r, T x, T y, T z)
     {
-      return aTransitive(incomparable<T, Rel>{r}, x, y, z); 
+      return aTransitive(incomparable_to<T, Rel>{r}, x, y, z); 
     }
 
   /**

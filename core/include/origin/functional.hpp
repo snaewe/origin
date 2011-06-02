@@ -12,6 +12,9 @@
 
 namespace origin
 {
+  template<typename T, typename... Args> struct tConstructible;
+  template<typename R, typename T, typename U> struct cRelation;
+  
   /**
    * @ingroup logic
    *
@@ -72,7 +75,7 @@ namespace origin
   {
     // aStrict_Partial_Order<Comp, T>
   public:
-    incomparable(Comp c)
+    incomparable_to(Comp c)
       : comp{c}
     { }
     
