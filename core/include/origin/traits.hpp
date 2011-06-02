@@ -896,16 +896,16 @@ namespace origin
    * is fragile.
    */
   //@{
-  template<typename... Args> struct get_conditional_result;
+  template<typename... Args> struct find_conditional_result;
 
   template<typename T>
-  struct get_conditional_result<T>
+  struct find_conditional_result<T>
   {
     typedef T type;
   };
 
   template<typename T, typename U>
-  struct get_conditional_result<T, U>
+  struct find_conditional_result<T, U>
   {
   private:
     template<typename X, typename Y>
@@ -917,15 +917,54 @@ namespace origin
   };
 
   template<typename T, typename... Args>
-  struct get_conditional_result<T, Args...>
+  struct find_conditional_result<T, Args...>
   {
   private:
     typedef typename front_type<Args...>::type Head;
-    typedef typename get_conditional_result<T, Head>::type X;
-    typedef typename get_conditional_result<Args...>::type Y;
+    typedef typename find_conditional_result<T, Head>::type X;
+    typedef typename find_conditional_result<Args...>::type Y;
   public:
-    typedef typename get_conditional_result<X, Y>::type type;
+    typedef typename find_conditional_result<X, Y>::type type;
   };
+
+  /**
+   * @ingroup traits
+   *
+   * Deduce the esult of the use of the conditional operator. The resulting 
+   * type is not a reference type.
+   */
+  template<typename... Args>
+  struct get_conditional_result
+  {
+    typedef typename std::remove_reference<
+      typename find_conditional_result<Args...>::type
+    >::type type;
+  };
+
+  /**
+   * @ingroup traits
+   *
+   * Return true if a result can be deduced from the conditional operator.
+   */
+  template<typename... Args>
+  struct has_conditional_result
+    : substitution_succeeded<
+        typename get_conditional_result<Args...>::type
+      >::type
+  { };
+
+  /**
+   * @ingroup traits
+   *
+   * Return true if the given arguments share a common type. 
+   *
+   * This is equivalent to has_conditional_result.
+   */
+  template<typename... Args>
+  struct has_common_type
+    : has_conditional_result<Args...>::type
+  { };
+  
   //@}
 
   /**
@@ -1029,44 +1068,6 @@ namespace origin
   { };
 
 
-
-  /**
-   * @ingroup traits
-   *
-   * Deduce the esult of the use of the conditional operator. The resulting 
-   * type is not a reference type.
-   */
-  template<typename... Args>
-  struct deduce_conditional_result
-  {
-    typedef typename std::remove_reference<
-      typename get_conditional_result<Args...>::type
-    >::type type;
-  };
-
-  /**
-   * @ingroup traits
-   *
-   * Return true if a result can be deduced from the conditional operator.
-   */
-  template<typename... Args>
-  struct has_conditional_result
-    : substitution_succeeded<
-        typename deduce_conditional_result<Args...>::type
-      >::type
-  { };
-
-  /**
-   * @ingroup traits
-   *
-   * Return true if the given arguments share a common type. 
-   *
-   * This is equivalent to has_conditional_result.
-   */
-  template<typename... Args>
-  struct has_common_type
-    : has_conditional_result<Args...>::type
-  { };
 
 
   /**

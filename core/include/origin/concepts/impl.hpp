@@ -64,6 +64,33 @@ namespace origin
       : bool_constant<!std::is_same<T, T>::value>
     { };
     
+
+  /**
+   * @ingroup axioms
+   * 
+   * The logical implication operator returns true if x is true and the y is
+   * true. Note that if x is false, then the result is also trivially true.
+   */
+  template<typename T, typename U>
+    inline auto implies(T const& p, U const& q)
+      -> decltype(!p || q)
+    { 
+      return !p || q; 
+    }
+
+  /**
+   * @ingroup axioms
+   * The logical equality (spelled iff, or if and only iff) operator returns 
+   * true if x implies y and y implies x. Said otherwise, x is logically equal 
+   * to y if x equals y.
+   */
+  template<typename T, typename U>
+    inline auto iff(T const& p, T const& q)
+      -> decltype((p && q) || (!p && !q))
+    { 
+      return (p && q) || (!p && !q); 
+    }
+    
     
   /**
    * @ingroup concepts

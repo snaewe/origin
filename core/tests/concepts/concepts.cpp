@@ -26,6 +26,7 @@ int main()
   static_assert(!tSame<int, int const>::value, "");
 
   static_assert(tCommon<int, int, char>::value, "");
+
   static_assert(!tCommon<string, float>::value, "");
 
   static_assert(tInt<int>::value, "");

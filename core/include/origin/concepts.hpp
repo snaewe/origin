@@ -8,11 +8,7 @@
 #ifndef ORIGIN_CONCEPTS_HPP
 #define ORIGIN_CONCEPTS_HPP
 
-#include <origin/concepts/impl.hpp>
-#include <origin/concepts/fwd.hpp>
-#include <origin/concepts/traits.hpp>
-#include <origin/concepts/regular.hpp>
-#include <origin/concepts/function.hpp>
-#include <origin/concepts/relation.hpp>
+#include <origin/concepts/constraints.hpp>
+#include <origin/concepts/concepts.hpp>
 
 #endif

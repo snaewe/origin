@@ -9,22 +9,75 @@
 #define ORIGIN_CONCEPTS_TRAITS_HPP
 
 #include <origin/concepts/impl.hpp>
-#include <origin/concepts/fwd.hpp>
 
 namespace origin
 {
   /**
-   * @defgroup concepts_type_traits Type Traits
-   * @ingroup concepts
-   *
-   * Type traits are constraints that evaluate properties of types or sets
-   * of types, especially from the perspective of the programming language.
-   * These traits are often implemented in terms of an underlying standard
-   * type trait.
+   * @defgroup constraints
    */
 
+  // Type Traits
+  template<typename... Args> struct tSame;
+  template<typename T, typename U> struct tDifferent;
+  template<typename T, typename U> struct tConvertible;
+  
+  // Type Classification
+  template<typename T> struct tInt;
+  template<typename T> struct tSigned_Int;
+  template<typename T> struct tUnsigned_Int;
+
+  // Object Properties
+  template<typename T> struct tDestructible;
+  template<typename T, typename... Args> struct tConstructible;
+  template<typename T, typename U> struct tAssignable;
+
+  // Operator Traits
+  // FIXME: Traits for !=, >, <= and >=
+  template<typename T, typename U = T> struct tEqual;
+  template<typename T, typename U = T> struct tLess;
+
+  template<typename T, typename U = T> struct tPlus;
+  template<typename T, typename U = T> struct tMinus;
+  template<typename T, typename U = T> struct tMultiply;
+  template<typename T, typename U = T> struct tDivide;
+  template<typename T, typename U = T> struct tModulus;
+  template<typename T> struct tNegate;
+
+  template<typename T, typename U = T> struct tBit_And;
+  template<typename T, typename U = T> struct tBit_Or;
+  template<typename T, typename U = T> struct tBit_Xor;
+  template<typename T> struct tComplement;
+  template<typename T, typename U> struct tLeft_Shift;
+  template<typename T, typename U> struct tRight_Shift;
+  
+  template<typename T, typename U = T> struct tLogical_And;
+  template<typename T, typename U = T> struct tLogical_Or;
+  template<typename T> struct tLogical_Not;
+  
+  template<typename T, typename U> struct tPlus_Assign;
+  template<typename T, typename U> struct tMinus_Assign;
+  template<typename T, typename U> struct TMultiply_Assign;
+  template<typename T, typename U> struct tDivide_Assign;
+  template<typename T, typename U> struct tModulus_Assign;
+  template<typename T, typename U> struct tBit_And_Assign;
+  template<typename T, typename U> struct tBit_Or_Assign;
+  template<typename T, typename U> struct tBit_Xor_Assign;
+  template<typename T, typename U> struct tLeft_Shift_Assign;
+  template<typename T, typename U> struct tRight_Shift_Assign;
+  template<typename T> struct tPre_Increment;
+  template<typename T> struct tPost_Increment;
+  template<typename T> struct tPre_Decrement;
+  template<typename T> struct tPost_Decrement;
+  
+  template<typename T> struct tDereference;
+  template<typename T, typename U> struct tSubscript;
+  template<typename F, typename... Args> struct tCallable;
+  
+  // FIXME: This should be a concept, but we can't guarantee copyability.
+  template<typename F, typename... Args> struct tProcedure;
+  
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Same trait is valid for a sequence of types that all have (exactly)
    * the same type.
@@ -43,7 +96,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Different trait is valid for two types that are not the Same. This
    * is equivalent to !Same<T, U>::value.
@@ -62,7 +115,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Common trait is valid if the type arguments share a common type. A
    * single type is its own common type. Two types have a common type, they can
@@ -73,6 +126,8 @@ namespace origin
   template<typename... Args>
     struct tCommon
     {
+      typedef typename get_conditional_result<Args...>::type result_type;
+      
       tCommon()
       {
         static_assert(value, "Arguments do not share a common type");
@@ -84,7 +139,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Convertible trait is valid for a type T that can be converted to a
    * type U.
@@ -103,7 +158,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Derived trait is true for a type T that is derived from a type U.
    */
@@ -121,7 +176,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Int trait is true for all built-in integral types.
    */
@@ -139,7 +194,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Signed_int trait is true for all built-in signed integral types.
    */
@@ -157,7 +212,7 @@ namespace origin
     };
 
   /**
-   * @ingroup concepts_type_traits
+   * @ingroup constraints
    *
    * The Unsigned_int trait is true for all built-in unsigned integral types.
    */
@@ -408,28 +463,6 @@ namespace origin
       static constexpr bool value = type::value;
     };    
     
-  template<typename T>
-    struct tPlus<T, T>
-    {
-      typedef typename get_plus_result<T, T>::type result_type;
-
-      tPlus()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x + y), T>{};
-      }
-
-      typedef std::tuple<
-        has_plus<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };    
-    
   /**
    * @ingroup concepts_interface_traits
    * The Minus constraint evaluates the existence of the binary - operator. 
@@ -455,29 +488,7 @@ namespace origin
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
     };    
-    
-  template<typename T>
-    struct tMinus<T, T>
-    {
-      typedef typename get_minus_result<T, T>::type result_type;
 
-      tMinus()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x - y), T>{};
-      }
-
-      typedef std::tuple<
-        has_minus<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };        
-    
   /**
    * @ingroup concepts_interface_traits
    * The Multiply constraint evaluates the existence of the binary * operator. 
@@ -503,29 +514,6 @@ namespace origin
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
     };    
-    
-  template<typename T>
-    struct tMultiply<T, T>
-    {
-      typedef typename get_multiply_result<T, T>::type result_type;
-
-      tMultiply()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x * y), T>{};
-      }
-
-      typedef std::tuple<
-        has_multiply<T, T>,
-        tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };        
     
   /**
    * @ingroup concepts_interface_traits
@@ -553,28 +541,6 @@ namespace origin
       static constexpr bool value = type::value;
     };    
     
-  template<typename T>
-    struct tDivide<T, T>
-    {
-      typedef typename get_divide_result<T, T>::type result_type;
-      tDivide()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x / y), T>{};
-      }
-
-      typedef std::tuple<
-        has_divide<T, T>,
-        tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };         
-    
   /**
    * @ingroup concepts_interface_traits
    * The Modulus constraint evaluates the existence of the binary % operator. 
@@ -600,27 +566,6 @@ namespace origin
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
     };    
-    
-  template<typename T>
-    struct tModulus<T, T>
-    {
-      typedef typename get_modulus_result<T, T>::type result_type;
-      tModulus()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x / y), T>{};
-      }
-
-      typedef std::tuple<
-        has_modulus<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
     
   /**
    * @ingroup concepts_interface_traits
@@ -675,29 +620,6 @@ namespace origin
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
     };    
-    
-  template<typename T>
-    struct tBit_And<T, T>
-    {
-      typedef typename get_bit_and_result<T, T>::type result_type;
-      
-      tBit_And()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x & y), T>{};
-      }
-
-      typedef std::tuple<
-        has_bit_and<T, T>,
-        tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
 
   /**
    * @ingroup concepts_interface_traits
@@ -725,28 +647,6 @@ namespace origin
       static constexpr bool value = type::value;
     };    
     
-  template<typename T>
-    struct tBit_Or<T, T>
-    {
-      typedef typename get_bit_or_result<T, T>::type result_type;
-
-      tBit_Or()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x | y), T>{};
-      }
-
-      typedef std::tuple<
-        has_bit_or<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };    
-
   /**
    * @ingroup concepts_interface_traits
    * The Bit_Xor constraint evaluates the existence of the binary ^ operator. 
@@ -773,28 +673,6 @@ namespace origin
       static constexpr bool value = type::value;
     };    
     
-  template<typename T>
-    struct tBit_Xor<T, T>
-    {
-      typedef typename get_bit_xor_result<T, T>::type result_type;
-      
-      tBit_Xor()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x ^ y), T>{};
-      }
-
-      typedef std::tuple<
-        has_bit_xor<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
-
   /**
    * @ingroup concepts_interface_traits
    * The Complement constraint evaluates availability of a complement operator 
@@ -848,28 +726,6 @@ namespace origin
       static constexpr bool value = type::value;
     };
 
-  template<typename T>
-    struct tLogical_And<T, T>
-    {
-      typedef typename get_logical_and_result<T, T>::type result_type;
-      
-      tLogical_And()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x && y), T>{};
-      }
-
-      typedef std::tuple<
-        has_logical_and<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };
-
  /**
    * @ingroup concepts_interface_traits
    *
@@ -897,28 +753,6 @@ namespace origin
       static constexpr bool value = type::value;
     };
 
-  template<typename T>
-    struct tLogical_Or<T, T>
-    {
-      typedef typename get_logical_or_result<T, T>::type result_type;
-      
-      tLogical_Or()
-      {
-        auto p = constraints;
-      }
-
-      static void constraints(T x, T y)
-      {
-        tConvertible<decltype(x || y), T>{};
-      }
-
-      typedef std::tuple<
-        has_logical_or<T, T>, tConvertible<result_type, T>
-      > requirements;
-      typedef typename requires_all<requirements>::type type;
-      static constexpr bool value = type::value;
-    };    
-    
   /**
    * @ingroup concepts_interface_traits
    *
@@ -949,6 +783,64 @@ namespace origin
     };
 
   // FIXME: Implement compound assignment.
+    
+  /**
+   * @ingroup concepts_constraints
+   * The Plus_Assign constraint evaluates availability of a compound += 
+   * operator for a type T (the assignee) and a type U (the assigned).
+   */
+  template<typename T, typename U>
+    struct tPlus_Assign
+    {
+      typedef typename get_plus_assign_result<T, U>::type result_type;
+      
+      tPlus_Assign()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x, U y) 
+      {
+        tConvertible<decltype(x += y), T&>{};
+      }
+      
+      typedef std::tuple<
+        has_plus_assign<T, U>,
+        tConvertible<result_type, T&>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+  /**
+   * @ingroup concepts_constraints
+   * The Minus_Assign constraint evaluates availability of a compound -= 
+   * operator for a type T (the assignee) and a type U (the assigned).
+   */
+  template<typename T, typename U>
+    struct tMinus_Assign
+    {
+      typedef typename get_minus_assign_result<T, U>::type result_type;
+      
+      tMinus_Assign()
+      {
+        auto p = constraints;
+      }
+      
+      static void constraints(T& x, U y) 
+      {
+        tConvertible<decltype(x -= y), T&>{};
+      }
+      
+      typedef std::tuple<
+        has_minus_assign<T, U>,
+        tConvertible<result_type, T&>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
+    
+    
   /**
    * The Pre_Increment constraint evaluates the ability of the pre-increment
    * operator ++ for the type T.

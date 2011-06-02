@@ -64,7 +64,7 @@ namespace origin
         tConvertible<decltype(++i), Iter&>{};
         
         i++;
-        *i++;
+        *i++; // Needed by irregular iterators (vector<bool>::iterator)
       }
 
       typedef std::tuple<
@@ -169,7 +169,7 @@ namespace origin
       typedef std::tuple<
         tInput_Iterator<Iter>,
         tConvertible<iterator_category, std::forward_iterator_tag>,
-        tConvertible<typename get_post_increment_result<Iter>::type, Iter const&>
+        tConvertible<typename tPost_Increment<Iter>::result_type, Iter const&>
       > requirements;
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
@@ -196,10 +196,10 @@ namespace origin
       // FIXME: Write in terms of tPre_Decrement, tPost_Decrement?
       typedef std::tuple<
         cForward_Iterator<Iter>,
-        has_pre_decrement<Iter>,
-        tConvertible<typename get_pre_decrement_result<Iter>::type, Iter&>,
-        has_post_decrement<Iter>,
-        tConvertible<typename get_post_decrement_result<Iter>::type, Iter const&>
+        tPre_Decrement<Iter>,
+        tConvertible<typename tPre_Decrement<Iter>::result_type, Iter&>,
+        tPost_Decrement<Iter>,
+        tConvertible<typename tPost_Decrement<Iter>::result_type, Iter const&>
       > requirements;
       typedef typename requires_all<requirements>::type type;
       static constexpr bool value = type::value;
@@ -212,58 +212,53 @@ namespace origin
    * support constant-time, random access traversal.
    */
   template<typename Iter>
-  struct cRandom_Access_Iterator
-  {
-    typedef typename std::iterator_traits<Iter>::reference reference;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
-
-    cRandom_Access_Iterator()
+    struct cRandom_Access_Iterator
     {
-      auto p = constraints;
-    }
+      typedef typename std::iterator_traits<Iter>::reference reference;
+      typedef typename std::iterator_traits<Iter>::difference_type difference_type;
 
-    static void constraints(Iter i, difference_type n)
-    {
-      tConvertible<decltype(i += n), Iter&>{};
-      tConvertible<decltype(i + n), Iter>{};
-      tConvertible<decltype(n + i), Iter>{};
+      cRandom_Access_Iterator()
+      {
+        auto p = constraints;
+      }
 
-      tConvertible<decltype(i -= n), Iter&>{};
-      tConvertible<decltype(i - n), Iter>{};
+      static void constraints(Iter i, difference_type n)
+      {
+        // Random access
+        tConvertible<decltype(i += n), Iter&>{};
+        tConvertible<decltype(i + n), Iter>{};
+        tConvertible<decltype(n + i), Iter>{};
+        tConvertible<decltype(i -= n), Iter&>{};
+        tConvertible<decltype(i - n), Iter>{};
 
-      tConvertible<decltype(i - i), difference_type>{};
+        // Difference
+        tConvertible<decltype(i - i), difference_type>{};
 
-      tConvertible<decltype(i[n]), reference>{};
-    }
+        // Subscript
+        tConvertible<decltype(i[n]), reference>{};
+      }
 
-    // FIXME: Write in terms of actual traits (tPlus_assign?)
-    typedef std::tuple<
-      cBidirectional_Iterator<Iter>,
-
-      has_plus_assign<Iter, difference_type>,
-      tConvertible<typename get_plus_assign_result<Iter, difference_type>::type, Iter&>,
-
-      has_plus<Iter, difference_type>,
-      tConvertible<typename get_plus_result<Iter, difference_type>::type, Iter>,
-
-      has_plus<difference_type, Iter>,
-      tConvertible<typename get_plus_result<difference_type, Iter>::type, Iter>,
-
-      has_minus_assign<Iter, difference_type>,
-      tConvertible<typename get_minus_assign_result<Iter, difference_type>::type, Iter&>,
-
-      has_minus<Iter, difference_type>,
-      tConvertible<typename get_minus_result<Iter, difference_type>::type, Iter>,
-
-      has_minus<Iter, Iter>,
-      tConvertible<typename get_minus_result<Iter, Iter>::type, difference_type>,
-
-      has_subscript<Iter, difference_type>,
-      tConvertible<typename get_subscript_result<Iter, difference_type>::type, reference>
-    > requirements;
-    typedef typename requires_all<requirements>::type type;
-    static constexpr bool value = type::value;
-  };
+      // FIXME: Write in terms of actual traits (tPlus_assign?)
+      typedef std::tuple<
+        cBidirectional_Iterator<Iter>,
+        tPlus_Assign<Iter, difference_type>,
+        tConvertible<typename tPlus_Assign<Iter, difference_type>::result_type, Iter&>,
+        tPlus<Iter, difference_type>,
+        tConvertible<typename tPlus<Iter, difference_type>::result_type, Iter>,
+        tPlus<difference_type, Iter>,
+        tConvertible<typename tPlus<difference_type, Iter>::result_type, Iter>,
+        tMinus_Assign<Iter, difference_type>,
+        tConvertible<typename tMinus_Assign<Iter, difference_type>::result_type, Iter&>,
+        tMinus<Iter, difference_type>,
+        tConvertible<typename tMinus<Iter, difference_type>::result_type, Iter>,
+        tMinus<Iter, Iter>,
+        tConvertible<typename tMinus<Iter, Iter>::result_type, difference_type>,
+        tSubscript<Iter, difference_type>,
+        tConvertible<typename tSubscript<Iter, difference_type>::result_type, reference>
+      > requirements;
+      typedef typename requires_all<requirements>::type type;
+      static constexpr bool value = type::value;
+    };
   
 } // namespace origin
 
