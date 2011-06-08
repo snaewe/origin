@@ -29,12 +29,14 @@ namespace origin
     : private adjacency_matrix_base<
         Vertex,
         Matrix,
-        adj_mtx_impl_::bool_mtx,
+        adj_mtx_impl_::bool_detail<typename Matrix::value_type>,
         Alloc
       >
   {
     typedef adjacency_matrix_base<
-              Vertex,Matrix,adj_mtx_impl_::bool_mtx,Alloc
+              Vertex,Matrix,
+              adj_mtx_impl_::bool_detail<typename Matrix::value_type>,
+              Alloc
             > base_type;
   public:
     typedef typename base_type::matrix_type        matrix_type;
@@ -106,7 +108,8 @@ namespace origin
 
     /** @name Edge Properties and Operations */
     //@{
-    using base_type::add_edge;
+    edge add_edge(vertex u, vertex v);
+    using base_type::add_edge; //(u,v,e)
     using base_type::remove_edge;
     using base_type::remove_edges;
     using base_type::get_edge;
@@ -130,6 +133,19 @@ namespace origin
     { return base_type::equal(x); }
     //@}
   };
+
+  // Present because Boolean types have a default edge value
+  template<typename V, typename M, typename A>
+  auto adjacency_matrix<V,M,A>::add_edge(vertex v, vertex u) -> edge
+  {
+    edge_value_type& ev = matrix_(v.value, u.value);
+
+    assert(( !ev ));
+
+    ev = edge_value_type{true};
+
+    return edge(v.value, u.value);
+  }
 
 } // origin
 

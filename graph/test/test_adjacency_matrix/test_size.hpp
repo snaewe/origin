@@ -29,7 +29,7 @@
  * @tparam Graph An adjacency matrix
  */
 template<typename Graph>
-struct graph_sizes
+struct graph_sizes_bool
 {
   typedef typename Graph::vertex Vertex;
   //typedef typename Graph::edge Edge;
@@ -56,6 +56,47 @@ struct graph_sizes
       assert(( g.order() == i ));
       for(auto j = 0u; j < i; ++j) {
         g.add_edge(Vertex(j), Vertex(j));
+        assert(( g.size() == j + 1 ));
+      }
+      Graph h = g;
+      for(auto j = 0u; j < i; ++j) {
+        h.remove_edges(Vertex(j), Vertex(j));
+        assert(( h.size() == i - j - 1 ));
+      }
+      assert(( h.empty() ));
+      assert(( !g.empty() ));
+    }
+  }
+};
+
+template<typename Graph>
+struct graph_sizes_dist
+{
+  typedef typename Graph::vertex Vertex;
+  //typedef typename Graph::edge Edge;
+  typedef typename Graph::matrix_type Matrix;
+
+  void test()
+  {
+    using namespace std;
+
+    // Null graph sizes.
+    {
+      Graph g;
+      assert(( g.null() ));
+      assert(( g.empty() ));
+      assert(( g.size() == 0u ));
+      assert(( g.order() == 0u ));
+    }
+
+    // Test the first 5 positive integers.
+    for(auto i = 1u; i < 6u; ++i) {
+      Graph g(i);
+      assert(( !g.null() ));
+      assert(( g.empty() ));
+      assert(( g.order() == i ));
+      for(auto j = 0u; j < i; ++j) {
+        g.add_edge(Vertex(j), Vertex(j), 1.0f);
         assert(( g.size() == j + 1 ));
       }
       Graph h = g;

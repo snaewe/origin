@@ -160,7 +160,6 @@ namespace origin
 
     /** @name Edge Properties and Operations */
     //@{
-    edge add_edge(vertex u, vertex v);
     edge add_edge(vertex u, vertex v, edge_value_type const& e);
 
     void remove_edge(edge e);
@@ -203,7 +202,7 @@ namespace origin
   auto adjacency_matrix_base<V,M,E,A>::operator=(adjacency_matrix_base const& x)
     -> adjacency_matrix_base&
   {
-    if(this == &x) {
+    if(this != &x) {
       matrix_ = x.matrix_;
       vertices_ = x.vertices_;
     }
@@ -266,26 +265,14 @@ namespace origin
   }
 
   template<typename V, typename M, typename E, typename A>
-  auto adjacency_matrix_base<V,M,E,A>::add_edge(vertex v, vertex u) -> edge
-  {
-    edge_value_type& ev = matrix_(v.value, u.value);
-
-    assert(( !ev ));
-
-    ev = edge_value_type{true};
-
-    return edge(v.value, u.value);
-  }
-
-  template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::add_edge
   (vertex v, vertex u, edge_value_type const& e) -> edge
   {
-    assert(( e != edge_value_type{false} ));
+    assert(( E::edge(e) ));
 
     edge_value_type& ev = matrix_(v.value, u.value);
 
-    assert(( !ev ));
+    assert(( !E::edge(ev) ));
 
     ev = e;
     return edge(v.value, u.value);
@@ -296,9 +283,9 @@ namespace origin
   {
     edge_value_type& ev = matrix_(e.source, e.target);
 
-    assert(( ev ));
+    assert(( E::edge(ev) ));
 
-    ev = edge_value_type{false};
+    ev = E::null_edge_value();
   }
 
   template<typename V, typename M, typename E, typename A>
@@ -306,28 +293,28 @@ namespace origin
   {
     edge_value_type& ev = matrix_(v.value, u.value);
 
-    assert(( ev ));
+    assert(( E::edge(ev) ));
 
-    ev = edge_value_type{false};
+    ev = E::null_edge_value();
   }
 
   template<typename V, typename M, typename E, typename A>
   void adjacency_matrix_base<V,M,E,A>::remove_edges()
   {
-    edge_value_type e_false = edge_value_type{false};
+    edge_value_type e_null = E::null_edge_value();
     for(auto i = 0u; i < vertices_.size(); ++i)
       for(auto j = 0u; j < vertices_.size(); ++j)
-        matrix_(i,j) = e_false;
+        matrix_(i,j) = e_null;
   }
 
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::get_edge(vertex u, vertex v) -> edge
-  { return matrix_(u.value, v.value) ? edge{u.value, v.value} : edge{}; }
+  { return E::edge(matrix_(u.value, v.value)) ? edge{u.value, v.value} : edge{}; }
 
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::get_edge(const_vertex u, const_vertex v) const
     -> const_edge
-  { return matrix_(u.value, v.value) ? edge{u.value, v.value} : edge{}; }
+  { return E::edge(matrix_(u.value, v.value)) ? edge{u.value, v.value} : edge{}; }
 
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::source(edge e) -> vertex
@@ -388,7 +375,7 @@ namespace origin
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::in_edges(vertex v) -> in_edge_range
   {
-    return const_in_edge_range(
+    return in_edge_range(
       in_edge_iterator(*this, v.value),
       in_edge_iterator(*this, order() * order() + v.value)
     );

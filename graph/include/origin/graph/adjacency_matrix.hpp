@@ -11,5 +11,6 @@
 #define ORIGIN_GRAPH_ADJACENCY_MATRIX_INCLUDE_HPP
 
 #include <origin/graph/adjacency_matrix/adjacency_matrix.hpp>
+#include <origin/graph/adjacency_matrix/distance_matrix.hpp>
 
 #endif

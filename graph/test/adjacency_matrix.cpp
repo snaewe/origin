@@ -21,31 +21,44 @@
  * A simple harness for running a test model. Note that setup and teardown are
  * performed in the (default) constructors of the test model.
  */
-template<typename Matrix = origin::square_dynarray<bool>>
 void test_copy_create() {
   using namespace origin;
 
-  create_copy_graph<adjacency_matrix<char, Matrix>> t;
+  typedef square_dynarray<bool> Boolean_Matrix;
+  typedef square_dynarray<float> Distance_Matrix;
 
-  t.test();
+  create_copy_graph_bool<adjacency_matrix<char, Boolean_Matrix>> t_bool;
+  create_copy_graph_dist<distance_matrix<char, Distance_Matrix>> t_dist;
+
+  t_bool.test();
+  t_dist.test();
 };
 
-template<typename Matrix = origin::square_dynarray<bool>>
 void test_sizes() {
   using namespace origin;
 
-  graph_sizes<adjacency_matrix<char, Matrix>> t;
+  typedef square_dynarray<bool> Boolean_Matrix;
+  typedef square_dynarray<float> Distance_Matrix;
 
-  t.test();
+  graph_sizes_bool<adjacency_matrix<char, Boolean_Matrix>> t_bool;
+  graph_sizes_dist<distance_matrix<char, Distance_Matrix>> t_dist;
+
+  t_bool.test();
+  t_dist.test();
 };
 
 template<typename Matrix = origin::square_dynarray<bool>>
 void test_data_access() {
   using namespace origin;
 
-  graph_data_access<adjacency_matrix<char, Matrix>> t;
+  typedef square_dynarray<bool> Boolean_Matrix;
+  typedef square_dynarray<float> Distance_Matrix;
 
-  t.test();
+  graph_data_access_bool<adjacency_matrix<char, Boolean_Matrix>> t_bool;
+  graph_data_access_dist<distance_matrix<char, Distance_Matrix>> t_dist;
+
+  t_bool.test();
+  t_dist.test();
 };
 
 int main()

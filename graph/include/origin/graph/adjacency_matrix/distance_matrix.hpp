@@ -10,7 +10,7 @@
 
 #include <cassert>
 
-#include <origin/graph/distance_matrix/impl.hpp>
+#include <origin/graph/adjacency_matrix/impl.hpp>
 #include <origin/graph/vertex.hpp>
 
 #include <origin/utility/empty.hpp>
@@ -37,12 +37,15 @@ namespace origin
     : private adjacency_matrix_base<
         Vertex,
         Matrix,
-        adj_mtx_impl_::dist_mtx,
+        adj_mtx_impl_::dist_detail<typename Matrix::value_type>,
         Alloc
       >
   {
     typedef adjacency_matrix_base<
-              Vertex,Matrix,adj_mtx_impl_::dist_mtx,Alloc
+              Vertex,
+              Matrix,
+              adj_mtx_impl_::dist_detail<typename Matrix::value_type>,
+              Alloc
             > base_type;
   public:
     typedef typename base_type::matrix_type        matrix_type;

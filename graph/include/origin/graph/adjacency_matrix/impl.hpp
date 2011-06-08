@@ -10,6 +10,8 @@
 
 #include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
+#include <limits>
+//#include <origin/
 
 #include <cstddef>
 
@@ -59,18 +61,47 @@ namespace origin
 
     // FIXME These are temporary jury rigged predicates that define what an edge
     //       is relative to the different adjacency matrix types.
-    struct bool_mtx
+    template<typename Boolean>
+    struct bool_detail
     {
-      template<typename Boolean>
-      inline static bool edge(Boolean b)
+      typedef Boolean bool_type;
+
+      inline static bool edge(bool_type const& b)
       { return b; }
+
+      inline static bool_type null_edge_value()
+      { return bool_type{false}; }
     };
 
-    struct dist_mtx
+    template<typename Distance>
+    struct dist_detail
     {
-      template<typename Distance>
-      inline static bool edge(Distance d)
-      { return d != Distance(); }
+      typedef Distance dist_type;
+
+      // Helper functions from numeric_limits
+      template<typename D>
+      static constexpr
+      typename std::enable_if<
+        std::numeric_limits<D>::has_infinity,
+        Distance
+      >::type
+      infinity()
+      { return std::numeric_limits<D>::infinity(); }
+
+      template<typename D>
+      static constexpr
+      typename std::enable_if<
+        !std::numeric_limits<D>::has_infinity,
+        Distance
+      >::type
+      infinity()
+      { return std::numeric_limits<D>::max(); }
+
+      inline static bool edge(dist_type const& d)
+      { return d != dist_type() && d != infinity<dist_type>(); }
+
+      inline static dist_type null_edge_value()
+      { return dist_type(); }
     };
 
     /**
@@ -160,7 +191,9 @@ namespace origin
       edge_iterator(Graph& g, size_type n)
         : graph_(g), index_(n), order_(g.order()), end_(g.order() * g.order())
       {
-        if(!EdgePred::template edge<edge_value_type>(graph_(0,0)))
+        if(!EdgePred::edge(
+             graph_(index_ / order_, index_ % order_)
+        ) && index_ < end_)
           next_edge();
       }
 
@@ -188,7 +221,7 @@ namespace origin
           /*std::cerr << '(' << index_ / order_ << ',' << index_ % order_ << ')';*/
         }
         while(
-          !EdgePred::template edge<edge_value_type>(
+          !EdgePred::edge(
             graph_(index_ / order_, index_ % order_)
           ) && index_ < end_);
       }
@@ -229,14 +262,12 @@ namespace origin
 
       in_edge_iterator() = delete;
 
-      //*boolean_edge_iterator(Graph& g, size_type n)
       in_edge_iterator(Graph& g, size_type n)
         : graph_(g), index_(n), order_(g.order()), end_(g.order() * g.order())
       {
-        //std::cerr << n << '\n';
-        if(!EdgePred::template edge<edge_value_type>(
+        if(!EdgePred::edge(
              graph_(index_ / order_, index_ % order_)
-        ))
+        ) && index_ < end_)
           next_edge();
       }
 
@@ -252,7 +283,9 @@ namespace origin
       { return index_ == x.index_; }
 
       bool less(in_edge_iterator const& x) const
-      { return index_ < x.index_; }
+      { 
+        std::cerr << index_ << ':' << x.index_ << '\n';
+        return index_ < x.index_; }
 
       void increment()
       { next_edge(); }
@@ -261,10 +294,9 @@ namespace origin
       void next_edge()
       {
         do { index_ += order_;}
-             //if(index_ >= end_) std::cerr << index_ << ':' << order_ << ':' << end_ << '\n';}
-        while(//(!EdgePred::template edge<edge_value_type>(
-          //graph_(index_ / order_, index_ % order_)
-        /*)) &&*/ index_ < end_);
+        while((!EdgePred::edge(
+          graph_(index_ / order_, index_ % order_)
+        )) && index_ < end_);
       }
 
       Graph& graph_;
