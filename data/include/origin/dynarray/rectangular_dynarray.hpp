@@ -199,7 +199,7 @@ namespace origin
      * @param alloc   An allocator object
      */
     rectangular_dynarray(size_type m,
-                         size_typen n,
+                         size_type n,
                          std::initializer_list<value_type> list,
                          allocator_type const& alloc = allocator_type{})
       : base_type{m, n, list.begin()->size(), alloc}
