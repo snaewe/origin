@@ -7,3 +7,5 @@
 
 add_subdirectory(dynarray)
 add_subdirectory(heap)
+
+origin_executable(stack stack.cpp)
