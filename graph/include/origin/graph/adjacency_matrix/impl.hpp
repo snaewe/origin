@@ -98,10 +98,10 @@ namespace origin
       { return std::numeric_limits<D>::max(); }
 
       inline static bool edge(dist_type const& d)
-      { return d != dist_type() && d != infinity<dist_type>(); }
+      { return d != infinity<dist_type>(); }
 
       inline static dist_type null_edge_value()
-      { return dist_type(); }
+      { return infinity<dist_type>(); }
     };
 
     /**
@@ -188,14 +188,16 @@ namespace origin
 
       edge_iterator() = delete;
 
-      edge_iterator(Graph& g, size_type n)
-        : graph_(g), index_(n), order_(g.order()), end_(g.order() * g.order())
+      edge_iterator(Graph const& g, size_type n)
+        : graph_(&g), index_(n), order_(g.order()), end_(g.order() * g.order())
       {
         if(!EdgePred::edge(
-             graph_(index_ / order_, index_ % order_)
+             (*graph_)(index_ / order_, index_ % order_)
         ) && index_ < end_)
           next_edge();
       }
+
+      edge_iterator& operator=(edge_iterator const& e) = default;
 
       edge_iterator(edge_iterator const&) = default;
 
@@ -217,16 +219,14 @@ namespace origin
     private:
       void next_edge()
       {
-        do { ++index_; 
-          /*std::cerr << '(' << index_ / order_ << ',' << index_ % order_ << ')';*/
-        }
+        do { ++index_; }
         while(
           !EdgePred::edge(
-            graph_(index_ / order_, index_ % order_)
+            (*graph_)(index_ / order_, index_ % order_)
           ) && index_ < end_);
       }
 
-      Graph& graph_;
+      Graph const * graph_;
       size_type index_;
       size_type order_;
       size_type end_;
@@ -262,11 +262,11 @@ namespace origin
 
       in_edge_iterator() = delete;
 
-      in_edge_iterator(Graph& g, size_type n)
-        : graph_(g), index_(n), order_(g.order()), end_(g.order() * g.order())
+      in_edge_iterator(Graph const& g, size_type n)
+        : graph_(&g), index_(n), order_(g.order()), end_(g.order() * g.order())
       {
         if(!EdgePred::edge(
-             graph_(index_ / order_, index_ % order_)
+             (*graph_)(index_ / order_, index_ % order_)
         ) && index_ < end_)
           next_edge();
       }
@@ -295,11 +295,11 @@ namespace origin
       {
         do { index_ += order_;}
         while((!EdgePred::edge(
-          graph_(index_ / order_, index_ % order_)
+          (*graph_)(index_ / order_, index_ % order_)
         )) && index_ < end_);
       }
 
-      Graph& graph_;
+      Graph const * graph_;
       size_type index_;
       size_type order_;
       size_type end_;

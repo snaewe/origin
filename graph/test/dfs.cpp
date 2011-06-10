@@ -9,6 +9,8 @@
 
 #include <origin/utility/typestr.hpp>
 #include <origin/graph/adjacency_list.hpp>
+
+#include <origin/graph/adjacency_matrix.hpp>
 #include <origin/graph/algorithm/search/depth_first.hpp>
 
 using namespace std;
@@ -24,10 +26,10 @@ void test()
   typedef typename Graph::const_edge Const_Edge;
   typedef dfs_visitor Visitor;
 
-  Graph g;
-  auto u = g.add_vertex();
-  auto v = g.add_vertex();
-  g.add_edge(u, v);
+  Graph g(2);
+  Vertex u(0);
+  Vertex v(1);
+  g.add_edge(u,v);
 
   // Get some const objects for const instantiations.
   Graph const& cg = g;
@@ -57,19 +59,19 @@ void test()
   depth_first_traverse(cg, vis, color);
 
   // Check dfs range implementations.
-//   for(auto x : dfs(g, u)) ;
-//   for(auto x : dfs(g, u, color));
-//   for(auto x : dfs(cg, cu)) ;
-//   for(auto x : dfs(cg, cu, color));
+  /*for(auto x : dfs(g, u)) ;
+  for(auto x : dfs(g, u, color));
+  for(auto x : dfs(cg, cu)) ;
+  for(auto x : dfs(cg, cu, color));
 
-//   for(auto x : dfs(g));
-//   for(auto x : dfs(cg));
-//   for(auto x : dfs(g, color));
-//   for(auto x : dfs(cg, color));
+  for(auto x : dfs(g));
+  for(auto x : dfs(cg));
+  for(auto x : dfs(g, color));
+  for(auto x : dfs(cg, color));*/
 }
 
 int main()
 {
-  test<directed_adjacency_list<>>();
-  test<undirected_adjacency_list<>>();
+  test<adjacency_matrix<>>();
+  //test<undirected_adjacency_list<>>();
 }

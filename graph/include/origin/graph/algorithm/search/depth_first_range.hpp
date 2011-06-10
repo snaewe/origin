@@ -117,13 +117,14 @@ namespace origin
     typedef Graph graph_type;
     typedef typename graph_traits<graph_type>::vertex vertex;
     typedef typename graph_traits<graph_type>::edge edge;
+    typedef typename graph_type::out_edge_range out_edge_range;
 
     typedef Color_Label color_label;
     typedef typename label_traits<color_label, vertex>::value_type color_type;
     typedef origin::color_traits<color_type> color_traits;
 
-    typedef std::stack<vertex> search_stack;
     typedef std::pair<vertex, out_edge_range> vertex_state;
+    typedef std::stack<vertex_state> search_stack;
 
     typedef dfs_iterator<this_type> iterator;
 
@@ -164,18 +165,18 @@ namespace origin
           edge e = *i;
           vertex v = graph.target(e);
           if(color(v) == color_traits::white()) {
-            stack.push({current_vertex, out_edge_range{++i, ie}});
-            current_vertex = v;
-            search(current_vertex);
+            stack.push({current, out_edge_range{++i, ie}});
+            current = v;
+            search(current);
             return;
           }
           else
             ++i;
         }
         // Finished current vertex
-        color(current_vertex) = color_traits::black();
+        color(current) = color_traits::black();
         if(!stack.empty())
-          current_vertex = stack.top().first;
+          current = stack.top().first;
       }
     }
 
@@ -256,7 +257,7 @@ namespace origin
    * @internal
    * @ingroup graph_dfs
    *
-   * Implements the breadth-first traversal range.
+   * Implements the depth-first traversal range.
    *
    * @tparam Graph        An Outward_Graph
    * @tparam Color_Label  A Vertex_Label<Graph, Color>
@@ -306,7 +307,7 @@ namespace origin
           ++iter;
         }
         if(iter != last) {
-          current_vertex = *iter;
+          base_type::current = *iter;
           search(*iter);
         }
     }

@@ -9,5 +9,6 @@
 #define ORIGIN_GRAPH_ALGORITHM_SEARCH_DEPTH_FIRST_HPP
 
 #include <origin/graph/algorithm/search/depth_first_algorithm.hpp>
+#include <origin/graph/algorithm/search/depth_first_range.hpp>
 
 #endif

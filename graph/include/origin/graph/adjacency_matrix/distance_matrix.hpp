@@ -56,6 +56,8 @@ namespace origin
     typedef typename base_type::size_type          size_type;
     typedef typename base_type::difference_type    difference_type;
 
+    typedef typename base_type::graph_category     graph_category;
+
     // Vertex and Edge data types
     typedef typename base_type::vertex             vertex;
     typedef typename base_type::const_vertex       const_vertex;

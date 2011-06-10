@@ -11,6 +11,7 @@
 #include <origin/range/zip_range.hpp>
 #include <origin/graph/adjacency_matrix.hpp>
 #include <origin/dynarray/square_dynarray.hpp>
+#include <origin/dynarray/rectangular_dynarray.hpp>
 
 // Test suite
 #include "test_adjacency_matrix/test_create.hpp"

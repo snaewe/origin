@@ -100,11 +100,14 @@ struct graph_sizes_dist
         assert(( g.size() == j + 1 ));
       }
       Graph h = g;
+      Graph k = g;
       for(auto j = 0u; j < i; ++j) {
         h.remove_edges(Vertex(j), Vertex(j));
         assert(( h.size() == i - j - 1 ));
       }
+      k.remove_edges();
       assert(( h.empty() ));
+      assert(( k.empty() ));
       assert(( !g.empty() ));
     }
   }

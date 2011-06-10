@@ -52,7 +52,7 @@ namespace origin
     typedef typename vertex_allocator_type::difference_type difference_type;
 
     // FIXME The matrix decides the directedness.
-    //struct graph_category : directed_graph_tag { };
+    struct graph_category : directed_graph_tag { };
 
     // Vertex and Edge data types
     typedef vertex_t vertex;
@@ -92,14 +92,14 @@ namespace origin
       : matrix_(move(m)), vertices_(get_order(m))
     { }
 
-    adjacency_matrix_base(size_type n)
+    /*adjacency_matrix_base(size_type n)
       : matrix_(n), vertices_(n)
-    { }
+    { remove_edges(); }*/
 
     // Enable if matrix is constructed by # rows and # columns
-    /*adjacency_matrix(size_type n)
+    adjacency_matrix_base(size_type n)
       : matrix_(n, n), vertices_(n)
-    { assert((n == m)); }*/
+    { remove_edges(); }
 
     adjacency_matrix_base& operator=(adjacency_matrix_base const& x);
     //@}

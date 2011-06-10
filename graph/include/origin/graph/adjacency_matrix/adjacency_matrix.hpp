@@ -16,14 +16,14 @@
 
 #include <origin/utility/empty.hpp>
 #include <origin/dynarray/dynarray.hpp>
-#include <origin/dynarray/square_dynarray.hpp>
+#include <origin/dynarray/rectangular_dynarray.hpp>
 
 
 namespace origin
 {
 
   template<typename Vertex = empty_t,
-           typename Matrix = square_dynarray<bool>,
+           typename Matrix = rectangular_dynarray<bool>,
            typename Alloc = std::allocator<Vertex>>
   class adjacency_matrix
     : private adjacency_matrix_base<
@@ -39,13 +39,15 @@ namespace origin
               Alloc
             > base_type;
   public:
-    typedef typename base_type::matrix_type        matrix_type;
+    typedef typename base_type::matrix_type           matrix_type;
     typedef typename base_type::vertex_allocator_type vertex_allocator_type;
-    typedef typename base_type::vertex_value_type  vertex_value_type;
-    typedef typename base_type::edge_value_type    edge_value_type;
+    typedef typename base_type::vertex_value_type     vertex_value_type;
+    typedef typename base_type::edge_value_type       edge_value_type;
 
     typedef typename base_type::size_type          size_type;
     typedef typename base_type::difference_type    difference_type;
+
+    typedef typename base_type::graph_category     graph_category;
 
     // Vertex and Edge data types
     typedef typename base_type::vertex             vertex;
@@ -54,14 +56,14 @@ namespace origin
     typedef typename base_type::const_edge         const_edge;
 
     // Range types
-    typedef typename base_type::vertex_range       vertex_range;
-    typedef typename base_type::const_vertex_range const_vertex_range;
-    typedef typename base_type::edge_range         edge_range;
-    typedef typename base_type::const_edge_range   const_edge_range;
-    typedef typename base_type::out_edge_range     out_edge_range;
+    typedef typename base_type::vertex_range         vertex_range;
+    typedef typename base_type::const_vertex_range   const_vertex_range;
+    typedef typename base_type::edge_range           edge_range;
+    typedef typename base_type::const_edge_range     const_edge_range;
+    typedef typename base_type::out_edge_range       out_edge_range;
     typedef typename base_type::const_out_edge_range const_out_edge_range;
-    typedef typename base_type::in_edge_range      in_edge_range;
-    typedef typename base_type::const_in_edge_range const_in_edge_range;
+    typedef typename base_type::in_edge_range        in_edge_range;
+    typedef typename base_type::const_in_edge_range  const_in_edge_range;
 
     /** @name Construction, Assignment and Destruction */
     //@{
