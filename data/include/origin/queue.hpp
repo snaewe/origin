@@ -5,22 +5,22 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_STACK_HPP
-#define ORIGIN_STACK_HPP
+#ifndef ORIGIN_QUEUE_HPP
+#define ORIGIN_QUEUE_HPP
 
 #include <cassert>
-#include <vector>
+#include <deque>
 
 namespace origin
 {
   /**
-   * The stack class implements the traditional stack data structure.
+   * The queue class implements the traditional queue data structure.
    * 
    * @tparam T      The value type of the stack
    * @tparam Cont   The underlying container
    */
-  template<typename T, typename Cont = std::vector<T>>
-  class stack
+  template<typename T, typename Cont = std::deque<T>>
+  class queue
   {
     typedef Cont container_type;
   public:
@@ -52,33 +52,46 @@ namespace origin
     }
     //@}
     
-    /** @name Stack operations */
+    /** @name Queue operations */
     //@{
     /**
-     * Return a reference to the object on top of the stack.
+     * Return a reference to the object at the front of the queue.
      */
-    reference top()
+    reference front()
+    {
+      return data_.front();
+    }
+    
+    const_reference top() const
+    {
+      return data_.front();
+    }
+    
+    /**
+     * Return a reference to the object at the back of the queue.
+     */
+    reference back()
     {
       return data_.back();
     }
     
-    const_reference top() const
+    const_reference back() const
     {
       return data_.back();
     }
 
     /**
-     * Move the top object out of the stack. This does not pop the object off
-     * the stack.
+     * Move the front object out of the queue. This does not pop the object
+     * out of the queue.
      */
     value_type displace()
     {
       assert(( !empty() ));
-      return std::move(top());
+      return std::move(front());
     }
     
     /**
-     * Copy the given object onto the stack.
+     * Copy the given object into the back of the queue.
      */
     void push(value_type const& x)
     {
@@ -86,7 +99,7 @@ namespace origin
     }
     
     /**
-     * Move the given object onto the stack.
+     * Move the given object into the back of the queue.
      */
     void push(value_type&& x)
     {
@@ -94,7 +107,7 @@ namespace origin
     }
     
     /**
-     * Construct an object on top of the stack.
+     * Construct an object in the back of the queue.
      */
     template<typename... Args>
       void emplace(Args&&... args)
@@ -103,12 +116,12 @@ namespace origin
       }
     
     /**
-     * Discard the object on top of the stack.
+     * Discard the object at the front of the queue.
      */
     void pop()
     {
       assert(( !empty() ));
-      data_.pop_back();
+      data_.pop_front();
     }
     //@}
     

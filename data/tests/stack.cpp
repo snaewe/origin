@@ -43,8 +43,31 @@ struct Moveable {
   Resource* rc;
 };
 
+template<typename T>
+  void check_stack(std::initializer_list<T> list)
+  {
+    stack<T> s;
+    assert(( s.empty() ));
+    assert(( s.size() == 0 ));
+    for(auto& x : list) {
+      s.push(x);
+      assert(( s.top() == x ));
+    }
+    assert(( s.size() == list.size() ));
+    
+    auto i = std::prev(list.end());
+    while(!s.empty()) {
+      assert(( s.top() == *i ));
+      s.pop();
+      --i;
+    }
+  }
+
+
 int main()
 {
+  check_stack({1, 2, 3, 4, 5});
+
   Moveable x{new Resource{}};
   assert(( x.rc ));
   Moveable y{move(x)};

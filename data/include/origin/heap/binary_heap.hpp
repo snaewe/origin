@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_HEAPS_BINARY_HEAP_HPP
-#define ORIGIN_HEAPS_BINARY_HEAP_HPP
+#ifndef ORIGIN_HEAP_BINARY_HEAP_HPP
+#define ORIGIN_HEAP_BINARY_HEAP_HPP
 
 #include <cassert>
 #include <algorithm>
