@@ -13,22 +13,48 @@
 
 namespace origin
 {
-  // FIXME: This is not a sorted associative container, nor is it a hashed
-  // associative container. It's more like a direct associative container.
+  // FIXME: Define a variant that actually understands mapped value validity. 
+  // This can be easily achieved using either an accompanying bitmap or by 
+  // making the elements optional (at greater cost of space and time). It should
+  // be called direct_map. The corresponding concept is Direct Map.
+  
+  // If we consider maps to be functions (i.e., m[k] <=> f(x)), then 
+  // Associative containers define partial functions. We can generalize that
+  // notion to Associations and Partial Maps. More precisely an Association
+  // is a Partial Map if, for any Map m and a key k, m.count(k) == 0. This is
+  // our basic understanding of all associative containers.
+  //
+  // An Association is a Total Map if, for any Map m and all keys k in the
+  // domain of m, m.count(k) > 0. Note that that, here, domain is not simply 
+  // all objects represented by the domain type, but rather the set of keys
+  // over which a Map m is currently defined. Intuitively, a Total Map is one
+  // where each key is implicitly mapped to some value. The value may or may
+  // not have meaning, depending on the current state of the program, however.
 
-  // FIXME: Define a variant that actually understands initialization. This
-  // can be easily achieved using either an accompanying bitmap or by making
-  // the elements optional (at greater cost).
+  // FIXME: The vector_map is a Total, Direct, Unique Association.
+  
+  // FIXME: Seriously, how many Total Maps could there possibly be? Still, there
+  // semantically, this is what we have.
+  
+  // NOTE: Total Maps don't have erase functions and their insert function is
+  // more like a Multimap than a Map: it can't fail.
+
 
   /**
-   * The vector map adapts an underlying Vector into a unique associative
-   * container. An allocator for the container can be specified as part of the
-   * underlying vector.
+   * A vector map implements a Direct, Unique Map over a Random Access 
+   * Container. Like all Direct Maps, the key type of the vector map is 
+   * the size type of the underlying container. However, all keys are implicitly 
+   * mapped to values. This is an optimization over true Direct Maps where the
+   * mapped value may not be defined for a given key.
+   *
+   * The vector_map is a container adaptor, taking an underlying container as
+   * a template parameter. The allocator for the map can be specified as an
+   * argument to that parameter.
    * 
    * @tparam T      The mapped type
    * @tparam Vec    The underlying Vector type
    */
-  template<typename T, Vec = std::vector<T>>
+  template<typename T, typename Vec = std::vector<T>>
     class vector_map
     {
       typedef Vec vector_type;
@@ -44,6 +70,8 @@ namespace origin
       
       typedef typename vector_type::allocator_type allocator_type;
       
+      // FIXME: These are wrong. They need to return value types, not the 
+      // mapped type.
       typedef typename vector_type::iterator iterator;
       typedef typename vector_type::const_iterator const_iterator;
       typedef typename vector_type::reverse_iterator reverse_iterator;
@@ -55,12 +83,25 @@ namespace origin
        * @brief Default constructor
        */
       vector_map()
-        : data_{}, init_{}
+        : data_{}
       { }
 
-      vector_map(allocator_type const& alloc = allocator_type{})
-        : data_{}, init_{}
+      vector_map(allocator_type const& alloc)
+        : data_{alloc}
       { }
+      
+      /**
+       * @name Fill constructor
+       */
+      explicit vector_map(size_type n)
+        : data_{n}
+      { }
+      
+      vector_map(size_type n, mapped_type x)
+        : data_{n, x}
+      { }
+      
+      // FIXME: Write more constructors
       //@}
       
       /** @name Properties */
@@ -134,7 +175,38 @@ namespace origin
       }
       //@}
 
-      /** @name Map Operations */
+      /** Member access */
+      //@{
+      /**
+       * Return a reference to the mapped value indicated by the given key.
+       * If no such value exists, the map is resized in order to accomodate
+       * the new value.
+       * 
+       * @note This operation may result in the creation of many new, default
+       * initialized values.
+       */
+      mapped_type& operator[](key_type const& k)
+      {
+        maybe_resize(k);
+        return get(k);
+      }
+      //@}
+      
+      /** @name Modifiers */
+      //@{
+      /**
+       * Insert the given key/value pair into the map, returning an iterator to
+       * the given position.
+       */
+      iterator insert(value_type const& x)
+      {
+        maybe_resize(x.first);
+        get(x.first) = x.second;
+        return begin() + x.first;
+      }
+      //@}
+
+      /** @name Map operations */
       //@{
       /**
        * Return an iterator to the object indicated by the given key or an
@@ -150,55 +222,13 @@ namespace origin
         return valid(k) ? begin() + k : end();
       }
       
-      size_type count(key_type const& x) count
+      /**
+       * Return the number of objects associated with the given k. If the key
+       * is in bounds, this is 1. If not, 0.
+       */
+      size_type count(key_type const& k) const
       {
         return valid(k) ? 1 : 0;
-      }
-
-      /**
-       * Insert the given key/value pair into the map. This operation
-       * will always succeed.
-       */
-      pair<iterator, bool> insert(value_type const& x)
-      {
-        map_[x.first] = x.second;
-        return {begin() + x.first, true};
-      }
-      
-      /**
-       * Erase the mapping indicated by the given iterator.
-       * 
-       * @note This operation does not eagerly erase the mapped value. It 
-       * is erased when the mapping is overwritten or the map is destroyed.
-       */
-      void erase(iterator pos)
-      { }
-      
-      /**
-       * Return a reference to the mapped value indicated by the given key.
-       * If no such value exists, the map is resized in order to accomodate
-       * the new value.
-       * 
-       * @note This operation may result in the creation of many new, default
-       * initialized values.
-       */
-      mapped_type& operator[](key_type const& k)
-      {
-        if(k >= size()) {
-          resize(2 * k);
-        }
-        return map_[k];
-      }
-
-
-      /**
-       * Erase the association with the specified key. The mapped value at the
-       * specified index is assigned to -1u.
-       */
-      void erase(key_type const& k)
-      {
-        assert(( has(k) ));
-        map_[k] = -1u;
       }
       //@}
       
@@ -223,6 +253,39 @@ namespace origin
       {
         return data_.end();
       }
+      
+      reverse_iterator rbegin()
+      {
+        return data_.rbegin();
+      }
+      
+      reverse_iterator rend()
+      {
+        return data_.rend();
+      }
+      
+      const_reverse_iterator rbegin() const
+      {
+        return data_.rbegin();
+      }
+      
+      const_reverse_iterator rend() const
+      {
+        return data_.rend();
+      }
+      //@}
+
+      /** @name Operations */
+      //@{
+      void clear()
+      {
+        data_.clear();
+      }
+
+      void swap(vector_map& x)
+      {
+        data_.swap(x);
+      }      
       //@}
       
     private:
@@ -230,6 +293,29 @@ namespace origin
       bool valid(key_type const& k) const
       {
         return !empty() && k < size();
+      }
+
+      // If the key is larger than the current size, allocate more mappings. 
+      void maybe_resize(key_type const& k)
+      {
+        if(k >= size()) {
+          if(k >= capacity()) {
+            // FIXME: The resize heursitic is a total guess. There's probably
+            // a better one.
+            reserve(capacity() == 0 ? 8 : 2 * k);
+          }
+          resize(k + 1);
+        }
+      }
+      
+      mapped_type& get(key_type const& k)
+      {
+        return data_[k];
+      }
+      
+      mapped_type const& get(key_type const& k) const
+      {
+        return data_[k];
       }
       
     private:
