@@ -11,6 +11,8 @@
 #include <vector>
 #include <utility>
 
+#include <origin/iterator/facades.hpp>
+
 namespace origin
 {
   // FIXME: Define a variant that actually understands mapped value validity. 
@@ -39,6 +41,159 @@ namespace origin
   // NOTE: Total Maps don't have erase functions and their insert function is
   // more like a Multimap than a Map: it can't fail.
 
+  /**
+   * The vector map iterator provides an iterator type over the mappings in a 
+   * vector map.
+   */
+  template<typename Vec>
+    class vector_map_iterator
+      : public random_access_iterator_facade<
+          vector_map_iterator<Vec>,
+          std::pair<typename Vec::size_type, typename Vec::reference>,
+          std::pair<typename Vec::size_type, typename Vec::reference>&,
+          std::pair<typename Vec::size_type, typename Vec::reference>,
+          typename Vec::difference_type
+        >
+    {
+      typedef typename Vec::size_type size_type;
+      typedef typename Vec::reference base_reference;
+      typedef typename Vec::iterator base_iterator;
+      typedef random_access_iterator_facade<
+        vector_map_iterator<Vec>,
+        std::pair<size_type, base_reference>,
+        std::pair<size_type, base_reference>&,
+        std::pair<size_type, base_reference>,
+        typename Vec::difference_type
+      > base_type;
+    public:
+      typedef typename base_type::reference reference;
+      typedef typename base_type::difference_type difference_type;
+      
+      vector_map_iterator(size_type n, base_iterator i)
+        : pos_{n}, iter_{i}
+      { }
+      
+      bool equal(vector_map_iterator const& x) const
+      {
+        return iter_ == x.iter_;
+      }
+      
+      bool less(vector_map_iterator const& x) const
+      {
+        return iter_ < x.iter_;
+      }
+      
+      reference dereference() const
+      {
+        return {pos_, *iter_};
+      }
+      
+      void increment()
+      {
+        ++pos_;
+        ++iter_;
+      }
+      
+      void decrement()
+      {
+        --pos_;
+        --iter_;
+      }
+      
+      void advance(difference_type n)
+      {
+        pos_ += n;
+        iter_ += n;
+      }
+      
+      difference_type distance(vector_map_iterator const& x) const
+      {
+        return x.iter - iter_;
+      }
+      
+    private:
+      size_type pos_;
+      base_iterator iter_;
+    };
+  
+  /**
+   * The constant vector map iterator provides a constant iterator type over 
+   * the mappings in a vector map.
+   */
+  template<typename Vec>
+    class const_vector_map_iterator
+      : public random_access_iterator_facade<
+          const_vector_map_iterator<Vec>,
+          std::pair<typename Vec::size_type, typename Vec::const_reference>,
+          std::pair<typename Vec::size_type, typename Vec::const_reference> const&,
+          std::pair<typename Vec::size_type, typename Vec::const_reference>,
+          typename Vec::difference_type
+        >
+    {
+      typedef typename Vec::size_type size_type;
+      typedef typename Vec::const_reference base_reference;
+      typedef typename Vec::const_iterator base_iterator;
+      typedef random_access_iterator_facade<
+        const_vector_map_iterator<Vec>,
+        std::pair<size_type, base_reference>,
+        std::pair<size_type, base_reference> const&,
+        std::pair<size_type, base_reference>,
+        typename Vec::difference_type
+      > base_type;
+    public:
+      typedef typename base_type::reference reference;
+      typedef typename base_type::difference_type difference_type;
+      
+      const_vector_map_iterator(size_type n, base_iterator i)
+        : pos_{n}, iter_{i}
+      { }
+      
+      const_vector_map_iterator(vector_map_iterator<Vec> const& x)
+        : pos_{x.pos_}, iter_{x.iter_}
+      { }
+      
+      bool equal(const_vector_map_iterator const& x) const
+      {
+        return iter_ = x.iter_;
+      }
+      
+      bool less(const_vector_map_iterator const& x) const
+      {
+        return iter_ < x.iter_;
+      }
+      
+      reference dereference() const
+      {
+        return {pos_, *iter_};
+      }
+      
+      void increment()
+      {
+        ++pos_;
+        ++iter_;
+      }
+      
+      void decrement()
+      {
+        --pos_;
+        --iter_;
+      }
+      
+      void advance(difference_type n)
+      {
+        pos_ += n;
+        iter_ += n;
+      }
+
+      difference_type distance(const_vector_map_iterator const& x) const
+      {
+        return x.iter_ - iter_;
+      }
+      
+    private:
+      size_type pos_;
+      base_iterator iter_;
+    };
 
   /**
    * A vector map implements a Direct, Unique Map over a Random Access 
@@ -72,8 +227,8 @@ namespace origin
       
       // FIXME: These are wrong. They need to return value types, not the 
       // mapped type.
-      typedef typename vector_type::iterator iterator;
-      typedef typename vector_type::const_iterator const_iterator;
+      typedef vector_map_iterator<vector_type> iterator;
+      typedef const_vector_map_iterator<vector_type> const_iterator;
       typedef typename vector_type::reverse_iterator reverse_iterator;
       typedef typename vector_type::const_reverse_iterator const_reverse_iterator;
 
@@ -86,22 +241,71 @@ namespace origin
         : data_{}
       { }
 
-      vector_map(allocator_type const& alloc)
+      explicit vector_map(allocator_type const& alloc)
         : data_{alloc}
+      { }
+      
+      // FIXME: Optimize for forward iterators.
+      // FIXME: If we concepts, we could also make a range constructor that
+      // accepted a sequence of mapped_types also. 
+      /**
+       * @name Range constructor
+       * The range constructor initializes the map over a sequence of mappings
+       * (i.e., key value pairs).
+       * 
+       * @tparam Iter   An Iterator satisfying Input_Iterator<Iter, value_type>
+
+       * @param first   The first iterator a range
+       * @param last    An iterator past the end of the range
+       */
+      template<typename Iter>
+        vector_map(Iter first, Iter last)
+          : data_{}
+        {
+          for( ; first != last; ++first)
+            data_[first->first] = first->second;
+        }
+        
+      /**
+       * @name Initializer list constructor (for value_types)
+       * The initializer list constructor initializess a map over a sequence
+       * of mappings (i.e., key/value pairs).
+       * 
+       * @param list  An initializer list containing mappings
+       */
+      vector_map(std::initializer_list<value_type> list)
+        : data_{}
+      {
+        for(auto& x : list)
+          data_[x.first] = x.second;
+      }
+      
+      /**
+       * @name Initializer list constructor (for mapped_types)
+       * The initializer list constructor initializess a map over a sequence
+       * of mapped values.
+       * 
+       * @param list  An initializer list containing mapped values.
+       */
+      vector_map(std::initializer_list<mapped_type> list)
+        : data_{list.begin(), list.end()}
       { }
       
       /**
        * @name Fill constructor
+       * The fill constructor provides a method of initializing a map over a
+       * set of n mappings, optionally initialized to the value x.
+       * 
+       * @param n   The number of initial mappings
+       * @param x   The default mapped value for each initial mapping.
        */
       explicit vector_map(size_type n)
         : data_{n}
       { }
       
-      vector_map(size_type n, mapped_type x)
+      vector_map(size_type n, mapped_type const& x)
         : data_{n, x}
       { }
-      
-      // FIXME: Write more constructors
       //@}
       
       /** @name Properties */
@@ -204,6 +408,40 @@ namespace origin
         get(x.first) = x.second;
         return begin() + x.first;
       }
+
+      /**
+       * Erase the mapping at the specified position.
+       * 
+       * @note This operation is lazy. The erased object is not erased until
+       * it is overwritten or the vector is cleared or destroyed.
+       */
+      void erase(iterator pos)
+      { }
+      
+      /**
+       * Erase the mapping specified by the given key.
+       * 
+       * @note This operation is lazy. The erased object is not erased until
+       * it is re-assigned or the vector is cleared or destroyed.
+       */
+      void erase(key_type const& k)
+      { }
+
+      /**
+       * Erase all keys in the map.
+       */
+      void clear()
+      {
+        data_.clear();
+      }
+
+      /**
+       * Swap this map the other.
+       */
+      void swap(vector_map& x)
+      {
+        data_.swap(x);
+      }      
       //@}
 
       /** @name Map operations */
@@ -236,22 +474,22 @@ namespace origin
       //@{
       iterator begin()
       {
-        return data_.begin();
+        return {0, data_.begin()};
       }
       
       iterator end()
       {
-        return data_.end();
+        return {size(), data_.end()};
       }
       
       const_iterator begin() const
       {
-        return data_.begin();
+        return {0, data_.begin()};
       }
       
       const_iterator end() const
       {
-        return data_.end();
+        return {size(), data_.end()};
       }
       
       reverse_iterator rbegin()
@@ -275,19 +513,6 @@ namespace origin
       }
       //@}
 
-      /** @name Operations */
-      //@{
-      void clear()
-      {
-        data_.clear();
-      }
-
-      void swap(vector_map& x)
-      {
-        data_.swap(x);
-      }      
-      //@}
-      
     private:
       // Return true if the given key is valid (i.e., in bounds).
       bool valid(key_type const& k) const

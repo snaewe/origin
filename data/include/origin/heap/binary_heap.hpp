@@ -226,25 +226,33 @@ namespace origin
    * location of the element within the data structure and preserve the heap
    * invariant.
    *
-   * @tparam T      The value type.
+   * @tparam T      The value type
    * @tparam Comp   A Strict_Weak_Order on T
-   * @tparam Map    A Mapping between T and an index
    * @tparam Cont   The underlying Random_Access_Container
+   * @tparam Map    A Map associating T objects with Cont indexes
    */
   template<typename T, 
            typename Comp = std::less<T>, 
-           typename Map = hash_index<T>,
-           typename Cont = std::vector<T>>
+           typename Cont = std::vector<T>,
+           typename Map = std::unordered_map<T, typename Cont::size_type>>
     class mutable_binary_heap
     {
+      // FIXME: The underlying container type is not just a Random Access 
+      // Container, but a Back Insertion (and erasure?) container that also
+      // supports reserve. Note that the reserve can be abstracted for viable 
+      // models that simply don't support it (e.g., deques). An array or
+      // dynarray are not viable models because they don't support push_back.
+    
       typedef Cont container_type;
+      typedef Map map_type;
     public:
       typedef T value_type;
+      typedef T& reference;
+      typedef T const& const_reference;
+      
       typedef Comp value_compare;
+      
       typedef typename container_type::size_type size_type;
-    private:
-      typedef typename container_type::allocator_type alloc_type;
-      typedef typename Map::template rebind<alloc_type>::type index_type;
     public:
 
       /** @name Initialization */
@@ -257,10 +265,12 @@ namespace origin
        * @param comp  A value_compare function object
        */
       mutable_binary_heap(value_compare const& comp = value_compare{})
-        : comp_{comp}
+        : data_{}, comp_{comp}, map_{}
       { }
 
       // FIXME: Optimize this operation for forward iterators. Reserve first.
+      // Also, is it possible to know, based on distance(first, last), the
+      // eventual capacity of the map_ (for vector_maps only, of course). 
       /**
        * @brief Range constructor
        * Initialize the heap with the elements in the range [first, last).
@@ -276,14 +286,14 @@ namespace origin
         mutable_binary_heap(Iter first,
                             Iter last,
                             value_compare const& comp = value_compare{}) 
-          : comp_{comp}
+          : data_{}, comp_{comp}, map_{}
         {
           while(first != last)
             push(*first++);
         }
 
       // FIXME: Implement me effeciently. See refactoring notes for the range
-      // constructor above.
+      // constructor above. Also note the option of reserving map capacity.
       /**
        * @brief Initializer list constructor
        * Initialize the heap with the elements from the given initializer list.
@@ -293,12 +303,12 @@ namespace origin
        */
       mutable_binary_heap(std::initializer_list<T> list,
                           value_compare const& comp = value_compare{})
+        : data_{}, comp_{comp}, map_{}
       {
         for(value_type const& x : list)
           push(x);
       }
       //@}
-
 
       /** @name Properties */
       //@{
@@ -445,8 +455,8 @@ namespace origin
       // Return the index of the given value. The value must be in the heap.
       size_type index(value_type const& x) const
       {
-        assert(( index_.has(x) ));
-        return index_.get(x);
+        assert(( map_.count(x) != 0 ));
+        return (*map_.find(x)).second;
       }
       
       // Return true if n is the root index (0).
@@ -489,8 +499,8 @@ namespace origin
       void exchange(size_type m, size_type n)
       {
         std::swap(get(m), get(n));
-        index_.put(get(m), m);
-        index_.put(get(n), n);
+        map_[get(m)] = m;
+        map_[get(n)] = n;
       }
 
       size_type up_heap(size_type n);
@@ -499,7 +509,7 @@ namespace origin
     private:
       container_type data_;
       value_compare comp_;
-      index_type index_;
+      map_type map_;
     };
 
   // Bubble the element at the index n up the heap. Return the new index after
@@ -547,7 +557,7 @@ namespace origin
       // Push element into the heap structure
       size_type n = data_.size();
       data_.push_back(x);
-      index_.put(x, n);
+      map_[x] = n;
       
       // Adjust the heap.
       up_heap(n);
@@ -559,7 +569,7 @@ namespace origin
       // Push element into the heap structure
       size_type n = data_.size();
       data_.push_back(std::move(x));
-      index_.put(x, n);
+      map_[x] = n;
       
       // Adjust the heap.
       up_heap(n);
@@ -572,7 +582,7 @@ namespace origin
       // Push element into the heap structure
       size_type n = data_.size();
       data_.emplace_back(std::forward<Args>(args)...);
-      index_.put(data_.back(), n);
+      map_[data_.back()] = n;
       
       // Adjust the heap.
       up_heap(n);
@@ -583,7 +593,7 @@ namespace origin
     {
       // Swap root with last element and erase the old root.
       exchange(0, data_.size() - 1);
-      index_.erase(data_.back());
+      map_.erase(data_.back());
       data_.pop_back();
 
       // Preserve the heap invariant.

@@ -153,7 +153,7 @@ template<template<typename...> class Heap, typename Engine>
   void check_dense_mutable_heap(Engine& eng)
   {
     typedef index_compare<int> Comp;
-    typedef origin::vector_index<> Index;
+    typedef origin::vector_map<int> Index;
     
     int const N = 100;
     
@@ -172,7 +172,7 @@ template<template<typename...> class Heap, typename Engine>
     // Construct a mutable heap to order that domain by offsets into the
     // owning vector.
     Comp comp{v.data()};
-    Heap<size_t, Comp, Index> h{comp};
+    Heap<size_t, Comp, std::vector<size_t>, Index> h{comp};
     for(size_t i = 0; i < v.size(); ++i)
       h.push(i);
     check_heap_order(h);
