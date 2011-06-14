@@ -220,6 +220,12 @@ namespace origin
       value_compare comp_;
     };
 
+  // FIXME: Consider prefixing the mutable_binary_heap with "basic_" and then
+  // creating an alias that fixes the Container type as std::vector.
+    
+  // FIXME: Does the choice of std::vector depend on sizeof(T). If T is large,
+  // we should probably be using a deque rather than a vector.
+    
   /**
    * A mutable binary heap is a binary heap that allows the values in the to
    * be modified by an external program. The heap is updated to adjust the

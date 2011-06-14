@@ -50,7 +50,7 @@ namespace origin
       : public random_access_iterator_facade<
           vector_map_iterator<Vec>,
           std::pair<typename Vec::size_type, typename Vec::reference>,
-          std::pair<typename Vec::size_type, typename Vec::reference>&,
+          std::pair<typename Vec::size_type, typename Vec::reference>,
           std::pair<typename Vec::size_type, typename Vec::reference>,
           typename Vec::difference_type
         >
@@ -61,7 +61,7 @@ namespace origin
       typedef random_access_iterator_facade<
         vector_map_iterator<Vec>,
         std::pair<size_type, base_reference>,
-        std::pair<size_type, base_reference>&,
+        std::pair<size_type, base_reference>,
         std::pair<size_type, base_reference>,
         typename Vec::difference_type
       > base_type;
@@ -125,7 +125,7 @@ namespace origin
       : public random_access_iterator_facade<
           const_vector_map_iterator<Vec>,
           std::pair<typename Vec::size_type, typename Vec::const_reference>,
-          std::pair<typename Vec::size_type, typename Vec::const_reference> const&,
+          std::pair<typename Vec::size_type, typename Vec::const_reference>,
           std::pair<typename Vec::size_type, typename Vec::const_reference>,
           typename Vec::difference_type
         >
@@ -136,7 +136,7 @@ namespace origin
       typedef random_access_iterator_facade<
         const_vector_map_iterator<Vec>,
         std::pair<size_type, base_reference>,
-        std::pair<size_type, base_reference> const&,
+        std::pair<size_type, base_reference>,
         std::pair<size_type, base_reference>,
         typename Vec::difference_type
       > base_type;
