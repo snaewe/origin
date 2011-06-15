@@ -7,7 +7,6 @@
 
 #include <iostream>
 
-#include <origin/vector_map.hpp>
 #include <origin/heap/binary_heap.hpp>
 
 #include "check_heap.hpp"

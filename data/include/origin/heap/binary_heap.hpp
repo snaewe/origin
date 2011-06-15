@@ -10,10 +10,10 @@
 
 #include <cassert>
 #include <algorithm>
+#include <unordered_map>
 
 #include <origin/utility/meta.hpp>
 #include <origin/utility/typestr.hpp>
-#include <origin/heap/index.hpp>
 
 namespace origin
 {
