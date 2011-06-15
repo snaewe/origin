@@ -10,7 +10,6 @@ add_subdirectory(heap)
 
 origin_run_test(stack stack.cpp)
 origin_run_test(queue queue.cpp)
-origin_run_test(vector_map vector_map.cpp)
 origin_run_test(ordinal_map ordinal_map.cpp)
 
 add_subdirectory(perf)
