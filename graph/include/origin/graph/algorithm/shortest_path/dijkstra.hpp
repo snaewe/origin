@@ -9,7 +9,7 @@
 #define ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_DIJKSTRA
 
 #include <functional>
-#include <limits>
+
 
 #include <origin/graph/algorithm/shortest_path/dijkstra_common.hpp>
 #include <origin/heap/binary_heap.hpp>
@@ -50,28 +50,36 @@ namespace origin {
     // The heap only stores vertices. This simplifies things quite a bit.
     // However, the less operation compares against distance only. So we must
     // make a special less.
+    template<typename Compare_>
     struct distance_compare
+      : private Compare_
     {
-      bool operator()(vertex a, vertex b)
-      { return distance(a) > distance(b); }
+      typedef typename Compare::first_argument_type first_argument_type;
+      typedef typename Compare::second_argument_type second_argument_type;
+      typedef typename Compare::result_type result_type;
+
+      bool operator()(first_argument_type const& a, second_argument_type const& b)
+      { return Compare::operator()(distance(a), distance(b)); }
     };
 
-    typedef binary_heap<vertex, distance_compare> vertex_heap_type;
+    typedef binary_heap<
+      distance_type,
+      distance_compare<std::greater<distance_type>>
+    > vertex_heap_type;
 
     dijkstra_shortest_paths_draft(
       Graph const& graph,
       vertex start_vertex,
+      distance_type infinity,
+      distance_type zero,
       PredecessorMap predecessor = PredecessorMap(),
       DistanceMap distance = DistanceMap(),
       WeightMap weight = WeightMap(),
+      Compare compare = Compare(),
       DijkstraVisitor visitor = DijkstraVisitor()
-    ) : graph(graph),
-        predecessor(predecessor),
-        distance(distance),
-        vertex_heap(),
-        weight(weight),
-        infinity(std::numeric_limits<float>::infinity()),
-        zero(0.0f)
+    ) : graph(graph), predecessor(predecessor), distance(distance),
+        vertex_heap(), weight(weight), infinity(infinity), zero(zero),
+        compare(compare)
     { }
 
     /**
@@ -82,9 +90,9 @@ namespace origin {
     {
       for(vertex& v : graph.vertices()) {
         predecessor(v) = v;
-        distance(v) = ;
+        distance(v) = std::limits;
       }
-      distance(start_vertex) = zero;
+      distance(start_vertex) = 0.0f;
       vertex_heap.push(start_vertex);
       visitor.discover_vertex(graph, start_vertex);
     }
@@ -145,6 +153,7 @@ namespace origin {
     DijkstraVisitor visitor;
     distance_type infinity;
     distance_type zero;
+    Compare compare;
   };
 
 }
