@@ -15,7 +15,8 @@
 namespace origin 
 {
   /**
-   * The vertex_t type represents in index into indexable graph.
+   * The vertex_t type represents an ordinal reference to a vertex in a Graph.
+   * The integral value -1u corresponds to a null vertex.
    */
   class vertex_t
     : public implicit_bool_facade<vertex_t>
@@ -32,29 +33,44 @@ namespace origin
     { }
 
     bool equal(vertex_t x) const
-    { return value == x.value; }
+    { 
+      return value == x.value; 
+    }
 
     bool less(vertex_t x) const
-    { return value < x.value; }
+    { 
+      return value < x.value; 
+    }
 
     bool valid() const
-    { return value != value_type(-1); }
+    { 
+      return value != -1u; 
+    }
 
     value_type value;
   };
+  
+  /**
+   * Return the ordinal value of the given vertex index.
+   */
+  vertex_t::value_type ord(vertex_t v)
+  {
+    return v.value;
+  }
 } // namespace origin
 
 // Support std::hash<> interoperability.
 namespace std 
 {
   template<>
-  struct hash<origin::vertex_t>
-    : public hash<std::size_t>
-  {
-    typedef std::size_t size_type;
+    struct hash<origin::vertex_t> : public hash<std::size_t>
+    {
+      typedef std::size_t size_type;
 
-    size_type operator()(origin::vertex_t const& v) const
-    { return hash<size_type>::operator()(v.value); }
+      size_type operator()(origin::vertex_t const& v) const
+      { 
+        return hash<size_type>::operator()(v.value); 
+      }
   };
 } // namespace std
 
@@ -81,25 +97,39 @@ namespace origin
     { }
     
     reference dereference() const
-    { return vertex_; }
+    { 
+      return vertex_; 
+    }
     
     bool equal(vertex_iterator iter) const
-    { return vertex_.value == iter.vertex_.value; }
+    { 
+      return vertex_.value == iter.vertex_.value; 
+    }
     
     bool less(vertex_iterator iter) const
-    { return vertex_.value < iter.vertex_.value; }
+    { 
+      return vertex_.value < iter.vertex_.value; 
+    }
 
     void increment()
-    { ++vertex_.value; }
+    { 
+      ++vertex_.value; 
+    }
     
     void decrement()
-    { --vertex_.value; }
+    { 
+      --vertex_.value; 
+    }
     
     void advance(difference_type n)
-    { vertex_.value += n; }
+    { 
+      vertex_.value += n; 
+    }
     
     difference_type distance(vertex_iterator iter)
-    { return iter.vertex_.value - vertex_.value; }
+    { 
+      return iter.vertex_.value - vertex_.value; 
+    }
     
   private:
     vertex_t vertex_;

@@ -278,7 +278,7 @@ namespace origin
 
       static void constraints(Args&&... args)
       {
-        T{std::forward<Args>(args)...};
+        T(std::forward<Args>(args)...);
       }
 
       typedef std::tuple<is_constructible<T, Args...>> requirements;

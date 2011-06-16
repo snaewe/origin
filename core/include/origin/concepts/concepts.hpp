@@ -53,7 +53,7 @@ namespace origin
 
   // Type Concepts
   template<typename T> struct cBoolean;
-  template<typename T> struct Integral;
+  template<typename T> struct cIntegral;
   
   /**
    * @ingroup axioms
@@ -323,6 +323,8 @@ namespace origin
           && aTransitive(r, x, y, z);
     }
 
+  template<typename T, typename Comp> struct incomparable_to;
+
   /**
    * @ingroup axioms
    *
@@ -463,7 +465,7 @@ namespace origin
     bool aEquality(T x, T y, Pred p) 
     {
       return implies(x == y, p(x) == p(y));
-    }  
+    }
   
   /**
    * @ingroup axioms
@@ -736,6 +738,14 @@ namespace origin
       static constexpr bool value = type::value;
     };
 
+
+  // Algebraic concepts
+  template<typename Op, typename T>
+    void aGroup(Op op)
+    {
+      T id = identity(op);
+    };
+    
     
     
   /**

@@ -7,6 +7,7 @@
 
 origin_run_test(tuple tuple.cpp)
 origin_run_test(optional optional.cpp)
+origin_run_test(functional functional.cpp)
 
 add_subdirectory(iterator)
 add_subdirectory(concepts)

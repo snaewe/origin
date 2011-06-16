@@ -192,25 +192,44 @@ namespace origin
     // types. There could be facades for these things, but they don't exist
     // just yet.
     Derived& operator+=(Diff n)
-    { static_cast<Derived*>(this)->advance(n); }
+    { 
+      static_cast<Derived*>(this)->advance(n); 
+      return *static_cast<Derived*>(this);
+    }
 
     Derived& operator-=(Diff n)
-    { static_cast<Derived*>(this)->advance(-n); }
+    { 
+      static_cast<Derived*>(this)->advance(-n);
+      return *static_cast<Derived*>(this);
+    }
 
     friend Derived operator+(Derived x, Diff n)
-    { x += n; return x; }
+    { 
+      x += n; 
+      return x; 
+    }
 
     friend Derived operator+(Diff n, Derived x)
-    { x += n; return x; }
+    { 
+      x += n; 
+      return x; 
+    }
 
     friend Derived operator-(Derived x, Diff n)
-    { x =- n; return x; }
+    { 
+      x =- n; 
+      return x; 
+    }
 
     friend Diff operator-(Derived x, Derived y)
-    { return x.distance(y); }
+    { 
+      return x.distance(y); 
+    }
 
     Ref operator[](Diff n) const
-    { return *((*static_cast<Derived*>(this)) + n); }
+    { 
+      return *((*static_cast<Derived*>(this)) + n);
+    }
   };
 } // namespace origin
 

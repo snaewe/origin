@@ -20,6 +20,14 @@
 using namespace std;
 using namespace origin;
 
+struct func
+{ 
+  bool operator()(int y) 
+  { 
+    return true; 
+  }
+};
+
 int main()
 {
   static_assert(tSame<int, int>::value, "");
@@ -51,6 +59,9 @@ int main()
   static_assert(!cBoolean<string>::value, "");
   static_assert(!cBoolean<int*>::value, "");            // !Constructible<int*, bool>
   static_assert(!cBoolean<boost::tribool>::value, "");  // tribool is not Ordered
+
+  // FIXME: Write more functional checks.
+  tProcedure<func, int>{};
   
 }
 

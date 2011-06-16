@@ -17,7 +17,8 @@
 namespace origin
 {
   /**
-   * The edge_t type represents in index into indexable graph.
+   * The edge_t type represents an ordinal reference to an edge in a Graph.
+   * The integral value -1u corresponds to a null edge.
    */
   class edge_t
     : public implicit_bool_facade<edge_t>
@@ -26,39 +27,54 @@ namespace origin
     typedef std::size_t value_type;
 
     edge_t()
-      : value(-1)
+      : value{-1}
     { }
 
     edge_t(std::size_t x)
-      : value(x)
+      : value{x}
     { }
 
     bool equal(edge_t x) const
-    { return value == x.value; }
+    { 
+      return value == x.value; 
+    }
 
     bool less(edge_t x) const
-    { return value < x.value; }
+    { 
+      return value < x.value; 
+    }
 
     bool valid() const
-    { return value != value_type(-1); }
+    { 
+      return value != value_type(-1); 
+    }
 
     value_type value;
   };
+  
+  /**
+   * Return the ordinal value of the given edge.
+   */
+  edge::value_type ord(edge_t e)
+  {
+    return e.value;
+  }
 } // namespace origin
 
+// FIXME: When are we going to have Origin::Hashable?
 // Support std::hash interoperability.
 namespace std
 {
   template<>
-  struct hash<origin::edge_t>
-    : public hash<std::size_t>
-  {
-    typedef std::size_t size_type;
+    struct hash<origin::edge_t> : public hash<std::size_t>
+    {
+      typedef std::size_t size_type;
 
-    size_type operator()(origin::edge_t const& e) const
-    { return hash<size_type>::operator()(e.value); }
-  };
-
+      size_type operator()(origin::edge_t const& e) const
+      { 
+        return hash<size_type>::operator()(e.value); 
+      }
+    };
 } // namespace std
 
 namespace origin
@@ -84,25 +100,39 @@ namespace origin
     { }
 
     reference dereference() const
-    { return edge_; }
+    { 
+      return edge_; 
+    }
 
     bool equal(edge_iterator iter) const
-    { return edge_.value == iter.edge_.value; }
+    { 
+      return edge_.value == iter.edge_.value; 
+    }
 
     bool less(edge_iterator iter) const
-    { return edge_.value < iter.edge_.value; }
+    { 
+      return edge_.value < iter.edge_.value; 
+    }
 
     void increment()
-    { ++edge_.value; }
+    { 
+      ++edge_.value; 
+    }
 
     void decrement()
-    { --edge_.value; }
+    { 
+      --edge_.value; 
+    }
 
     void advance(difference_type n)
-    { edge_.value += n; }
+    { 
+      edge_.value += n; 
+    }
 
     difference_type distance(edge_iterator iter)
-    { return iter.edge_.value - edge_.value ; }
+    { 
+      return iter.edge_.value - edge_.value ; 
+    }
 
   private:
     edge_t edge_;
@@ -127,37 +157,39 @@ namespace origin
   //@{
   // Specializations for directed graphs.
   template<typename Graph>
-  typename std::enable_if<
-    is_directed_graph<Graph>::value,
-    typename Graph::out_edge_range
-  >::type
-  out_edges(Graph& g, typename Graph::vertex v)
-  { return g.out_edges(v); }
+    typename std::enable_if<
+      is_directed_graph<Graph>::value,
+      typename Graph::out_edge_range
+    >::type
+    out_edges(Graph& g, typename Graph::vertex v)
+    { 
+      return g.out_edges(v); 
+    }
 
   template<typename Graph>
-  typename std::enable_if<
-    is_directed_graph<Graph>::value,
-    typename Graph::const_out_edge_range
-  >::type
-  out_edges(Graph const& g, typename Graph::const_vertex v)
-  { return g.out_edges(v); }
+    typename std::enable_if<
+      is_directed_graph<Graph>::value,
+      typename Graph::const_out_edge_range
+    >::type
+    out_edges(Graph const& g, typename Graph::const_vertex v)
+    { return g.out_edges(v); }
 
   // Specializations for undirected graphs
   template<typename Graph>
-  typename std::enable_if<
-    is_undirected_graph<Graph>::value,
-    typename Graph::incident_edge_range
-  >::type
-  out_edges(Graph& g, typename Graph::vertex v)
-  { return g.incident_edges(v); }
+    typename std::enable_if<
+      is_undirected_graph<Graph>::value,
+      typename Graph::incident_edge_range
+    >::type
+    out_edges(Graph& g, typename Graph::vertex v)
+    { return g.incident_edges(v); }
 
   template<typename Graph>
-  typename std::enable_if<
-    is_undirected_graph<Graph>::value,
-    typename Graph::const_incident_edge_range
-  >::type
-  out_edges(Graph const& g, typename Graph::const_vertex v)
-  { return g.incident_edges(v); }
+    typename std::enable_if<
+      is_undirected_graph<Graph>::value,
+      typename Graph::const_incident_edge_range
+    >::type
+    out_edges(Graph const& g, typename Graph::const_vertex v)
+    { return g.incident_edges(v); }
   //@}
 
   // FIXME: This is pretty hinky. It works, but I'm not terribly proud of it.
@@ -166,24 +198,22 @@ namespace origin
    * the out_edges function.
    */
   template<typename Graph>
-  struct outward_graph_traits
-  {
-    typedef Graph graph_type;
-    typedef typename graph_traits<Graph>::vertex vertex;
-    typedef typename graph_traits<Graph>::edge edge;
+    struct outward_graph_traits
+    {
+      typedef Graph graph_type;
+      typedef typename graph_traits<Graph>::vertex vertex;
+      typedef typename graph_traits<Graph>::edge edge;
 
-    typedef decltype(
-      out_edges(std::declval<Graph&>(), std::declval<vertex>())
-    ) range;
-    typedef typename range_traits<range>::iterator iterator;
-  };
+      typedef decltype(out_edges(std::declval<Graph&>(), std::declval<vertex>())) range;
+      typedef typename range_traits<range>::iterator iterator;
+    };
 
   /**
    * Return the opposite end of the given edge.
    */
   template<typename Graph, typename Edge, typename Vertex>
-  Vertex opposite(Graph& g, Edge e, Vertex v)
-  { return g.source(e) == v ? g.target(e) : v; }
+    Vertex opposite(Graph& g, Edge e, Vertex v)
+    { return g.source(e) == v ? g.target(e) : v; }
 
 } // namesapce origin
 
