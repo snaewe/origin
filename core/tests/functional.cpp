@@ -29,8 +29,8 @@ int main()
   dummy<order_traits<greater<char>>::extreme()> y;
   // cout << typestr(x) << " " << typestr(y) << "\n";
 
-  assert(( extreme_element(less<double>{}) == numeric_limits<double>::infinity() ));
-  assert(( extreme_element(greater<double>{}) == -numeric_limits<double>::infinity() ));
+  assert(( extreme_element(less<double>{}) == numeric_limits<double>::max() ));
+  assert(( extreme_element(greater<double>{}) == numeric_limits<double>::min() ));
   
   
   {

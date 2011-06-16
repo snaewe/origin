@@ -177,58 +177,8 @@ namespace origin
         return typename operation_traits<Op>::inverse{};
       }
   
-  // FIXME: Extreme traits probably belongs in traits and not in functional.
-  /** 
-   * @internal 
-   * For numeric types, the largest and least values are +-infinity, if they
-   * are floating point types. For non-floating point types the largest and
-   * least values are the maximum and minimum values encoded by the type.
-   */
-  template<typename T, bool Inf = std::numeric_limits<T>::has_infinity>
-    struct extreme_traits_
-    {
-      static constexpr T largest()
-      {
-        return std::numeric_limits<T>::infinity();
-      }
-      
-      static constexpr T least()
-      {
-        return -std::numeric_limits<T>::infinity();
-      }
-    };
-  
-  // Specialization for integral types.
-  template<typename T>
-    struct extreme_traits_<T, false>
-    {
-      static constexpr T largest()
-      {
-        return std::numeric_limits<T>::max();
-      }
-      
-      static constexpr T least()
-      {
-        return std::numeric_limits<T>::min();
-      }
-    };
-    
-  // FIXME: Semantically, I think this should be:
-  //  !(x < L) => x == L.
-  // Note that this isn't strictly true for floating point types since NaN
-  // compares false, but inf isn't NaN. That's exceptional, however.
 
-  /**
-   * The extreme traits describe the extreme values represented by a data
-   * type, specifically its largest and least values. The largest value of
-   * a type satisfies the property that for any value x and the largest value
-   * L, x != L => x < L. The least value of a type satisfies the property that
-   * for any values x and the least value l, x != l => x > l.
-   */
-  template<typename T>
-    struct extreme_traits : extreme_traits_<T>
-    { };
-  
+
   /**
    * The inverse comparison function object changs the position of arguments
    * in a comparison function in order to define an inverse order. For example,
@@ -245,6 +195,11 @@ namespace origin
         }
     };
   
+  // FIXME: Semantically, I think this should be:
+  //  !(x < L) => x == L.
+  // Note that this isn't strictly true for floating point types since NaN
+  // compares false, but inf isn't NaN. That's exceptional, however.
+
   /**
    * The order traits abstracts information about the properties of an order
    * of an element. In particular, the order traits associoate an inverse
@@ -263,7 +218,7 @@ namespace origin
 
       static constexpr T extreme()
       {
-        return extreme_traits<T>::largest();
+        return std::numeric_limits<T>::max();
       }
     };
   
@@ -275,7 +230,7 @@ namespace origin
 
       static constexpr T extreme()
       {
-        return extreme_traits<T>::least();
+        return std::numeric_limits<T>::min();
       }
     };
     
