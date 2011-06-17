@@ -55,7 +55,7 @@ namespace origin
   /**
    * Return the ordinal value of the given edge.
    */
-  edge::value_type ord(edge_t e)
+  edge_t::value_type ord(edge_t e)
   {
     return e.value;
   }

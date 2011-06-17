@@ -27,13 +27,13 @@ namespace origin {
    * instatiated over a const graph type, then the graph, vertex, and edge
    * parameters to each visit function will be const.
    */
-  struct dijkstra_visitor
+  struct default_dijkstra_visitor
   {
     /**
      * Called after a vertex has been discovered.
      */
     template<typename Graph, typename Vertex>
-    void discovered_vertex(Graph& g, Vertex v) { }
+    void discover_vertex(Graph& g, Vertex v) { }
 
     /**
      * Called when a vertex is next in queue for the algorithm.
@@ -46,6 +46,13 @@ namespace origin {
      */
     template<typename Graph, typename Vertex>
     void finish_vertex(Graph& g, Vertex v) { }
+
+    /**
+     * Called when we assign a child v to the parent u,
+     * meaning (g, parent, child).
+     */
+    template<typename Graph, typename Vertex>
+    void parent(Graph& g, Vertex u, Vertex v) { }
 
     /**
      * Called when we determine whether or not the algorithm will relax an edge.
@@ -63,9 +70,41 @@ namespace origin {
      * Called when an edge was not relaxed.
      */
     template<typename Graph, typename Edge>
-    void edge__notrelaxed(Graph& g, Edge e) { }
+    void edge_not_relaxed(Graph& g, Edge e) { }
   };
 
-}
+  // Perhaps this could ease some of the syntax by packing all of the
+  // deducible stuff into a traits class.
+  template<typename Distance>
+  struct distance_traits {
+    typedef Distance distance_type;
+
+    static constexpr distance_type zero()
+    { return distance_type(); }
+
+    static constexpr distance_type infinity()
+    { return std::numeric_limits<distance_type>::max(); }
+  };
+
+  /**
+   * The default weight labeling. This assumes that the edge values are the
+   * weight values.
+   * FIXME This is begging for a concept
+   */
+  template<typename Graph>
+  struct default_weight_label
+  {
+  private:
+    typedef typename Graph::edge_value_type distance_type;
+    typedef typename Graph::edge edge;
+
+  public:
+    distance_type operator()(Graph const& g, edge e)
+    {
+      return g[e];
+    }
+  };
+
+} // namespace origin
 
 #endif //ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_DIJKSTRA_COMMON

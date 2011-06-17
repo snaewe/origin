@@ -5,15 +5,57 @@
 // and conditions.
 
 #include <iostream>
-
-#include <origin/graph/algorithm/shortest_path/dijkstra.hpp>
-#include <origin/heap/binary_heap.hpp>
 #include <functional>
 #include <limits>
+#include <cstddef>
+
+#include <origin/graph/algorithm/shortest_path/dijkstra.hpp>
+#include <origin/graph/adjacency_matrix.hpp>
+#include <origin/ordinal_map.hpp>
+
+#include "dijkstra/detail.hpp"
+
+using namespace origin;
 
 int main() {
 
-  std::cout << "Up and testing...\n";
+  typedef distance_matrix<float> DistGraph;
+  typedef typename DistGraph::vertex Vertex;
+  typedef typename DistGraph::edge Edge;
+  //typedef ordinal_label<Vertex, Vertex> PredecessorLabel;
+  typedef ordinal_label<Vertex, float> DistanceLabel;
+  typedef default_weight_label<DistGraph> WeightLabel;
+  typedef debug_dijkstra_visitor<DistGraph> Visitor;
+
+  DistGraph g(4);
+
+  Vertex v[] = { Vertex(0), Vertex(1), Vertex(2), Vertex(3) };
+
+  /**   0
+   *   / \
+   *  1---2
+   *   \ /
+   *    3
+   */
+
+  g.add_edge(v[0], v[1], 1.0f);
+  g.add_edge(v[0], v[2], 2.0f);
+  g.add_edge(v[1], v[2], 0.2f);
+  g.add_edge(v[2], v[1], 0.1f);
+  g.add_edge(v[1], v[3], 3.0f);
+  g.add_edge(v[2], v[3], 1.0f);
+
+  dijkstra_shortest_paths_draft<
+    DistGraph,
+    DistanceLabel,
+    WeightLabel,
+    Visitor
+  > dsp(g, v[0]);
+  dsp();
+
+  auto path = dsp.visitor_.get_path_to(v[3]);
+  
+  dsp.visitor_.print();
 
   return 0;
 }

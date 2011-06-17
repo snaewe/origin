@@ -306,6 +306,7 @@ namespace origin
     };
 
   } //namespace adj_mtx_impl_
+
 } // namespace origin
 
 #endif //ORIGIN_GRAPH_ADJACENCY_MATRIX_IMPL_HPP
