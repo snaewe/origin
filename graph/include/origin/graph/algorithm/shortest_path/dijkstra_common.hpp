@@ -33,44 +33,44 @@ namespace origin {
      * Called after a vertex has been discovered.
      */
     template<typename Graph, typename Vertex>
-    void discover_vertex(Graph& g, Vertex v) { }
+    void discover_vertex(Graph const& g, Vertex v) { }
 
     /**
      * Called when a vertex is next in queue for the algorithm.
      */
     template<typename Graph, typename Vertex>
-    void examine_vertex(Graph& g, Vertex v) { }
+    void examine_vertex(Graph const& g, Vertex v) { }
 
     /**
      * Called when algorithm finishes relaxing a vertex's adjacenct vertices.
      */
     template<typename Graph, typename Vertex>
-    void finish_vertex(Graph& g, Vertex v) { }
+    void finish_vertex(Graph const& g, Vertex v) { }
 
     /**
      * Called when we assign a child v to the parent u,
      * meaning (g, parent, child).
      */
     template<typename Graph, typename Vertex>
-    void parent(Graph& g, Vertex u, Vertex v) { }
+    void parent(Graph const& g, Vertex u, Vertex v) { }
 
     /**
      * Called when we determine whether or not the algorithm will relax an edge.
      */
     template<typename Graph, typename Edge>
-    void examine_edge(Graph& g, Edge e) { }
+    void examine_edge(Graph const& g, Edge e) { }
 
     /**
      * Called when an edge was relaxed.
      */
     template<typename Graph, typename Edge>
-    void edge_relaxed(Graph& g, Edge e) { }
+    void edge_relaxed(Graph const& g, Edge e) { }
 
     /**
      * Called when an edge was not relaxed.
      */
     template<typename Graph, typename Edge>
-    void edge_not_relaxed(Graph& g, Edge e) { }
+    void edge_not_relaxed(Graph const& g, Edge e) { }
   };
 
   // Perhaps this could ease some of the syntax by packing all of the

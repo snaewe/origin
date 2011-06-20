@@ -30,24 +30,32 @@ namespace origin {
     : default_dijkstra_visitor
   {
     typedef typename Graph::vertex vertex;
+    typedef typename Graph::edge edge;
     typedef std::vector<vertex> path_type;
+
+    void examine_vertex(Graph const& g, vertex v)
+    { std::cerr << "Examining vertex: " << g[v] << '\n'; }
+
+    void examine_edge(Graph const& g, edge e)
+    { std::cerr << "Examining edge: " << g[g.source(e)] << '\n'; }
 
     void parent(Graph const& g, vertex u, vertex v)
     {
-      std:: cerr << '(' << u.value << ',' << v.value << ")\n";
+      //std:: cerr << '(' << u.value << ',' << v.value << ")\n";
       tree[u] = v;
     }
 
-    void print()
+    void print(Graph const& g)
     {
       if(tree.empty())
         std::cout << "empty";
       else {
-        std::cout << "(0," << tree[vertex(0)].value << ')';
+        std::cout << '(' << g[vertex(0)] << ',' << g[tree[vertex(0)]] << ')';
         for(unsigned int i = 1; i < tree.size(); ++i) {
-          std::cout << " (" << i << ',' << tree[vertex(i)].value << ')';
+          std::cout << " (" << g[vertex(i)] << ',' << g[tree[vertex(i)]] << ')';
         }
       }
+      std::cout << '\n';
     }
 
     path_type get_path_to(vertex v)

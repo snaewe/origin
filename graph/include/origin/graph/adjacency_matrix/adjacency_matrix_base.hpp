@@ -356,9 +356,10 @@ namespace origin
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::out_edges(vertex v) -> out_edge_range
   {
+    //std::cerr << 
     return {
       edge_iterator(*this, v.value * order()),
-      edge_iterator(*this, v.value * (order() + 1))
+      edge_iterator(*this, (v.value + 1) * order())
     };
   }
 
@@ -368,7 +369,7 @@ namespace origin
   {
     return {
       edge_iterator(*this, v.value * order()),
-      edge_iterator(*this, v.value * (order() + 1))
+      edge_iterator(*this, (v.value + 1) * order())
     };
   }
 

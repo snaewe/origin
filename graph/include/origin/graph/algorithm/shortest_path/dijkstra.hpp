@@ -101,11 +101,12 @@ namespace origin {
         distance_type min_vertex_distance = distance_(min_vertex);
 
         if(min_vertex_distance == extreme_element())
-          return;
+        { return; }
 
         // Find the minimum from the neighbors
         for(edge e : out_edges(graph_, min_vertex)) {
           visitor_.examine_edge(graph_, e);
+          std::cerr << min_vertex_distance << '\n';
 
           // Assert that the edge is not negative
           assert(( !(weight_(graph_, e) < identity_element_plus()) ));
