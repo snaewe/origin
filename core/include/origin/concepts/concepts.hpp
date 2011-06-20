@@ -876,7 +876,7 @@ namespace origin
 
       typedef std::tuple<
         cRegular<T>,
-        tConstructible<T, long, long>,
+        tConstructible<T, long long>,
         tPlus<T>,
         tConvertible<typename tPlus<T>::result_type, T>,
         tMinus<T>,
