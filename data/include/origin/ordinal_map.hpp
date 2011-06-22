@@ -410,6 +410,12 @@ namespace origin
         maybe_resize(ord(k));
         return get(k);
       }
+
+      /**
+       * @note Read-only access to the associated value.
+       */
+      mapped_type const& operator[](key_type const& k) const
+      { return get(k); }
       //@}
       
       /** @name Modifiers */

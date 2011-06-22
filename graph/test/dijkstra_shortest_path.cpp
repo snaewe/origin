@@ -19,14 +19,20 @@ using namespace origin;
 
 int main() {
 
-  typedef distance_matrix<char> DistGraph;
+  /*typedef distance_matrix<char> DistGraph;
   typedef typename DistGraph::vertex Vertex;
   typedef typename DistGraph::edge Edge;
   typedef ordinal_label<Vertex, float> DistanceLabel;
   typedef default_weight_label<DistGraph> WeightLabel;
-  typedef debug_dijkstra_visitor<DistGraph> Visitor;
+  typedef debug_dijkstra_visitor<DistGraph> Visitor;*/
 
-  DistGraph g(4);
+  // Type definitions
+  typedef distance_matrix<char> Dist_Graph;
+  typedef typename Dist_Graph::vertex Vertex;
+  typedef typename Dist_Graph::edge Edge;
+  typedef ordinal_label<Vertex, float> Distance_Label;
+
+  Dist_Graph g(4);
 
   Vertex v[] = { Vertex(0), Vertex(1), Vertex(2), Vertex(3) };
 
@@ -49,7 +55,9 @@ int main() {
   g.add_edge(v[1], v[3], 3.0f);
   g.add_edge(v[2], v[3], 1.0f);
 
-  dijkstra_shortest_paths_draft<
+  dijkstra_shortest_paths(g, v[0], Distance_Label(), default_dijkstra_visitor());
+
+  /*dijkstra_shortest_paths_draft_old<
     DistGraph,
     DistanceLabel,
     WeightLabel,
@@ -59,7 +67,7 @@ int main() {
 
   auto path = dsp.visitor_.get_path_to(v[3]);
   
-  dsp.visitor_.print(g);
+  dsp.visitor_.print(g);*/
 
   return 0;
 }

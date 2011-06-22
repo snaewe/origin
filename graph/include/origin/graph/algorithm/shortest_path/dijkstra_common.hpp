@@ -73,18 +73,10 @@ namespace origin {
     void edge_not_relaxed(Graph const& g, Edge e) { }
   };
 
-  // Perhaps this could ease some of the syntax by packing all of the
-  // deducible stuff into a traits class.
-  template<typename Distance>
-  struct distance_traits {
-    typedef Distance distance_type;
-
-    static constexpr distance_type zero()
-    { return distance_type(); }
-
-    static constexpr distance_type infinity()
-    { return std::numeric_limits<distance_type>::max(); }
-  };
+  /**
+   * Default Distance_Label is derived from ordinal_map.
+   */
+  // FIXME Add this!
 
   /**
    * The default weight labeling. This assumes that the edge values are the
@@ -92,18 +84,45 @@ namespace origin {
    * FIXME This is begging for a concept
    */
   template<typename Graph>
-  struct default_weight_label
-  {
-  private:
-    typedef typename Graph::edge_value_type distance_type;
-    typedef typename Graph::edge edge;
-
-  public:
-    distance_type operator()(Graph const& g, edge e)
+    struct default_weight_label
     {
-      return g[e];
-    }
-  };
+    private:
+      typedef typename Graph::edge_value_type distance_type;
+      typedef typename Graph::edge edge;
+
+    public:
+      distance_type operator()(Graph const& g, edge e)
+      {
+        return g[e];
+      }
+    };
+
+  /**
+   * The edge_weight function object abstracts the weight operation on a
+   * Weighted graph.
+   * 
+   * @tparam Graph  A Weighted Graph
+   */
+  template<typename Graph, typename Weight>
+    struct edge_weight
+    {
+      // FIXME: Do I need to formally specify the result type? I think the
+      // idiom to do so is a nested result struct that is partially specialized
+      // over the different function signatures.
+      
+      // FIXME: This needs to result in a reference. Does it?
+      auto operator()(Graph& g, typename Graph::edge e) 
+        -> decltype(weight(g, e))
+      {
+        return weight(g, e);
+      }
+      
+      auto operator()(Graph const& g, typename Graph::const_edge e) const
+        -> const decltype(weight(g, e))
+      {
+        return weight(g, e);
+      }
+    };
 
 } // namespace origin
 

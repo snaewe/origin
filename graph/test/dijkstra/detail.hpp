@@ -22,6 +22,10 @@ namespace origin {
     typename ordinal_map<Ordinal, Value>::mapped_type& operator()
     (typename ordinal_map<Ordinal, Value>::key_type k)
     { return ordinal_map<Ordinal, Value>::operator[](k); }
+
+    typename ordinal_map<Ordinal, Value>::mapped_type const& operator()
+    (typename ordinal_map<Ordinal, Value>::key_type k) const
+    { return ordinal_map<Ordinal, Value>::operator[](k); }
   };
 
   // Debug Dijkstra visitor
