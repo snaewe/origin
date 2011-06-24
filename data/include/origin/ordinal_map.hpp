@@ -399,11 +399,9 @@ namespace origin
       //@{
       /**
        * Return a reference to the mapped value indicated by the given key.
-       * If no such value exists, the map is resized in order to accomodate
-       * the new value.
-       * 
-       * @note This operation may result in the creation of many new, default
-       * initialized values.
+       * If no such key exists, the map is resized in order to accomodate
+       * the new value. This may * result in the creation of ord(k) - size() 
+       * new mappings.
        */
       mapped_type& operator[](key_type const& k)
       {
@@ -412,10 +410,16 @@ namespace origin
       }
 
       /**
-       * @note Read-only access to the associated value.
+       * Return a reference to the mapped value indicated by the given key.
+       * Note that the key must be in the map.
+       * 
+       * @pre find(k) != end()
        */
       mapped_type const& operator[](key_type const& k) const
-      { return get(k); }
+      { 
+        assert(( find(k) != end() ));
+        return get(k); 
+      }
       //@}
       
       /** @name Modifiers */
