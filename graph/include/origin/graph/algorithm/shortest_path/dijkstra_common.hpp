@@ -79,25 +79,6 @@ namespace origin {
   // FIXME Add this!
 
   /**
-   * The default weight labeling. This assumes that the edge values are the
-   * weight values.
-   * FIXME This is begging for a concept
-   */
-  template<typename Graph>
-    struct default_weight_label
-    {
-    private:
-      typedef typename Graph::edge_value_type distance_type;
-      typedef typename Graph::edge edge;
-
-    public:
-      distance_type operator()(Graph const& g, edge e)
-      {
-        return g[e];
-      }
-    };
-
-  /**
    * The edge_weight function object abstracts the weight operation on a
    * Weighted graph.
    * 
@@ -109,6 +90,7 @@ namespace origin {
       // FIXME: Do I need to formally specify the result type? I think the
       // idiom to do so is a nested result struct that is partially specialized
       // over the different function signatures.
+
       
       // FIXME: This needs to result in a reference. Does it?
       auto operator()(Graph& g, typename Graph::edge e) 

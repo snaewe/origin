@@ -172,7 +172,7 @@ namespace origin
       
       bool equal(const_ordinal_map_iterator const& x) const
       {
-        return iter_ = x.iter_;
+        return iter_ == x.iter_;
       }
       
       bool less(const_ordinal_map_iterator const& x) const
@@ -543,7 +543,7 @@ namespace origin
       // Return true if the given key is valid (i.e., in bounds).
       bool valid(key_type const& k) const
       {
-        return !empty() && k < size();
+        return !empty() && ord(k) < size();
       }
 
       // If the key is larger than the current size, allocate more mappings. 

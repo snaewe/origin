@@ -36,6 +36,11 @@ namespace origin {
     typedef typename Graph::vertex vertex;
     typedef typename Graph::edge edge;
     typedef std::vector<vertex> path_type;
+    typedef ordinal_map<vertex, vertex> parent_label_type;
+
+    debug_dijkstra_visitor(parent_label_type& p)
+      : parents(p)
+    { }
 
     void examine_vertex(Graph const& g, vertex v)
     { std::cerr << "Examining vertex: " << g[v] << '\n'; }
@@ -44,37 +49,20 @@ namespace origin {
     { std::cerr << "Examining edge: " << g[g.source(e)] << '\n'; }
 
     void parent(Graph const& g, vertex u, vertex v)
-    {
-      //std:: cerr << '(' << u.value << ',' << v.value << ")\n";
-      tree[u] = v;
-    }
-
-    void print(Graph const& g)
-    {
-      if(tree.empty())
-        std::cout << "empty";
-      else {
-        std::cout << '(' << g[vertex(0)] << ',' << g[tree[vertex(0)]] << ')';
-        for(unsigned int i = 1; i < tree.size(); ++i) {
-          std::cout << " (" << g[vertex(i)] << ',' << g[tree[vertex(i)]] << ')';
-        }
-      }
-      std::cout << '\n';
-    }
+    { parents[u] = v; }
 
     path_type get_path_to(vertex v)
     {
       path_type path;
       do {
         path.push_back(v);
-        v = tree[v];
-      } while(tree[v] != v);
+        v = parents[v];
+      } while(parents[v] != v);
       return path;
     }
 
-    ordinal_map<vertex, vertex> tree;
+    parent_label_type& parents;
   };
-  
 
 } // namespace origin
 

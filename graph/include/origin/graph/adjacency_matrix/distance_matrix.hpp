@@ -52,8 +52,6 @@ namespace origin
     typedef typename base_type::vertex_allocator_type vertex_allocator_type;
     typedef typename base_type::vertex_value_type  vertex_value_type;
     typedef typename base_type::edge_value_type    edge_value_type;
-    // Distance matrix is a weighted graph
-    typedef typename base_type::edge_value_type    distance_type;
 
     typedef typename base_type::size_type          size_type;
     typedef typename base_type::difference_type    difference_type;
@@ -153,7 +151,7 @@ namespace origin
   template<typename V, typename M, typename A>
   auto weight(distance_matrix<V,M,A> const& g,
               typename distance_matrix<V,M,A>::edge e)
-    -> typename distance_matrix<V,M,A>::distance_type
+    -> typename distance_matrix<V,M,A>::edge_value_type
   { return g[e]; }
 
 } // origin

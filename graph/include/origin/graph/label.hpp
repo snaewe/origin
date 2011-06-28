@@ -83,6 +83,47 @@ namespace origin
     label_type label;
   };
 
+  /*template<typename Graph>
+    struct vertex_label
+    {
+      typedef typename graph_traits<Graph>::vertex vertex;
+      typedef typename graph_traits<Graph>::mapping_type vertex_mapping_type;
+      typedef Map mapping_type;
+      typedef typename Map::key_type key_type;
+      typedef typename mapped_type;
+
+      vertex_label(mapping_type& m)
+        : map(m)
+      { }
+
+      mapped_type& operator()(key_type k)
+      { return map[k]; }
+
+      mapped_type const& operator()(key_type k) const
+      { return map[k]; }
+
+      mapping_type& map;
+    };*/
+
+  template<typename Map>
+    struct vertex_label
+    {
+      typedef typename Map::key_type key_type;
+      typedef typename Map::mapped_type mapped_type;
+
+      vertex_label(Map& m)
+        : map(m)
+      { }
+
+      mapped_type& operator()(key_type k)
+      { return map[k]; }
+
+      mapped_type const& operator()(key_type k) const
+      { return map[k]; }
+
+      Map& map;
+    };
+
 
 } // namespace origin
 

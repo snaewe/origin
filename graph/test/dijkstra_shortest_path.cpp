@@ -12,6 +12,7 @@
 #include <origin/graph/algorithm/shortest_path/dijkstra.hpp>
 #include <origin/graph/adjacency_matrix.hpp>
 #include <origin/ordinal_map.hpp>
+#include <origin/graph/label.hpp>
 
 #include "dijkstra/detail.hpp"
 
@@ -30,7 +31,10 @@ int main() {
   typedef distance_matrix<char> Dist_Graph;
   typedef typename Dist_Graph::vertex Vertex;
   typedef typename Dist_Graph::edge Edge;
-  typedef ordinal_label<Vertex, float> Distance_Label;
+  typedef ordinal_map<Vertex, float> Distance_Map;
+  typedef vertex_label<Distance_Map> Distance_Label;
+  typedef debug_dijkstra_visitor<Dist_Graph> Visitor;
+  typedef typename Visitor::parent_label_type shortest_path_parent_map;
 
   Dist_Graph g(4);
 
@@ -55,7 +59,9 @@ int main() {
   g.add_edge(v[1], v[3], 3.0f);
   g.add_edge(v[2], v[3], 1.0f);
 
-  dijkstra_shortest_paths(g, v[0], Distance_Label(), default_dijkstra_visitor());
+  shortest_path_parent_map parents;
+  Distance_Map dm(4u);
+  dijkstra_shortest_paths(g, v[0], Distance_Label(dm), Visitor(parents));
 
   /*dijkstra_shortest_paths_draft_old<
     DistGraph,
