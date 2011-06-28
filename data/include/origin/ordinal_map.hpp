@@ -253,14 +253,9 @@ namespace origin
       /**
        * @brief Default constructor
        */
-      ordinal_map()
-        : data_{}
+      ordinal_map(allocator_type const& alloc = allocator_type{})
       { }
 
-      explicit ordinal_map(allocator_type const& alloc)
-        : data_{alloc}
-      { }
-      
       // FIXME: Optimize for forward iterators.
       // FIXME: If we concepts, we could also make a range constructor that
       // accepted a sequence of mapped_types also. 
@@ -304,7 +299,7 @@ namespace origin
        * @param list  An initializer list containing mapped values.
        */
       ordinal_map(std::initializer_list<mapped_type> list)
-        : data_{list.begin(), list.end()}
+        : data_(list.begin(), list.end())
       { }
       
       /**
@@ -315,12 +310,8 @@ namespace origin
        * @param n   The number of initial mappings
        * @param x   The default mapped value for each initial mapping.
        */
-      explicit ordinal_map(size_type n)
-        : data_{n}
-      { }
-      
-      ordinal_map(size_type n, mapped_type const& x)
-        : data_{n, x}
+      explicit ordinal_map(size_type n, mapped_type const& x = mapped_type{})
+        : data_(n, x)
       { }
       //@}
       
