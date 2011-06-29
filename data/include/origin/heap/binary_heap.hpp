@@ -520,8 +520,8 @@ namespace origin
 
   // Bubble the element at the index n up the heap. Return the new index after
   // bubbling. If the heap is already valid, then up_heap(n) == n.
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    auto mutable_binary_heap<T, Comp, Map, Alloc>::up_heap(size_type n) -> size_type
+  template<typename T, typename Comp, typename Cont, typename Map>
+    auto mutable_binary_heap<T, Comp, Cont, Map>::up_heap(size_type n) -> size_type
     {
       while(!is_root(n)) {
         // If the heap order is violated (p < n), swap and repeat.
@@ -537,8 +537,8 @@ namespace origin
   
   // Bubble the object at the given index down the heap. Return the new index 
   // of the bubbled element. If the heap is alread valid then down_heap(n) == n.
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    auto mutable_binary_heap<T, Comp, Map, Alloc>::down_heap(size_type n) -> size_type
+  template<typename T, typename Comp, typename Cont, typename Map>
+    auto mutable_binary_heap<T, Comp, Cont, Map>::down_heap(size_type n) -> size_type
     {
       size_t c = left(n);
       while(c < size()) {
@@ -557,8 +557,8 @@ namespace origin
       return n;
     }
     
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    void mutable_binary_heap<T, Comp, Map, Alloc>::push(value_type const& x)
+  template<typename T, typename Comp, typename Cont, typename Map>
+    void mutable_binary_heap<T, Comp, Cont, Map>::push(value_type const& x)
     {
       // Push element into the heap structure
       size_type n = data_.size();
@@ -569,21 +569,25 @@ namespace origin
       up_heap(n);
     }
 
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    void mutable_binary_heap<T, Comp, Map, Alloc>::push(value_type&& x)
+  // FIXME: Does it make sense to support move semantics for mutable heaps?
+  // I don't think so becase we're storing two copies of the value type.
+  template<typename T, typename Comp, typename Cont, typename Map>
+    void mutable_binary_heap<T, Comp, Cont, Map>::push(value_type&& x)
     {
       // Push element into the heap structure
       size_type n = data_.size();
       data_.push_back(std::move(x));
-      map_[x] = n;
+      map_[data_.back()] = n;
       
       // Adjust the heap.
       up_heap(n);
     }
 
-  template<typename T, typename Comp, typename Map, typename Alloc>
+  // FIXME: If it doesn't make sense to move objects into the heap, does
+  // it make sense to construct them directly in place? Maybe.
+  template<typename T, typename Comp, typename Cont, typename Map>
     template<typename... Args>
-    void mutable_binary_heap<T, Comp, Map, Alloc>::emplace(Args&&... args)
+    void mutable_binary_heap<T, Comp, Cont, Map>::emplace(Args&&... args)
     {
       // Push element into the heap structure
       size_type n = data_.size();
@@ -594,8 +598,8 @@ namespace origin
       up_heap(n);
     }
 
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    void mutable_binary_heap<T, Comp, Map, Alloc>::pop()
+  template<typename T, typename Comp, typename Cont, typename Map>
+    void mutable_binary_heap<T, Comp, Cont, Map>::pop()
     {
       // Swap root with last element and erase the old root.
       exchange(0, data_.size() - 1);
@@ -608,8 +612,8 @@ namespace origin
       }
     }
 
-  template<typename T, typename Comp, typename Map, typename Alloc>
-    void mutable_binary_heap<T, Comp, Map, Alloc>::update(value_type const& x)
+  template<typename T, typename Comp, typename Cont, typename Map>
+    void mutable_binary_heap<T, Comp, Cont, Map>::update(value_type const& x)
     {
       assert(( get(index(x)) == x ));
 
@@ -622,6 +626,5 @@ namespace origin
     }
 
 } // namespace origin
-
 
 #endif // ORIGIN_HEAPS_BINARY_HEAP_HPP

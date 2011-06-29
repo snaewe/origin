@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include <origin/heap/binary_heap.hpp>
+#include <origin/heap/binomial_heap.hpp>
 
 #include "check_heap.hpp"
 
@@ -18,12 +18,18 @@ int main()
 {
   default_random_engine eng;
   
-  check_heap<binary_heap<int>>(eng);
-  check_heap<mutable_binary_heap<int>>(eng);
+  check_heap<binomial_heap<int>>(eng);
+  check_heap<mutable_binomial_heap<int>>(eng);
 
-  typedef mutable_binary_heap<int*, indirect_compare<int>> PtrHeap;
-  typedef mutable_binary_heap<
-    size_t, index_compare<int>, vector<size_t>, ordinal_map<size_t, size_t>
+  typedef mutable_binomial_heap<int*, indirect_compare<int>> PtrHeap;
+  
+  // FIXME: This is going to pose a serious usability problem if we really
+  // want to make heaps interchangeable...
+  typedef mutable_binomial_heap<
+    size_t, 
+    index_compare<int>, 
+    allocator<size_t>, 
+    ordinal_map<size_t, mutable_binomial_tree_node<size_t>*>
   > OrdHeap;
   
   vector<int> v = make_data(eng);

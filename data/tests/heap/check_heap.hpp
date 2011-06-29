@@ -14,6 +14,7 @@
 #include <vector>
 #include <random>
 
+#include <origin/functional.hpp>
 #include <origin/ordinal_map.hpp>
 
 /**
@@ -35,7 +36,9 @@ template<typename T, typename Comp = std::less<T>>
   };
 
 // FIXME: T should really be a random access iterator in order to be fully
-// general.
+// general, but that's not a huge concern right now... Maybe this should be
+// called "offset_compare" since the elements compared are given as offsets
+// from the underlying values.
 /**
  * Indirectly compare two objects based on their indexes into an underlying
  * random access sequence.
@@ -58,6 +61,33 @@ template<typename T, typename Comp = std::less<T>>
     Comp comp;
   };
 
+// Generate some data for testing.
+template<typename Eng>
+  std::vector<int> make_data(Eng& eng)
+  {
+    // Used for generating random data.
+    std::uniform_int_distribution<int> value_dist{0, 1000};
+    auto value = bind(value_dist, eng);
+
+    // Generate some random data
+    std::vector<int> v(100);
+    std::generate(v.begin(), v.end(), value);
+    return std::move(v);
+  }
+  
+template<typename T, typename A>
+  void print(std::vector<T, A> const& v)
+  {
+    for(auto const& x : v)
+      std::cout << v << ' ';
+    std::cout << '\n';
+  }
+
+template<typename T, typename A, typename Comp>
+  bool sorted(std::vector<T, A> const& v, Comp comp)
+  {
+    return is_sorted(v.begin(), v.end(), comp);
+  }
 
 /**
  * Check the heap order on a copy of the given heap. This is done by comparing
@@ -66,21 +96,13 @@ template<typename T, typename Comp = std::less<T>>
 template<typename Heap>
   void check_heap_order(Heap h)
   {
-    // Empty heaps are valid.
-    if(h.empty())
-      return;
-    
-
-    // Compare each subsequent pair of elements popped from the heap. They
-    // must not violate the order property of the heap.
-    auto comp = h.value_comp();
-    auto x = h.top();
-    h.pop();
+    typedef typename Heap::value_type Value;
+    std::vector<Value> v;
     while(!h.empty()) {
-      auto y = h.top();
+      v.push_back(h.top());
       h.pop();
-      assert(( !comp(x, y) ));
-      x = y;
+      // print(v);
+      assert(( sorted(v, origin::invert_order(h.value_comp())) ));
     }
   }
 
@@ -89,7 +111,7 @@ template<typename Heap>
  * number of objects into the heap and verifies that the result will be sorted
  * each time.
  */
-template<template<typename...> class Heap, typename Eng>
+template<typename Heap, typename Eng>
   void check_heap(Eng& eng)
   {
     int const N = 100;
@@ -97,40 +119,37 @@ template<template<typename...> class Heap, typename Eng>
     std::uniform_int_distribution<> dist{0, 1000};
     auto var = bind(dist, eng);
 
-    Heap<int> h;
+    Heap h;
     for(int i = 0; i < N; ++i)
       h.push(var());
     check_heap_order(h);
   }
 
 
-
 /**
- * Check the validity of the mutable Heap template. This constructs a heap
- * over a domain of objects and then modifies the objects in the domain,
- * updating the heap. The heap order is verified after each update.
+ * Check the validity of the mutable heap. This constructs a heap over the
+ * given data set (a vector or array of integral values), and then randomly 
+ * modifies the values, updating the heap.
  */
-template<template<typename...> class Heap, typename Engine>
-  void check_mutable_heap(Engine& eng)
+template<typename Heap, typename Vec, typename Engine>
+  void check_indirect_mutable_heap(Vec& v, Engine& eng)
   {
-    typedef indirect_compare<int> Comp;
+    typedef typename Vec::value_type Value;
+    typedef typename Vec::size_type Size;
+    typedef indirect_compare<Value> Comp;
     
-    int const N = 100;
+    Size N = 100;
     
     // Random variable picking indexes
-    std::uniform_int_distribution<size_t> index_dist{0, N - 1};
+    std::uniform_int_distribution<Size> index_dist{0, N - 1};
     auto index = bind(index_dist, eng);
     
     // Random variable for generating values.
-    std::uniform_int_distribution<int> value_dist{0, 1000};
+    std::uniform_int_distribution<Value> value_dist{0, 1000};
     auto value = bind(value_dist, eng);
 
-    // Build a small domain of randomly generated objects.
-    std::vector<int> v(N);
-    std::generate(v.begin(), v.end(), value);
-    
-    // Construct a mutable heap to order that domain by pointers into it.
-    Heap<int*, Comp> h;
+    // Initialize the heap.
+    Heap h;
     for(auto& p : v)
       h.push(&p);
     check_heap_order(h);
@@ -147,37 +166,31 @@ template<template<typename...> class Heap, typename Engine>
   }
 
 /**
- * Check the validity of the mutable Heap template using a dense index mapping
- * over the domain of objects. The testing strategy is practically identical
- * to that of check_mutable_heap.
+ * Check the validity of the mutable heap. This constructs a heap over the
+ * given data set (a vector or array of integral values), and then randomly 
+ * modifies the values, updating the heap.
  */
-template<template<typename...> class Heap, typename Engine>
-  void check_dense_mutable_heap(Engine& eng)
+template<typename Heap, typename Vec, typename Engine>
+  void check_ordinal_mutable_heap(Vec& v, Engine& eng)
   {
-    int const N = 100;
+    typedef typename Vec::value_type Value;
+    typedef typename Vec::size_type Size;
+    typedef index_compare<Value> Comp;  // Same as Heap::value_compare
+    
+    Size N = 100;
     
     // Random variable picking indexes
-    std::uniform_int_distribution<size_t> index_dist{0, N - 1};
+    std::uniform_int_distribution<Size> index_dist{0, N - 1};
     auto index = bind(index_dist, eng);
     
     // Random variable for generating values.
-    std::uniform_int_distribution<int> value_dist{0, 1000};
+    std::uniform_int_distribution<Value> value_dist{0, 1000};
     auto value = bind(value_dist, eng);
 
-    // Build a small domain of randomly generated objects.
-    std::vector<int> v(N);
-    std::generate(v.begin(), v.end(), value);
-    
-    // Construct a mutable heap to order that domain by offsets into the
-    // vector v, initialized above.
-    typedef index_compare<int> Comp;
-    typedef std::vector<size_t> Cont;
-    typedef origin::ordinal_map<std::size_t, int> Map;
-
-    // Initialize the heap
-    Comp comp{v.data()};
-    Heap<std::size_t, Comp, Cont, Map> h{comp};
-    for(size_t i = 0; i < v.size(); ++i)
+    // Initialize the heap.
+    Comp comp{&v.front()};
+    Heap h{comp};
+    for(Size i = 0; i < v.size(); ++i)
       h.push(i);
     check_heap_order(h);
     

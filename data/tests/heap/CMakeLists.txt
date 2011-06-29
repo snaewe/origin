@@ -6,5 +6,6 @@
 # and conditions.
 
 origin_run_test(binary_heap binary_heap.cpp)
+origin_run_test(binomial_heap binomial_heap.cpp)
 
 # origin_executable(perf_mutable_map perf_mutable_map.cpp)
