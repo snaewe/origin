@@ -17,5 +17,6 @@ origin_run_test(dfs dfs.cpp)
 origin_run_test(dfs_check dfs_check.cpp)
 origin_run_test(bipartite bipartite.cpp)
 origin_run_test(dijkstra_shortest_path dijkstra_shortest_path.cpp)
+origin_run_test(floyd_warshall floyd_warshall.cpp)
 
 add_subdirectory(io)

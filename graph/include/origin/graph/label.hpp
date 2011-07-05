@@ -8,6 +8,8 @@
 #ifndef ORIGIN_GRAPH_LABEL_HPP
 #define ORIGIN_GRAPH_LABEL_HPP
 
+#include <unordered_map>
+
 /**
  * @defgroup graph_label
  * Types and traits related to the definition and use of labels. A label is
@@ -82,28 +84,6 @@ namespace origin
     mapping_type data;
     label_type label;
   };
-
-  /*template<typename Graph>
-    struct vertex_label
-    {
-      typedef typename graph_traits<Graph>::vertex vertex;
-      typedef typename graph_traits<Graph>::mapping_type vertex_mapping_type;
-      typedef Map mapping_type;
-      typedef typename Map::key_type key_type;
-      typedef typename mapped_type;
-
-      vertex_label(mapping_type& m)
-        : map(m)
-      { }
-
-      mapped_type& operator()(key_type k)
-      { return map[k]; }
-
-      mapped_type const& operator()(key_type k) const
-      { return map[k]; }
-
-      mapping_type& map;
-    };*/
 
   template<typename Map>
     struct vertex_label

@@ -17,9 +17,6 @@
 #include <origin/graph/edge.hpp>
 #include <origin/graph/label.hpp>
 
-float identity_element() { return 0.0f; }
-float extreme_element() { return std::numeric_limits<float>::max(); }
-
 namespace origin {
 
   /**
@@ -28,8 +25,8 @@ namespace origin {
    * @tparam Weight_Label   A Readable edge Label that assocates a weight
    * with every edge.
    * 
-   * @tparam Weight_Accum   An associative (commutative?) binary operation 
-   * that accumulates edge weights.
+   * @tparam Weight_Accum   An associative binary operation that accumulates
+   * edge weights.
    * 
    * @tparam Weight_Comp    A Strict_Weak_Order over the graph's edge weights
    *
@@ -39,7 +36,6 @@ namespace origin {
    * 
    * @tparam Visitor        A Dijkstra_Visitor
    *
-   * FIXME Replace float with result_of
    * TODO Put in static asserts!
    */
   template<typename Graph,
@@ -48,7 +44,7 @@ namespace origin {
            typename Weight_Compare,
            typename Distance_Label,
            typename Visitor>
-    class dijkstra_shortest_paths_draft_full_heap
+    class dijkstra_shortest_paths_impl
     {
     public:
       // Graph types
@@ -107,14 +103,14 @@ namespace origin {
       typedef mutable_binary_heap<vertex, distance_compare> heap_type;
 
       // Constructor
-      dijkstra_shortest_paths_draft_full_heap(Graph const& graph,
-                                              weight_label weight_l,
-                                              weight_accumulate accum,
-                                              weight_compare compare,
-                                              distance_label distance,
-                                              distance_type init,
-                                              distance_type infinity,
-                                              visitor_type visitor)
+      dijkstra_shortest_paths_impl(Graph const& graph,
+                                   weight_label weight_l,
+                                   weight_accumulate accum,
+                                   weight_compare compare,
+                                   distance_label distance,
+                                   distance_type init,
+                                   distance_type infinity,
+                                   visitor_type visitor)
         : graph_{graph}, heap_{distance_compare{compare, distance}},
           weight_(weight_l), accum_{accum, infinity}, compare_{compare},
           distance_{distance}, init_{init}, infinity_{infinity},
@@ -187,19 +183,19 @@ namespace origin {
    * Test Cover
    */
   template<typename Graph,
-           typename Vertex,
            typename Distance_Label,
            typename Visitor>
     void dijkstra_shortest_paths(Graph const& g,
-                                 Vertex start,
+                                 typename Graph::vertex start,
                                  Distance_Label distance,
                                  Visitor vis)
     {
+      typedef typename Graph::vertex Vertex;
       typedef typename label_traits<Distance_Label, Vertex>::value_type Distance_Type;
       typedef std::plus<Distance_Type> Weight_Accum;
       typedef std::less<Distance_Type> Weight_Compare;
       typedef edge_weight<Graph, edge_weight<Graph, Distance_Type>> Weight_Label;
-      typedef dijkstra_shortest_paths_draft_full_heap<
+      typedef dijkstra_shortest_paths_impl<
         Graph, Weight_Label, Weight_Accum, Weight_Compare, Distance_Label, Visitor
       > Algorithm;
 
@@ -211,10 +207,6 @@ namespace origin {
       Algorithm algo{g, weight, accum, compare, distance, init, infinity, vis};
       algo(start);
     }
-
-  /**
-   * Test cover that takes a user defined edge_weight
-   */
 
 } // namespace origin
 

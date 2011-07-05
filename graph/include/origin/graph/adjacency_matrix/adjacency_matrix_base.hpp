@@ -51,7 +51,7 @@ namespace origin
     typedef typename vertex_allocator_type::size_type size_type;
     typedef typename vertex_allocator_type::difference_type difference_type;
 
-    // FIXME The matrix decides the directedness.
+    // FIXME The matrix decides the directedness. Make this a template parameter
     struct graph_category : directed_graph_tag { };
 
     // Vertex and Edge data types
