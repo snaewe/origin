@@ -14,28 +14,42 @@
 namespace origin {
 
   /**
-   * Clamps the return value of an accumulator to max.
-   *
-   * @tparam Graph  A Graph
+   * The edge_weight function object abstracts the weight operation on a
+   * Weighted graph.
    * 
-   * @tparam Weight_Label   A Readable edge Label that assocates a weight
-   * with every edge.
-   * 
-   * @tparam Weight_Accum   An associative (commutative?) binary operation 
-   * that accumulates edge weights.
-   * 
-   * @tparam Weight_Comp    A Strict_Weak_Order over the graph's edge weights
-   *
-   * @tparam Distance_Label A Writable vertex Label that records the cumulative
-   * edge weight from a start vertex to every other vertex.
-   * 
-   * 
-   * @tparam Visitor        A Dijkstra_Visitor
-   *
-   * TODO Put in static asserts!
+   * @tparam Graph  A Weighted Graph
    */
-  template<typename Accumulator
-           typename Compare = std::less<Accumulator::first_argument_type>>
+  template<typename Graph>
+    struct edge_weight
+    {
+      // FIXME: Do I need to formally specify the result type? I think the
+      // idiom to do so is a nested result struct that is partially specialized
+      // over the different function signatures.
+
+      
+      // FIXME: This needs to result in a reference. Does it?
+      auto operator()(Graph& g, typename Graph::edge e) 
+        -> decltype(weight(g, e))
+      {
+        return weight(g, e);
+      }
+      
+      auto operator()(Graph const& g, typename Graph::const_edge e) const
+        -> const decltype(weight(g, e))
+      {
+        return weight(g, e);
+      }
+    };
+
+  /**
+   * A wrapper that limits that clamps the return value of an accumulator.
+   *
+   * @tparam Accumulator  An accumulator
+   * 
+   * @tparam Compare      An order on the value type.
+   */
+  template<typename Accumulator,
+           typename Compare>
     struct clamped_accumulate
       : std::binary_function<typename Accumulator::first_argument_type,
                              typename Accumulator::second_argument_type,

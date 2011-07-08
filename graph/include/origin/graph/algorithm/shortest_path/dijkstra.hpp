@@ -9,7 +9,6 @@
 #define ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_DIJKSTRA
 
 #include <functional>
-#include <limits>
 
 #include <origin/graph/algorithm/shortest_path/dijkstra_common.hpp>
 #include <origin/heap/binary_heap.hpp>
@@ -194,7 +193,7 @@ namespace origin {
       typedef typename label_traits<Distance_Label, Vertex>::value_type Distance_Type;
       typedef std::plus<Distance_Type> Weight_Accum;
       typedef std::less<Distance_Type> Weight_Compare;
-      typedef edge_weight<Graph, edge_weight<Graph, Distance_Type>> Weight_Label;
+      typedef edge_weight<Graph> Weight_Label;
       typedef dijkstra_shortest_paths_impl<
         Graph, Weight_Label, Weight_Accum, Weight_Compare, Distance_Label, Visitor
       > Algorithm;

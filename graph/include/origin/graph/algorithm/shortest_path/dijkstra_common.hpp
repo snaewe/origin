@@ -74,17 +74,12 @@ namespace origin {
   };
 
   /**
-   * Default Distance_Label is derived from ordinal_map.
-   */
-  // FIXME Add this!
-
-  /**
    * The edge_weight function object abstracts the weight operation on a
    * Weighted graph.
    * 
    * @tparam Graph  A Weighted Graph
    */
-  template<typename Graph, typename Weight>
+  template<typename Graph>
     struct edge_weight
     {
       // FIXME: Do I need to formally specify the result type? I think the
