@@ -63,12 +63,12 @@ namespace origin
   template<typename Graph>
   typename graph_traits<Graph>::vertex_iterator
   begin_vertex(Graph& g)
-  { return begin(g.vertices()); }
+  { return std::begin(g.vertices()); }
 
   template<typename Graph>
   typename graph_traits<Graph const>::vertex_iterator
   begin_vertex(Graph const& g)
-  { return begin(g.vertices()); }
+  { return std::begin(g.vertices()); }
   //@}
 
   /**
@@ -79,12 +79,12 @@ namespace origin
   template<typename Graph>
   typename graph_traits<Graph>::vertex_iterator
   end_vertex(Graph& g)
-  { return end(g.vertices()); }
+  { return std::end(g.vertices()); }
 
   template<typename Graph>
   typename graph_traits<Graph const>::vertex_iterator
   end_vertex(Graph const& g)
-  { return end(g.vertices()); }
+  { return std::end(g.vertices()); }
   //@}
 
   /**

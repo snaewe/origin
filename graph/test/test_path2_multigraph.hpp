@@ -7,6 +7,10 @@
 #ifndef TEST_PATH2_MULTIGRAPH_HPP
 #define TEST_PATH2_MULTIGRAPH_HPP
 
+using std::distance;
+using std::end;
+using std::next;
+
 /**
  * Test the construction and destruction of a P2 (path-2) multigraph, a graph
  * with two vertices u and v, connected by the edges (u, v, 1) and (u, v, 2).

@@ -72,7 +72,7 @@ namespace origin
         stack.pop();
         visitor.started_vertex(graph, u);
 
-        auto i = begin(rng), ie = end(rng);
+        auto i = std::begin(rng), ie = std::end(rng);
         while(i != ie) {
           edge e = *i;
           visitor.started_edge(graph, e);
@@ -94,8 +94,8 @@ namespace origin
             // Swap the current iteration range with the that of the new
             // current vertex.
             rng = out_edges(graph, u);
-            i = begin(rng);
-            ie = end(rng);
+            i = std::begin(rng);
+            ie = std::end(rng);
           } else {
             // Determine if the edge is a back, forward, or cross edge.
             if(color(v) == color_traits::gray()) {

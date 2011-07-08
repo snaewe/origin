@@ -7,6 +7,8 @@
 #ifndef TEST_PATH2_GRAPH_HPP
 #define TEST_PATH2_GRAPH_HPP
 
+using std::distance;
+
 /**
  * Test the construction and destruction of a P2 (path-2) graph, a graph with
  * two vertices u and v, connected by a single edge (u, v).

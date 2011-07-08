@@ -30,7 +30,7 @@ struct singleton_graph
 
     // Validate iterator state.
     auto vr = g.vertices();
-    assert(( distance(begin(vr), end(vr)) == 1 ));
+    assert(( std::distance(std::begin(vr), std::end(vr)) == 1 ));
     assert(( g[*begin(vr)] == 'a' ));
     for(auto x : g.vertices()) ;
 

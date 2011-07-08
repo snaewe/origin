@@ -140,7 +140,7 @@ namespace origin
   template<typename V, typename M, typename A>
   auto adjacency_matrix<V,M,A>::add_edge(vertex v, vertex u) -> edge
   {
-    edge_value_type& ev = matrix_(v.value, u.value);
+    edge_value_type& ev = base_type::matrix_(v.value, u.value);
 
     assert(( !ev ));
 

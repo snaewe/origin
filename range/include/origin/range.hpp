@@ -12,7 +12,7 @@
 #include <origin/range/container_range.hpp>
 #include <origin/range/filter_range.hpp>
 #include <origin/range/enumerate_range.hpp>
-#include <origin/range/zipped_range.hpp>
+#include <origin/range/zip_range.hpp>
 
 /**
  * @defgroup Range

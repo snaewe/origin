@@ -193,7 +193,7 @@ namespace origin
     bool equal(adjacency_matrix_base const& x) const;
     //@}
 
-  private:
+  protected:
     matrix_type matrix_;
     vertex_list vertices_;
   };

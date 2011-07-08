@@ -10,6 +10,9 @@
 
 #include <origin/graph/adjacency_list/directed.hpp>
 
+using std::begin;
+using std::end;
+
 namespace origin
 {
   /** @internal */
