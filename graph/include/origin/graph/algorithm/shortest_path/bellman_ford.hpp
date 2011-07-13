@@ -20,25 +20,29 @@
 namespace origin {
 
   /**
-   * Implementation of the Bellman-Ford algorithm.
+   * Implementation of Bellman-Ford's shortest paths algorithm.
    *
-   * @tparam Graph  A graph
+   * @tparam Graph          A Graph
+   * 
+   * @tparam Vertex_Label   A writable vertex Label that assocates a distance
+   * with every vertex.
    *
-   * @tparam Edge_Distance_Label  Label the vertices with shortest distances
+   * @tparam Edge_Label     A readable edge label that records the shortest
+   * distance from the start to each other vertex
+   * 
+   * @tparam Accumulate_Op  An closed accumulation operation on distance types
+   * 
+   * @tparam Compare_Op     A Strict_Weak_Order over the distance_type
    *
-   * @tparam Distance_Accumulate
+   * @tparam Visitor        A Dijkstra_Visitor
    *
-   * @tparam Distance_Compare
-   *
-   * @tparam Vertex_Distance_Label
-   *
-   * @tparam Visitor
+   * TODO Implement path recovery.
    */
   template<typename Graph,
-           typename Edge_Distance_Label,
-           typename Distance_Accumulate,
-           typename Distance_Compare,
-           typename Vertex_Distance_Label,
+           typename Vertex_Label,
+           typename Edge_Label,
+           typename Accumulate_Op,
+           typename Compare_Op,
            typename Visitor>
     class bellman_ford_impl
     {
@@ -46,16 +50,21 @@ namespace origin {
       // Graph types
       typedef typename graph_traits<Graph>::vertex vertex;
 
-      // Associated labels, accumulator, order and distance type
-      typedef Edge_Distance_Label edge_distance_label;
-      typedef Vertex_Distance_Label vertex_distance_label;
-      typedef Distance_Accumulate distance_accumulate;
-      typedef Distance_Compare distance_compare;
-      typedef typename label_traits<Vertex_Distance_Label, vertex>::value_type distance_type;
+      // Associated labels
+      typedef Edge_Label edge_label;
+      typedef Vertex_Label vertex_label;
+
+      // Distance operations
+      typedef Accumulate_Op accumulate_op;
+      typedef Compare_Op compare_op;
+      typedef typename label_traits<
+        Vertex_Label, vertex
+      >::value_type distance_type;
+      
     private:
       typedef detail::clamped_accumulate<
-        distance_accumulate, distance_compare
-      > clamped_distance_accumulate;
+        accumulate_op, compare_op
+      > clamped_accumulate_op;
       typedef typename graph_traits<Graph>::size_type size_type;
 
       // Static Assertions
@@ -64,27 +73,24 @@ namespace origin {
     public:
       // Constructor
       bellman_ford_impl(Graph const& g,
-                        vertex_distance_label d,
-                        edge_distance_label w,
-                        distance_accumulate acc,
-                        distance_compare cmp,
+                        vertex_label d,
+                        edge_label w,
+                        accumulate_op acc,
+                        compare_op cmp,
                         distance_type init,
                         distance_type max,
                         Visitor v)
         : g_(g), d_(d), w_(w), acc_(acc, max), cmp_(cmp), init_(init),
           max_(max), v_(v)
-      { }
-
-      // Initialization
-      // TODO Move to algorithm main
-      //void initialize(vertex start);
+      {
+        for(auto v : g_.vertices())
+          d_(v) = max_;
+      }
 
       // Algorithm Main
       void operator()(vertex start)
       {
         // Initialize distance label
-        for(auto v : g_.vertices())
-          d_(v) = max_;
         d_(start) = init_;
 
         for(size_type i = 0u; i < g_.order() - 1u; ++i) {
@@ -92,8 +98,8 @@ namespace origin {
           bool edge_relaxed = false;
           for(auto e : g_.edges()) {
             v_.examine_edge(g_,e);
-            distance_type dist = w_(g_,e) + d_(g_.source(e));
-            if(dist < d_(g_.target(e))) {
+            distance_type dist = accum_(w_(g_,e), d_(g_.source(e)));
+            if(cmp(dist, d_(g_.target(e)))) {
               d_(g_.target(e)) = dist;
               v_.edge_relaxed(g_,e);
               edge_relaxed = true;
@@ -105,7 +111,7 @@ namespace origin {
         }
         // Check to see that all of the edges are minimized
         for(auto e : g_.edges()) {
-          if(w_(g_,e) + d_(g_.source(e)) < d_(g_.target(e))) {
+          if(cmp_(accum_(w_(g_,e), d_(g_.source(e))), d_(g_.target(e)))) {
             v_.edge_not_minimized(g_,e);
             assert(false);
           } else{
@@ -116,10 +122,10 @@ namespace origin {
 
     private:
       Graph const& g_;
-      vertex_distance_label d_;
-      edge_distance_label w_;
-      clamped_distance_accumulate acc_;
-      distance_compare cmp_;
+      vertex_label d_;
+      edge_label w_;
+      clamped_accumulate_op acc_;
+      compare_op cmp_;
       distance_type init_;
       distance_type max_;
       Visitor v_;
@@ -129,30 +135,30 @@ namespace origin {
    * Bellman_ford Algorithm
    */
   template<typename Graph,
-           typename Distance_Label,
+           typename Vertex_Label,
            typename Visitor = default_bellman_ford_visitor>
     void bellman_ford(Graph const& g,
                       typename graph_traits<Graph>::vertex start,
-                      Distance_Label d,
+                      Vertex_Label d,
                       Visitor visitor = Visitor())
     {
       typedef typename graph_traits<Graph>::vertex vertex;
       typedef typename label_traits<
-        Distance_Label, vertex
+        Vertex_Label, vertex
       >::value_type distance_type;
-      typedef std::plus<distance_type> accumulate;
-      typedef std::less<distance_type> compare;
-      typedef detail::edge_weight<Graph> edge_distance_label;
+      typedef std::plus<distance_type> accumulate_op;
+      typedef std::less<distance_type> compare_op;
+      typedef detail::edge_weight<Graph> edge_label;
       typedef bellman_ford_impl<
-        Graph, edge_distance_label, accumulate, compare, Distance_Label, Visitor
+        Graph, Vertex_Label, edge_label, accumulate_op, compare_op, Visitor
       > Algorithm;
 
-      edge_distance_label edge_label;
-      accumulate accum;
-      compare cmp;
+      edge_label w;
+      accumulate_op accum;
+      compare_op cmp;
       distance_type init = identity_element(accum);
       distance_type max = extreme_element(cmp);
-      Algorithm algo(g, d, edge_label, accum, cmp, init, max, visitor);
+      Algorithm algo(g, d, w, accum, cmp, init, max, visitor);
 
       algo(start);
     }

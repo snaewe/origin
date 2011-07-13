@@ -20,86 +20,88 @@
 namespace origin {
 
   /**
-   * @tparam Graph  A Graph
-   * 
-   * @tparam Weight_Label   A Readable edge Label that assocates a weight
-   * with every edge.
-   * 
-   * @tparam Weight_Accum   An associative binary operation that accumulates
-   * edge weights.
-   * 
-   * @tparam Weight_Comp    A Strict_Weak_Order over the graph's edge weights
+   * Implementation of Dijkstra's shortest paths algorithm.
    *
-   * @tparam Distance_Label A Writable vertex Label that records the cumulative
-   * edge weight from a start vertex to every other vertex.
+   * @tparam Graph          A Graph
    * 
+   * @tparam Vertex_Label   A writable vertex Label that assocates a distance
+   * with every vertex.
+   *
+   * @tparam Edge_Label     A readable edge label that records the shortest
+   * distance from the start to each other vertex
    * 
+   * @tparam Accumulate_Op  An closed accumulation operation on distance types
+   * 
+   * @tparam Compare_Op     A Strict_Weak_Order over the distance_type
+   *
    * @tparam Visitor        A Dijkstra_Visitor
    *
-   * TODO Put in static asserts!
+   * TODO Implement path recovery
    */
   template<typename Graph,
-           typename Weight_Label,
-           typename Weight_Accumulate,
-           typename Weight_Compare,
-           typename Distance_Label,
+           typename Vertex_Label,
+           typename Edge_Label,
+           typename Accumulate_Op,
+           typename Compare_Op,
            typename Visitor>
     class dijkstra_shortest_paths_impl
     {
     public:
       // Graph types
       typedef typename graph_traits<Graph>::vertex vertex;
-      typedef typename graph_traits<Graph>::edge edge;
 
-      //Associated labels
-      typedef Weight_Label weight_label;
-      typedef Distance_Label distance_label;
+      // Associated labels
+      typedef Edge_Label edge_label;
+      typedef Vertex_Label vertex_label;
 
-      // FIXME Rename all mention of weight to length or vice versa
-      typedef typename label_traits<distance_label, vertex>::value_type distance_type;
-      typedef Weight_Accumulate weight_accumulate;
-      typedef Weight_Compare weight_compare;
-      typedef Visitor visitor_type;
+      // Distance operations
+      typedef typename label_traits<
+        vertex_label, vertex
+      >::value_type distance_type;
+      typedef Accumulate_Op accumulate_op;
+      typedef Compare_Op compare_op;
 
     private:
+      // FIXME This must prevent overflow, or have the option to.
       typedef detail::clamped_accumulate<
-        weight_accumulate, weight_compare
-      > clamped_accumulate_type;
+        accumulate_op, compare_op
+      > clamped_accumulate_op;
 
-      // Distance compare - while the heap only stores vertices, comparisons are
-      // performed on the distance labels.
-      struct distance_compare : std::binary_function<vertex, vertex, bool>
+      // Heap is ordered by distance labels associated with vertices
+      struct heap_compare_op : std::binary_function<vertex, vertex, bool>
       {
-        distance_compare(weight_compare c, distance_label d)
-          : comp{c}, dist{d}
+        heap_compare_op(compare_op c, vertex_label d)
+          : cmp(c), dist(d)
         { }
 
         bool operator()(vertex a, vertex b) const
-        { return comp(dist(b), dist(a)); }
+        { return cmp(dist(b), dist(a)); }
 
-        weight_compare comp;
-        distance_label dist;
+        compare_op cmp;
+        vertex_label dist;
       };
 
-    public:
-      typedef mutable_binary_heap<vertex, distance_compare> heap_type;
+      typedef mutable_binary_heap<vertex, heap_compare_op> heap_type;
 
+      // Static assertions
+      // TODO Add this!
+
+    public:
       // Constructor
-      dijkstra_shortest_paths_impl(Graph const& graph,
-                                   weight_label weight_l,
-                                   weight_accumulate accum,
-                                   weight_compare compare,
-                                   distance_label distance,
+      dijkstra_shortest_paths_impl(Graph const& g,
+                                   vertex_label d,
+                                   edge_label w,
+                                   accumulate_op accum,
+                                   compare_op cmp,
                                    distance_type zero,
-                                   distance_type maximum,
-                                   visitor_type visitor)
-        : graph_(graph), heap_(distance_compare{compare, distance}),
-          weight_(weight_l), accum_{accum, maximum}, compare_{compare},
-          distance_{distance}, zero_{zero}, maximum_{maximum},
+                                   distance_type max,
+                                   Visitor visitor)
+        : g_(g), heap_(heap_compare_op(cmp, d)), d_(d), w_(w),
+          accum_(accum, max), cmp_(cmp), zero_(zero), max_(max),
           visitor_(visitor)
       {
-        for(vertex v : graph_.vertices()) {
-          distance_(v) = maximum_;
+        for(vertex v : g_.vertices()) {
+          d_(v) = max_;
           heap_.push(v);
         }
       }
@@ -107,116 +109,122 @@ namespace origin {
       // Algorithm main
       void operator()(vertex start)
       {
-        distance_(start) = zero_;
+        d_(start) = zero_;
         heap_.push(start);
-        visitor_.discover_vertex(graph_, start);
+        visitor_.discover_vertex(g_, start);
 
         while(!heap_.empty()) {
           vertex u = heap_.top();
           heap_.pop();
 
-          visitor_.examine_vertex(graph_, u);
+          visitor_.examine_vertex(g_, u);
 
           // Since this version fills the heap, there may be disconnected components
-          distance_type du = distance_(u);
-          if(!compare_(du, maximum_))
+          distance_type du = d_(u);
+          if(!cmp_(du, max_))
             return;
 
           // Find the minimum vertex from all neighbors
-          for(edge e : out_edges(graph_, u)) {
-            visitor_.examine_edge(graph_, e);
+          for(auto e : out_edges(g_, u)) {
+            visitor_.examine_edge(g_, e);
 
             // Dijkstra requires non-negative weights.
-            assert(( !compare_(weight_(graph_, e), zero_) ));
+            assert(( !cmp_(w_(g_, e), zero_) ));
 
             // Get the distance of the neighbor vertex
-            vertex v = graph_.target(e);
-            distance_type dv = distance_(v);
-            if(!compare_(dv, maximum_))
-              visitor_.discover_vertex(graph_, v);
+            vertex v = g_.target(e);
+            distance_type dv = d_(v);
+            if(!cmp_(dv, max_))
+              visitor_.discover_vertex(g_, v);
 
             // Relax the edge
-            distance_type d = accum_(du, weight_(graph_, e));
-            if(compare_(d, dv)) {
-              distance_(v) = d;
+            distance_type d = accum_(du, w_(g_, e));
+            if(cmp_(d, dv)) {
+              d_(v) = d;
               heap_.decrease(v);
-              visitor_.edge_relaxed(graph_, e);
+              visitor_.edge_relaxed(g_, e);
             } else {
-              visitor_.edge_not_relaxed(graph_, e);
+              visitor_.edge_not_relaxed(g_, e);
             }
           }
         }
       }
 
     private:
-      Graph const& graph_;
+      Graph const& g_;
       heap_type heap_;
-      weight_label weight_;
-      clamped_accumulate_type accum_;
-      weight_compare compare_;
-      distance_label distance_;
+      vertex_label d_;
+      edge_label w_;
+      clamped_accumulate_op accum_;
+      compare_op cmp_;
       distance_type zero_;
-      distance_type maximum_;
-      visitor_type visitor_;
+      distance_type max_;
+      Visitor visitor_;
     };
 
   /**
    * Test Cover
    */
   template<typename Graph,
-           typename Distance_Label,
+           typename Vertex_Label,
            typename Visitor = default_dijkstra_visitor>
     void dijkstra_shortest_paths(Graph const& g,
                                  typename graph_traits<Graph>::vertex start,
-                                 Distance_Label distance,
-                                 Visitor vis = Visitor())
+                                 Vertex_Label d,
+                                 Visitor visitor = Visitor())
     {
-      typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename label_traits<Distance_Label, Vertex>::value_type Distance_Type;
-      typedef std::plus<Distance_Type> Weight_Accum;
-      typedef std::less<Distance_Type> Weight_Compare;
-      typedef detail::edge_weight<Graph> Weight_Label;
+      typedef typename graph_traits<Graph>::vertex vertex;
+      typedef typename label_traits<
+        Vertex_Label, vertex
+      >::value_type distance_type;
+      typedef detail::edge_weight<Graph> edge_label;
+      typedef std::plus<distance_type> accumulate_op;
+      typedef std::less<distance_type> compare_op;
       typedef dijkstra_shortest_paths_impl<
-        Graph, Weight_Label, Weight_Accum, Weight_Compare, Distance_Label, Visitor
+        Graph, Vertex_Label, edge_label, accumulate_op, compare_op, Visitor
       > Algorithm;
 
-      Weight_Label weight;
-      Weight_Accum accum;
-      Weight_Compare compare;
-      Distance_Type zero = identity_element(accum);
-      Distance_Type maximum = extreme_element(compare);
-      Algorithm algo{g, weight, accum, compare, distance, zero, maximum, vis};
+      edge_label w;
+      accumulate_op accum;
+      compare_op cmp;
+      distance_type zero = identity_element(accum);
+      distance_type max = extreme_element(cmp);
+      Algorithm algo(g, d, w, accum, cmp, zero, max, visitor);
       algo(start);
     }
 
   /**
    * Complete algorithm
    */
+  #ifndef DIST_TYPE__
+  #define DIST_TYPE__ typename label_traits<Vertex_Label, typename \
+                      graph_traits<Graph>::vertex>::value_type
   template<typename Graph,
-           typename Distance_Label,
-           typename Accumulate,
-           typename Compare,
-           typename Visitor,
-           typename Distance>
+           typename Vertex_Label,
+           typename Edge_Label,
+           typename Accumulate_Op,
+           typename Compare_Op,
+           typename Visitor>
     void dijkstra_shortest_path(Graph const& g,
-                                typename Graph::vertex start,
-                                Distance_Label d,
-                                Accumulate accum,
-                                Compare cmp,
-                                Visitor visitor,
-                                Distance zero,
-                                Distance max)
+                                typename graph_traits<Graph>::vertex start,
+                                Vertex_Label d,
+                                Accumulate_Op accum,
+                                Compare_Op cmp,
+                                DIST_TYPE__ zero,
+                                DIST_TYPE__ max, 
+                                Visitor visitor)
     {
-      typedef detail::edge_weight<Graph> Weight_Label;
+      typedef detail::edge_weight<Graph> edge_label;
       typedef dijkstra_shortest_paths_impl<
-        Graph, Weight_Label, Accumulate, Compare, Distance_Label, Visitor
+        Graph, Vertex_Label, edge_label, Accumulate_Op, Compare_Op, Visitor
       > Algorithm;
 
-      Weight_Label weight;
-      Algorithm algo(g, weight, accum, cmp, d, zero, max, visitor);
+      edge_label w;
+      Algorithm algo(g, d, w, accum, cmp, zero, max, visitor);
       algo(start);
     }
-                                
+
+  #endif // DIST_TYPE__
 
 } // namespace origin
 

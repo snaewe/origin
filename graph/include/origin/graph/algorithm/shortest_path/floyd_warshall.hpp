@@ -8,15 +8,12 @@
 #ifndef ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_FLOYD_WARSHALL
 #define ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_FLOYD_WARSHALL
 
-#include<iostream>
-
 #include <cassert>
-
-#include <origin/graph/traits.hpp>
-#include <origin/functional.hpp>
 
 #include <origin/graph/algorithm/shortest_path/floyd_warshall_common.hpp>
 #include <origin/graph/algorithm/shortest_path/shortest_path_common.hpp>
+#include <origin/graph/traits.hpp>
+#include <origin/functional.hpp>
 
 namespace origin {
 
@@ -38,6 +35,94 @@ namespace origin {
    * TODO Put in static asserts!
    * TODO Clamp the accumulator, compare, etc.
    */
+  template<typename Graph,
+           typename Distance_Matrix,
+           typename Edge_Label,
+           typename Accumulator_Op,
+           typename Compare_Op>
+    class floyd_warshall_impl_new
+    {
+    public:
+      // Graph types
+      //typedef typename graph_traits<Graph>::vertex_iterator vertex_iterator;
+      typedef typename graph_traits<Graph>::edge edge;
+
+      // Associated labels?
+
+      // Other
+      typedef typename std::result_of<Weight_Label(Graph, edge)>::type distance_type;
+
+      // Assert static requirements
+      //assert that distance_mtx conforms, etc...
+
+      floyd_warshall_impl_new(Graph const& g,
+                          Distance_Matrix& d,
+                          Weight_Label w,
+                          Weight_Accumulator acc,
+                          Weight_Compare cmp,
+                          distance_type zero,
+                          distance_type max)
+        : g_(g), d_(d), w_(w), acc_(acc), cmp_(cmp), zero_(zero), max_(max)
+      { }
+
+      void initialize_matrix()
+      {
+        for(auto u : g_.vertices())
+          for(auto v : g_.vertices())
+            d_(u,v) = max_;
+
+        for(auto v : g_.vertices())
+          d_(v,v) = zero_;
+
+        // Set distance matrix to edge_weights
+        for(auto e : g_.edges()) {
+          if(d_(g_.source(e),g_.target(e)) < max_)
+            d_(g_.source(e),g_.target(e)) =
+              min(w_(g_, e), d_(g_.source(e),g_.target(e)), cmp_);
+          else
+            d_(g_.source(e),g_.target(e)) = w_(g_, e);
+        }
+
+        // If g is undirected, for each u,v in edges(g), we must also account
+        // for v,u.
+        if(is_undirected_graph<Graph>::type::value) {
+          for(auto e : g_.edges()) {
+            if(d_(g_.target(e),g_.source(e)) < max_)
+              d_(g_.target(e),g_.source(e)) =
+                min(w_(g_, e), d_(g_.target(e),g_.source(e)), cmp_);
+            else
+              d_(g_.target(e),g_.source(e)) = w_(g_, e);
+          }
+        }
+      }
+
+      void operator()(void)
+      {
+        for(auto i : g_.vertices())
+          for(auto j : g_.vertices())
+            if(d_(j,i) < max_)
+              for(auto k : g_.vertices())
+                if(d_(i,k) < max_){
+                  distance_type dist = acc_(d_(j,i), d_(i,k));
+                  if(dist < d_(j,k))
+                    d_(j,k) = dist;
+                }
+
+        // No negative weight loops may be in the graph
+        for(auto v : g_.vertices())
+        { assert(( !cmp_(d_(v,v), zero_) )); }
+      }
+
+    private:
+      Graph const& g_;
+      Distance_Matrix& d_;
+      Weight_Label w_;
+      Weight_Accumulator acc_;
+      Weight_Compare cmp_;
+      distance_type zero_;
+      distance_type max_;
+    };
+
   template<typename Graph,
            typename Distance_Matrix,
            typename Weight_Label,
