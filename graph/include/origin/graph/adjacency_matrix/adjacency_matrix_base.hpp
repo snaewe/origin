@@ -266,16 +266,16 @@ namespace origin
 
   template<typename V, typename M, typename E, typename A>
   auto adjacency_matrix_base<V,M,E,A>::add_edge
-  (vertex v, vertex u, edge_value_type const& e) -> edge
+  (vertex u, vertex v, edge_value_type const& e) -> edge
   {
     assert(( E::edge(e) ));
 
-    edge_value_type& ev = matrix_(v.value, u.value);
+    edge_value_type& ev = matrix_(u.value, v.value);
 
     assert(( !E::edge(ev) ));
 
     ev = e;
-    return edge(v.value, u.value);
+    return edge(u.value, v.value);
   }
 
   template<typename V, typename M, typename E, typename A>

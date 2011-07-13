@@ -34,20 +34,15 @@ int main() {
   for(char i = 0; i < (signed int)(num_vertices); ++i)
     g[vertex(i)] = 'a' + i;
   generate_wheel_graph(g, [](unsigned int n){ return 1.0f; });
-  for(auto e : g.edges())
-    std::cerr << '(' << e.source << ',' << e.target << ") : "
-                << g[e] << '\n';
-    /*std::cerr << '(' << g[g.source(e)]<< ',' << g[g.target(e)] << ") : "
-                << g[e] << '\n';*/
+
 
   // Call the shortest paths alg on it.
   all_pairs_shortest_paths(g, d);
 
-  /*for(auto i = 0u; i < num_vertices; ++i)
+  for(auto i = 0u; i < num_vertices; ++i)
     for(auto j = 0u; j < num_vertices; ++j)
       std::cout << '(' << g[vertex(i)]<< ',' << g[vertex(j)] << ") : "
                 << d(i,j) << '\n';
-*/
 
   return 0;
 } 

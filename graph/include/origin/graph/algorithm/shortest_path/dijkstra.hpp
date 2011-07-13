@@ -11,6 +11,7 @@
 #include <functional>
 
 #include <origin/graph/algorithm/shortest_path/dijkstra_common.hpp>
+#include <origin/graph/algorithm/shortest_path/shortest_path_common.hpp>
 #include <origin/heap/binary_heap.hpp>
 #include <origin/functional.hpp>
 #include <origin/graph/edge.hpp>
@@ -54,34 +55,16 @@ namespace origin {
       typedef Weight_Label weight_label;
       typedef Distance_Label distance_label;
 
-      // FIXME Rename all mention of weight to distance or vice versa
+      // FIXME Rename all mention of weight to length or vice versa
       typedef typename label_traits<distance_label, vertex>::value_type distance_type;
       typedef Weight_Accumulate weight_accumulate;
       typedef Weight_Compare weight_compare;
       typedef Visitor visitor_type;
 
     private:
-      // Clamp accumulate to infinity.
-      // FIXME Clamped types exist in many languages (implemented or
-      // documentation only). Should an abstraction exist for functor output?
-
-      struct clamped_accumulate
-        : std::binary_function<distance_type, distance_type, distance_type>
-      {
-        clamped_accumulate(weight_accumulate a, distance_type x)
-          : accum(a), inf(x)
-        { }
-
-        distance_type operator()(distance_type x, distance_type y) const
-        {
-          if(x == inf || y == inf)
-            return inf;
-          return x + y;
-        }
-
-        weight_accumulate accum;
-        distance_type inf;
-      };
+      typedef detail::clamped_accumulate<
+        weight_accumulate, weight_compare
+      > clamped_accumulate_type;
 
       // Distance compare - while the heap only stores vertices, comparisons are
       // performed on the distance labels.
@@ -107,16 +90,16 @@ namespace origin {
                                    weight_accumulate accum,
                                    weight_compare compare,
                                    distance_label distance,
-                                   distance_type init,
-                                   distance_type infinity,
+                                   distance_type zero,
+                                   distance_type maximum,
                                    visitor_type visitor)
-        : graph_{graph}, heap_{distance_compare{compare, distance}},
-          weight_(weight_l), accum_{accum, infinity}, compare_{compare},
-          distance_{distance}, init_{init}, infinity_{infinity},
+        : graph_(graph), heap_(distance_compare{compare, distance}),
+          weight_(weight_l), accum_{accum, maximum}, compare_{compare},
+          distance_{distance}, zero_{zero}, maximum_{maximum},
           visitor_(visitor)
       {
         for(vertex v : graph_.vertices()) {
-          distance_(v) = infinity_;
+          distance_(v) = maximum_;
           heap_.push(v);
         }
       }
@@ -124,7 +107,7 @@ namespace origin {
       // Algorithm main
       void operator()(vertex start)
       {
-        distance_(start) = init_;
+        distance_(start) = zero_;
         heap_.push(start);
         visitor_.discover_vertex(graph_, start);
 
@@ -136,25 +119,24 @@ namespace origin {
 
           // Since this version fills the heap, there may be disconnected components
           distance_type du = distance_(u);
-          if(!compare_(du, infinity_))
+          if(!compare_(du, maximum_))
             return;
 
           // Find the minimum vertex from all neighbors
           for(edge e : out_edges(graph_, u)) {
             visitor_.examine_edge(graph_, e);
 
-            // If the edge is negative, we use Bellman-Ford.
-            assert(( !compare_(weight_(graph_, e), init_) ));
+            // Dijkstra requires non-negative weights.
+            assert(( !compare_(weight_(graph_, e), zero_) ));
 
             // Get the distance of the neighbor vertex
             vertex v = graph_.target(e);
             distance_type dv = distance_(v);
-            if(!compare_(dv, infinity_))
+            if(!compare_(dv, maximum_))
               visitor_.discover_vertex(graph_, v);
 
             // Relax the edge
-            //distance_type d = accum_(du, weight_(graph_, e));
-            distance_type d = 1.0f;
+            distance_type d = accum_(du, weight_(graph_, e));
             if(compare_(d, dv)) {
               distance_(v) = d;
               heap_.decrease(v);
@@ -170,11 +152,11 @@ namespace origin {
       Graph const& graph_;
       heap_type heap_;
       weight_label weight_;
-      clamped_accumulate accum_;
+      clamped_accumulate_type accum_;
       weight_compare compare_;
       distance_label distance_;
-      distance_type init_;
-      distance_type infinity_;
+      distance_type zero_;
+      distance_type maximum_;
       visitor_type visitor_;
     };
 
@@ -183,17 +165,17 @@ namespace origin {
    */
   template<typename Graph,
            typename Distance_Label,
-           typename Visitor>
+           typename Visitor = default_dijkstra_visitor>
     void dijkstra_shortest_paths(Graph const& g,
-                                 typename Graph::vertex start,
+                                 typename graph_traits<Graph>::vertex start,
                                  Distance_Label distance,
-                                 Visitor vis)
+                                 Visitor vis = Visitor())
     {
-      typedef typename Graph::vertex Vertex;
+      typedef typename graph_traits<Graph>::vertex Vertex;
       typedef typename label_traits<Distance_Label, Vertex>::value_type Distance_Type;
       typedef std::plus<Distance_Type> Weight_Accum;
       typedef std::less<Distance_Type> Weight_Compare;
-      typedef edge_weight<Graph> Weight_Label;
+      typedef detail::edge_weight<Graph> Weight_Label;
       typedef dijkstra_shortest_paths_impl<
         Graph, Weight_Label, Weight_Accum, Weight_Compare, Distance_Label, Visitor
       > Algorithm;
@@ -201,11 +183,40 @@ namespace origin {
       Weight_Label weight;
       Weight_Accum accum;
       Weight_Compare compare;
-      Distance_Type init = identity_element(accum);
-      Distance_Type infinity = extreme_element(compare);
-      Algorithm algo{g, weight, accum, compare, distance, init, infinity, vis};
+      Distance_Type zero = identity_element(accum);
+      Distance_Type maximum = extreme_element(compare);
+      Algorithm algo{g, weight, accum, compare, distance, zero, maximum, vis};
       algo(start);
     }
+
+  /**
+   * Complete algorithm
+   */
+  template<typename Graph,
+           typename Distance_Label,
+           typename Accumulate,
+           typename Compare,
+           typename Visitor,
+           typename Distance>
+    void dijkstra_shortest_path(Graph const& g,
+                                typename Graph::vertex start,
+                                Distance_Label d,
+                                Accumulate accum,
+                                Compare cmp,
+                                Visitor visitor,
+                                Distance zero,
+                                Distance max)
+    {
+      typedef detail::edge_weight<Graph> Weight_Label;
+      typedef dijkstra_shortest_paths_impl<
+        Graph, Weight_Label, Accumulate, Compare, Distance_Label, Visitor
+      > Algorithm;
+
+      Weight_Label weight;
+      Algorithm algo(g, weight, accum, cmp, d, zero, max, visitor);
+      algo(start);
+    }
+                                
 
 } // namespace origin
 

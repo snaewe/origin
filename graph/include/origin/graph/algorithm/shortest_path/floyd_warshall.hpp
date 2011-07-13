@@ -36,7 +36,7 @@ namespace origin {
    * @tparam Weight_Compare   A Strict_Weak_Order over the graph's edge weights
    *
    * TODO Put in static asserts!
-   * TODO Clamp the accumulator!
+   * TODO Clamp the accumulator, compare, etc.
    */
   template<typename Graph,
            typename Distance_Matrix,
@@ -63,9 +63,9 @@ namespace origin {
                           Weight_Label w,
                           Weight_Accumulator acc,
                           Weight_Compare cmp,
-                          distance_type max,
-                          distance_type zero)
-        : g_(g), d_(d), w_(w), acc_(acc), cmp_(cmp), max_(max), zero_(zero)
+                          distance_type zero,
+                          distance_type max)
+        : g_(g), d_(d), w_(w), acc_(acc), cmp_(cmp), zero_(zero), max_(max)
       { }
 
       void initialize_matrix()
@@ -74,14 +74,11 @@ namespace origin {
           for(auto v : g_.vertices())
             d_(u,v) = max_;
 
-        // Is this really necessary? What about loops?
-        // Oh, wow. Negative loops do awful and strange things to this algo...
         for(auto v : g_.vertices())
           d_(v,v) = zero_;
 
         // Set distance matrix to edge_weights
         for(auto e : g_.edges()) {
-          //std::cerr << w_(g_, e);
           if(d_(g_.source(e),g_.target(e)) < max_)
             d_(g_.source(e),g_.target(e)) =
               min(w_(g_, e), d_(g_.source(e),g_.target(e)), cmp_);
@@ -91,8 +88,7 @@ namespace origin {
 
         // If g is undirected, for each u,v in edges(g), we must also account
         // for v,u.
-        bool g_is_undirected = is_undirected_graph<Graph>::type::value;
-        if(g_is_undirected) {
+        if(is_undirected_graph<Graph>::type::value) {
           for(auto e : g_.edges()) {
             if(d_(g_.target(e),g_.source(e)) < max_)
               d_(g_.target(e),g_.source(e)) =
@@ -111,7 +107,7 @@ namespace origin {
               for(auto k : g_.vertices())
                 if(d_(i,k) < max_){
                   distance_type dist = acc_(d_(j,i), d_(i,k));
-                  if(d_(j,k) < dist)
+                  if(dist < d_(j,k))
                     d_(j,k) = dist;
                 }
 
@@ -126,8 +122,8 @@ namespace origin {
       Weight_Label w_;
       Weight_Accumulator acc_;
       Weight_Compare cmp_;
-      distance_type max_;
       distance_type zero_;
+      distance_type max_;
     };
 
   /**
@@ -137,7 +133,7 @@ namespace origin {
     void all_pairs_shortest_paths(Graph const& g, Distance_Matrix& d)
     {
       typedef typename Distance_Matrix::value_type distance_type;
-      typedef edge_weight<Graph> edge_weight_label;
+      typedef detail::edge_weight<Graph> edge_weight_label;
       typedef std::plus<distance_type> accumulate_type;
       typedef std::less<distance_type> compare_type;
       typedef floyd_warshall_impl<
@@ -152,6 +148,7 @@ namespace origin {
 
       Algorithm algo{g, d, weight, accumulate, compare, zero, maximum};
       algo.initialize_matrix();
+      algo();
     }
 
 } // namespace origin

@@ -73,34 +73,6 @@ namespace origin {
     void edge_not_relaxed(Graph const& g, Edge e) { }
   };
 
-  /**
-   * The edge_weight function object abstracts the weight operation on a
-   * Weighted graph.
-   * 
-   * @tparam Graph  A Weighted Graph
-   */
-  template<typename Graph>
-    struct edge_weight
-    {
-      // FIXME: Do I need to formally specify the result type? I think the
-      // idiom to do so is a nested result struct that is partially specialized
-      // over the different function signatures.
-
-      
-      // FIXME: This needs to result in a reference. Does it?
-      auto operator()(Graph& g, typename Graph::edge e) 
-        -> decltype(weight(g, e))
-      {
-        return weight(g, e);
-      }
-      
-      auto operator()(Graph const& g, typename Graph::const_edge e) const
-        -> const decltype(weight(g, e))
-      {
-        return weight(g, e);
-      }
-    };
-
 } // namespace origin
 
 #endif //ORIGIN_GRAPH_ALGORITHM_SHORTEST_PATH_DIJKSTRA_COMMON

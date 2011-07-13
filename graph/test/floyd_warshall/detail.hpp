@@ -39,7 +39,8 @@ namespace origin {
     auto vi = g.vertices().begin();
     auto vb = g.vertices().begin();
     for(auto i = 0u; i < g.order() - 1; ++i) {
-      g.add_edge(vi, ++vi, l(i));
+      g.add_edge(vi, vi+1, l(i));
+      ++vi;
     }
     g.add_edge(vi, vb, l(g.size() - 1));
   }
