@@ -13,6 +13,7 @@
 
 #include <origin/graph/algorithm/shortest_path/shortest_path_common.hpp>
 #include <origin/graph/algorithm/shortest_path/bellman_ford_common.hpp>
+#include <origin/functional.hpp>
 #include <origin/graph/traits.hpp>
 #include <origin/graph/label.hpp>
 
@@ -60,6 +61,7 @@ namespace origin {
       // Static Assertions
       // FIXME Add these!
 
+    public:
       // Constructor
       bellman_ford_impl(Graph const& g,
                         vertex_distance_label d,
@@ -69,21 +71,22 @@ namespace origin {
                         distance_type init,
                         distance_type max,
                         Visitor v)
-        : g_(g), d_(d), w_(w), acc_(acc), cmp_(cmp), init_(init), max_(max), v_(v)
+        : g_(g), d_(d), w_(w), acc_(acc, max), cmp_(cmp), init_(init),
+          max_(max), v_(v)
       { }
 
       // Initialization
       // TODO Move to algorithm main
-      void initialize(vertex start)
+      //void initialize(vertex start);
+
+      // Algorithm Main
+      void operator()(vertex start)
       {
+        // Initialize distance label
         for(auto v : g_.vertices())
           d_(v) = max_;
         d_(start) = init_;
-      }
 
-      // Algorithm Main
-      void operator()()
-      {
         for(size_type i = 0u; i < g_.order() - 1u; ++i) {
           // If we cannot relax any edges, we shouldn't repeat process
           bool edge_relaxed = false;
@@ -130,16 +133,28 @@ namespace origin {
            typename Visitor = default_bellman_ford_visitor>
     void bellman_ford(Graph const& g,
                       typename graph_traits<Graph>::vertex start,
-                      Distance_Label distance,
-                      Visitor vis = Visitor())
+                      Distance_Label d,
+                      Visitor visitor = Visitor())
     {
       typedef typename graph_traits<Graph>::vertex vertex;
       typedef typename label_traits<
         Distance_Label, vertex
       >::value_type distance_type;
-      typedef std::plus<distance_type> distance_accumulate;
-      typedef std::less<distance_type> distance_compare;
+      typedef std::plus<distance_type> accumulate;
+      typedef std::less<distance_type> compare;
       typedef detail::edge_weight<Graph> edge_distance_label;
+      typedef bellman_ford_impl<
+        Graph, edge_distance_label, accumulate, compare, Distance_Label, Visitor
+      > Algorithm;
+
+      edge_distance_label edge_label;
+      accumulate accum;
+      compare cmp;
+      distance_type init = identity_element(accum);
+      distance_type max = extreme_element(cmp);
+      Algorithm algo(g, d, edge_label, accum, cmp, init, max, visitor);
+
+      algo(start);
     }
 
 }

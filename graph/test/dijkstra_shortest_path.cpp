@@ -20,13 +20,6 @@ using namespace origin;
 
 int main() {
 
-  /*typedef distance_matrix<char> DistGraph;
-  typedef typename DistGraph::vertex Vertex;
-  typedef typename DistGraph::edge Edge;
-  typedef ordinal_label<Vertex, float> DistanceLabel;
-  typedef default_weight_label<DistGraph> WeightLabel;
-  typedef debug_dijkstra_visitor<DistGraph> Visitor;*/
-
   // Type definitions
   typedef distance_matrix<char> Dist_Graph;
   typedef typename Dist_Graph::vertex Vertex;
@@ -63,15 +56,8 @@ int main() {
   Distance_Map dm(4u);
   dijkstra_shortest_paths(g, v[0], Distance_Label(dm), Visitor(parents));
 
-  /*dijkstra_shortest_paths_draft_old<
-    DistGraph,
-    DistanceLabel,
-    WeightLabel,
-    Visitor
-  > dsp(g, v[0]);
-  dsp();
 
-  auto path = dsp.visitor_.get_path_to(v[3]);
+  /*auto path = dsp.visitor_.get_path_to(v[3]);
   
   dsp.visitor_.print(g);*/
 
