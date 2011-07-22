@@ -177,8 +177,6 @@ namespace origin
         return typename operation_traits<Op>::inverse{};
       }
   
-
-
   /**
    * The inverse comparison function object changs the position of arguments
    * in a comparison function in order to define an inverse order. For example,
@@ -188,12 +186,27 @@ namespace origin
   template<typename Comp>
     struct inverse_compare : Comp
     {
+      inverse_compare(Comp c)
+        : Comp(c)
+      { }
+      
       template<typename T>
         bool operator()(T const& x, T const& y) const
         {
           return Comp::operator()(y, x);
         }
     };
+    
+  /**
+   * The invert order function returns the inverse of the supplied comparison.
+   * 
+   * @param Comp    An Order
+   */
+  template<typename Comp>
+    inverse_compare<Comp> invert_order(Comp comp)
+    {
+      return inverse_compare<Comp>{comp};
+    }
   
   // FIXME: Semantically, I think this should be:
   //  !(x < L) => x == L.
