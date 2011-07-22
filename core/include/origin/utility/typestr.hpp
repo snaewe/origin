@@ -18,42 +18,92 @@
 
 namespace origin
 {
-  /**
-   * @ingroup util
-   * This curious class is a type wrapper that is used to to fully preserve
-   * typenames as they are printed. It has no other function.
-   */
-  template<typename> struct ___ { };
+  template<typename T> struct typerep;
 
   /**
-   * @ingroup util
-   * Return a string that describes the type of the given template parameter.
-   * The type name depends on the results of the typeid operator.
-   *
-   * @todo Rewrite this so that demangle will dynamically allocate the memory.
-   *
-   * @todo Implement this for MSVC. I think MSVC simply returns the type name.
+   * Return a textual representation of the explicitly specified type name.
    */
-  template <typename T>
-  std::string typestr()
-  {
-#if defined(__GNUC__)
-    std::size_t const BUFSIZE = 8192;
-    std::size_t n = BUFSIZE;
-    char buf[BUFSIZE];
-    abi::__cxa_demangle(typeid(___<T>).name(), buf, &n, 0);
-    return std::string(buf, ::strlen(buf));
-#endif
-  }
+  template<typename T>
+    std::string typestr()
+    {
+      return std::move(typerep<T>{}());
+    }
+    
+  /**
+   * Return a textual representation of the type name of the given argument.
+   */
+  template<typename T>
+    inline std::string typestr(T&&)
+    {
+      return std::move(typestr<T>());
+    }
 
   /**
-   * @ingroup util
-   * Return a string that describes the type of the given parameter. The type
-   * name depends on the results of the typeid operator.
+   * @internal
+   * The typerep class is a function object used to generate the name of a type.
+   * It is specialized for cv qualifiers and references so that that information
+   * is preserved in the requested type name.
    */
-  template <typename T>
-  inline std::string typestr(T const&)
-  { return typestr<T>(); }
+  template<typename T>
+    struct typerep
+    {
+      static constexpr std::size_t max_buffer = 8192;
+
+      std::string operator()() const
+      {
+  #if defined(__GNUC__)
+        char buf[max_buffer];
+        std::size_t n = max_buffer;
+        abi::__cxa_demangle(typeid(T).name(), buf, &n, 0); 
+        return std::move(std::string(buf, ::strlen(buf)));
+  #endif
+      }
+    };
+    
+  template<typename T>
+    struct typerep<T const>
+    {
+      std::string operator()() const
+      {
+        return std::move(typestr<T>() + " const");
+      }
+    };
+    
+  template<typename T>
+    struct typerep<T volatile>
+    {
+      std::string operator()() const
+      {
+        return std::move(typestr<T>() + " volatile");
+      }
+    };
+
+  template<typename T>
+    struct typerep<T const volatile>
+    {
+      std::string operator()() const
+      {
+        return std::move(typestr<T>() + " const volatile");
+      }
+    };
+    
+  template<typename T>
+    struct typerep<T&>
+    {
+      std::string operator()() const
+      {
+        return std::move(typestr<T>() + "&");
+      }
+    };
+
+  template<typename T>
+    struct typerep<T&&>
+    {
+      std::string operator()() const
+      {
+        return std::move(typestr<T>() + "&&");
+      }
+    };
 
 } // namespace origin
 
