@@ -184,17 +184,19 @@ namespace origin
    * greater<T>.
    */
   template<typename Comp>
-    struct inverse_compare : Comp
+    struct inverse_compare
     {
-      inverse_compare(Comp c)
-        : Comp(c)
+      inverse_compare(Comp c = Comp{})
+        : comp(c)
       { }
       
       template<typename T>
         bool operator()(T const& x, T const& y) const
         {
-          return Comp::operator()(y, x);
+          return comp(y, x);
         }
+        
+      Comp comp;
     };
     
   /**
