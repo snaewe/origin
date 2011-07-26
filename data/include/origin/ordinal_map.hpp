@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <origin/iterator/facades.hpp>
+#include <origin/ordinal.hpp>
 
 namespace origin
 {
@@ -40,22 +41,6 @@ namespace origin
   
   // NOTE: Total Maps don't have erase functions and their insert function is
   // more like a Multimap than a Map: it can't fail.
-
-  // FIXME: This needs to be moved into the standard library, but I have no
-  // idea where it should go. Utility? Traits? Concepts? It's very fundamental.
-  /**
-   * Return the ordinal number associated the given object.
-   * 
-   * @note This is only enabled for unsigned integral numbers and for any other
-   * type that specializes this operation.
-   */
-  template<typename T>
-    inline typename std::enable_if<std::is_unsigned<T>::value, T>::type
-    ord(T x)
-    {
-      return x;
-    }
-
 
   /**
    * The vector map iterator provides an iterator type over the mappings in a 
@@ -102,6 +87,7 @@ namespace origin
       
       reference dereference() const
       {
+        // FIXME: 
         return {key_type{pos_}, *iter_};
       }
       
