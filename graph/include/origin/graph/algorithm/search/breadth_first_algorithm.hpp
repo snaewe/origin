@@ -8,219 +8,153 @@
 #ifndef ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_ALGORITHM_HPP
 #define ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_ALGORITHM_HPP
 
+#include <origin/graph/label.hpp>
 #include <origin/graph/algorithm/search/breadth_first_common.hpp>
 
 namespace origin
 {
-  /**
-   * @internal
-   * @ingroup graph_bfs
-   *
-   * Implementation of the breadth first search.
-   *
-   * @tparam Graph        A Graph type.
-   * @tparam Visitor      A Search_Visitor type.
-   * @tparam Color_Label  A label function associating a vertex with a Color
-   *                      value.
-   */
-  template<typename Graph, typename Visitor, typename Color_Label>
-  class bfs_impl
-  {
-  public:
-    typedef Visitor visitor_type;
+  // NOTE: Despite the fact that all of the algorithms take references to
+  // graphs, the actual Graph type might be deduced as const Graph. We need
+  // to be const-correct.
 
-    typedef Graph graph_type;
-    typedef typename graph_traits<graph_type>::vertex vertex;
-    typedef typename graph_traits<graph_type>::edge edge;
 
-    typedef Color_Label color_label;
-    typedef typename label_traits<color_label, vertex>::value_type color_type;
-    typedef origin::color_traits<color_type> color_traits;
-
-    typedef std::queue<vertex> search_queue;
-
-    bfs_impl(Graph& g, Visitor vis, Color_Label color)
-      : graph(g), visitor(vis), queue(), color(color)
-    { }
-
-    void init()
+  template<typename Graph, typename Color_Label, typename Visitor>
+    class bfs_algo
     {
-      for(auto v : graph.vertices()) {
-        color(v) = color_traits::white();
-        visitor.initialized_vertex(graph, v);
+    public:
+      typedef typename graph_traits<Graph>::vertex vertex;
+      typedef typename graph_traits<Graph>::edge edge;
+      
+      typedef typename label_traits<Color_Label, vertex>::value_type color_type;
+      typedef color_traits<color_type> colors;
+      
+      bfs_algo(Graph& g, Color_Label c, Visitor& v)
+        : graph(g), color(c), vis(v)
+      {
+        init_graph();
       }
-    }
 
-    // Perform search
-    void operator()(vertex s)
-    {
-      color(s) = color_traits::gray();
-      queue.push(s);
-      visitor.root_vertex(graph, s);
-      visitor.discovered_vertex(graph, s);
+      // Initialize the graph being searched. color_type all of the vertices white.
+      void init_graph()
+      {
+        for(auto v : graph.vertices()) {
+          color(v) = colors::white();
+          vis.initialized_vertex(graph, v);
+        }
+      }
 
-      while(!queue.empty()) {
-        vertex u = queue.front();
-        queue.pop();
-        visitor.started_vertex(graph, u);
+      void init_tree(vertex v)
+      {
+        color(v) = colors::gray();
+        queue.push(v);
+        vis.root_vertex(graph, v);
+        vis.discovered_vertex(graph, v);
+      }
 
-        for(edge e : out_edges(graph, u)) {
-          visitor.started_edge(graph, e);
-          vertex v = graph.target(e);
+      void examine_target(edge e)
+      {
+        vertex v = graph.target(e);
+        if(color(v) == colors::white()) {
+          vis.tree_edge(graph, e);
+          color(v) = colors::gray();
+          vis.discovered_vertex(graph, v);
+          queue.push(v);
+        } else {
+          vis.nontree_edge(graph, e);
+        }
+      }
 
-          if(color(v) == color_traits::white()) {
-            visitor.tree_edge(graph, e);
-            color(v) = color_traits::gray();
-            visitor.discovered_vertex(graph, v);
-            queue.push(v);
+      void search_vertex(vertex v)
+      {
+        for(edge e : out_edges(graph, v)) {
+          vis.started_edge(graph, e);
+
+          // What action should we take for the vertex?
+          action const act = vis.examine_edge(graph, e);
+          if(act == action::handle) {
+            // Examine the vertex for new edges/vertices
+            examine_target(e);
+            vis.finished_edge(graph, e);
           } else {
-            visitor.nontree_edge(graph, e);
+            // Either skip the edge or finish iterating over edges.
+            vis.finished_edge(graph, e);
+            if(act == action::ignore)
+              continue;
+            else
+              break;
           }
         }
-
-        color(u) = color_traits::black();
-        visitor.finished_vertex(graph, u);
       }
-    }
 
-    graph_type& graph;
-    visitor_type visitor;
-    search_queue queue;
-    color_label color;
-  };
+      // Pop a vertex from the queue, returning it.
+      vertex start_vertex()
+      {
+        vertex v = queue.front();
+        queue.pop();
+        vis.started_vertex(graph, v);
+        return v;
+      }
 
-  // NOTE: This the Vertex_Label concept prameterized over another concept?
-  // It looks like it might be. I think I may have found a motivating argument
-  // for concept concept parameters as constraints. God forbid somebody try
-  // use the technique for some kind of freaky adaptive structure. It could be
-  // the case.
+      // Indicate that the vertex has been searched.
+      void finish_vertex(vertex v)
+      {
+        color(v) = colors::black();
+        vis.finished_vertex(graph, v);
+      }
 
-  /**
-   * @ingroup graph_bfs
-   * @class bf_search_algo<Graph, Visitor, Color_Label>
-   * @class bf_search_algo<Graph, Visitor>
-   *
-   * The breadth-first search algorithm object performs a breadth first
-   * traversal on all vertices connected to a single starting vertex. Only
-   * vertices reachable from the start vertex are visited.
-   *
-   * An optional color label may be specified as the template parameter of the
-   * algorithm object. If given, this type must be a label function associating
-   * each vertex in the graph with a Color value. If the label is ommitted,
-   * then the algorithm object will internally allocate its own association
-   * and label function.
-   *
-   * @tparam Graph        A Graph type.
-   * @tparam Visitor      A Search_Visitor type.
-   * @tparam Color_Label  If given, a Vertex_Label<Graph, Color> type.
-   */
-  //@{
-  template<typename Graph,
-           typename Visitor,
-           typename Color_Label = default_t>
-  class bfs_algo
-  {
-  public:
-    typedef Graph graph_type;
-    typedef typename graph_traits<graph_type>::vertex vertex;
-    typedef typename graph_traits<graph_type>::edge edge;
-  protected:
-    typedef Visitor visitor_type;
-    typedef Color_Label color_label;
-    typedef bfs_impl<graph_type, visitor_type, color_label> search_impl;
-  public:
-    typedef typename search_impl::color_traits color_traits;
+      // Search the graph rooted at the tree s.
+      void search_tree(vertex s)
+      {
+        init_tree(s);
 
-    bfs_algo(Graph& g, Visitor vis, Color_Label color)
-      : impl(g, vis, color)
-    { }
+        while(!queue.empty()) {
+          vertex v = start_vertex();
 
-    void operator()(vertex v)
-    { impl(v); }
-
-  protected:
-    search_impl impl;
-  };
-
-  // This specialization uses a builtin color map.
-  template<typename Graph, typename Visitor>
-  class bfs_algo<Graph, Visitor, default_t>
-  {
-  public:
-    typedef Graph graph_type;
-    typedef typename graph_traits<graph_type>::vertex vertex;
-    typedef typename graph_traits<graph_type>::edge edge;
-  protected:
-    typedef Visitor visitor_type;
-    typedef vertex_map<graph_type, basic_color_t> color_map;
-    typedef typename color_map::label_type color_label;
-    typedef bfs_impl<Graph, Visitor, color_label> search_impl;
-  public:
-    typedef typename search_impl::color_traits color_traits;
-
-    bfs_algo(Graph& g, Visitor vis)
-      : colors(g), impl(g, vis, colors.label)
-    { }
-
-    void operator()(vertex v)
-    { impl(v); }
-
-  protected:
-    color_map colors;
-    search_impl impl;
-  };
-  //@}
-
-
-  /**
-   * @ingroup graph_bfs
-   * @class bf_traversal_algo<Graph, Visitor, Color_Label>
-   * @class bf_traversal_algo<Graph, Visitor>
-   *
-   * The breadth first traversal algorithm object implements a breadth first
-   * search on each disconnected component of the graph. All vertices in the
-   * graph are visited by this algorithm.
-   *
-   * An optional color label may be specified as the template parameter of the
-   * algorithm object. If given, this type must be a label function associating
-   * each vertex in the graph with a Color value. If the label is ommitted,
-   * then the algorithm object will internally allocate its own association
-   * and label function.
-   */
-  template<typename Graph,
-           typename Visitor,
-           typename Color_Label = default_t>
-  struct bft_algo
-    : private bfs_algo<Graph, Visitor, Color_Label>
-  {
-    typedef bfs_algo<Graph, Visitor, Color_Label> base_type;
-
-    typedef Visitor visitor_type;
-    typedef Graph graph_type;
-    typedef typename base_type::vertex vertex;
-    typedef typename base_type::edge edge;
-    typedef typename base_type::color_traits color_traits;
-
-    bft_algo(Graph& g, Visitor vis)
-      : base_type(g, vis)
-    { }
-
-    bft_algo(Graph& g, Visitor vis, Color_Label label)
-      : base_type(g, vis, label)
-    { }
-
-    void operator()()
-    {
-      for(auto v : impl.graph.vertices()) {
-        if(impl.color(v) == color_traits::white()) {
-          base_type::operator()(v);
+          // What action should we take for the vertex?
+          action const act = vis.examine_vertex(graph, v);
+          if(act == action::handle) {
+            search_vertex(v);
+            finish_vertex(v);
+          } else {
+            finish_vertex(v);
+            if(act == action::ignore)
+              continue;
+            else
+              break;
+          }
         }
       }
-    }
+      
+      // Execute a search on the entire graph.
+      void search_graph()
+      {
+        for(vertex v : graph) {
+          if(color(v) == colors::white()) {
+            search_tree(v);
+            
+            // Examine (the root of) the tree that we've just searched. If
+            // the algorithm accepts it, break.
+            if(examine_tree(v) == action::accept)
+              break;
+          }
+        }
+      }
 
-  private:
-    using base_type::impl;
-  };
+      void operator()(vertex v)
+      {
+        search_tree(v);
+      }
+      
+      void operator()()
+      {
+        search_graph();
+      }
+
+      Graph& graph;
+      std::queue<vertex> queue;
+      Color_Label color;
+      Visitor& vis;
+    };
 
   /**
    * @fn breadth_first_search(g, v, vis)
@@ -232,7 +166,7 @@ namespace origin
    *
    * @tparam Graph        A Graph type.
    * @tparam Visitor      A Breadth_First_Visitor type.
-   * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
+   * @tparam Color_Label  A Read_Write_Label that maps vertices to a color_type
    *                      type supporting at least three colors.
    *
    * @param g       A Graph object.
@@ -242,13 +176,18 @@ namespace origin
    */
   //@{
   template<typename Graph, typename Visitor>
-  inline void
-  breadth_first_search(Graph& g, typename Graph::vertex v, Visitor vis)
-  {
-    bfs_algo<Graph, Visitor> algo(g, vis);
-    algo(v);
-  }
+    inline void breadth_first_search(Graph& g, 
+                                     typename graph_traits<Graph>::vertex v, 
+                                     Visitor vis)
+    {
+      vertex_map<Graph, basic_color_t> colors(g.order());
+      auto color = label(colors);
+      
+      bfs_algo<Graph, decltype(color), Visitor> algo(g, color, vis);
+      algo(v);
+    }
 
+#if 0
   // Const version of above.
   // FIXME: Should I be using graph_traits?
   template<typename Graph, typename Visitor>
@@ -261,7 +200,7 @@ namespace origin
     algo(v);
   }
 
-  // Color label version
+  // color_type label version
   template<typename Graph, typename Visitor, typename Color_Label>
   inline void
   breadth_first_search(Graph& g,
@@ -298,7 +237,7 @@ namespace origin
    *
    * @tparam Graph        A Graph type.
    * @tparam Visitor      A Breadth_First_Visitor type.
-   * @tparam Color_Label  A Read_Write_Label that maps vertices to a Color
+   * @tparam Color_Label  A Read_Write_Label that maps vertices to a color_type
    *                      type supporting at least three colors.
    *
    * @param g       A Graph object.
@@ -322,7 +261,7 @@ namespace origin
     algo();
   }
 
-  // Color label variant
+  // color_type label variant
   template<typename Graph, typename Visitor, typename Color_Label>
   inline void breadth_first_traverse(Graph& g, Visitor vis, Color_Label color)
   {
@@ -338,6 +277,8 @@ namespace origin
     algo();
   }
   //@}
+#endif
+  
 
 } // namespace origin
 

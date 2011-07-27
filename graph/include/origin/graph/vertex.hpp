@@ -18,8 +18,7 @@ namespace origin
    * The vertex_t type represents an ordinal reference to a vertex in a Graph.
    * The integral value -1u corresponds to a null vertex.
    */
-  class vertex_t
-    : public implicit_bool_facade<vertex_t>
+  class vertex_t : public implicit_bool_facade<vertex_t>
   {
   public:
     typedef std::size_t value_type;
@@ -49,7 +48,7 @@ namespace origin
 
     value_type value;
   };
-  
+
   /**
    * Return the ordinal value of the given vertex index.
    */
@@ -59,6 +58,8 @@ namespace origin
   }
 } // namespace origin
 
+// FIXME: Is there anything we can do about this short of rewriting our own
+// hash table. Probably not. This is pretty bad, though.
 // Support std::hash<> interoperability.
 namespace std 
 {

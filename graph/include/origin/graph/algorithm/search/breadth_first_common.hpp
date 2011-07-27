@@ -31,6 +31,31 @@ namespace origin
    */
 
   /**
+   * The action enumeration defines a set of actions that can be returned by
+   * observers in order to influence the control of an algorithm.
+   */
+  enum class action 
+  {
+    /**
+     * Process the vertex or edge in the usual way.
+     */
+    handle,
+    
+    /**
+     * Ignore the vertex or edge and continue processing as normal. This 
+     * action is typically used to reduce the search space by eliminating
+     * paths.
+     */
+    ignore,
+    
+    /**
+     * Accept the vertex or edge as a best among candidates. This typically
+     * indicates a terminating condition for the algorithm.
+     */
+    accept
+  };
+  
+  /**
    * @ingroup graph_bfs
    * The breadth first search visitor provides a callback interface for
    * the algorithms and range adaptors in this module.
@@ -42,57 +67,127 @@ namespace origin
    */
   struct bfs_visitor
   {
+    /** @name Events */
+    //@{
     /**
      * Called after a vertex has been initialized.
      */
     template<typename Graph, typename Vertex>
-    void initialized_vertex(Graph& g, Vertex v) { }
+      void initialized_vertex(Graph& g, Vertex v) 
+      { }
 
     /**
      * Called after a vertex has been discovered.
      */
     template<typename Graph, typename Vertex>
-    void discovered_vertex(Graph& g, Vertex v) { }
+      void discovered_vertex(Graph& g, Vertex v) 
+      { }
 
     /**
      * Called after a vertex has been popped from the queue and before its
      * incident edges have been examined.
      */
     template<typename Graph, typename Vertex>
-    void started_vertex(Graph& g, Vertex v) { }
+      void started_vertex(Graph& g, Vertex v) 
+      { }
 
     /**
-     * Called after the vertex has been examined.
+     * Called after the vertex has been examined and possibly ignored or
+     * accepted.
      */
     template<typename Graph, typename Vertex>
-    void finished_vertex(Graph& g, Vertex v) { }
+      void finished_vertex(Graph& g, Vertex v) 
+      { }
 
+    /**
+     * Called before an incident edge is examined.
+     */
+    template<typename Graph, typename Edge>
+      void started_edge(Graph& g, Edge e) 
+      { }
+    
+    /**
+     * Called after the edge has been examined, and possibly ignored or 
+     * accepted.
+     */
+    template<typename Graph, typename Edge>
+      void finished_edge(Graph& g, Edge e)
+      { }
+    //@}
+
+    /** @name Classifiers */
+    //@{
     /**
      * Called when a new search tree root is encountered. This is called
      * before the vertex is discovered, allowing derived visitors to perform
      * search-tree initialization before the discovery of the root vertex.
      */
     template<typename Graph, typename Vertex>
-    void root_vertex(Graph& g, Vertex v) { }
-
-    /**
-     * Called before an incident edge is examined.
-     */
-    template<typename Graph, typename Edge>
-    void started_edge(Graph& g, Edge e) { }
+      void root_vertex(Graph& g, Vertex v) 
+      { }
 
     /**
      * Called when an edge is determined to be in the search tree. Occurs
      * just before the target vertex is discovered.
      */
     template<typename Graph, typename Edge>
-    void tree_edge(Graph& g, Edge e) { }
+      void tree_edge(Graph& g, Edge e) 
+      { }
 
     /**
      * Called when an edge is determined to not be in the search tree.
      */
     template<typename Graph, typename Edge>
-    void nontree_edge(Graph& g, Edge e) { }
+      void nontree_edge(Graph& g, Edge e) 
+      { }
+    //@}
+
+    /** @name Observers */
+    //@{
+    /**
+     * Called to determine the action to be taken for the given vertex. 
+     * Corresponding actions are:
+     *  - handle - The vertex is searched
+     *  - ignore - The vertex is not searched
+     *  - accept - The vertex is not searched and the search of the current
+     *             tree is terminated.
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Vertex>
+      constexpr action examine_vertex(Graph& g, Vertex v)
+      {
+        return action::handle;
+      }
+    
+    /**
+     * Called to determine the action to be taken for the given edge. 
+     * Corresponding actions are:
+     *  - handle - The edge is examined
+     *  - ignore - The edge is not examined
+     *  - accept - The edge is not examined and edge traversal is terminated
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Edge>
+      constexpr action examine_edge(Graph& g, Edge e)
+      {
+        return action::handle;
+      }
+
+    /**
+     * Called to determine the action to be taken for the root of the given
+     * search tree. This observer is only called when performing a search on
+     * the entire graph. Corresponding actions are:
+     *  - handle - No action is taken
+     *  - ignore - No action is taken
+     *  - accept - The search is terminated
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Vertex>
+      constexpr action examine_tree(Graph& g, Vertex v)
+      {
+        return action::handle;
+      }
+    //@}
   };
 
 } // namespace origin
