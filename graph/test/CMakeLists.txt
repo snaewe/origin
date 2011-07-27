@@ -19,7 +19,6 @@ origin_run_test(bipartite bipartite.cpp)
 
 # Shortest path Tests
 origin_run_test(dijkstra_shortest_path dijkstra_shortest_path.cpp)
-origin_run_test(breadth_first_shortest_paths breadth_first_shortest_paths.cpp)
 origin_run_test(floyd_warshall floyd_warshall.cpp)
 origin_run_test(bellman_ford bellman_ford.cpp)
 

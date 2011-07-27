@@ -268,13 +268,13 @@ namespace origin
       // Execute a search on the entire graph.
       void search_graph()
       {
-        for(vertex v : graph) {
+        for(vertex v : graph.vertices()) {
           if(color(v) == colors::white()) {
             search_tree(v);
             
             // Examine (the root of) the tree that we've just searched. If
             // the algorithm accepts it, break.
-            if(examine_tree(v) == action::accept)
+            if(vis.examine_tree(graph, v) == action::accept)
               break;
           }
         }
@@ -293,7 +293,7 @@ namespace origin
       Graph& graph;
       std::queue<vertex> queue;
       Color_Label color;
-      Visitor& vis;
+      Visitor&& vis;
     };
 
   /**
@@ -320,7 +320,7 @@ namespace origin
     inline void breadth_first_search(Graph& g, 
                                      typename graph_traits<Graph>::vertex v, 
                                      Color_Label color,
-                                     Visitor& vis)
+                                     Visitor&& vis)
     {
       bfs_algo<Graph, decltype(color), Visitor> algo(g, color, vis);
       algo(v);
@@ -329,7 +329,7 @@ namespace origin
   template<typename Graph, typename Visitor>
     inline void breadth_first_search(Graph& g, 
                                      typename graph_traits<Graph>::vertex v, 
-                                     Visitor& vis)
+                                     Visitor&& vis)
     {
       vertex_map<Graph, basic_color_t> c(g.order());
       breadth_first_search(g, v, label(c), vis);
@@ -355,14 +355,14 @@ namespace origin
    * @param color   A color label
    */
   template<typename Graph, typename Color_Label, typename Visitor>
-    inline void breadth_first_search_all(Graph& g, Color_Label color, Visitor& vis)
+    inline void breadth_first_search_all(Graph& g, Color_Label color, Visitor&& vis)
     {
       bfs_algo<Graph, Color_Label, Visitor> algo(g, color, vis);
       algo();
     }
   
   template<typename Graph, typename Visitor>
-    inline void breadth_first_search_all(Graph& g, Visitor& vis)
+    inline void breadth_first_search_all(Graph& g, Visitor&& vis)
     {
       vertex_map<Graph, basic_color_t> c(g.order());
       breadth_first_search_all(g, label(c), vis);
@@ -386,9 +386,7 @@ namespace origin
                                 Distance zero,
                                 Distance inf)
     {
-      typedef distance_visitor<Graph, Distance_Label, bfs_visitor> Visitor;
-      Visitor vis(dist, zero, inf);
-      breadth_first_search(g, v, vis);
+      breadth_first_search(g, v, visit_distance(g, dist, zero, inf, bfs_visitor{}));
     }
 
   template<typename Graph, typename Distance_Label>
@@ -396,12 +394,7 @@ namespace origin
                                 typename graph_traits<Graph>::vertex v,
                                 Distance_Label dist)
     {
-      typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename label_traits<Distance_Label, Vertex>::value_type Distance;
-
-      Distance zero = 0;
-      Distance inf = std::numeric_limits<Distance>::max();
-      breadth_first_distance(g, v, dist, zero, inf);
+      breadth_first_search(g, v, visit_distance(g, dist, bfs_visitor{}));
     }
     
   /**
@@ -415,22 +408,18 @@ namespace origin
    * @tparam Graph            A Graph
    * @tparam Parent_Label     A Mutable_Label
    */
-  template<typename Graph, typename Parent_Label>
+  template<typename Graph, typename Predecessor_Label>
     void breadth_first_search_tree(Graph& g, 
                                    typename graph_traits<Graph>::vertex v,
-                                   Parent_Label par)
+                                   Predecessor_Label pred)
     {
-      typedef parent_visitor<Graph, Parent_Label, bfs_visitor> Visitor;
-      Visitor vis(par);
-      breadth_first_search(g, v, vis);
+      breadth_first_search(g, v, visit_predecessor(g, pred, bfs_visitor{}));
     }
 
-  template<typename Graph, typename Parent_Label>
-    void breadth_first_search_forest(Graph& g, Parent_Label par)
+  template<typename Graph, typename Predecessor_Label>
+    void breadth_first_search_forest(Graph& g, Predecessor_Label pred)
     {
-      typedef parent_visitor<Graph, Parent_Label, bfs_visitor> Visitor;
-      Visitor vis(par);
-      breadth_first_search_all(g, vis);
+      breadth_first_search_all(g, visit_predecessor(g, pred, bfs_visitor{}));
     }
 
 
