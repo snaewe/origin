@@ -5,19 +5,185 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_ALGORITHM_HPP
-#define ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_ALGORITHM_HPP
+#ifndef ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_HPP
+#define ORIGIN_GRAPH_ALGORITHM_SEARCH_BREADTH_FIRST_HPP
 
+#include <queue>
+
+#include <origin/graph/color.hpp>
 #include <origin/graph/label.hpp>
-#include <origin/graph/algorithm/search/breadth_first_common.hpp>
+#include <origin/graph/edge.hpp>
 
 namespace origin
 {
-  // NOTE: Despite the fact that all of the algorithms take references to
-  // graphs, the actual Graph type might be deduced as const Graph. We need
-  // to be const-correct.
+  // FIXME: This is almost definitely more general than just the BFS module.
+  /**
+   * The action enumeration defines a set of actions that can be returned by
+   * observers in order to influence the control of an algorithm.
+   */
+  enum class action 
+  {
+    /**
+     * Process the vertex or edge in the usual way.
+     */
+    handle,
+    
+    /**
+     * Ignore the vertex or edge and continue processing as normal. This 
+     * action is typically used to reduce the search space by eliminating
+     * paths.
+     */
+    ignore,
+    
+    /**
+     * Accept the vertex or edge as a best among candidates. This typically
+     * indicates a terminating condition for the algorithm.
+     */
+    accept
+  };
+  
+  /** 
+   * @defgroup bfs Breadth First Search
+   * @ingroup graph_search
+   */
+
+  /**
+   * @ingroup bfs
+   * 
+   * The breadth first search visitor provides a callback interface for
+   * the algorithms and ranges adaptors in this module.
+   */
+  struct bfs_visitor
+  {
+    /** @name Events */
+    //@{
+    /**
+     * Called after a vertex has been initialized.
+     */
+    template<typename Graph, typename Vertex>
+      void initialized_vertex(Graph& g, Vertex v) 
+      { }
+
+    /**
+     * Called after a vertex has been discovered.
+     */
+    template<typename Graph, typename Vertex>
+      void discovered_vertex(Graph& g, Vertex v) 
+      { }
+
+    /**
+     * Called after a vertex has been popped from the queue and before its
+     * incident edges have been examined.
+     */
+    template<typename Graph, typename Vertex>
+      void started_vertex(Graph& g, Vertex v) 
+      { }
+
+    /**
+     * Called after the vertex has been examined and possibly ignored or
+     * accepted.
+     */
+    template<typename Graph, typename Vertex>
+      void finished_vertex(Graph& g, Vertex v) 
+      { }
+
+    /**
+     * Called before an incident edge is examined.
+     */
+    template<typename Graph, typename Edge>
+      void started_edge(Graph& g, Edge e) 
+      { }
+    
+    /**
+     * Called after the edge has been examined, and possibly ignored or 
+     * accepted.
+     */
+    template<typename Graph, typename Edge>
+      void finished_edge(Graph& g, Edge e)
+      { }
+    //@}
+
+    /** @name Classifiers */
+    //@{
+    /**
+     * Called when a new search tree root is encountered. This is called
+     * before the vertex is discovered, allowing derived visitors to perform
+     * search-tree initialization before the discovery of the root vertex.
+     */
+    template<typename Graph, typename Vertex>
+      void root_vertex(Graph& g, Vertex v) 
+      { }
+
+    /**
+     * Called when an edge is determined to be in the search tree. Occurs
+     * just before the target vertex is discovered.
+     */
+    template<typename Graph, typename Edge>
+      void tree_edge(Graph& g, Edge e) 
+      { }
+
+    /**
+     * Called when an edge is determined to not be in the search tree.
+     */
+    template<typename Graph, typename Edge>
+      void nontree_edge(Graph& g, Edge e) 
+      { }
+    //@}
+
+    /** @name Observers */
+    //@{
+    /**
+     * Called to determine the action to be taken for the given vertex. 
+     * Corresponding actions are:
+     *  - handle - The vertex is searched
+     *  - ignore - The vertex is not searched
+     *  - accept - The vertex is not searched and the search of the current
+     *             tree is terminated.
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Vertex>
+      constexpr action examine_vertex(Graph& g, Vertex v)
+      {
+        return action::handle;
+      }
+    
+    /**
+     * Called to determine the action to be taken for the given edge. 
+     * Corresponding actions are:
+     *  - handle - The edge is examined
+     *  - ignore - The edge is not examined
+     *  - accept - The edge is not examined and edge traversal is terminated
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Edge>
+      constexpr action examine_edge(Graph& g, Edge e)
+      {
+        return action::handle;
+      }
+
+    /**
+     * Called to determine the action to be taken for the root of the given
+     * search tree. This observer is only called when performing a search on
+     * the entire graph. Corresponding actions are:
+     *  - handle - No action is taken
+     *  - ignore - No action is taken
+     *  - accept - The search is terminated
+     * The default implementation returns handle.
+     */
+    template<typename Graph, typename Vertex>
+      constexpr action examine_tree(Graph& g, Vertex v)
+      {
+        return action::handle;
+      }
+    //@}
+  };
 
 
+  /**
+   * @ingroup bfs
+   * 
+   * The bfs algorithm object implements a breadth first search over a graph.
+   */
   template<typename Graph, typename Color_Label, typename Visitor>
     class bfs_algo
     {
@@ -157,6 +323,7 @@ namespace origin
     };
 
   /**
+   * @ingroup bfs
    * @fn breadth_first_search(g, v, vis)
    * @fn breadth_first_search(g, v, vis, color)
    *
@@ -175,64 +342,33 @@ namespace origin
    * @param color   A color label.
    */
   //@{
-  template<typename Graph, typename Visitor>
+  template<typename Graph, typename Color_Label, typename Visitor>
     inline void breadth_first_search(Graph& g, 
                                      typename graph_traits<Graph>::vertex v, 
-                                     Visitor vis)
+                                     Color_Label color,
+                                     Visitor& vis)
     {
-      vertex_map<Graph, basic_color_t> colors(g.order());
-      auto color = label(colors);
-      
       bfs_algo<Graph, decltype(color), Visitor> algo(g, color, vis);
       algo(v);
     }
 
-#if 0
-  // Const version of above.
-  // FIXME: Should I be using graph_traits?
   template<typename Graph, typename Visitor>
-  inline void
-  breadth_first_search(Graph const& g,
-                       typename Graph::const_vertex v,
-                       Visitor vis)
-  {
-    bfs_algo<Graph const, Visitor> algo(g, vis);
-    algo(v);
-  }
-
-  // color_type label version
-  template<typename Graph, typename Visitor, typename Color_Label>
-  inline void
-  breadth_first_search(Graph& g,
-                      typename Graph::vertex v,
-                      Visitor vis,
-                      Color_Label color)
-  {
-    bfs_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
-    algo(v);
-  }
-
-  // Const version of above.
-  template<typename Graph,
-           typename Visitor,
-           typename Color_Label>
-  inline void
-  breadth_first_search(Graph const& g,
-                       typename Graph::const_vertex v,
-                       Visitor vis,
-                       Color_Label color)
-  {
-    bfs_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
-    algo(v);
-  }
+    inline void breadth_first_search(Graph& g, 
+                                     typename graph_traits<Graph>::vertex v, 
+                                     Visitor& vis)
+    {
+      vertex_map<Graph, basic_color_t> c(g.order());
+      breadth_first_search(g, v, label(c), vis);
+    }
   //@}
 
   /**
-   * @fn breadth_first_traverse(g, vis)
-   * @fn breadth_first_traverse(g, vis, color)
+   * @ingroup bfs
+   * @fn breadth_first_search_all(g, vis)
+   * @fn breadth_first_search_all(g, vis, color)
    *
-   * Perform a breadth-first traversal on the graph, visiting all vertices.
-   * The color label, if specified, records the states of vertices during
+   * Perform a breadth-first search on the graph, visiting all vertices. The 
+   * color label, if specified, records the states of vertices during
    * traversal.
    *
    * @tparam Graph        A Graph type.
@@ -241,45 +377,25 @@ namespace origin
    *                      type supporting at least three colors.
    *
    * @param g       A Graph object.
-   * @param v       The vertex from which the search begins.
    * @param vis     A visitor.
    * @param color   A color label.
    */
   //@{
-  template<typename Graph, typename Visitor>
-  inline void breadth_first_traverse(Graph& g, Visitor vis)
-  {
-    bft_algo<Graph, Visitor> algo(g, vis);
-    algo();
-  }
-
-  // Const version of above.
-  template<typename Graph, typename Visitor>
-  inline void breadth_first_traverse(Graph const& g, Visitor vis)
-  {
-    bft_algo<Graph const, Visitor> algo(g, vis);
-    algo();
-  }
-
-  // color_type label variant
-  template<typename Graph, typename Visitor, typename Color_Label>
-  inline void breadth_first_traverse(Graph& g, Visitor vis, Color_Label color)
-  {
-    bft_algo<Graph, Visitor, Color_Label> algo(g, vis, color);
-    algo();
-  }
-
-  // Const version of above.
-  template<typename Graph, typename Visitor, typename Color_Label>
-  inline void breadth_first_traverse(Graph const& g, Visitor vis, Color_Label color)
-  {
-    bft_algo<Graph const, Visitor, Color_Label> algo(g, vis, color);
-    algo();
-  }
-  //@}
-#endif
+  template<typename Graph, typename Color_Label, typename Visitor>
+    inline void breadth_first_search_all(Graph& g, Color_Label color, Visitor& vis)
+    {
+      bfs_algo<Graph, Color_Label, Visitor> algo(g, color, vis);
+      algo();
+    }
   
-
+  template<typename Graph, typename Visitor>
+    inline void breadth_first_search_all(Graph& g, Visitor& vis)
+    {
+      vertex_map<Graph, basic_color_t> c(g.order());
+      breadth_first_search_all(g, label(c), vis);
+    }
+  //@}
+  
 } // namespace origin
 
 #endif
