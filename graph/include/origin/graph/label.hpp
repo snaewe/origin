@@ -222,7 +222,7 @@ namespace origin
       typedef typename Map::mapped_type mapped_type;
 
       map_label(Map& m)
-        : map(map)
+        : map(m)
       { }
       
       mapped_type& operator()(key_type const& k) const
@@ -241,7 +241,7 @@ namespace origin
       typedef typename Map::mapped_type mapped_type;
 
       map_label(Map const& m)
-        : map(map)
+        : map(m)
       { }
       
       mapped_type const& operator()(key_type const& k) const

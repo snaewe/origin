@@ -11,11 +11,20 @@
 
 #include <origin/utility/typestr.hpp>
 #include <origin/graph/adjacency_list.hpp>
-#include <origin/graph/algorithm/shortest_path/breadth_first.hpp>
+#include <origin/graph/algorithm/search/breadth_first.hpp>
 #include <origin/ordinal_map.hpp>
 
 using namespace std;
 using namespace origin;
+
+struct ostream_visitor : bfs_visitor
+{
+  template<typename G, typename V>
+    void discovered_vertex(G& g, V v)
+    {
+      cout << g[v] << "\n";
+    }
+};
 
 int main() 
 {
@@ -36,10 +45,21 @@ int main()
   // FIXME: Add some utilities to make working wtih these things a little
   // easier.
   
+  // Check distances
   vertex_map<Graph, int> dist(g.order());
-
-  bfs_visitor vis;
-  breadth_first_search(g, a, vis);
+  breadth_first_distance(g, a, label(dist));
+  assert(( dist[a] == 0 ));
+  assert(( dist[b] == 1 ));
+  assert(( dist[c] == 1 ));
+  assert(( dist[d] == 2 ));
+  
+  // Check predecessors
+  vertex_map<Graph, Vertex> pred(g.order());
+  breadth_first_search_tree(g, a, label(pred));
+  assert(( pred[a] == a ));
+  assert(( pred[b] == a ));
+  assert(( pred[c] == a ));
+  assert(( pred[d] == b || pred[d] == c )); // Indeterminate
   
 
   return 0;
