@@ -14,7 +14,7 @@ include(Origin)
 origin_component(
   graph
   VERSION 0.1.0
-  DEPENDS core range data
+  DEPENDS core range data math
   AUTHORS
     Andrew Sutton <andrew.n.sutton -at- gmail.com>
     Michael Lopez <mlopez7 -at- kent.edu>

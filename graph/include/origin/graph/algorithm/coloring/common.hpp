@@ -8,7 +8,7 @@
 #ifndef ORIGIN_GRAPH_ALGORITHM_COLORING_COMMON_HPP
 #define ORIGIN_GRAPH_ALGORITHM_COLORING_COMMON_HPP
 
-#include <origin/graph/algorithm/coloring/common.hpp>
+#include <stdexcept>
 
 namespace origin
 {
@@ -22,8 +22,7 @@ namespace origin
    * A graph coloring error is a runtime error that indicates that a requested
    * graph coloring cannot be computed.
    */
-  class graph_coloring_error
-    : public std::runtime_error
+  class graph_coloring_error : public std::runtime_error
   {
   public:
     graph_coloring_error(std::string const& what)
