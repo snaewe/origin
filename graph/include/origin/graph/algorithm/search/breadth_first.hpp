@@ -159,22 +159,25 @@ namespace origin
    * The bfs algorithm object implements a breadth first search over a graph.
    */
   template<typename Graph, typename Color_Label, typename Visitor>
-    class bfs_algo
+    class bfs_algorithm
     {
     public:
-      typedef typename graph_traits<Graph>::vertex vertex;
-      typedef typename graph_traits<Graph>::edge edge;
+      typedef Graph graph_type;
+      typedef typename graph_traits<graph_type>::vertex vertex;
+      typedef typename graph_traits<graph_type>::edge edge;
       
-      typedef typename label_traits<Color_Label, vertex>::value_type color_type;
+      typedef Color_Label color_label;
+      typedef typename label_traits<color_label, vertex>::value_type color_type;
       typedef color_traits<color_type> colors;
       
-      bfs_algo(Graph& g, Color_Label c, Visitor& v)
-        : graph(g), color(c), vis(v)
+      bfs_algorithm(Graph& g, Color_Label c, Visitor&& v)
+        : graph(g), color{c}, vis(v), queue{}
       {
         init_graph();
       }
 
-      // Initialize the graph being searched. color_type all of the vertices white.
+      // Initialize the graph being searched. color_type all of the vertices 
+      // white.
       void init_graph()
       {
         for(auto v : graph.vertices()) {
@@ -290,10 +293,10 @@ namespace origin
         search_graph();
       }
 
-      Graph& graph;
-      std::queue<vertex> queue;
-      Color_Label color;
+      graph_type& graph;
+      color_label color;
       Visitor&& vis;
+      std::queue<vertex> queue;
     };
 
   /**
@@ -322,7 +325,7 @@ namespace origin
                                      Color_Label color,
                                      Visitor&& vis)
     {
-      bfs_algo<Graph, decltype(color), Visitor> algo(g, color, vis);
+      bfs_algorithm<Graph, decltype(color), Visitor> algo(g, color, vis);
       algo(v);
     }
 
@@ -357,7 +360,7 @@ namespace origin
   template<typename Graph, typename Color_Label, typename Visitor>
     inline void breadth_first_search_all(Graph& g, Color_Label color, Visitor&& vis)
     {
-      bfs_algo<Graph, Color_Label, Visitor> algo(g, color, vis);
+      bfs_algorithm<Graph, Color_Label, Visitor> algo(g, color, vis);
       algo();
     }
   
