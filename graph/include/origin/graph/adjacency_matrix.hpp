@@ -5,10 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-
-
-#ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_INCLUDE_HPP
-#define ORIGIN_GRAPH_ADJACENCY_MATRIX_INCLUDE_HPP
+#ifndef ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
+#define ORIGIN_GRAPH_ADJACENCY_MATRIX_HPP
 
 #include <origin/graph/adjacency_matrix/adjacency_matrix.hpp>
 #include <origin/graph/adjacency_matrix/distance_matrix.hpp>
