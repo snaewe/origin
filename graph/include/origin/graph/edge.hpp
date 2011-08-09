@@ -16,38 +16,33 @@
 
 namespace origin
 {
-  /**
+ /**
    * The edge_t type represents an ordinal reference to an edge in a Graph.
    * The integral value -1u corresponds to a null edge.
    */
   class edge_t
     : public implicit_bool_facade<edge_t>
   {
+    typedef bool (edge_t::*unspecified_bool_type)() const;
   public:
     typedef std::size_t value_type;
 
-    edge_t()
-      : value{-1}
-    { }
-
-    edge_t(std::size_t x)
+    edge_t(value_type x = -1)
       : value{x}
     { }
 
-    bool equal(edge_t x) const
-    { 
-      return value == x.value; 
-    }
-
-    bool less(edge_t x) const
-    { 
-      return value < x.value; 
-    }
-
-    bool valid() const
-    { 
-      return value != value_type(-1); 
-    }
+    // Equatable
+    bool operator==(edge_t x) const { return value == x.value; }
+    bool operator!=(edge_t x) const { return value != x.value; }
+    
+    // Totally_Ordered
+    bool operator<(edge_t x) const { return value < x.value; }
+    bool operator>(edge_t x) const { return value > x.value; }
+    bool operator<=(edge_t x) const { return value <= x.value; }
+    bool operator>=(edge_t x) const { return value >= x.value; }
+    
+    // Safe bool
+    bool valid() const { return value != value_type{-1}; }
 
     value_type value;
   };
@@ -68,11 +63,9 @@ namespace std
   template<>
     struct hash<origin::edge_t> : public hash<std::size_t>
     {
-      typedef std::size_t size_type;
-
-      size_type operator()(origin::edge_t const& e) const
+      std::size_t operator()(origin::edge_t e) const
       { 
-        return hash<size_type>::operator()(e.value); 
+        return hash<std::size_t>::operator()(e.value); 
       }
     };
 } // namespace std
@@ -84,62 +77,126 @@ namespace origin
    * types. The result of dereferencing an edge iterator is an edge_t object.
    */
   class edge_iterator
-    : public random_access_iterator_facade<
-        edge_iterator, edge_t, edge_t, edge_t
-      >
   {
-    typedef random_access_iterator_facade<
-        edge_iterator, edge_t, edge_t, edge_t
-    > base_type;
   public:
-    typedef typename base_type::reference reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef edge_t value_type;
+    typedef std::ptrdiff_t difference_type;
 
-    edge_iterator(edge_t v)
-      : edge_(v)
+    edge_iterator(edge_t e)
+      : edge{e}
     { }
 
-    reference dereference() const
-    { 
-      return edge_; 
-    }
+    edge_t const& operator*() const { return edge; }
+    edge_t const* operator->() const { return &edge; }
 
-    bool equal(edge_iterator iter) const
-    { 
-      return edge_.value == iter.edge_.value; 
-    }
+    // Equatable
+    bool operator==(edge_iterator x) const { return edge == x.edge; }
+    bool operator!=(edge_iterator x) const { return edge != x.edge; }
 
-    bool less(edge_iterator iter) const
-    { 
-      return edge_.value < iter.edge_.value; 
-    }
+    // TotallyOrdered
+    bool operator<(edge_iterator x) const { return edge < x.edge; }
+    bool operator>(edge_iterator x) const { return edge > x.edge; }
+    bool operator<=(edge_iterator x) const { return edge <= x.edge; }
+    bool operator>=(edge_iterator x) const { return edge >= x.edge; }
 
-    void increment()
-    { 
-      ++edge_.value; 
-    }
+    // Increment
+    edge_iterator& operator++() { ++edge.value; return *this; }
+    edge_iterator operator++(int) { edge_iterator tmp{*this}; ++*this; return tmp; }
 
-    void decrement()
-    { 
-      --edge_.value; 
-    }
+    // Decrement
+    edge_iterator& operator--() { --edge.value; return *this; }
+    edge_iterator operator--(int) { edge_iterator tmp{*this}; --*this; return tmp; }
 
-    void advance(difference_type n)
-    { 
-      edge_.value += n; 
-    }
+    // Advance
+    edge_iterator& operator+=(difference_type n) { edge.value += n; return *this; }
+    edge_iterator& operator-=(difference_type n) { edge.value -= n; return *this; }
 
-    difference_type distance(edge_iterator iter)
+    // Next/Prev
+    friend edge_iterator operator+(edge_iterator i, difference_type n) { i += n; return i; }
+    friend edge_iterator operator+(difference_type n, edge_iterator i) { i += n; return i; }
+    friend edge_iterator operator-(edge_iterator i, difference_type n) { i -= n; return i; }
+    
+    // Distance
+    friend difference_type operator-(edge_iterator i, edge_iterator j) 
     { 
-      return iter.edge_.value - edge_.value ; 
+      return j->value - i->value; 
     }
 
   private:
-    edge_t edge_;
+    edge_t edge;
   };
 
+  /**
+   * The has_target Predicate is used to evaluate whether or not an edge
+   * has a given vertex as its target.
+   */
+  template<typename Graph>
+    struct has_target_pred
+    {
+      typedef typename graph_traits<Graph>::vertex Vertex;
+      typedef typename graph_traits<Graph>::vertex Edge;
+      
+      has_target_pred(Graph& g, Vertex v)
+        : graph(g), vertex{v}
+      { }
+      
+      bool operator()(Edge e) const
+      {
+        return graph.target(e) == vertex;
+      }
+      
+      Graph& graph;
+      Vertex vertex;
+    };
+    
+  /**
+   * Return a predicate that can be used to determine if the given graph has
+   * an edge with the specified vertex.
+   */
+  template<typename Graph>
+    inline has_target_pred<Graph> 
+    if_has_target(Graph& g, typename graph_traits<Graph>::vertex v)
+    {
+      return {g, v};
+    }
+
+  // FIXME: Requires bidirectional edges?
+  /**
+   * The has_source Predicate is used to evaluate whether or not an edge
+   * has a given vertex as its source.
+   */
+  template<typename Graph>
+    struct has_source_pred
+    {
+      typedef typename graph_traits<Graph>::vertex Vertex;
+      typedef typename graph_traits<Graph>::vertex Edge;
+      
+      has_source_pred(Graph& g, Vertex v)
+        : graph(g), vertex{v}
+      { }
+      
+      bool operator()(Edge e) const
+      {
+        return graph.source(e) == vertex;
+      }
+      
+      Graph& graph;
+      Vertex vertex;
+    };
+
+  /**
+   * Return a predicate that can be used to determine if the given graph has
+   * an edge with the specified vertex.
+   */
+  template<typename Graph>
+    inline has_source_pred<Graph> 
+    if_has_source(Graph& g, typename graph_traits<Graph>::vertex v)
+    {
+      return {g, v};
+    }
+
   // FIXME: The following functions do not belong in this file. I'm not
-  // quite sure where they go, but it's not here.
+  // quite sure where they go. Maybe traits?
 
   // NOTE: We could *amlost* get the directed/undirected selection to work
   // without enable_if if undirected graphs don't derive from directed graphs.
@@ -148,6 +205,7 @@ namespace origin
   // NOTE: If a graph is somehow both directed and undirected, then we're going
   // to have ambiguity problems.
 
+  
   /**
    * @fn out_edges(g, v)
    * Return the set of out edges of a vertex. This function is overloaded for
@@ -172,7 +230,9 @@ namespace origin
       typename Graph::const_out_edge_range
     >::type
     out_edges(Graph const& g, typename Graph::const_vertex v)
-    { return g.out_edges(v); }
+    { 
+      return g.out_edges(v); 
+    }
 
   // Specializations for undirected graphs
   template<typename Graph>
@@ -181,7 +241,9 @@ namespace origin
       typename Graph::incident_edge_range
     >::type
     out_edges(Graph& g, typename Graph::vertex v)
-    { return g.incident_edges(v); }
+    { 
+      return g.incident_edges(v); 
+    }
 
   template<typename Graph>
     typename std::enable_if<
@@ -189,7 +251,9 @@ namespace origin
       typename Graph::const_incident_edge_range
     >::type
     out_edges(Graph const& g, typename Graph::const_vertex v)
-    { return g.incident_edges(v); }
+    { 
+      return g.incident_edges(v); 
+    }
   //@}
 
   // FIXME: This is pretty hinky. It works, but I'm not terribly proud of it.
