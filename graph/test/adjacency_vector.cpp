@@ -10,27 +10,33 @@
 
 #include <origin/graph/adjacency_vector.hpp>
 
+#include "test_copy.hpp"
+#include "test_singleton_graph.hpp"
+#include "test_path2_graph.hpp"
+// #include "test_path2_multigraph.hpp"
+
 using namespace std;
 using namespace origin;
 
+// FIXME: This is copied out of graph.cpp. It should be moved into a more
+// general framework.
+template<typename Test>
+  void test()
+  {
+    Test t;
+    t.test();
+  };
+
 int main()
 {
-  directed_adjacency_vector<char, int> g;
-  auto u = g.add_vertex('a');
-  auto v = g.add_vertex('b');
-  g.add_edge(u, v, 0);
-  g.add_edge(u, v, 1);
-  assert(( g.order() == 2 ));
-  assert(( g.size() == 2 ));
-  
-  for(auto x : g.vertices()) {
-    cout << g[x] << "\n";
-  }
-  for(auto x : g.edges()) {
-    cout << g[x] << "\n";
-  }
-  for(auto x : g.out_edges(u)) {
-    cout << g[x] << "\n";
-  }
+  typedef directed_adjacency_vector<char, int> Graph;
+
+  // Basic semantics
+//   test<copy_graph<Graph>>();
+
+  // Exercise various topology tests.
+  test<singleton_graph<Graph>>();
+//   test<path2_graph<Graph>>();
+//   test<path2_multigraph<Graph>>();
   
 }

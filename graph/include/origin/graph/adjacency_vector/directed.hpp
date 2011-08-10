@@ -13,6 +13,7 @@
 
 #include <origin/utility/empty.hpp>
 #include <origin/range/iterator_range.hpp>
+#include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
 #include <origin/graph/edge.hpp>
 
@@ -55,30 +56,12 @@ namespace origin
         : value{x}
       { }
       
-      std::size_t degree() const
-      { 
-        return out.size() + in.size(); 
-      }
+      std::size_t degree() const      { return out.size() + in.size(); }
+      std::size_t out_degree() const  { return out.size(); }
+      std::size_t in_degree() const   { return in.size(); }
       
-      std::size_t out_degree() const
-      { 
-        return out.size(); 
-      }
-      
-      std::size_t in_degree() const
-      { 
-        return in.size(); 
-      }
-      
-      void add_out(edge_t e)
-      { 
-        out.push_back(e); 
-      }
-      
-      void add_in(edge_t e)
-      { 
-        in.push_back(e); 
-      }
+      void add_out(edge_t e) { out.push_back(e); }
+      void add_in(edge_t e) { in.push_back(e); }
 
       edge_list out;
       edge_list in;
@@ -105,37 +88,41 @@ namespace origin
     {
     public:
       typedef typename Alloc::template rebind<Vertex>::other vertex_allocator_type;
-      typedef typename Alloc::template rebind<Edge>::other edge_allocator_type;
+      typedef typename Alloc::template rebind<Edge>::other   edge_allocator_type;
 
-      typedef std::size_t size_type;
+      typedef std::size_t    size_type;
       typedef std::ptrdiff_t difference_type;
       
       typedef Vertex vertex_value_type;
-      typedef Edge edge_value_type;
+      typedef Edge   edge_value_type;
 
       typedef adjacency_vector_vertex<vertex_value_type> vertex_type;
-      typedef adjacency_vector_edge<edge_value_type> edge_type;
+      typedef adjacency_vector_edge<edge_value_type>     edge_type;
 
       typedef std::vector<vertex_type, vertex_allocator_type> vertex_list;
-      typedef std::vector<edge_type, edge_allocator_type> edge_list;
+      typedef std::vector<edge_type, edge_allocator_type>     edge_list;
       
       typedef vertex_t vertex;
       typedef vertex_t const_vertex;
+      
       typedef edge_t edge;
       typedef edge_t const_edge;
       
+    private:
+      // Const so that we can't accidentally modify the values in the vertex
+      // handles in the incident edge lists.
+      typedef typename vertex_type::edge_list::const_iterator incident_edge_iterator;
     public:
-      typedef iterator_range<vertex_iterator> vertex_range;
-      typedef iterator_range<vertex_iterator> const_vertex_range;
+      typedef iterator_range<vertex_iterator>        vertex_range;
+      typedef iterator_range<vertex_iterator>        const_vertex_range;
+      typedef iterator_range<edge_iterator>          edge_range;
+      typedef iterator_range<edge_iterator>          const_edge_range;
+      typedef iterator_range<incident_edge_iterator> out_edge_range;
+      typedef iterator_range<incident_edge_iterator> const_out_edge_range;
+      typedef iterator_range<incident_edge_iterator> in_edge_range;
+      typedef iterator_range<incident_edge_iterator> const_in_edge_range;
       
-      typedef iterator_range<edge_iterator> edge_range;
-      typedef iterator_range<edge_iterator> const_edge_range;
-      
-      typedef iterator_range<edge_iterator> out_edge_range;
-      typedef iterator_range<edge_iterator> const_out_edge_range;
-      
-      typedef iterator_range<edge_iterator> in_edge_range;
-      typedef iterator_range<edge_iterator> const_in_edge_range;
+      struct graph_category : directed_graph_tag, buildable_graph_tag { };
       
       /** @name Initialization and Assignment. */
       //@{
@@ -155,115 +142,78 @@ namespace origin
       //@}
       
       /** @name Properties */
-      constexpr size_type max_order() const
-      {
-        return vertices_.max_size();
-      }
+      constexpr size_type max_order() const { return vertices_.max_size(); }
       
-      constexpr size_type max_size() const
-      {
-        return edges_.max_size();
-      }
+      constexpr size_type max_size() const { return edges_.max_size(); }
       
-      vertex_allocator_type get_vertex_allocator() const
-      {
-        return vertex_allocator_type{};
-      }
-
-      edge_allocator_type get_edge_allocator() const
-      {
-        return edge_allocator_type{};
-      }
+      vertex_allocator_type get_vertex_allocator() const { return vertex_allocator_type{}; }
+      
+      edge_allocator_type get_edge_allocator() const { return edge_allocator_type{}; }
       //@}
 
       /** @name Graph properties */
       //@{
-      bool null() const
-      { 
-        return vertices_.empty();
-      }
+      // Return true if the graph has no vertices.
+      bool null() const { return vertices_.empty(); }
       
-      size_type order() const
-      { 
-        return vertices_.size(); 
-      }
+      // Return the number of vertices in the graph.
+      size_type order() const { return vertices_.size(); }
       
-      bool empty() const
-      { 
-        return edges_.empty();
-      }
+      // Return true if the graph has no edges.
+      bool empty() const { return edges_.empty(); }
       
-      size_type size() const
-      {
-        return edges_.size(); 
-      }
+      // Return the number of edges in the graph.
+      size_type size() const { return edges_.size(); }
+      //@}
       
       /** @name Data access */
       //@{
-      vertex_value_type& operator[](vertex v)
-      { 
-        return get(v).value; 
-      }
-      
-      vertex_value_type const& operator[](vertex v) const
-      { 
-        return get(v).value; 
-      }
-      
-      edge_value_type& operator[](edge e)
-      { 
-        return get(e).value; 
-      }
-      
-      edge_value_type const& operator[](edge e) const
-      { 
-        return get(e).value; 
-      }
+      // Return the value associated with the given vertex.
+      vertex_value_type&       operator[](vertex v)       { return get(v).value; }
+      vertex_value_type const& operator[](vertex v) const { return get(v).value; }
+
+      // Return the value associated with the given edge.
+      edge_value_type&       operator[](edge e)       { return get(e).value; }
+      edge_value_type const& operator[](edge e) const { return get(e).value; }
       //@}
 
       /** @name Graph operations */
-      /**
-       * Add a vertex to the graph. The value of the vertex may be optionally
-       * given.
-       */
+      // Return the vertex indicated by the given index
+      vertex       get_vertex(size_type n)       { return n; }
+      const_vertex get_vertex(size_type n) const { return n; }
+    
+      // Return the degree, out degree or in degree of the given vertex
+      size_type degree(const_vertex v) const     { return get(v).degree(); }
+      size_type out_degree(const_vertex v) const { return get(v).out_degree(); }
+      size_type in_degree(const_vertex v) const  { return get(v).in_degree(); }
+
+      // Return the edge indicated by the given index.
+      edge       get_edge(size_type n)       { return n; }
+      const_edge get_edge(size_type n) const { return n; }
+
+      // Return the edge connecting the vertex u to v, or an invalid edge if
+      // u and v are not adjacent.
+      edge        get_edge(vertex u, vertex v);
+      const_edge  get_edge(vertex u, vertex v) const;
+
+      // Return the source vertex of the given edge.
+      vertex       source(edge e)             { return get(e).source; }
+      const_vertex source(const_edge e) const { return get(e).source; }
+
+      // Return the target vertex of the given edge.
+      vertex       target(edge e)       { return get(e).target; }
+      const_vertex target(edge e) const { return get(e).target; }
+
+      // Add a value to the graph, returning a handle to the added vertex. The 
+      // associated value may be specified.
       vertex add_vertex(vertex_value_type const& x = vertex_value_type{})
       {
         vertices_.push_back(vertex_type{x});
-        return vertices_.size() - 1;
+        return vertex{vertices_.size() - 1};
       }
 
-      /**
-       * Return the vertex indicated by the given index.
-       */
-      vertex get_vertex(size_type n)
-      { 
-        return n; 
-      }
-      
-      const_vertex get_vertex(size_type n) const
-      { 
-        return n; 
-      }
-    
-      size_type degree(const_vertex v) const
-      { 
-        return get(v).degree(); 
-      }
-
-      size_type out_degree(const_vertex v) const
-      { 
-        return get(v).out_degree(); 
-      }
-
-      size_type in_degree(const_vertex v) const
-      { 
-        return get(v).in_degree(); 
-      }
-
-      /**
-       * Add an edge connecting vertex u to vertex v. The value of the edge
-       * may optionally be given.
-       */
+      // Add an edge to the graph so that u is connected to v, returning a 
+      // handle to the added edge. The associated value may be specified.
       edge add_edge(vertex u, vertex v, edge_value_type const& x = edge_value_type{})
       {
         edges_.push_back(edge_type{u, v, x});
@@ -272,127 +222,66 @@ namespace origin
         get(v).add_in(e);
         return e;
       }
-      
-      /**
-       * Return the edge indicated by the given index.
-       */
-      edge get_edge(size_type n)
-      { 
-        return n;
-      }
-
-      const_edge get_edge(size_type n) const
-      { 
-        return n;
-      }
-
-      /**
-       * Return the edge connecting the vertex u to the vertex v. If given.
-       */
-      edge get_edge(vertex u, vertex v);
-      const_edge get_edge(vertex u, vertex v) const;
-
-      /**
-       * Return the source vertex of the given edge.
-       */
-      vertex source(edge e)
-      { 
-        return get(e).source; 
-      }
-      
-      const_vertex source(const_edge e) const
-      { 
-        return get(e).source; 
-      }
-      
-      /**
-       * Return the target vertex of the given edge.
-       */
-      vertex target(edge e)
-      { 
-        return get(e).target; 
-      }
-      
-      const_vertex target(edge e) const
-      { 
-        return get(e).target; 
-      }
       //@}
 
-      /** @name Vertex and Edge Ranges */
+      /** @name Ranges */
       //@{
-      vertex_range vertices()
-      { 
-        vertex_iterator f{0}, l{order()};
-        return {f, l};
-      }
-
-      const_vertex_range vertices() const
-      { 
-        vertex_iterator f{0}, l{order()};
-        return {f, l};
-      }
+      // Return the range of vertices in the graph.
+      vertex_range       vertices()       { return {begin_vertices(), end_vertices()}; }
+      const_vertex_range vertices() const { return {begin_vertices(), end_vertices()}; }
       
-      edge_range edges()
-      { 
-        edge_iterator f{0}, l{size()};
-        return {f, l};
-      }
+      // Return the range of all edges in the graph.
+      edge_range       edges()       { return {begin_edges(), end_edges()}; }
+      const_edge_range edges() const { return {begin_edges(), end_edges()}; }
       
-      const_edge_range edges() const
-      { 
-        edge_iterator f{0}, l{size()};
-        return {f, l};
-      }
+      out_edge_range       out_edges(vertex v)       { return {begin_out_edges(v), end_out_edges(v)}; }
+      const_out_edge_range out_edges(vertex v) const { return {begin_out_edges(v), end_out_edges(v)}; }
       
-      out_edge_range out_edges(vertex v)
-      { 
-        edge_iterator f{0}, l{get(v).out_degree()};
-        return {f, l};
-      }
-      
-      const_out_edge_range out_edges(vertex v) const
-      { 
-        edge_iterator f{0}, l{get(v).out_degree()};
-        return {f, l};
-      }
-      
-      in_edge_range in_edges(vertex v)
-      { 
-        edge_iterator f{0}, l{get(v).in_degree()};
-        return {f, l};
-      }
-
-      const_in_edge_range in_edges(vertex v) const
-      { 
-        edge_iterator f{0}, l{get(v).in_degree()};
-        return {f, l};
-      }
+      in_edge_range       in_edges(vertex v)       { return {begin_in_edges(v), end_in_edges(v)}; }
+      const_in_edge_range in_edges(vertex v) const { return {begin_in_edges(v), end_in_edges(v)}; }
       //@}
 
     private:
-      // Return the vertex associated with the given handle.
-      vertex_type& get(vertex v)
-      { 
-        return vertices_[v.value]; 
-      }
+      // Return the vertex object associated with the given handle.
+      vertex_type&       get(vertex v)             { return vertices_[v.value]; }
+      vertex_type const& get(const_vertex v) const { return vertices_[v.value]; }
       
-      vertex_type const& get(const_vertex v) const
-      { 
-        return vertices_[v.value]; 
-      }
+      // Return the edge object associated with the given handle.
+      edge_type&       get(edge e)             { return edges_[e.value]; }
+      edge_type const& get(const_edge e) const { return edges_[e.value]; }
       
-      // Return the edge associated with the given handle.
-      edge_type& get(edge e)
-      { 
-        return edges_[e.value]; 
-      }
+      // Return an iterator to the first vertex
+      vertex_iterator begin_vertices()       { return vertex_t{0}; }
+      vertex_iterator begin_vertices() const { return vertex_t{0}; }
       
-      edge_type const& get(const_edge e) const
-      { 
-        return edges_[e.value]; 
-      }
-    
+      // Return an iterator past the last vertex
+      vertex_iterator end_vertices()       { return vertex_t{order()}; }
+      vertex_iterator end_vertices() const { return vertex_t{order()}; }
+
+      // Return an iterator to the first edge
+      edge_iterator begin_edges()       { return edge_t{0}; }
+      edge_iterator begin_edges() const { return edge_t{0}; }
+      
+      // Return an iterator past the last edge
+      edge_iterator end_edges()       { return edge_t{size()}; }
+      edge_iterator end_edges() const { return edge_t{size()}; }
+      
+      // Return an iterator to the first out edge of v
+      incident_edge_iterator begin_out_edges(vertex v)             { return get(v).out.begin(); }
+      incident_edge_iterator begin_out_edges(const_vertex v) const { return get(v).out.begin(); }
+      
+      // Return an iterator past the last out edge of v
+      incident_edge_iterator end_out_edges(vertex v)             { return get(v).out.end(); }
+      incident_edge_iterator end_out_edges(const_vertex v) const { return get(v).out.end(); }
+
+      // Return an iterator to the first incident edge of v
+      incident_edge_iterator begin_in_edges(vertex v)       { return get(v).incident.begincident(); }
+      incident_edge_iterator begin_in_edges(vertex v) const { return get(v).incident.begincident(); }
+      
+      // Return an iterator past the last incident edge of v.
+      incident_edge_iterator end_in_edges(vertex v)       { return get(v).incident.end(); }
+      incident_edge_iterator end_in_edges(vertex v) const { return get(v).incident.end(); }
+
     private:
       vertex_list vertices_;
       edge_list edges_;

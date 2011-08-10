@@ -15,34 +15,41 @@ namespace origin
 {
   /**
    * @ingroup range
+   * 
    * The range class template encapsulates a pair of iterators denoting a
-   * half-open range.
-   *
-   * @note Discussion on the C++ mailing list indicates that this may eventually
-   * be superseded by a std::range class. No such class currently exists.
+   * bounded range.
    *
    * @tparam Iter An Iterator type.
    */
   template<typename Iter>
-  class iterator_range
-  {
-  public:
-    typedef Iter iterator;
+    class iterator_range
+    {
+    public:
+      typedef Iter iterator;
 
-    iterator_range(iterator b = iterator{}, iterator e = iterator{})
-      : begin_{b}, end_{e}
-    { }
+      iterator_range(iterator b = iterator{}, iterator e = iterator{})
+        : begin_{b}, end_{e}
+      { }
 
-    iterator begin() const
-    { return begin_; }
+      iterator begin() const { return begin_; }
+      iterator end() const { return end_; }
 
-    iterator end() const
-    { return end_; }
-
-  private:
-    iterator begin_;
-    iterator end_;
-  };
+    private:
+      iterator begin_;
+      iterator end_;
+    };
+  
+  template<typename Iter>
+    auto begin(iterator_range<Iter>& r) -> decltype(r.begin())
+    {
+      return r.begin();
+    }
+    
+  template<typename Iter>
+    auto end(iterator_range<Iter>& r) -> decltype(r.end())
+    {
+      return r.end();
+    }
 
 } // namespace origin
 

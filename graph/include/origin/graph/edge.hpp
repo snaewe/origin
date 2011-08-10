@@ -8,6 +8,7 @@
 #ifndef ORIGIN_GRAPH_EDGE_HPP
 #define ORIGIN_GRAPH_EDGE_HPP
 
+#include <iterator>
 #include <functional>
 
 #include <origin/iterator/facades.hpp>
@@ -17,18 +18,21 @@
 namespace origin
 {
  /**
-   * The edge_t type represents an ordinal reference to an edge in a Graph.
-   * The integral value -1u corresponds to a null edge.
-   */
-  class edge_t
-    : public implicit_bool_facade<edge_t>
+  * The edge_t type represents an ordinal reference to an edge in a Graph.
+  * The integral value -1u corresponds to a null edge.
+  */
+  class edge_t : public implicit_bool_facade<edge_t>
   {
     typedef bool (edge_t::*unspecified_bool_type)() const;
   public:
     typedef std::size_t value_type;
+    
+    edge_t()
+      : value{-1}
+    { }
 
-    edge_t(value_type x = -1)
-      : value{x}
+    edge_t(value_type n)
+      : value{n}
     { }
 
     // Equatable
@@ -61,11 +65,11 @@ namespace origin
 namespace std
 {
   template<>
-    struct hash<origin::edge_t> : public hash<std::size_t>
+    struct hash<origin::edge_t>
     {
       std::size_t operator()(origin::edge_t e) const
       { 
-        return hash<std::size_t>::operator()(e.value); 
+        return std::hash<std::size_t>{}(e.value); 
       }
     };
 } // namespace std
@@ -80,7 +84,10 @@ namespace origin
   {
   public:
     typedef edge_t value_type;
+    typedef edge_t const& reference;
+    typedef edge_t const* pointer;
     typedef std::ptrdiff_t difference_type;
+    typedef std::random_access_iterator_tag iterator_category;
 
     edge_iterator(edge_t e)
       : edge{e}
@@ -118,8 +125,8 @@ namespace origin
     
     // Distance
     friend difference_type operator-(edge_iterator i, edge_iterator j) 
-    { 
-      return j->value - i->value; 
+    {
+      return i->value - j->value; 
     }
 
   private:
@@ -140,10 +147,7 @@ namespace origin
         : graph(g), vertex{v}
       { }
       
-      bool operator()(Edge e) const
-      {
-        return graph.target(e) == vertex;
-      }
+      bool operator()(Edge e) const { return graph.target(e) == vertex; }
       
       Graph& graph;
       Vertex vertex;
@@ -175,10 +179,7 @@ namespace origin
         : graph(g), vertex{v}
       { }
       
-      bool operator()(Edge e) const
-      {
-        return graph.source(e) == vertex;
-      }
+      bool operator()(Edge e) const { return graph.source(e) == vertex; }
       
       Graph& graph;
       Vertex vertex;
@@ -277,7 +278,9 @@ namespace origin
    */
   template<typename Graph, typename Edge, typename Vertex>
     Vertex opposite(Graph& g, Edge e, Vertex v)
-    { return g.source(e) == v ? g.target(e) : v; }
+    { 
+      return g.source(e) == v ? g.target(e) : v; 
+    }
 
 } // namesapce origin
 

@@ -8,6 +8,7 @@
 #ifndef ORIGIN_GRAPH_VERTEX_HPP
 #define ORIGIN_GRAPH_VERTEX_HPP
 
+#include <iterator>
 #include <functional>
 
 #include <origin/iterator/facades.hpp>
@@ -22,29 +23,26 @@ namespace origin
   {
   public:
     typedef std::size_t value_type;
-
-    vertex_t()
-      : value(-1)
-    { }
     
-    vertex_t(std::size_t n)
-      : value(n)
+    vertex_t()
+      : value{-1}
     { }
 
-    bool equal(vertex_t x) const
-    { 
-      return value == x.value; 
-    }
+    explicit vertex_t(value_type n)
+      : value{n}
+    { }
 
-    bool less(vertex_t x) const
-    { 
-      return value < x.value; 
-    }
+    // Equatable
+    bool operator==(vertex_t x) const { return value == x.value; }
+    bool operator!=(vertex_t x) const { return value != x.value; }
 
-    bool valid() const
-    { 
-      return value != -1u; 
-    }
+    bool operator<(vertex_t x) const { return value < x.value; }
+    bool operator>(vertex_t x) const { return value > x.value; }
+    bool operator<=(vertex_t x) const { return value <= x.value; }
+    bool operator>=(vertex_t x) const { return value <= x.value; }
+
+    // Safe bool
+    bool valid() const { return value != -1u; }
 
     value_type value;
   };
@@ -64,13 +62,11 @@ namespace origin
 namespace std 
 {
   template<>
-    struct hash<origin::vertex_t> : public hash<std::size_t>
+    struct hash<origin::vertex_t>
     {
-      typedef std::size_t size_type;
-
-      size_type operator()(origin::vertex_t const& v) const
+      std::size_t operator()(origin::vertex_t const& v) const
       { 
-        return hash<size_type>::operator()(v.value); 
+        return std::hash<std::size_t>{}(v.value); 
       }
   };
 } // namespace std
@@ -82,58 +78,56 @@ namespace origin
    * index. Dereferencing a vertex iterator yields a vertex_t object.
    */
   class vertex_iterator
-    : public random_access_iterator_facade<
-        vertex_iterator, vertex_t, vertex_t, vertex_t
-      >
   {
-    typedef random_access_iterator_facade<
-      vertex_iterator, vertex_t, vertex_t, vertex_t
-    > base_type;
   public:
-    typedef typename base_type::reference reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef vertex_t value_type;
+    typedef vertex_t const& reference;
+    typedef vertex_t const* pointer;
+    typedef std::ptrdiff_t difference_type;
+    typedef std::random_access_iterator_tag iterator_category;
 
-    vertex_iterator(vertex_t v)
-      : vertex_(v)
+    vertex_iterator(vertex_t e)
+      : vert{e}
     { }
+
+    vertex_t const& operator*() const { return vert; }
+    vertex_t const* operator->() const { return &vert; }
+
+    // Equatable
+    bool operator==(vertex_iterator x) const { return vert == x.vert; }
+    bool operator!=(vertex_iterator x) const { return vert != x.vert; }
+
+    // TotallyOrdered
+    bool operator<(vertex_iterator x) const { return vert < x.vert; }
+    bool operator>(vertex_iterator x) const { return vert > x.vert; }
+    bool operator<=(vertex_iterator x) const { return vert <= x.vert; }
+    bool operator>=(vertex_iterator x) const { return vert >= x.vert; }
+
+    // Increment
+    vertex_iterator& operator++() { ++vert.value; return *this; }
+    vertex_iterator operator++(int) { vertex_iterator tmp{*this}; ++*this; return tmp; }
+
+    // Decrement
+    vertex_iterator& operator--() { --vert.value; return *this; }
+    vertex_iterator operator--(int) { vertex_iterator tmp{*this}; --*this; return tmp; }
+
+    // Advance
+    vertex_iterator& operator+=(difference_type n) { vert.value += n; return *this; }
+    vertex_iterator& operator-=(difference_type n) { vert.value -= n; return *this; }
+
+    // Next/Prev
+    friend vertex_iterator operator+(vertex_iterator i, difference_type n) { i += n; return i; }
+    friend vertex_iterator operator+(difference_type n, vertex_iterator i) { i += n; return i; }
+    friend vertex_iterator operator-(vertex_iterator i, difference_type n) { i -= n; return i; }
     
-    reference dereference() const
-    { 
-      return vertex_; 
-    }
-    
-    bool equal(vertex_iterator iter) const
-    { 
-      return vertex_.value == iter.vertex_.value; 
-    }
-    
-    bool less(vertex_iterator iter) const
-    { 
-      return vertex_.value < iter.vertex_.value; 
+    // Distance
+    friend difference_type operator-(vertex_iterator i, vertex_iterator j) 
+    {
+      return i->value - j->value; 
     }
 
-    void increment()
-    { 
-      ++vertex_.value; 
-    }
-    
-    void decrement()
-    { 
-      --vertex_.value; 
-    }
-    
-    void advance(difference_type n)
-    { 
-      vertex_.value += n; 
-    }
-    
-    difference_type distance(vertex_iterator iter)
-    { 
-      return iter.vertex_.value - vertex_.value; 
-    }
-    
   private:
-    vertex_t vertex_;
+    vertex_t vert;
   };
 
 } // namespace origin
