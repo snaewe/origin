@@ -133,12 +133,20 @@ namespace origin
       // FIXME: Copy, move semantics.
       
       // Vertex fill constructor
-      directed_adjacency_vector(size_type n, 
-                                vertex_value_type const& x = vertex_value_type{})
-        : vertices_{n}, edges_{}
+      directed_adjacency_vector(size_type n, vertex_value_type const& x = vertex_value_type{})
+        : vertices_(n, x), edges_{}
       { }
-      
-      // FIXME: Range constructor, initializer list constructor
+
+      // Vertex range constructor
+      template<typename Iter>
+        directed_adjacency_vector(Iter first, Iter last)
+          : vertices_(first, last), edges_{}
+        { }
+        
+      // Vertex initialization constructor
+      directed_adjacency_vector(std::initializer_list<vertex_value_type> list)
+        : vertices_(list), edges_{}
+      { }
       //@}
       
       /** @name Properties */

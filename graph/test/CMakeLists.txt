@@ -12,6 +12,8 @@ origin_executable(adjacency_vector adjacency_vector.cpp)
 
 origin_executable(undirected undirected.cpp)
 
+origin_run_test(generator generator.cpp)
+
 origin_run_test(algorithm algorithm.cpp)
 origin_run_test(bfs bfs.cpp)
 origin_run_test(dfs dfs.cpp)

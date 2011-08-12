@@ -122,7 +122,6 @@ namespace origin
   { };
   //@}
 
-
   /**
    * The graph traits class abstracts the access to associated types of a graph
    * class, providing a uniform and simplified abstraction. The traits class
@@ -137,10 +136,6 @@ namespace origin
     typedef typename Graph::edge edge;
     typedef typename Graph::vertex_range vertex_range;
     typedef typename Graph::edge_range edge_range;
-
-    // For convenience
-    typedef typename vertex_range::iterator vertex_iterator;
-    typedef typename edge_range::iterator edge_iterator;
   };
 
   template<typename Graph>
@@ -152,51 +147,23 @@ namespace origin
     typedef typename Graph::const_edge edge;
     typedef typename Graph::const_vertex_range vertex_range;
     typedef typename Graph::const_edge_range edge_range;
-
-    // For convenience
-    typedef typename vertex_range::iterator vertex_iterator;
-    typedef typename edge_range::iterator edge_iterator;
   };
 
-  // FIXME: Build similar accessors for edge vertices. Consider building
-  // similar abstractions for all common graph operations (vertices, edges,
-  // etc.).
-
-  // FIXME: This requires that the graph has interable vertex set. In other
-  // words, this is only instantiable if g.vertices() is a valid expresson
-  // of g.
-
-  /**
-   * @fn begin_vertices
-   * Return an iterator to the first vertex in the graph.
-   */
-  //@{
+  // Return an iterator to the first vertex in the graph.
   template<typename Graph>
-  typename graph_traits<Graph>::vertex_iterator
-  begin_vertex(Graph& g)
-  { return std::begin(g.vertices()); }
+    auto begin_vertex(Graph& g) -> decltype(begin(g.vertices()))
+    { 
+      return begin(g.vertices());
+    }
 
+  // Return an iterator past the last vertex in the graph.
   template<typename Graph>
-  typename graph_traits<Graph const>::vertex_iterator
-  begin_vertex(Graph const& g)
-  { return std::begin(g.vertices()); }
-  //@}
-
-  /**
-   * @fn end_vertices
-   * Return an iterator past the end of the graph's vertex set.
-   */
-  //@{
-  template<typename Graph>
-  typename graph_traits<Graph>::vertex_iterator
-  end_vertex(Graph& g)
-  { return std::end(g.vertices()); }
-
-  template<typename Graph>
-  typename graph_traits<Graph const>::vertex_iterator
-  end_vertex(Graph const& g)
-  { return std::end(g.vertices()); }
-  //@}
+    auto end_vertex(Graph& g) -> decltype(end(g.vertices()))
+    { 
+      return end(g.vertices()); 
+    }
+    
+  // FIXME: Add edge accessors.
 
 } // namesapce origin
 
