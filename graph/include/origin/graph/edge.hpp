@@ -141,7 +141,7 @@ namespace origin
     struct has_target_pred
     {
       typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename graph_traits<Graph>::vertex Edge;
+      typedef typename graph_traits<Graph>::edge Edge;
       
       has_target_pred(Graph& g, Vertex v)
         : graph(g), vertex{v}
@@ -173,7 +173,7 @@ namespace origin
     struct has_source_pred
     {
       typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename graph_traits<Graph>::vertex Edge;
+      typedef typename graph_traits<Graph>::edge Edge;
       
       has_source_pred(Graph& g, Vertex v)
         : graph(g), vertex{v}

@@ -7,8 +7,6 @@
 #ifndef TEST_PATH2_GRAPH_HPP
 #define TEST_PATH2_GRAPH_HPP
 
-using std::distance;
-
 /**
  * Test the construction and destruction of a P2 (path-2) graph, a graph with
  * two vertices u and v, connected by a single edge (u, v).
@@ -20,20 +18,39 @@ struct path2_graph
 {
   typedef typename Graph::vertex Vertex;
   typedef typename Graph::edge Edge;
-
-  /** Test the common behavior of adding a single edge. */
-  void add_edge()
+  
+  // Add vertices to the graph if the graph is vertex-buildable.
+  void add_vertices(origin::vertex_buildable_graph_tag)
   {
     u = g.add_vertex('a');
     v = g.add_vertex('b');
     assert(( g.order() == 2 ));
     assert(( g.size() == 0 ));
+  }
+  
+  // Add vertices to the graph if it is vertex-initialized.
+  void add_vertices(origin::vertex_initialized_graph_tag)
+  {
+    g = std::move(Graph(2));;
+    auto vi = begin(g.vertices());
+    
+    // FIXME: Is there a more graceful way to do this? Assignment by iota?
+    u = *vi++;
+    v = *vi;
+    g[u] = 'a';
+    g[v] = 'b';
+  }
+  
 
+  // Add an edge to the graph and evaluate its properties.
+  void add_edge()
+  {
     // Check the state of vertex/edge iterators.
+    add_vertices(typename Graph::graph_category{});
     auto vr = g.vertices();
     auto vi = begin(vr);
     auto ve = end(vr);
-    assert(( distance(vi, ve) == 2 ));
+    assert(( std::distance(vi, ve) == 2 ));
     assert(( g[*vi++] == 'a' ));
     assert(( g[*vi] == 'b' ));
 
@@ -47,13 +64,14 @@ struct path2_graph
     auto er = g.edges();
     auto ei = begin(er);
     auto ee = end(er);
-    assert(( distance(ei, ee) == 1 ));
+    assert(( std::distance(ei, ee) == 1 ));
     assert(( g[*ei] == 1 ));
 //     for(auto x : g.edges()) ;
   }
 
-  /** Test common behavior of removing a single edge. */
-  void remove_edge()
+
+  // Remove vertices and re-validate properties of the graph.
+  void remove_edge(origin::vertex_dynamic_graph_tag)
   {
     g.remove_edge(e);
     assert(( g.empty() ));
@@ -63,6 +81,11 @@ struct path2_graph
     assert(( g.degree(u) == 0 ));
     assert(( g.degree(v) == 0 ));
   }
+
+  // Do not remove vertices if the graph is not dynamic.
+  template<typename Tag>
+    void remove_edge(Tag)
+    { }
 
   /** Check in and out edges of the directed graph. */
   void check(origin::directed_graph_tag)
@@ -89,15 +112,16 @@ struct path2_graph
     assert(( distance(uoi, uoe) == 1 ));
     assert(( g[*uoi] == 1 ));
     assert(( *uoi == *begin(er) ));
-//     for(auto x : g.out_edges(u)) ;
+    for(auto x : g.out_edges(u))
+      assert(( x ));
 
     // Check the in edges of u
     auto uir = g.in_edges(u);
-    assert(( distance(begin(uir), end(uir)) == 0 ));
+    assert(( std::distance(begin(uir), end(uir)) == 0 ));
 
     // Check the out edge iterators (for v).
     auto vor = g.out_edges(v);
-    assert(( distance(begin(vor), end(vor)) == 0 ));
+    assert(( std::distance(begin(vor), end(vor)) == 0 ));
 
     // Check the in edge iterators (for v).
     auto vir = g.in_edges(v);
@@ -108,7 +132,8 @@ struct path2_graph
     assert(( distance(vii, vie) == 1 ));
     assert(( g[*vii] == 1 ));
     assert(( *vii == *begin(er) ));
-//     for(auto x : g.in_edges(v)) ;
+    for(auto x : g.in_edges(v))
+      assert(( x ));
 
     // FIXME: These guys aren't comparable because they're slightly different
     // iterator types. It would be great if these were interoperable, but I'm
@@ -116,7 +141,7 @@ struct path2_graph
     // begin(oer) == begin(er);
   }
 
-  /** Check incident edges of the undirected graph. */
+  // Check the incident edges of undirected graphs.
   void check(origin::undirected_graph_tag)
   {
     assert(( g.get_edge(u, v) ));
@@ -147,9 +172,10 @@ struct path2_graph
 
   void test()
   {
-    add_edge();
-    check(typename Graph::graph_category{});
-    remove_edge();
+    typename Graph::graph_category tag;
+    add_edge(); // FIXME: Adapt for non-edge buildable graphs?
+    check(tag);
+    remove_edge(tag);
   }
 
   Graph g;

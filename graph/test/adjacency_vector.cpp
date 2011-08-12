@@ -36,7 +36,7 @@ int main()
 
   // Exercise various topology tests.
   test<singleton_graph<Graph>>();
-//   test<path2_graph<Graph>>();
+  test<path2_graph<Graph>>();
 //   test<path2_multigraph<Graph>>();
   
 }

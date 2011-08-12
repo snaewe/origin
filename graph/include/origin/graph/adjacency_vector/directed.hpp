@@ -275,12 +275,12 @@ namespace origin
       incident_edge_iterator end_out_edges(const_vertex v) const { return get(v).out.end(); }
 
       // Return an iterator to the first incident edge of v
-      incident_edge_iterator begin_in_edges(vertex v)       { return get(v).incident.begincident(); }
-      incident_edge_iterator begin_in_edges(vertex v) const { return get(v).incident.begincident(); }
+      incident_edge_iterator begin_in_edges(vertex v)       { return get(v).in.begin(); }
+      incident_edge_iterator begin_in_edges(vertex v) const { return get(v).in.begin(); }
       
       // Return an iterator past the last incident edge of v.
-      incident_edge_iterator end_in_edges(vertex v)       { return get(v).incident.end(); }
-      incident_edge_iterator end_in_edges(vertex v) const { return get(v).incident.end(); }
+      incident_edge_iterator end_in_edges(vertex v)       { return get(v).in.end(); }
+      incident_edge_iterator end_in_edges(vertex v) const { return get(v).in.end(); }
 
     private:
       vertex_list vertices_;
