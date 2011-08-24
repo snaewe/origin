@@ -5,53 +5,15 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
+#include <cassert>
 #include <iostream>
 
-#include <origin/utility/typestr.hpp>
-#include <origin/graph/adjacency_list.hpp>
+#include <origin/graph/adjacency_vector.hpp>
 #include <origin/graph/algorithm/search/breadth_first.hpp>
 
 using namespace std;
 using namespace origin;
 
-// Make sure that everything compiles with the given graph.
-template<typename Graph>
-  void sanity_check()
-  {
-    typedef typename Graph::vertex Vertex;
-    typedef typename Graph::const_vertex Const_Vertex;
-    typedef typename Graph::edge Edge;
-    typedef typename Graph::const_edge Const_Edge;
-    typedef bfs_visitor Visitor;
-
-    // Build a trivial graph.
-    Graph g;
-    auto u = g.add_vertex('a');
-    auto v = g.add_vertex('b');
-    g.add_edge(u, v);
-
-    // Get some const objects for const instantiations.
-    Graph const& cg = g;
-    Const_Vertex cu = u;
-
-    Visitor vis;
-
-    // Build a custom color map for various instantiations.
-    vertex_map<Graph, basic_color_t> cm;
-    auto color = label(cm);
-
-    // Check search instantiations
-    breadth_first_search(g, u, vis);
-    breadth_first_search(g, u, color, vis);
-    breadth_first_search(cg, cu, vis);
-    breadth_first_search(cg, cu, color, vis);
-
-    // Check traversal instantiations
-    breadth_first_search_all(g, vis);
-    breadth_first_search_all(g, color, vis);
-    breadth_first_search_all(cg, vis);
-    breadth_first_search_all(cg, color, vis);
-  }
 
 // Actually test a graph to see if it works right.
 template<typename Graph>
@@ -92,12 +54,15 @@ template<typename Graph>
     assert(( pred[c] == a ));
     assert(( pred[d] == c ));
     
-    auto vis = on_discover_vertex(ostream_visit(std::cout), bfs_visitor{});
+    auto vis = on_discover_vertex(ostream_visit(cout, " "), bfs_visitor{});
     breadth_first_search(g, a, vis);
   }
 
 int main()
 {
-  sanity_check<directed_adjacency_list<char>>();
-  test<directed_adjacency_list<char>>();
+  typedef directed_adjacency_vector<char, int> Graph;
+  test<Graph>();
+  
+//   sanity_check<directed_adjacency_list<char>>();
+//   test<directed_adjacency_list<char>>();
 }

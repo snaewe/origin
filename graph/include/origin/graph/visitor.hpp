@@ -159,7 +159,7 @@ namespace origin
   // FIXME: It might be better if this sat on an output iterator rather than
   // an output stream. Think about insertion iterators.
   /**
-   * The ostream visitor is an Event Visitor that prints the value associated
+   * The ostream visitor is an Event Visitor that streams the value associated
    * with the visited handle to an output stream. For example, visiting
    * discovered vertices will case vertex properties to streamed out.
    */
@@ -169,10 +169,9 @@ namespace origin
       typedef typename Output_Stream::char_type Char;
 
       ostream_visitor(Output_Stream& os, Char const* sep = " ")
-        : os(os)
+        : os(os), sep{sep}
       { }
 
-      // FIXME: Different output for vertices and edges? Could be...
       template<typename Graph, typename Handle>
         void operator()(Graph& g, Handle x)
         {
@@ -182,13 +181,15 @@ namespace origin
       Output_Stream& os;
       Char const* sep;
     };
-    
-  template<typename Output_Stream>
-    inline ostream_visitor<Output_Stream> ostream_visit(Output_Stream& os)
-    {
-      return ostream_visitor<Output_Stream>{os};
-    }
 
+  // Return an ostream visitor on the given stream.
+  template<typename Output_Stream>
+    inline ostream_visitor<Output_Stream> 
+    ostream_visit(Output_Stream& os,
+                  typename Output_Stream::char_type const* sep = " ")
+    {
+      return ostream_visitor<Output_Stream>{os, sep};
+    }
     
 } // namespace origin
 
