@@ -10,6 +10,8 @@
 
 #include <type_traits>
 
+#include <origin/utility/meta.hpp>
+
 namespace origin
 {
   // FIXME: What are the different kinds of graph mutability:
@@ -27,7 +29,6 @@ namespace origin
   // the adjacency matrix is static vertex/dynamic edge
   // the static graph is static.
 
-
   // Directionality
   struct directed_graph_tag { };
   struct undirected_graph_tag { };
@@ -44,6 +45,23 @@ namespace origin
   struct vertex_dynamic_graph_tag : vertex_buildable_graph_tag { };
   struct edge_dynamic_graph_tag : edge_buildable_graph_tag { };
   struct dynamic_graph_tag : vertex_dynamic_graph_tag, edge_dynamic_graph_tag { };
+  
+  
+  template<typename G>
+    class __is_graph
+    {
+      template<typename T>
+        static typename T::graph_category check(T const&);
+      static substitution_failure check(...);
+    public:
+      typedef decltype(check(std::declval<G>())) type;
+    };
+    
+  // True if G is a graph. Graph's declare a nested type, graph_category.
+  template<typename G>
+    struct is_graph
+      : substitution_succeeded<typename __is_graph<G>::type>::value
+    { };
   
   // FIXME: Many of these can be syntactically evaluated without tag classes.
   // For example, vertex buildable graphs have add_vertex, dynamic vertex
@@ -149,21 +167,86 @@ namespace origin
     typedef typename Graph::const_edge_range edge_range;
   };
 
-  // Return an iterator to the first vertex in the graph.
-  template<typename Graph>
-    auto begin_vertex(Graph& g) -> decltype(begin(g.vertices()))
-    { 
-      return begin(g.vertices());
-    }
+  // The graph interface is exposed as free functions.
 
-  // Return an iterator past the last vertex in the graph.
-  template<typename Graph>
-    auto end_vertex(Graph& g) -> decltype(end(g.vertices()))
-    { 
-      return end(g.vertices()); 
+  // Return true if the graph has no vertices.
+  template<typename G>
+    inline typename std::enable_if<is_graph<G>::value, bool>::type 
+    null(G const& g)
+    {
+      return g.null();
     }
     
-  // FIXME: Add edge accessors.
+  // Return the number of vertices in a graph.
+  template<typename G>
+    inline auto order(G const& g) -> decltype(g.order())
+    {
+      return g.order();
+    }
+
+  // Return true if the graph is empty.
+  template<typename G>
+    inline typename std::enable_if<is_graph<G>::value, bool>::type
+    empty(G const& g)
+    {
+      return g.empty();
+    }
+
+  // Return the size of a graph
+  template<typename G>
+    inline auto size(G const& g) ->
+      typename std::enable_if<is_graph<G>::value, decltype(g.size())>::type
+    {
+      return g.size();
+    }
+  
+  // Return the vertex set of a graph
+  template<typename G>
+    inline auto vertices(G& g) -> decltype(g.vertices())
+    {
+      return g.vertices();
+    }
+    
+  // Add a vertex to the graph
+  template<typename G>
+    inline auto add_vertex(G& g) -> decltype(g.add_vertex())
+    {
+      return g.add_vertex();
+    }
+    
+  // Add a vertex to the graph with the specified property.
+  template<typename G, typename T>
+    inline auto add_vertex(G& g, T const& value) -> decltype(g.add_vertex(value))
+    {
+      return g.add_vertex(value);
+    }
+    
+  // Return the edge set of a graph
+  template<typename G>
+    inline auto edges(G& g) -> decltype(g.edges())
+    {
+      return g.edges();
+    }
+
+  // TODO: I should really be using more specific graph properties, but for
+  // some reason the compiler isn't connecting with them.
+
+  // Add an edge to the graph.
+  template<typename G, typename V>
+    inline auto add_edge(G& g, V u, V v) -> decltype(g.add_edge(u, v))
+    {
+      return g.add_edge(u, v);
+    }
+
+  // Add an edge to the graph with the specified property.
+  template<typename G, typename V, typename T>
+    inline auto add_edge(G& g, V u, V v, T const& value)
+      -> decltype(g.add_edge(u, v, value))
+    {
+      return g.add_edge(u, v, value);
+    }
+
+
 
 } // namesapce origin
 

@@ -8,6 +8,7 @@
 #ifndef ORIGIN_GRAPH_ALGORITHM_COLORING_TWO_COLORING_HPP
 #define ORIGIN_GRAPH_ALGORITHM_COLORING_TWO_COLORING_HPP
 
+#include <origin/graph/color.hpp>
 #include <origin/graph/algorithm/coloring/common.hpp>
 
 namespace origin
@@ -71,8 +72,8 @@ namespace origin
   template<typename Graph, typename Color_Label>
     void two_coloring(Graph& g, Color_Label color)
     {
-      two_color_visitor<Graph, Color_Label, bfs_visitor>(g, color);
-      breadth_first_search_all(g, color);
+      two_color_visitor<Graph, Color_Label, bfs_visitor> vis(color);
+      breadth_first_search_all(g, vis);
     }
   
   // HOWTO: How do I find which component each vertex belongs to?

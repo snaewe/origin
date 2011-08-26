@@ -9,6 +9,7 @@
 #define ORIGIN_GRAPH_IO_EDGE_LIST_HPP
 
 #include <iosfwd>
+#include <unordered_map>
 
 #include <origin/graph/traits.hpp>
 

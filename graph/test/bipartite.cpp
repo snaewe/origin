@@ -5,6 +5,7 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
+#include <cassert>
 #include <iostream>
 
 #include <origin/graph/adjacency_vector.hpp>
@@ -26,13 +27,13 @@ int main()
   }
   
   { // K3 is not.
-//     Graph g;
-//     auto u = g.add_vertex();
-//     auto v = g.add_vertex();
-//     auto w = g.add_vertex();
-//     g.add_edge(u, v);
-//     g.add_edge(v, w);
-//     g.add_edge(w, u);
-//     assert(( !is_bipartite(g) ));
+    Graph g;
+    auto u = g.add_vertex();
+    auto v = g.add_vertex();
+    auto w = g.add_vertex();
+    g.add_edge(u, v);
+    g.add_edge(v, w);
+    g.add_edge(w, u);
+    assert(( !is_bipartite(g) ));
   }
 }
