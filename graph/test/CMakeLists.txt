@@ -17,7 +17,7 @@ origin_run_test(bfs bfs.cpp)
 origin_run_test(dfs dfs.cpp)
 origin_run_test(bipartite bipartite.cpp)
 
-# origin_run_test(dfs_check dfs_check.cpp)
+origin_run_test(topological_sort topological_sort.cpp)
 
 
 # Shortest path Tests

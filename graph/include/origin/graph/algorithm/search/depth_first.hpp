@@ -346,7 +346,6 @@ namespace origin
     // Perform a depth first search on the graph.
     void operator()()
     {
-      return;
       search_graph();
     }
 
@@ -429,7 +428,7 @@ namespace origin
     inline void depth_first_search_all(Graph& g, Visitor&& vis)
     {
       vertex_map<Graph, basic_color_t> color;
-      depth_first_search(g, label(color), vis);
+      depth_first_search_all(g, label(color), vis);
     }
   //@}
 
