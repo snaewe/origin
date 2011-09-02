@@ -46,4 +46,29 @@ int main()
     assert(( g.size() == 5 ));
     write_edge_list(cout, g);
   }
+
+  { // complete graphs
+    cout << "==== K5 ====\n";
+    Graph g = iota_complete_graph<Graph>({'a', 'b', 'c', 'd', 'e'}, 0);
+    assert(( g.order() == 5 ));
+    assert(( g.size() == 10 ));
+    write_edge_list(cout, g);
+  }
+
+  { // star graphs
+    cout << "==== S5 ====\n";
+    Graph g = iota_star_graph<Graph>({'a', 'b', 'c', 'd', 'e'}, 0);
+    assert(( g.order() == 5 ));
+    assert(( g.size() == 4 ));
+    write_edge_list(cout, g);
+  }
+
+  { // wheel graphs
+    cout << "==== W5 ====\n";
+    Graph g = iota_wheel_graph<Graph>({'a', 'b', 'c', 'd', 'e'}, 0);
+    assert(( g.order() == 5 ));
+    assert(( g.size() == 8 ));
+    write_edge_list(cout, g);
+  }
+
 }

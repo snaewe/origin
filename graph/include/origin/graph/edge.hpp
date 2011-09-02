@@ -28,7 +28,7 @@ namespace origin
     typedef std::size_t value_type;
     
     edge_t()
-      : value{-1}
+      : value{-1u}
     { }
 
     edge_t(value_type n)
@@ -46,7 +46,7 @@ namespace origin
     bool operator>=(edge_t x) const { return value >= x.value; }
     
     // Safe bool
-    bool valid() const { return value != value_type{-1}; }
+    bool valid() const { return value != value_type{-1u}; }
 
     value_type value;
   };

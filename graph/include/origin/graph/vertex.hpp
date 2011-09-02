@@ -25,7 +25,7 @@ namespace origin
     typedef std::size_t value_type;
     
     vertex_t()
-      : value{-1}
+      : value{-1u}
     { }
 
     explicit vertex_t(value_type n)
