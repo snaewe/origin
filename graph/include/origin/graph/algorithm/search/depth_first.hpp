@@ -193,96 +193,88 @@ namespace origin
     
     typedef Color_Label color_label;
     typedef typename label_traits<color_label, vertex>::value_type color_type;
-    typedef origin::color_traits<color_type> color_traits;
+    typedef color_traits<color_type> colors;
     
     typedef Visitor visitor_type;
 
   private:
     // The vertex state stores the current search state for a vertex. This
     // includes the current iteration state of the vertex.
-    typedef decltype(out_edges(std::declval<Graph>(), std::declval<vertex>())) out_edge_range;
-    typedef decltype(begin(std::declval<out_edge_range>())) out_edge_iterator;
-    typedef std::pair<vertex, out_edge_range> vertex_state;
+    typedef decltype(out_edges(std::declval<Graph>(), std::declval<vertex>())) range;
+    typedef decltype(begin(std::declval<range>())) iterator;
+    typedef std::pair<vertex, range> vertex_state;
     typedef std::stack<vertex_state> search_stack;
   public:
 
     dfs_algorithm(graph_type& g, color_label c, visitor_type&& v)
       : graph(g), color{c}, vis(v), stack{}
-    { 
+    {
       init_graph(); 
     }
 
     void init_graph()
     {
       for(auto v : vertices(graph)) {
-        color(v) = color_traits::white();
+        color(v) = colors::white();
         vis.initialized_vertex(graph, v);
       }
     }
     
     void init_tree(vertex v)
     {
-      color(v) = color_traits::gray();
-      stack.push({v, out_edges(graph, v)});
+      color(v) = colors::gray();
       vis.root_vertex(graph, v);
       vis.discovered_vertex(graph, v);
+      vis.started_vertex(graph, v);
+      stack.push({v, out_edges(graph, v)});
     }
     
-    void examine_target(edge e)
+    void examine_target(edge e, vertex& u, iterator& first, iterator& last)
     {
-      vertex v = target(graph, e);
-      if(color(v) == color_traits::white()) {
-        vis.tree_edge(graph, e);
-
-        // Re-push the current vertex onto the queue so that we can
-        // return to it after we descend through v. Note that the iteration
-        // state is advanced prior to re-pushing the state.
-        stack.push({cur, out_edge_range{++iter, last}});
-
-        // Make v the current vertex and visit it.
-        cur = v;
-        color(cur) = color_traits::gray();
-        vis.discovered_vertex(graph, cur);
-
-        // Swap the current iteration range with the that of the new
-        // current vertex.
-        auto rng = out_edges(graph, cur);
-        iter = std::begin(rng);
-        last = std::end(rng);
-      } else {
-        // Determine if the edge is a back, forward, or cross edge.
-        if(color(v) == color_traits::gray())
-          vis.back_edge(graph, e);
-        else
-          vis.nontree_edge(graph, e);
+      // Note: e == *first.
+      vertex v = target(graph, e); 
+      if(color(v) == colors::white()) {
+        vis.tree_edge(graph, e); 
         
-        // Don't forget to update the iterator.
-        ++iter;
+        // Re-push the current context so we can re-visit the current state
+        // when we're done with the new vertex.
+        stack.push({u, range{++first, last}});
+        
+        // Exchange the current context with the new vertex and its edges
+        u = v;
+        color(u) = colors::gray();
+        auto rng = out_edges(graph, u);
+        first = begin(rng);
+        last = end(rng);
+        vis.discovered_vertex(graph, u); 
+        vis.started_vertex(graph, u);
+      } else {
+        if(color(v) == colors::gray()) {
+          vis.back_edge(graph, e); 
+        } else {
+          vis.nontree_edge(graph, e); 
+        }
+        ++first;
       }
     }
     
     // Search the incident edges of the current vertex for undiscovered tree 
-    // edges.
-    void search_vertex(vertex_state s)
+    // edges. The current context (u, first, last) is modified by the algorithm.
+    void search_vertex(vertex& u, iterator& first, iterator& last)
     {
-      using std::begin;
-      using std::end;
-
-      auto rng = s.second;
-      iter = begin(rng);
-      last = end(rng);
-      while(iter != last) {
-        edge e = *iter;
+      while(first != last) {
+        edge e = *first;
         vis.started_edge(graph, e);
-
+        
         action const act = vis.examine_edge(graph, e);
         if(act == action::handle) {
-          examine_target(e);
+          examine_target(e, u, first, last);
           vis.finished_edge(graph, e);
+          // It may not be that e == *first after calling examine_target.
         } else {
           vis.finished_edge(graph, e);
           if(act == action::ignore) {
-            ++iter;
+            ++first;
             continue;
           } else
             break;
@@ -290,19 +282,18 @@ namespace origin
       }
     }
     
-    // Pop a vertex from the stack, setting it as the current vertex.
+    // Pop a vertex from the stack, setting it as the current vertex. 
     vertex_state start_vertex()
     {
       vertex_state s = std::move(stack.top());
       stack.pop();
-      cur = s.first;
-      vis.started_vertex(graph, cur);
       return std::move(s);
     }
     
+    // Finish the vertex by coloring it black.
     void finish_vertex(vertex v)
     {
-      color(v) = color_traits::black();
+      color(v) = colors::black();
       vis.finished_vertex(graph, v);
     }
 
@@ -310,16 +301,20 @@ namespace origin
     void search_tree(vertex v)
     {
       init_tree(v);
-
+      
       while(!stack.empty()) {
-        vertex_state s = start_vertex();
+        auto s = start_vertex();
+        vertex v = s.first;
+        iterator iter = begin(s.second);
+        iterator last = end(s.second);
 
+        // examine the vertex?
         action const act = vis.examine_vertex(graph, s.first);
         if(act == action::handle) {
-          search_vertex(s);
-          finish_vertex(s.first);
+          search_vertex(v, iter, last);
+          finish_vertex(v);
         } else {
-          finish_vertex(s.first);
+          finish_vertex(v);
           if(act == action::ignore)
             continue;
           else
@@ -332,7 +327,7 @@ namespace origin
     void search_graph()
     {
       for(auto v : vertices(graph)) {
-        if(color(v) == color_traits::white())
+        if(color(v) == colors::white())
           search_tree(v);
       }
     }
@@ -353,10 +348,6 @@ namespace origin
     color_label color;
     visitor_type vis;
     search_stack stack;
-  private:
-    vertex cur;
-    out_edge_iterator iter;
-    out_edge_iterator last;
   };
   
   /**

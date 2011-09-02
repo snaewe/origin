@@ -36,10 +36,6 @@ template<typename Graph>
     g.add_edge(a, b);
     g.add_edge(c, d);
 
-    auto vis = on_discover_vertex(ostream_visit(cout, " "), dfs_visitor{});
-    depth_first_search(g, a, vis);
-    cout << "\n";
-    
     vector<Vertex> order(4);
     topological_sort(g, order.begin());
     

@@ -34,11 +34,12 @@ namespace origin
 
       void started_vertex(G const& g, Vertex v) 
       {
-        std::cout << g[v] << "\n";
+//         std::cout << "start " << g[v] << "\n";
       }
 
       void finished_vertex(G const& g, Vertex v) 
       {
+//         std::cout << "finish " << g[v] << "\n";
         *iter++ = v;
       }
       
