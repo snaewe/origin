@@ -12,6 +12,7 @@
 
 #include <origin/graph/color.hpp>
 #include <origin/graph/label.hpp>
+#include <origin/graph/visitor.hpp>
 #include <origin/graph/edge.hpp>
 
 namespace origin
@@ -199,7 +200,7 @@ namespace origin
   private:
     // The vertex state stores the current search state for a vertex. This
     // includes the current iteration state of the vertex.
-    typedef decltype(out_edges(std::declval<Graph>())) out_edge_range;
+    typedef decltype(out_edges(std::declval<Graph>(), std::declval<vertex>())) out_edge_range;
     typedef decltype(begin(std::declval<out_edge_range>())) out_edge_iterator;
     typedef std::pair<vertex, out_edge_range> vertex_state;
     typedef std::stack<vertex_state> search_stack;
@@ -213,7 +214,7 @@ namespace origin
 
     void init_graph()
     {
-      for(auto v : graph.vertices()) {
+      for(auto v : vertices(graph)) {
         color(v) = color_traits::white();
         vis.initialized_vertex(graph, v);
       }
@@ -229,7 +230,7 @@ namespace origin
     
     void examine_target(edge e)
     {
-      vertex v = graph.target(e);
+      vertex v = target(graph, e);
       if(color(v) == color_traits::white()) {
         vis.tree_edge(graph, e);
 
@@ -293,6 +294,7 @@ namespace origin
     vertex_state start_vertex()
     {
       vertex_state s = std::move(stack.top());
+      stack.pop();
       cur = s.first;
       vis.started_vertex(graph, cur);
       return std::move(s);
@@ -312,7 +314,7 @@ namespace origin
       while(!stack.empty()) {
         vertex_state s = start_vertex();
 
-        action const act = vis.examine_vertex(graph, v.first);
+        action const act = vis.examine_vertex(graph, s.first);
         if(act == action::handle) {
           search_vertex(s);
           finish_vertex(s.first);
@@ -325,30 +327,33 @@ namespace origin
         }
       }
     }
-    
+
     // Perform a depth-first search on the entire graph.
     void search_graph()
     {
-      for(auto v : graph.vertices()) {
+      for(auto v : vertices(graph)) {
         if(color(v) == color_traits::white())
           search_tree(v);
       }
     }
     
+    // Perform a depth first search from the given vertex.
     void operator()(vertex v)
     {
       search_tree(v);
     }
     
+    // Perform a depth first search on the graph.
     void operator()()
     {
+      return;
       search_graph();
     }
 
     graph_type& graph;
+    color_label color;
     visitor_type vis;
     search_stack stack;
-    color_label color;
   private:
     vertex cur;
     out_edge_iterator iter;
@@ -378,7 +383,7 @@ namespace origin
     inline void depth_first_search(Graph& g,
                                    typename graph_traits<Graph>::vertex v,
                                    Color_Label color,
-                                   Visitor vis)
+                                   Visitor&& vis)
     {
       dfs_algorithm<Graph, Color_Label, Visitor> algo(g, color, vis);
       algo(v);
@@ -387,10 +392,10 @@ namespace origin
   template<typename Graph, typename Visitor>
     inline void depth_first_search(Graph& g, 
                                    typename graph_traits<Graph>::vertex v, 
-                                   Visitor vis)
+                                   Visitor&& vis)
     {
-      vertex_map<Graph, basic_color_t> color(g.order());
-      depth_first_search(g, v, color, vis);
+      vertex_map<Graph, basic_color_t> c(g.order());
+      depth_first_search(g, v, label(c), vis);
     }
   //@}
 
@@ -414,19 +419,58 @@ namespace origin
    */
   //@{
   template<typename Graph, typename Color_Label, typename Visitor>
-    inline void depth_first_traverse(Graph& g, Color_Label color, Visitor vis)
+    inline void depth_first_search_all(Graph& g, Color_Label color, Visitor&& vis)
     {
       dfs_algorithm<Graph, Color_Label, Visitor> algo(g, color, vis);
       algo();
     }
 
   template<typename Graph, typename Visitor>
-    inline void depth_first_traverse(Graph& g, Visitor vis)
+    inline void depth_first_search_all(Graph& g, Visitor&& vis)
     {
       vertex_map<Graph, basic_color_t> color;
       depth_first_search(g, label(color), vis);
     }
   //@}
+
+
+  // Compute the distance from v to every other vertex, writing values to the
+  // distance label dist.
+  template<typename Graph, typename Distance_Label, typename Distance>
+    void depth_first_distance(Graph& g, 
+                              typename graph_traits<Graph>::vertex v,
+                              Distance_Label dist,
+                              Distance zero,
+                              Distance inf)
+    {
+      depth_first_search(g, v, visit_distance(g, dist, zero, inf, dfs_visitor{}));
+    }
+
+  // Compute the distance from v to every other vertex in g, writing the
+  // values to the output label dist.
+  template<typename Graph, typename Distance_Label>
+    void depth_first_distance(Graph& g, 
+                              typename graph_traits<Graph>::vertex v,
+                              Distance_Label dist)
+    {
+      depth_first_search(g, v, visit_distance(g, dist, dfs_visitor{}));
+    }
+
+  // Compute the depth first search tree for the graph rooted at the vertex v.
+  template<typename Graph, typename Predecessor_Label>
+    void depth_first_search_tree(Graph& g, 
+                                 typename graph_traits<Graph>::vertex v,
+                                 Predecessor_Label pred)
+    {
+      depth_first_search(g, v, visit_predecessor(g, pred, dfs_visitor{}));
+    }
+
+  // Compute teh depth first search tree.
+  template<typename Graph, typename Predecessor_Label>
+    void depth_first_search_forest(Graph& g, Predecessor_Label pred)
+    {
+      depth_first_search_all(g, visit_predecessor(g, pred, dfs_visitor{}));
+    }
 
 } // namespace origin
 

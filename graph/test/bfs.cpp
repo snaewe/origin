@@ -56,13 +56,11 @@ template<typename Graph>
     
     auto vis = on_discover_vertex(ostream_visit(cout, " "), bfs_visitor{});
     breadth_first_search(g, a, vis);
+    cout << "\n";
   }
 
 int main()
 {
   typedef directed_adjacency_vector<char, int> Graph;
   test<Graph>();
-  
-//   sanity_check<directed_adjacency_list<char>>();
-//   test<directed_adjacency_list<char>>();
 }

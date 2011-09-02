@@ -213,7 +213,9 @@ namespace origin
     {
       return g.add_vertex();
     }
-    
+
+  // FIXME: Replace T with VertexValueType<G>.
+
   // Add a vertex to the graph with the specified property.
   template<typename G, typename T>
     inline auto add_vertex(G& g, T const& value) -> decltype(g.add_vertex(value))
@@ -227,7 +229,21 @@ namespace origin
     {
       return g.edges();
     }
+    
+  // FIXME: Replace E with EdgeType<G> for source and target.
 
+  template<typename G, typename E>
+    inline auto source(G const& g, E e) -> decltype(g.source(e))
+    {
+      return g.source(e);
+    }
+
+  template<typename G, typename E>
+    inline auto target(G const& g, E e) -> decltype(g.target(e))
+    {
+      return g.target(e);
+    }
+    
   // TODO: I should really be using more specific graph properties, but for
   // some reason the compiler isn't connecting with them.
 
@@ -247,6 +263,61 @@ namespace origin
     }
 
 
+  // Graph operations
+
+
+
+  // Return a range of edges incident to the vertex. For directed graphs this
+  // is always the out edges. For undirected graphs, it is the entire set of
+  // incident edges.
+  //
+  // FIXME: Should be called IncidentEdges?
+  template<typename Graph, typename V>
+    inline auto out_edges(Graph& g, V v)
+      -> typename std::enable_if<
+          is_directed_graph<Graph>::value, decltype(g.out_edges(v))
+        >::type
+    {
+      return g.out_edges(v); 
+    }
+
+  // Specialization for const directed graphs
+  template<typename Graph, typename V>
+    inline auto out_edges(Graph const& g, V v)
+      -> typename std::enable_if<
+          is_directed_graph<Graph>::value, decltype(g.out_edges(v))
+        >::type
+    {
+      return g.out_edges(v); 
+    }
+
+  // Specialization for undirected graphs.
+  template<typename Graph, typename V>
+    inline auto out_edges(Graph& g, V v)
+      -> typename std::enable_if<
+          is_undirected_graph<Graph>::value, decltype(g.incident_edges())
+        >::type
+    { 
+      return g.incident_edges(v); 
+    }
+
+  // Specialization for const undirected graphs
+  template<typename Graph, typename V>
+    inline auto out_edges(Graph const& g, V v)
+      -> typename std::enable_if<
+          is_undirected_graph<Graph>::value, decltype(g.incident_edges())
+        >::type
+    { 
+      return g.incident_edges(v); 
+    }
+
+
+  // Return the opposite end of the given edge.
+  template<typename Graph, typename Edge, typename Vertex>
+    Vertex opposite(Graph& g, Edge e, Vertex v)
+    { 
+      return source(g, e) == v ? target(g, e) : v; 
+    }
 
 } // namesapce origin
 

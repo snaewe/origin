@@ -180,7 +180,7 @@ namespace origin
       // white.
       void init_graph()
       {
-        for(auto v : graph.vertices()) {
+        for(auto v : vertices(graph)) {
           color(v) = colors::white();
           vis.initialized_vertex(graph, v);
         }
@@ -196,7 +196,7 @@ namespace origin
 
       void examine_target(edge e)
       {
-        vertex v = graph.target(e);
+        vertex v = target(graph, e);
         if(color(v) == colors::white()) {
           vis.tree_edge(graph, e);
           color(v) = colors::gray();
@@ -271,7 +271,7 @@ namespace origin
       // Execute a search on the entire graph.
       void search_graph()
       {
-        for(vertex v : graph.vertices()) {
+        for(vertex v : vertices(graph)) {
           if(color(v) == colors::white()) {
             search_tree(v);
             
@@ -325,7 +325,7 @@ namespace origin
                                      Color_Label color,
                                      Visitor&& vis)
     {
-      bfs_algorithm<Graph, decltype(color), Visitor> algo(g, color, vis);
+      bfs_algorithm<Graph, Color_Label, Visitor> algo(g, color, vis);
       algo(v);
     }
 
