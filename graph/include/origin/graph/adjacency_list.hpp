@@ -5,10 +5,10 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_GRAPH_ADJACENCY_VECTOR_HPP
-#define ORIGIN_GRAPH_ADJACENCY_VECTOR_HPP
+#ifndef ORIGIN_GRAPH_ADJACENCY_LIST_HPP
+#define ORIGIN_GRAPH_ADJACENCY_LIST_HPP
 
-#include <origin/graph/adjacency_vector/directed.hpp>
-#include <origin/graph/adjacency_vector/undirected.hpp>
+#include <origin/graph/adjacency_list/directed.hpp>
+#include <origin/graph/adjacency_list/undirected.hpp>
 
 #endif

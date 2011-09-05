@@ -5,7 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_executable(adjacency_vector adjacency_vector.cpp)
+origin_executable(adjacency_list adjacency_list.cpp)
 
 origin_run_test(generator generator.cpp)
 origin_run_test(breadth_first breadth_first.cpp)

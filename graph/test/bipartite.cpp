@@ -8,7 +8,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <origin/graph/adjacency_vector.hpp>
+#include <origin/graph/adjacency_list.hpp>
 #include <origin/graph/algorithm/bipartite.hpp>
 
 using namespace std;
@@ -16,7 +16,7 @@ using namespace origin;
 
 int main()
 {
-  typedef directed_adjacency_vector<char, int> Graph;
+  typedef directed_adjacency_list<char, int> Graph;
 
   { // K2 is bipartite
     Graph g;

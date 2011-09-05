@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_GRAPH_ADJACENCY_VECTOR_DIRECTED_HPP
-#define ORIGIN_GRAPH_ADJACENCY_VECTOR_DIRECTED_HPP
+#ifndef ORIGIN_GRAPH_ADJACENCY_LIST_DIRECTED_HPP
+#define ORIGIN_GRAPH_ADJACENCY_LIST_DIRECTED_HPP
 
 #include <algorithm>
 #include <vector>
@@ -25,11 +25,11 @@ namespace origin
   // The edge node for a directed adjacency list stores the source and vertex
   // indices of the graph.
   template<typename E>
-    struct adjacency_vector_edge
+    struct adjacency_list_edge
     {
       typedef E value_type;
       
-      adjacency_vector_edge(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
+      adjacency_list_edge(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
         : source{src}, target{tgt}, value{x}
       { }
 
@@ -41,12 +41,12 @@ namespace origin
   // The vertex node of an adjacency vector stores the out edge and in edge
   // lists.
   template<typename V>
-    struct adjacency_vector_vertex
+    struct adjacency_list_vertex
     {
       typedef V value_type;
       typedef std::vector<edge_t> edge_list;
       
-      adjacency_vector_vertex(value_type const& x = value_type{})
+      adjacency_list_vertex(value_type const& x = value_type{})
         : value{x}
       { }
       
@@ -78,7 +78,7 @@ namespace origin
   template<typename Vertex = empty_t, 
            typename Edge = empty_t, 
            typename Alloc = std::allocator<void>>
-    class directed_adjacency_vector
+    class directed_adjacency_list
     {
     public:
       typedef typename Alloc::template rebind<Vertex>::other vertex_allocator_type;
@@ -90,8 +90,8 @@ namespace origin
       typedef Vertex vertex_value_type;
       typedef Edge   edge_value_type;
     private:
-      typedef adjacency_vector_vertex<vertex_value_type> vertex_type;
-      typedef adjacency_vector_edge<edge_value_type>     edge_type;
+      typedef adjacency_list_vertex<vertex_value_type> vertex_type;
+      typedef adjacency_list_edge<edge_value_type>     edge_type;
 
       typedef std::vector<vertex_type, vertex_allocator_type> vertex_list;
       typedef std::vector<edge_type, edge_allocator_type>     edge_list;
@@ -117,41 +117,44 @@ namespace origin
       
       struct graph_category : directed_graph_tag, buildable_graph_tag { };
       
-      /** @name Initialization and Assignment. */
-      //@{
-      directed_adjacency_vector()
+      // Semiregular
+      // Copy and move constructors and assignment operators are generated.
+      directed_adjacency_list()
         : vertices_{}, edges_{}
       { }
       
-      // FIXME: Copy, move semantics.
-      
       // Vertex fill constructor
-      directed_adjacency_vector(size_type n, vertex_value_type const& x = vertex_value_type{})
+      directed_adjacency_list(size_type n, vertex_value_type const& x = vertex_value_type{})
         : vertices_(n, x), edges_{}
       { }
 
       // Vertex range constructor
       template<typename Iter>
-        directed_adjacency_vector(Iter first, Iter last)
+        directed_adjacency_list(Iter first, Iter last)
           : vertices_(first, last), edges_{}
         { }
         
       // Vertex initialization constructor
-      directed_adjacency_vector(std::initializer_list<vertex_value_type> list)
+      directed_adjacency_list(std::initializer_list<vertex_value_type> list)
         : vertices_(list), edges_{}
       { }
-      //@}
+
+      // Container properties.
       
-      /** @name Properties */
+      // Return the maximum number of vertices possible for the graph.
       constexpr size_type max_order() const { return vertices_.max_size(); }
+      
+      // Return the maximum number of edges possible for the graph.
       constexpr size_type max_size() const  { return edges_.max_size(); }
       
+      // Return the graph's vertex allocator.
       vertex_allocator_type get_vertex_allocator() const { return vertex_allocator_type{}; }
-      edge_allocator_type   get_edge_allocator() const   { return edge_allocator_type{}; }
-      //@}
+      
+      // Return the graph's edge allocator.
+      edge_allocator_type get_edge_allocator() const   { return edge_allocator_type{}; }
 
-      /** @name Graph properties */
-      //@{
+      // Graph properties
+
       // Return true if the graph has no vertices.
       bool null() const { return vertices_.empty(); }
       
@@ -163,20 +166,15 @@ namespace origin
       
       // Return the number of edges in the graph.
       size_type size() const { return edges_.size(); }
-      //@}
       
-      /** @name Data access */
-      //@{
-      // Return the value associated with the given vertex.
+      // Return the value associated with the vertex v.
       vertex_value_type&       operator[](vertex v)       { return get(v).value; }
       vertex_value_type const& operator[](vertex v) const { return get(v).value; }
 
-      // Return the value associated with the given edge.
+      // Return the value associated with the edge e.
       edge_value_type&       operator[](edge e)       { return get(e).value; }
       edge_value_type const& operator[](edge e) const { return get(e).value; }
-      //@}
 
-      /** @name Graph operations */
       // Return the vertex indicated by the given index
       vertex       get_vertex(size_type n)       { return n; }
       const_vertex get_vertex(size_type n) const { return n; }
@@ -203,7 +201,6 @@ namespace origin
       edge       get_in_edge(vertex v, size_type n)       { return get(v).in[n]; }
       const_edge get_in_edge(vertex v, size_type n) const { return get(v).in[n]; } 
 
-
       // Return the source vertex of the given edge.
       vertex       source(edge e)             { return get(e).source; }
       const_vertex source(const_edge e) const { return get(e).source; }
@@ -211,6 +208,8 @@ namespace origin
       // Return the target vertex of the given edge.
       vertex       target(edge e)       { return get(e).target; }
       const_vertex target(edge e) const { return get(e).target; }
+
+      // Graph operations
 
       // Add a value to the graph, returning a handle to the added vertex. The 
       // associated value may be specified.
@@ -230,10 +229,9 @@ namespace origin
         get(v).add_in(e);
         return e;
       }
-      //@}
 
-      /** @name Ranges */
-      //@{
+      // Ranges
+
       // Return the range of vertices in the graph.
       vertex_range       vertices()       { return {begin_vertices(), end_vertices()}; }
       const_vertex_range vertices() const { return {begin_vertices(), end_vertices()}; }
@@ -241,13 +239,14 @@ namespace origin
       // Return the range of all edges in the graph.
       edge_range       edges()       { return {begin_edges(), end_edges()}; }
       const_edge_range edges() const { return {begin_edges(), end_edges()}; }
-      
+
+      // Return the set of outgoing edges of the vertex v.
       out_edge_range       out_edges(vertex v)       { return {begin_out_edges(v), end_out_edges(v)}; }
       const_out_edge_range out_edges(vertex v) const { return {begin_out_edges(v), end_out_edges(v)}; }
       
+      // Return the set of incomming edges of the vertex v.
       in_edge_range       in_edges(vertex v)       { return {begin_in_edges(v), end_in_edges(v)}; }
       const_in_edge_range in_edges(vertex v) const { return {begin_in_edges(v), end_in_edges(v)}; }
-      //@}
 
     private:
       // Return the vertex object associated with the given handle.
@@ -297,7 +296,7 @@ namespace origin
 
     
   template<typename V, typename E, typename A>
-    inline auto directed_adjacency_vector<V, E, A>::
+    inline auto directed_adjacency_list<V, E, A>::
       get_edge(vertex u, vertex v) -> edge
     {
       auto& out = get(u).out;
@@ -306,7 +305,7 @@ namespace origin
     }
 
   template<typename V, typename E, typename A>
-    inline auto directed_adjacency_vector<V, E, A>::
+    inline auto directed_adjacency_list<V, E, A>::
       get_edge(const_vertex u, const_vertex v) const -> const_edge
     {
       auto& out = get(u).out;

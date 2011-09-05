@@ -9,7 +9,7 @@
 #include <cassert>
 
 #include <origin/utility/typestr.hpp>
-#include <origin/graph/adjacency_vector.hpp>
+#include <origin/graph/adjacency_list.hpp>
 #include <origin/graph/generator.hpp>
 #include <origin/graph/io.hpp>
 
@@ -18,7 +18,7 @@ using namespace origin;
 
 int main()
 {
-  typedef directed_adjacency_vector<char, int> Graph;
+  typedef directed_adjacency_list<char, int> Graph;
   typedef graph_traits<Graph>::vertex Vertex;
 
   { // null graph

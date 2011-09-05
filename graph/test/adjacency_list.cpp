@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cassert>
 
-#include <origin/graph/adjacency_vector.hpp>
+#include <origin/graph/adjacency_list.hpp>
 #include <origin/graph/generator.hpp>
 
 using namespace std;
@@ -98,8 +98,8 @@ template<typename G>
   
 int main()
 {
-  typedef undirected_adjacency_vector<char, int> Graph;
-  typedef directed_adjacency_vector<char, int> Digraph;
+  typedef undirected_adjacency_list<char, int> Graph;
+  typedef directed_adjacency_list<char, int> Digraph;
   test<Graph>();
   test<Digraph>();
 }
