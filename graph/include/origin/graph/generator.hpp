@@ -141,7 +141,8 @@ namespace origin
   template<typename G>
     inline G make_trivial_graph()
     {
-      return std::move(G(1));
+      G g(1);
+      return std::move(g);
     }
     
   // Make a trivial graph with 1 vertex and no edges. Initalize the label of 
@@ -154,7 +155,8 @@ namespace origin
     inline G make_trivial_graph(V const& value)
     {
       // Kind of tricky, but &x and &x+1 define a range of 1 element.
-      return std::move(&value, &value + 1);
+      G g(&value, &value + 1);
+      return std::move(g);
     }
 
   // Path graphs have n vertices and n - 1 edges.

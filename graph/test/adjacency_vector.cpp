@@ -9,34 +9,97 @@
 #include <cassert>
 
 #include <origin/graph/adjacency_vector.hpp>
-
-#include "test_copy.hpp"
-#include "test_singleton_graph.hpp"
-#include "test_path2_graph.hpp"
-// #include "test_path2_multigraph.hpp"
+#include <origin/graph/generator.hpp>
 
 using namespace std;
 using namespace origin;
 
-// FIXME: This is copied out of graph.cpp. It should be moved into a more
-// general framework.
-template<typename Test>
+template<typename G>
+  void test_null_graph()
+  {
+    G g = make_null_graph<G>();
+    assert(( null(g) ));
+    assert(( empty(g) ));
+  }
+
+template<typename G>
+  void test_trivial_graph()
+  {
+    G g = make_trivial_graph<G>('a');
+    assert(( order(g) == 1 ));
+    assert(( size(g) == 0 ));
+    assert(( g[*begin(vertices(g))] == 'a' ));
+  }
+
+
+// Test for directed graphs
+template<typename G>
+  void test_cycle1_graph(G const& g, std::true_type)
+  {
+    auto v = *begin(vertices(g));
+    assert(( out_degree(g, v) == 1 ));
+    assert(( in_degree(g, v) == 1 ));
+    assert(( degree(g, v) == 2 ));
+  }
+
+// Test for undirected graphs
+template<typename G>
+  void test_cycle1_graph(G const& g, std::false_type)
+  {
+    auto v = *begin(vertices(g));
+    assert(( degree(g, v) == 2 ));
+  }
+
+template<typename G>
+  void test_cycle1_graph()
+  {
+    G g = iota_cycle_graph<G>(1, 0);
+    assert(( order(g) == 1 )) ;
+    assert(( size(g) == 1 ));
+
+    // Make sure the size agrees with the distance.
+    assert(( distance(begin(vertices(g)), end(vertices(g))) == 1 ));
+    assert(( distance(begin(edges(g)), end(edges(g))) == 1 ));
+    
+    // Test directed/undirected aspects
+    test_cycle1_graph(g, is_directed_graph<G>{});
+  }
+
+
+// Test for directed graphs
+template<typename G>
+  void test_path2_graph(G const& g, std::true_type)
+  {
+  }
+
+// Test for undirected graphs
+template<typename G>
+  void test_path2_graph(G const& g, std::false_type)
+  {
+  }
+
+template<typename G>
+  void test_path2_graph()
+  {
+    G g = iota_path_graph<G>({'a', 'b'}, 0);
+    assert(( order(g) == 2 )) ;
+    assert(( size(g) == 1 ));
+    test_path2_graph(g, is_directed_graph<G>{});
+  }
+
+template<typename G>
   void test()
   {
-    Test t;
-    t.test();
-  };
-
+    test_null_graph<G>();
+    test_trivial_graph<G>();
+    test_cycle1_graph<G>();
+    test_path2_graph<G>();
+  }
+  
 int main()
 {
-  typedef directed_adjacency_vector<char, int> Graph;
-
-  // Basic semantics
-//   test<copy_graph<Graph>>();
-
-  // Exercise various topology tests.
-  test<singleton_graph<Graph>>();
-  test<path2_graph<Graph>>();
-//   test<path2_multigraph<Graph>>();
-  
+  typedef undirected_adjacency_vector<char, int> Graph;
+  typedef directed_adjacency_vector<char, int> Digraph;
+  test<Graph>();
+  test<Digraph>();
 }

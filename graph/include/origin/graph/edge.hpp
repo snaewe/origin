@@ -28,33 +28,31 @@ namespace origin
     typedef std::size_t value_type;
     
     edge_t()
-      : value{-1u}
+      : value{-1ul}
     { }
 
     edge_t(value_type n)
       : value{n}
     { }
 
-    // Equatable
+    // Equality_comparable
     bool operator==(edge_t x) const { return value == x.value; }
     bool operator!=(edge_t x) const { return value != x.value; }
     
-    // Totally_Ordered
+    // Totally_ordered
     bool operator<(edge_t x) const { return value < x.value; }
     bool operator>(edge_t x) const { return value > x.value; }
     bool operator<=(edge_t x) const { return value <= x.value; }
     bool operator>=(edge_t x) const { return value >= x.value; }
     
     // Safe bool
-    bool valid() const { return value != value_type{-1u}; }
+    bool valid() const { return value != value_type{-1ul}; }
 
     value_type value;
   };
-  
-  /**
-   * Return the ordinal value of the given edge.
-   */
-  edge_t::value_type ord(edge_t e)
+
+  // Ordinal<edge_t>
+  inline edge_t::value_type ord(edge_t e)
   {
     return e.value;
   }

@@ -7,18 +7,11 @@
 
 origin_executable(adjacency_vector adjacency_vector.cpp)
 
-# origin_executable(graph graph.cpp)
-# origin_executable(adjacency_matrix adjacency_matrix.cpp)
-# origin_executable(undirected undirected.cpp)
-
 origin_run_test(generator generator.cpp)
-
-origin_run_test(bfs bfs.cpp)
-origin_run_test(dfs dfs.cpp)
+origin_run_test(breadth_first breadth_first.cpp)
+origin_run_test(depth_first depth_first.cpp)
 origin_run_test(bipartite bipartite.cpp)
-
 origin_run_test(topological_sort topological_sort.cpp)
-
 
 # Shortest path Tests
 # origin_run_test(dijkstra_shortest_path dijkstra_shortest_path.cpp)

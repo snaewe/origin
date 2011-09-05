@@ -25,7 +25,7 @@ namespace origin
     typedef std::size_t value_type;
     
     vertex_t()
-      : value{-1u}
+      : value{-1ul}
     { }
 
     explicit vertex_t(value_type n)
@@ -42,7 +42,7 @@ namespace origin
     bool operator>=(vertex_t x) const { return value <= x.value; }
 
     // Safe bool
-    bool valid() const { return value != -1u; }
+    bool valid() const { return value != -1ul; }
 
     value_type value;
   };

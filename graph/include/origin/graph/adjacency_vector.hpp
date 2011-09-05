@@ -9,5 +9,6 @@
 #define ORIGIN_GRAPH_ADJACENCY_VECTOR_HPP
 
 #include <origin/graph/adjacency_vector/directed.hpp>
+#include <origin/graph/adjacency_vector/undirected.hpp>
 
 #endif

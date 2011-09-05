@@ -22,18 +22,14 @@ namespace origin
   // FIXME: Consider splitting on dependent, non-dependent features of the
   // adj_vec components. Also, the value types might be optimized using EBO.
 
-  /**
-   * The edge node for a directed adjacency list stores the source and vertex
-   * indices of the graph.
-   */
+  // The edge node for a directed adjacency list stores the source and vertex
+  // indices of the graph.
   template<typename E>
     struct adjacency_vector_edge
     {
       typedef E value_type;
       
-      adjacency_vector_edge(vertex_t src, 
-                            vertex_t tgt, 
-                            value_type const& x = value_type{})
+      adjacency_vector_edge(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
         : source{src}, target{tgt}, value{x}
       { }
 
@@ -42,10 +38,8 @@ namespace origin
       value_type value;
     };
   
-  /**
-   * The vertex node of an adjacency vector stores the out edge and in edge
-   * lists.
-   */
+  // The vertex node of an adjacency vector stores the out edge and in edge
+  // lists.
   template<typename V>
     struct adjacency_vector_vertex
     {
@@ -79,7 +73,7 @@ namespace origin
    * 
    * @tparam Vertex   An Object type, empty_t by default
    * @tparam Edge     An Object type, empty_t by default
-   * @tparam Alloc    An Allocator type, default_allocator by default.
+   * @tparam Alloc    An Allocator type, allocator<void> by default.
    */
   template<typename Vertex = empty_t, 
            typename Edge = empty_t, 
@@ -95,19 +89,18 @@ namespace origin
       
       typedef Vertex vertex_value_type;
       typedef Edge   edge_value_type;
-
+    private:
       typedef adjacency_vector_vertex<vertex_value_type> vertex_type;
       typedef adjacency_vector_edge<edge_value_type>     edge_type;
 
       typedef std::vector<vertex_type, vertex_allocator_type> vertex_list;
       typedef std::vector<edge_type, edge_allocator_type>     edge_list;
-      
+    public:
       typedef vertex_t vertex;
       typedef vertex_t const_vertex;
       
       typedef edge_t edge;
       typedef edge_t const_edge;
-      
     private:
       // Const so that we can't accidentally modify the values in the vertex
       // handles in the incident edge lists.
@@ -151,12 +144,10 @@ namespace origin
       
       /** @name Properties */
       constexpr size_type max_order() const { return vertices_.max_size(); }
-      
-      constexpr size_type max_size() const { return edges_.max_size(); }
+      constexpr size_type max_size() const  { return edges_.max_size(); }
       
       vertex_allocator_type get_vertex_allocator() const { return vertex_allocator_type{}; }
-      
-      edge_allocator_type get_edge_allocator() const { return edge_allocator_type{}; }
+      edge_allocator_type   get_edge_allocator() const   { return edge_allocator_type{}; }
       //@}
 
       /** @name Graph properties */
@@ -203,6 +194,15 @@ namespace origin
       // u and v are not adjacent.
       edge        get_edge(vertex u, vertex v);
       const_edge  get_edge(vertex u, vertex v) const;
+      
+      // Return the nth out edge of vertex v.
+      edge       get_out_edge(vertex v, size_type n)       { return get(v).out[n]; }
+      const_edge get_out_edge(vertex v, size_type n) const { return get(v).out[n]; } 
+
+      // Return the nth in edge of vertex v.
+      edge       get_in_edge(vertex v, size_type n)       { return get(v).in[n]; }
+      const_edge get_in_edge(vertex v, size_type n) const { return get(v).in[n]; } 
+
 
       // Return the source vertex of the given edge.
       vertex       source(edge e)             { return get(e).source; }

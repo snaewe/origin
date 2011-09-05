@@ -8,8 +8,6 @@
 #ifndef ORIGIN_GRAPH_TRAITS_HPP
 #define ORIGIN_GRAPH_TRAITS_HPP
 
-#include <type_traits>
-
 #include <origin/utility/meta.hpp>
 
 namespace origin
@@ -60,7 +58,7 @@ namespace origin
   // True if G is a graph. Graph's declare a nested type, graph_category.
   template<typename G>
     struct is_graph
-      : substitution_succeeded<typename __is_graph<G>::type>::value
+      : substitution_succeeded<typename __is_graph<G>::type>::type
     { };
   
   // FIXME: Many of these can be syntactically evaluated without tag classes.
@@ -199,7 +197,29 @@ namespace origin
     {
       return g.size();
     }
-  
+
+  // Return the out degree of the vertex v in the directed graph g.
+  template<typename G, typename V>
+    inline auto out_degree(G const& g, V v) -> decltype(g.out_degree(v))
+    {
+      return g.out_degree(v);
+    }
+    
+  // Return the in degree of the vertex v in the directed graph g.
+  template<typename G, typename V>
+    inline auto in_degree(G const& g, V v) -> decltype(g.in_degree(v))
+    {
+      return g.in_degree(v);
+    }
+
+  // Return the degree of the vertex v. This is the total number of edges
+  // incident to the vertex.
+  template<typename G, typename V>
+    inline auto degree(G const& g, V v) -> decltype(g.degree(v))
+    {
+      return g.degree(v);
+    }
+
   // Return the vertex set of a graph
   template<typename G>
     inline auto vertices(G& g) -> decltype(g.vertices())
@@ -295,7 +315,7 @@ namespace origin
   template<typename Graph, typename V>
     inline auto out_edges(Graph& g, V v)
       -> typename std::enable_if<
-          is_undirected_graph<Graph>::value, decltype(g.incident_edges())
+          is_undirected_graph<Graph>::value, decltype(g.incident_edges(v))
         >::type
     { 
       return g.incident_edges(v); 
@@ -305,10 +325,37 @@ namespace origin
   template<typename Graph, typename V>
     inline auto out_edges(Graph const& g, V v)
       -> typename std::enable_if<
-          is_undirected_graph<Graph>::value, decltype(g.incident_edges())
+          is_undirected_graph<Graph>::value, decltype(g.incident_edges(v))
         >::type
     { 
       return g.incident_edges(v); 
+    }
+
+  // Return the in edges of the vertex v in the directed graph g.
+  template<typename G, typename V>
+    inline auto in_edges(G& g, V v) -> decltype(g.in_edges(v))
+    {
+      return g.in_edges(v);
+    }
+  
+  template<typename G, typename V>
+    inline auto in_edges(G const& g, V v) -> decltype(g.in_edges(v))
+    {
+      return g.in_edges(v);
+    }
+
+  
+  // Return the incident edges of the vertex v in the undirected graph g.
+  template<typename G, typename V>
+    inline auto incident_edges(G& g, V v) -> decltype(g.incident_edges(v))
+    {
+      return g.incident_edges(v);
+    }
+    
+  template<typename G, typename V>
+    inline auto incident_edges(G const& g, V v) -> decltype(g.incident_edges(v))
+    {
+      return g.incident_edges(v);
     }
 
 
