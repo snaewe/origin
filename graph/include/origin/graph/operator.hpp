@@ -14,48 +14,140 @@
 
 namespace origin
 {
+  // The edge label accessor returns the label associated with a given graph.
+  template<typename G>
+    struct edge_label_accessor
+    {
+      typedef typename graph_traits<G>::edge E;
+      
+      auto operator()(G const& g, E e) const -> decltype(g[e])
+      {
+        return g[e];
+      }
+    };
+  
+  // NOTE: An identity label is a function Id : X -> N where X is either the 
+  // vertex or edge handle of a graph, and N is the size type. It associates
+  // a unique, ordinal identity with each vertex. 
+  //
+  // An identity map is function Map : N -> X  that maps an ordinal value to
+  // its associated vertex.
+  //
+  // A Domain is a type that binds the pair (Id, Map) together.
+  //
+  // If a vertex handle is ordinal and represents the identity of the vertex,
+  // then it is not necessary to construct a domain.
+    
+  // Construct a new, empty graph containing the same vertices as g. This 
+  // requires ordinal vertex handles and assumes that vertices are identified
+  // by those handles.
+  template<typename G>
+    G copy_vertices(G const& g)
+    {
+      G result(g.order());
+      auto verts = vertices(g);
+      for(auto i = begin(verts); i != end(verts); ++i) {
+        result[*i] = g[*i];
+      }
+      return std::move(result);
+    }
+
+
+  // Construct a new. empty graph containing the same vertices as g. The
+  // identity label assigns an ordinal identity to each vertex in the graph.
+  template<typename G, typename Map>
+    G copy_vertices(G const& g, Map map)
+    {
+      typedef typename graph_traits<G >::size_type Size;
+
+      G result(g.order());
+      for(Size i = 0; i < g.order(); ++i) {
+        result[map(i)] = g[map(i)];
+      }
+    }
+    
+  // TODO: What is the meaning of these algorithms for multigraphs?
   
   // Generate the complement of the edge (u, v) in G, adding it to the result
-  // graph. The edge (u', v') is added to G iff (u, v) is not in G. The function
-  // F is an EdgeFunction that returns the value type to be provided for the
-  // new edge.
+  // graph. The edge (u', v') is added to G iff (u, v) is not in G. F is an
+  // EdgeFunction returning the edge label.
   template<typename G, typename V, typename F>
     void edge_complement(G const& g, V u, V v, G& result, F f)
     {
-      if(!get_edge(g, u, v))
-        add_edge(result, u, v, f(g, u, v));
+      auto e = get_edge(g, u, v);
+      if(!e)
+        add_edge(result, u, v, f(g, e));
     }
   
-  
-  // Return the complement of the given graph with respect to the given
-  // subset of vertices in the range [first, last).
+  // Compute the complement of the given graph. The complement of a graph is
+  // the complement of its edge set...
+  //
+  // The function F is an edge function that returns the label associated with
+  // an edge (u, v).
+  //
+  // TODO: Give a formal definition of complement of the edge set.
   //
   // TODO: The algorithm only works for ordinal vertices. We need a vertex
   // bimap to handle this for the general case.
   //
   // TODO: Specialize this for a directed graph by performing a square 
   // iteration instead of a triangular iteration.
-  template<typename G, typename Iter, typename F>
-    G graph_complement(G const& g, Iter first, Iter last, F f)
+  template<typename G, typename F>
+    G graph_complement(G const& g, F f)
     {
-      G result(first, last);
-      while(first != last) {
-        for(auto i = next(first); i != last; ++i)
-          edge_complement(g, *first, *i, result, f);
-        ++first;
-      }
-      return std::move(result)
+      G result = copy_vertices(g);
+      auto verts = vertices(g);
+      for(auto i = begin(verts); i != end(verts); ++i)
+        for(auto j = next(i); j != end(verts); ++j)
+          edge_complement(g, *i, *j, result, f);
+      return std::move(result);
     }
-  
+
+  // Compute the complement of the given graph.
   template<typename G>
     G graph_complement(G const& g)
     {
-      graph_complement(g, begin(vertices(g)), end(vertices(g)));
+      return std::move(graph_complement(g, edge_label_accessor<G>{}));
     }
-    
-  template<typename G>
-    G graph_transpose(G const& g)
+
+  
+  
+  // TODO: Is there any reason to generalize the transpose operation for an
+  // arbitrary set of vertices? It's a non-trivial implementation since you
+  // have to reverse the subgraph induced by that set of vertices.
+
+  // Compute the transpose of a graph. For directed graphs, this returns a
+  // graph with all edges pointing in the reverse direction. For undirected
+  // graphs, this is an identity operation.
+  //
+  // Note that the name "transpose" is derived from the same operation as
+  // applied to an adjacency matrix.
+  //
+  // requires Graph<G> && EdgeAccessor<F, G>
+  template<typename G, typename F>
+    G graph_transpose(G const& g, F f)
     {
+      G result = copy_vertices(g);
+      for(auto e : edges(g))
+        add_edge(result, target(g, e), source(g, e), f(g, e));
+      return std::move(result);
+    }
+
+  // Compute the transpose of the given graph using the given vertex identity
+  // label. 
+  template<typename G, typename Dom, typename F>
+    G graph_transpose(G const& g, Dom dom, F f)
+    {
+      G result = copy_edges(g, dom.map);
+      for(auto e : edges(g))
+        add_edge(result, dom.id(target(g, e)), dom.id(source(g, e)), f(g, e));
+      return std::move(result);
+    }
+
+  template<typename G>
+    inline G graph_transpose(G const& g)
+    {
+      return std::move(graph_transpose(g, edge_label_accessor<G>{}));
     }
 
   // Compute the graph union according to Knuth. This is called the graph_sum

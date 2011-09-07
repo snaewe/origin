@@ -62,19 +62,9 @@ namespace origin
       value_type value;
     };
 
-  // FIXME: Could it be more efficient to have the edges in a single edge pool?
-  // and then carve the edge lists out of that? Would that be any different
-  // than Boost's CSR graph or LEDA's static graphs? I may be able to relax the 
-  // sorted edge requirement for a more general solution.
-
-  /** 
-   * The directed adjacency vector implements an Adjacency_List data structure
-   * whose vertex and edge sets are implemented using vectors.
-   * 
-   * @tparam Vertex   An Object type, empty_t by default
-   * @tparam Edge     An Object type, empty_t by default
-   * @tparam Alloc    An Allocator type, allocator<void> by default.
-   */
+    
+  // The directed adjacency vector implements an Adjacency_List data structure
+  // whose vertex and edge sets are implemented using vectors.
   template<typename Vertex = empty_t, 
            typename Edge = empty_t, 
            typename Alloc = std::allocator<void>>

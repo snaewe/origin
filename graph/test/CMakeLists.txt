@@ -8,6 +8,7 @@
 origin_executable(adjacency_list adjacency_list.cpp)
 
 origin_run_test(generator generator.cpp)
+origin_run_test(operator operator.cpp)
 origin_run_test(breadth_first breadth_first.cpp)
 origin_run_test(depth_first depth_first.cpp)
 origin_run_test(bipartite bipartite.cpp)
