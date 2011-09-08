@@ -16,6 +16,7 @@
 #include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
 #include <origin/graph/edge.hpp>
+#include <origin/graph/generator.hpp>
 
 namespace origin
 {
@@ -29,8 +30,10 @@ namespace origin
     {
       typedef E value_type;
       
+      // FIXME: Should be using {x} for initializer of value, but there seems
+      // to be a GCC bug that's preventing me from doing so.
       adjacency_list_edge(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
-        : source{src}, target{tgt}, value{x}
+        : source{src}, target{tgt}, value(x)
       { }
 
       vertex_t source;
@@ -119,15 +122,31 @@ namespace origin
       { }
 
       // Vertex range constructor
+      // TODO: Specialize for ranges of edge pairs and edge tuples
       template<typename Iter>
         directed_adjacency_list(Iter first, Iter last)
-          : vertices_(first, last), edges_{}
-        { }
+          : vertices_{}, edges_{}
+        {
+          while(first != last) {
+            add_vertex(*first);
+            ++first;
+          }
+        }
         
       // Vertex initialization constructor
       directed_adjacency_list(std::initializer_list<vertex_value_type> list)
-        : vertices_(list), edges_{}
-      { }
+        : vertices_{}, edges_{}
+      {
+        for(auto const& x : list)
+          add_vertex(x);
+      }
+      
+      // TODO: Generalize for edge tuples
+      directed_adjacency_list(std::initializer_list<std::pair<vertex_value_type, vertex_value_type>> list)
+        : vertices_{}, edges_{}
+      {
+        build_edge_graph(*this, list.begin(), list.end());
+      }
 
       // Container properties.
       
@@ -141,7 +160,7 @@ namespace origin
       vertex_allocator_type get_vertex_allocator() const { return vertex_allocator_type{}; }
       
       // Return the graph's edge allocator.
-      edge_allocator_type get_edge_allocator() const   { return edge_allocator_type{}; }
+      edge_allocator_type get_edge_allocator() const { return edge_allocator_type{}; }
 
       // Graph properties
 

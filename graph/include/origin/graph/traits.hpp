@@ -147,6 +147,8 @@ namespace origin
   struct graph_traits
   {
     typedef typename Graph::size_type size_type;
+    typedef typename Graph::vertex_value_type vertex_value_type;
+    typedef typename Graph::edge_value_type edge_value_type;
 
     typedef typename Graph::vertex vertex;
     typedef typename Graph::edge edge;

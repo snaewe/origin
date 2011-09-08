@@ -32,14 +32,8 @@ namespace origin
         throw graph_error("graph is not acyclic");
       }
 
-      void started_vertex(G const& g, Vertex v) 
-      {
-//         std::cout << "start " << g[v] << "\n";
-      }
-
       void finished_vertex(G const& g, Vertex v) 
       {
-//         std::cout << "finish " << g[v] << "\n";
         *iter++ = v;
       }
       
@@ -51,7 +45,7 @@ namespace origin
     Out topological_sort(G& g, Out result)
     {
       topological_sort_visitor<G, Out> vis{result};
-      depth_first_search(g, *begin(vertices(g)), vis);
+      depth_first_search_all(g, vis);
       return result;
     }
   

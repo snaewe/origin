@@ -8,12 +8,76 @@
 #ifndef ORIGIN_GRAPH_GENERATOR_HPP
 #define ORIGIN_GRAPH_GENERATOR_HPP
 
+#include <utility>
 #include <algorithm>
+#include <unordered_map>
 
 #include <origin/graph/traits.hpp>
 
 namespace origin
 {
+  // Add a vertex to the graph labeled with the given value, using map to
+  // ensure that each vertex is uniquely labeled. If the given value is already
+  // in the graph, the associated vertex is added.
+  //
+  // requires UniqueMap<VertexType<G>, T> && Convertible<T, VertexValueType<G>>
+  //
+  // TODO: Move to traits?
+  template<typename G, typename Map, typename T>
+    typename graph_traits<G>::vertex 
+    add_labeled_vertex(G& g, Map& map, T const& value)
+    {
+      typedef typename graph_traits<G>::vertex Vertex;
+      auto x = map.insert({value, Vertex{}});
+      if(x.second)
+        x.first->second = g.add_vertex(value);
+      return x.first->second;
+    }
+  
+  // Return the edge label from the edge triple t.
+  template<typename G, typename Tuple>
+    inline auto 
+    edge_label_from_tuple(G const& g, Tuple const& t) -> decltype(std::get<2>(t))
+    {
+      return std::get<2>(t);
+    }
+  
+  // Return the default edge label when given an edge pair.
+  template<typename G, typename V>
+    inline typename graph_traits<G>::edge_value_type
+    edge_from_tuple(G const& g, std::pair<V, V> const& p)
+    {
+      return typename graph_traits<G>::edge_value_type{};
+    }
+
+  // Build a graph from the given sequence of edge tuples, using the given map 
+  // to uniquely associate each vertex with its given label.
+  template<typename G, typename Map, typename Iter>
+    void build_edge_graph(G& g, Map& map, Iter first, Iter last)
+    {
+      typedef typename graph_traits<G>::vertex Vertex;
+      while(first != last) {
+        auto const& t = *first;
+        Vertex u = add_labeled_vertex(g, map, std::get<0>(t));
+        Vertex v = add_labeled_vertex(g, map, std::get<1>(t));
+        add_edge(g, u, v, edge_from_tuple(g, t));
+        ++first;
+      }
+    }
+
+  // Given a sequence of edge tuples build a graph. Note that the tuple can be 
+  // an edge pair (u, v) or a triple (u, v, e). If given a sequence of pairs,
+  // edges are assigned default labels.
+  template<typename G, typename Iter>
+    void build_edge_graph(G& g, Iter first, Iter last)
+    {
+      typedef typename graph_traits<G>::vertex Vertex;
+      typedef typename graph_traits<G>::vertex_value_type Value;
+      std::unordered_map<Value, Vertex> map;
+      build_edge_graph(g, map, first, last);
+    }
+  
+
   // TODO: There's an EdgeFunction concept, which is a function with the
   // syntax f(g, u, v).
   

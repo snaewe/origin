@@ -9,44 +9,33 @@
 #include <iostream>
 
 #include <origin/graph/adjacency_list.hpp>
+#include <origin/graph/io.hpp>
 #include <origin/graph/algorithm/topological_sort.hpp>
 
 using namespace std;
 using namespace origin;
 
-// Actually test a graph to see if it works right.
-template<typename Graph>
-  void test()
-  {
-    typedef typename Graph::vertex Vertex;
-
-    /*
-        a
-       / \
-      b   c
-          |
-          d
-    */
-    Graph g;
-    Vertex a = g.add_vertex('a');
-    Vertex b = g.add_vertex('b');
-    Vertex c = g.add_vertex('c');
-    Vertex d = g.add_vertex('d');
-    g.add_edge(a, c);
-    g.add_edge(a, b);
-    g.add_edge(c, d);
-
-    vector<Vertex> order(4);
-    topological_sort(g, order.begin());
-    
-    for(auto v : order) {
-      cout << g[v] << " ";
-    }
-    cout << "\n";
-  }
-
 int main()
 {
-  typedef directed_adjacency_list<char, int> Graph;
-  test<Graph>();
+  typedef directed_adjacency_list<int> Graph;
+  typedef Graph::vertex Vertex;
+  
+  // This is the graph given on the Wikipedia page for topological sorting.
+  Graph g = {
+    {7, 11}, {7, 8},
+    {5, 11},
+    {3, 8}, {3, 10},
+    {11, 2}, {11, 9}, {11, 10},
+    {8, 9}
+  };
+  assert(( g.order() == 8 ));
+  assert(( g.size() == 9 ));
+
+  vector<Vertex> order(g.order());
+  topological_sort(g, order.begin());
+  reverse(order.begin(), order.end());
+  for(auto v : order) {
+    cout << g[v] << " ";
+  }
+  cout << "\n";
 }
