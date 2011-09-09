@@ -48,7 +48,7 @@ namespace origin
     dynarray_base(size_type n, allocator_type const& alloc)
       : Alloc{alloc}, first{allocate(n)}, last{first + n}
     { }
-
+    
     ~dynarray_base()
     { deallocate(first); }
 
@@ -160,6 +160,14 @@ namespace origin
     dynarray& operator=(dynarray&& x)
     { dynarray tmp{std::move(x)}; swap(tmp); return *this; }
 
+    // FIXME: This is apparently, going toe require ForwardIterators.
+    template<typename Iter>
+      dynarray(Iter first, Iter last, allocator_type const& alloc = allocator_type{})
+        : base_type(std::distance(first, last), alloc)
+      { 
+        copy(first, last, begin()); 
+      }
+
     /**
      * @brief Initializer list constructor
      * Construct a dynarray over an initializer list.
@@ -170,7 +178,9 @@ namespace origin
     dynarray(std::initializer_list<value_type> list,
              allocator_type const& alloc = allocator_type{})
       : base_type{list.size(), alloc}
-    { std::copy(list.begin(), list.end(), begin()); }
+    { 
+      std::copy(list.begin(), list.end(), begin()); 
+    }
 
     // FIXME: Implement an iterator range constructor. This is going to have
     // to be specialized for input and forward iterators. This is going to
@@ -206,6 +216,25 @@ namespace origin
     bool empty() const
     { return base_type::size() == 0; }
     //@}
+
+  
+    // EqualityComparable
+    bool operator==(dynarray const& x) const
+    {
+      return std::equal(begin(), end(), x.begin());
+    }
+    
+    bool operator!=(dynarray const& x) const { return !(*this == x); }
+    
+    // TotallyOrdered
+    bool operator<(dynarray const& x) const
+    {
+      return std::lexicographical_compare(begin(), end(), x.begin(), x.end());
+    }
+    
+    bool operator>(dynarray const& x) const { return x < *this; }
+    bool operator<=(dynarray const& x) const { return !(x < *this); }
+    bool operator>=(dynarray const& x) const { return !(*this < x); }
 
     /** @name Accessors */
     //@{

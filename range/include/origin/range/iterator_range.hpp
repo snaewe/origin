@@ -40,13 +40,25 @@ namespace origin
     };
   
   template<typename Iter>
-    auto begin(iterator_range<Iter>& r) -> decltype(r.begin())
+    inline auto begin(iterator_range<Iter>& r) -> decltype(r.begin())
     {
       return r.begin();
     }
     
   template<typename Iter>
-    auto end(iterator_range<Iter>& r) -> decltype(r.end())
+    inline auto begin(iterator_range<Iter> const& r) -> decltype(r.begin())
+    {
+      return r.begin();
+    }
+
+  template<typename Iter>
+    inline auto end(iterator_range<Iter>& r) -> decltype(r.end())
+    {
+      return r.end();
+    }
+
+  template<typename Iter>
+    inline auto end(iterator_range<Iter> const& r) -> decltype(r.end())
     {
       return r.end();
     }
