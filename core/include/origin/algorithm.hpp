@@ -56,51 +56,93 @@ namespace origin
       return true;
     }
 
+
   // Return the first element in [first, last) that satisfies the predicate
-  // p.
+  // pred, or last if no such element exists.
   //
   // This function, along with next_if, can be used to iterate over the
-  // subsequence of values satisfying some predicate p.
+  // subsequence of values satisfying some predicate.
   template<typename Iter, typename Pred>
-    inline Iter first_if(Iter first, Iter last, Pred p)
+    inline Iter first_if(Iter first, Iter last, Pred pred)
     {
       // precondition: readable_range(first, last)
-      return find_if(first, last, p);
+      return find_if(first, last, pred);
+    }
+    
+  // Return the first element in [first, last) that is equal to value or
+  // last if no such element exists.
+  //
+  // This function, along with next_equal, can be used to iterate over the
+  // subsequence of values that are equal to another.
+  template<typename Iter, typename T>
+    inline Iter first_equal(Iter first, Iter last, const T& value)
+    {
+      return find(first, last, value);
     }
 
-  // Return the next element in [first, last) that satisfies pred.
+  // Return the next element in [first, last) that satisfies pred, or last if
+  // no such element exists.
   template<typename Iter, typename Pred>
-    inline Iter next_if(Iter first, Iter last, Pred p)
+    inline Iter next_if(Iter first, Iter last, Pred pred)
     {
       // precondition: readable_range(first, last)
       if(first != last)
-        return find_if(first + 1, last, p);
+        return find_if(first + 1, last, pred);
+      else
+        return last;
+    }
+    
+  // Return the next element in [first + 1, last) that is equal to value, or
+  // last if no such element exists.
+  template<typename Iter, typename T>
+    inline Iter next_equal(Iter first, Iter last, T const& value)
+    {
+      if(first != last)
+        return find(first + 1, last, value);
       else
         return last;
     }
     
   // Return an iterator to the nth element in [first, last) that satisfies
-  // pred, if such an element exists. If no such element exists, return
-  // last.
+  // pred, or last if no such element exists.
   //
   // TODO: Replace Size with DistanceType.
   template<typename Iter, typename Size, typename Pred>
-    Iter find_nth_if(Iter first, Iter last, Size n, Pred p)
+    Iter find_nth_if(Iter first, Iter last, Size count, Pred pred)
     {
       // precondition: readable_range(first, last)
-      // precondition: n >= 0
-      if(n == 0)
+      // precondition: count >= 0
+      if(count == 0)
         return last;
       
-      first = first_if(first, last, p);
-      --n;
+      first = first_if(first, last, pred);
+      --count;
       while(n != 0 && first != last) {
-        first = next_if(first, last, p);
-        --n;
+        first = next_if(first, last, pred);
+        --count;
       }
       return first;
     }
-  
+
+  // Return an iterator to the nth element in [first, last) that is equal to
+  // value, or last if no such element exists.
+  template<typename Iter, typename Size, typename T>
+    Iter find_nth_equal(Iter first, Iter last, Size count, T const& value)
+    {
+      // precondition: readable_range(first, last)
+      // precondition: count >= 0
+      if(count == 0)
+        return last;
+      
+      first = first_if(first, last, value);
+      --count;
+      while(n != 0 && first != last) {
+        first = next_if(first, last, value);
+        --count;
+      }
+      return first;
+    }
+
 } // namespace origin
 
 #endif
