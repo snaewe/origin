@@ -7,5 +7,6 @@
 
 origin_run_test(iterator_concepts iterator_concepts.cpp)
 origin_run_test(counter counter.cpp)
+origin_run_test(filter filter.cpp)
 origin_run_test(enumerator enumerator.cpp)
 origin_run_test(stride_iterator stride_iterator.cpp)
