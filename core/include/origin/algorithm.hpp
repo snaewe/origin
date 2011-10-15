@@ -140,18 +140,86 @@ namespace origin
   // precondition: readable_range(first, last)
   // precondition: count >= 0
   template<typename Iter, typename Size, typename T>
-    Iter find_nth_equal(Iter first, Iter last, Size count, T const& value)
+    Iter find_nth(Iter first, Iter last, Size count, T const& value)
     {
       if(count == 0)
         return last;
       
-      first = first_if(first, last, value);
+      first = first_equal(first, last, value);
       --count;
       while(count != 0 && first != last) {
-        first = next_if(first, last, value);
+        first = next_equal(first, last, value);
         --count;
       }
       return first;
+    }
+
+
+  // Extract the elements of [first, last) that are equal to value by moving 
+  // them into the output range. This algorithm is similar to remove, except 
+  // that the elements are moved into the output range instead of being 
+  // overwritten.
+  // 
+  // requires: Forward_iterator<Iter> && Equality_comparable<Iter, Value_type<Iter>>
+  // requires: Value_movable<Out, Iter>
+  // precondition: readable_range(first, last)
+  // precondition: movable_range(result, count_if(first, last, pred))
+  // postcondition: ...
+  template<typename Iter, typename Out, typename T>
+    std::pair<Iter, Out> extract(Iter first, Iter last, Out result, T const& value)
+    {
+      first = std::find(first, last, value);
+      if(first == last)
+        return {first, result};
+
+      *result = std::move(*first);
+      ++result;
+      Iter hole = first;
+      ++first;
+      while(first != last) {
+        if(*first != value) {
+          *hole = std::move(*first);
+          ++hole;
+        } else {
+          *result = std::move(*first);
+          ++result;
+        }
+        ++first;
+      }
+      return {hole, result};
+    }
+    
+  // Extract the elements of [first, last) by moving them into the output
+  // range. This algorithm is similar to remove_if, except that the elements
+  // are moved into the output range instead of being overwritten.
+  // 
+  // requires: Forward_iterator<Iter>
+  // requires: Value_movable<Out, Iter>
+  // precondition: readable_range(first, last)
+  // precondition: movable_range(result, count_if(first, last, pred))
+  // postcondition: ...
+  template<typename Iter, typename Out, typename Pred>
+    std::pair<Iter, Out> extract_if(Iter first, Iter last, Out result, Pred pred)
+    {
+      first = std::find_if(first, last, pred);
+      if(first == last)
+        return {first, result};
+
+      *result = std::move(*first);
+      ++result;
+      Iter hole = first;
+      ++first;
+      while(first != last) {
+        if(!pred(*first)) {
+          *hole = std::move(*first);
+          ++hole;
+        } else {
+          *result = std::move(*first);
+          ++result;
+        }
+        ++first;
+      }
+      return {hole, result};
     }
 
 } // namespace origin

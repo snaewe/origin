@@ -5,12 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(tuple tuple.cpp)
-origin_run_test(range range.cpp)
-origin_run_test(optional optional.cpp)
-origin_run_test(functional functional.cpp)
+origin_run_test(algo_find_nth_if find_nth_if.cpp)
+origin_run_test(algo_extract extract.cpp)
+origin_run_test(algo_extract_if extract_if.cpp)
 
-add_subdirectory(iterator)
-add_subdirectory(ranges)
-add_subdirectory(algorithms)
-add_subdirectory(concepts)
