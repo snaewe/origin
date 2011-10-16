@@ -13,12 +13,15 @@
 
 namespace origin
 {
-  // Return the size of the given range by calculating its distance.
+  // Return the size of the given range by calculating its distance. The size
+  // type is a natural (unsigned) number.
   template<typename R>
     inline auto size(R const& r) 
       -> typename std::enable_if<
         !has_member_size<R>::value,
-        decltype(std::distance(std::begin(r), std::end(r)))
+        typename std::make_unsigned<
+          decltype(std::distance(std::begin(r), std::end(r)))
+        >::type
       >::type
     {
       return std::distance(std::begin(r), std::end(r));
@@ -49,10 +52,29 @@ namespace origin
       return r.empty();
     }
 
+
+  // The range traits class provides a facility for accessing the names of
+  // of the types associated with a range.
+  template<typename R>
+    struct range_traits
+    {
+      typedef decltype(std::begin(std::declval<R&>())) iterator;
+      typedef decltype(size(std::declval<R&>())) size_type;
+    };
+
+  // A specialization of the trait above for constant ranges.
+  template<typename R>
+    struct range_traits<R const>
+    {
+      typedef decltype(std::begin(std::declval<R const&>())) iterator;
+      typedef decltype(size(std::declval<R const&>())) size_type;
+    };
+
 } // namespace origin
 
 // Include range constructors
 #include <origin/range/array.hpp>
+#include <origin/range/bounded.hpp>
 #include <origin/range/filter.hpp>
 
 #endif

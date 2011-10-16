@@ -17,7 +17,7 @@ namespace origin
   // A helper iterator for the filter_range.
   // This is a forward iterator.
   template<typename R, typename Iter>
-    class filter_range_iterator__
+    class filter_range_iterator
     {
     public:
       typedef typename std::iterator_traits<Iter>::value_type value_type;
@@ -29,28 +29,28 @@ namespace origin
         std::forward_iterator_tag
       >::type iterator_category;
     
-      filter_range_iterator__(R const& r, Iter i)
+      filter_range_iterator(R const& r, Iter i)
         : range(const_cast<R&>(r)), iter(i)
       { }
       
       // Equality_comparable
-      bool operator==(filter_range_iterator__ const& x) const { return iter == x.iter; }
-      bool operator!=(filter_range_iterator__ const& x) const { return iter != x.iter; }
+      bool operator==(filter_range_iterator const& x) const { return iter == x.iter; }
+      bool operator!=(filter_range_iterator const& x) const { return iter != x.iter; }
       
       // Readable
       reference operator*()  const { return *iter; }
       pointer   operator->() const { return &*iter; }
       
       // Incrementable
-      filter_range_iterator__& operator++()
+      filter_range_iterator& operator++()
       {
         iter = next_if(iter, std::end(range.range), range.pred);
         return *this;
       }
       
-      filter_range_iterator__ operator++(int)
+      filter_range_iterator operator++(int)
       {
-        filter_range_iterator__ tmp(*this);
+        filter_range_iterator tmp(*this);
         operator++();
         return tmp;
       }
@@ -71,9 +71,9 @@ namespace origin
     class filter_range
     {
       typedef filter_range<R, Pred> this_type;
-      typedef typename range_iterator<R>::type base_iterator;
+      typedef typename range_traits<R>::iterator base_iterator;
     public:
-      typedef filter_range_iterator__<this_type, base_iterator> iterator;
+      typedef filter_range_iterator<this_type, base_iterator> iterator;
       
       // Construct a filter range over the underlying range. The predicate
       // may be omitted if Pred is Default_constructible.

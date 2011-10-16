@@ -51,22 +51,6 @@ namespace origin
       : substitution_succeeded<typename has_member_size__<T>::type>
     { };
 
-    
-  // Return the iterator type associated with a range.
-  template<typename R>
-    struct range_iterator
-    {
-      typedef decltype(std::begin(std::declval<R&>())) type;
-    };
-
-  // A specialization of the trait above for constant ranges.
-  template<typename R>
-    struct range_iterator<R const>
-    {
-      typedef decltype(std::begin(std::declval<R const&>())) type;
-    };
-
-
 } // namespace origin
 
 #endif
