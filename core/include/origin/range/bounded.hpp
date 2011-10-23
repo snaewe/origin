@@ -19,20 +19,28 @@ namespace origin
     class bounded_range
     {
     public:
-      //
+      typedef Iter iterator;
+
+      // Initialize the bounded range so that both values are the same. The
+      // range is initially empty.
+      bounded_range()
+        : first(), last(first)
+      { }
+    
+      // Initialize the bounded range.
       //
       // precondition: bounded_range(first, last)
       // postcondition: this->begin() == first && this->end() == last
-      bounded_range(Iter first, Iter last)
+      bounded_range(iterator first, iterator last)
         : first(first), last(last)
       { }
       
-      Iter begin() const { return first; }
-      Iter end() const { return last; }
+      iterator begin() const { return first; }
+      iterator end() const { return last; }
       
     private:
-      Iter first;
-      Iter last;
+      iterator first;
+      iterator last;
     };
 
   // The adapted range class defines a (right) half-open range over some

@@ -9,3 +9,5 @@ origin_run_test(algo_find_nth_if find_nth_if.cpp)
 origin_run_test(algo_extract extract.cpp)
 origin_run_test(algo_extract_if extract_if.cpp)
 
+origin_run_test(algo_next_permutation next_permutation.cpp)
+origin_run_test(algo_next_combination next_combination.cpp)

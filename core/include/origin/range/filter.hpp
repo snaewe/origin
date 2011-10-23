@@ -92,7 +92,7 @@ namespace origin
       }
       
       // Range properties
-      R& base() const { return range; }
+      R const& base() const { return range; }
       Pred predicate() const { return pred; }
       
     private:

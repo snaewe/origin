@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include <origin/algorithm/combination.hpp>
+
 namespace origin
 {
  
@@ -221,6 +223,122 @@ namespace origin
       }
       return {hole, result};
     }
+
+
+  // Permutations and Combinations
+
+  // Compute the next lexicographical permutation of the ranger.
+  //
+  // requires: BidirectionalIterator<IteratorType<R>>
+  template<typename R>
+    inline bool next_permutation(R& range)
+    {
+      return std::next_permutation(std::begin(range), std::end(range));
+    }
+
+  template<typename R, typename Comp>
+    inline bool next_permutation(R& range, Comp comp)
+    {
+      return std::next_permutation(std::begin(range), std::end(range), comp);
+    }
+
+
+  // Compute the previous lexicographical permutation of the range r.
+  //
+  // requires: BidirectionalIterator<IteratorType<R>>
+  template<typename R>
+    inline bool prev_permutation(R& range)
+    {
+      return std::prev_permutation(std::begin(range), std::end(range));
+    }
+
+  template<typename R, typename Comp>
+    inline bool prev_permutation(R& range, Comp comp)
+    {
+      return std::prev_permutation(std::begin(range), std::end(range), comp);
+    }
+
+
+  // TODO: I'm not wild about the name _partial_*. These are often called
+  // k-permutations (and similarly k-combination). In general, I would have
+  // have preferred next_permutaiton to increment to k-permutations instead
+  // of entire sequences.
+
+  // Compute the next lexicographical permutation of elements in [first, mid) 
+  // from r where first is begin(r). Return false if there is no next 
+  // permutation.
+  //
+  // requires: See above.
+  // requires: SameType<IteratorType<R>>, Iter>
+  // precondition: mid in range
+  template<typename R, typename Iter>
+    inline bool next_partial_permutation(R& range, Iter mid)
+    {
+      return next_partial_permutation(std::begin(range), mid, std::end(range));
+    }
+
+  template<typename R, typename Iter, typename Comp>
+    inline bool next_partial_permutation(R& range, Iter mid, Comp comp)
+    {
+      return next_partial_permutation(std::begin(range), mid, std::end(range), comp);
+    }
+
+
+  // Compute the next lexicographical permutation of elements in [first, mid) 
+  // from r where first is begin(r). Return false if there is no next 
+  // permutation.
+  //
+  // requires: See above.
+  // requires: SameType<IteratorType<R>>, Iter>
+  // precondition: mid in range
+  template<typename R, typename Iter>
+    inline bool prev_partial_permutation(R& range, Iter mid)
+    {
+      return prev_partial_permutation(std::begin(range), mid, std::end(range));
+    }
+
+  template<typename R, typename Iter, typename Comp>
+    inline bool prev_partial_permutation(R& range, Iter mid, Comp comp)
+    {
+      return prev_partial_permutation(std::begin(range), mid, std::end(range), comp);
+    }
+
+
+  // Compute the next lexicographical combination of elements in [first, mid)
+  // from the range r where first is equal to begin(r). Return false if there
+  // is no next combination.
+  template<typename R, typename Iter>
+    inline bool next_combination(R& range, Iter mid)
+    {
+      return next_combination(std::begin(range), mid, std::end(range));
+    }
+
+  template<typename R, typename Iter, typename Comp>
+    inline bool next_combination(R& range, Iter mid, Comp comp)
+    {
+      return next_combination(std::begin(range), mid, std::end(range), comp);
+    }
+
+
+  // Compute the previous lexicographical combination of elements in 
+  // [first, mid) from the range r where first is equal to begin(r). Return 
+  // false if there is no next combination.
+  template<typename R, typename Iter>
+    inline bool prev_combination(R& range, Iter mid)
+    {
+      return prev_combination(std::begin(range), mid, std::end(range));
+    }
+
+  template<typename R, typename Iter, typename Comp>
+    inline bool prev_combination(R& range, Iter mid, Comp comp)
+    {
+      return prev_combination(std::begin(range), mid, std::end(range), comp);
+    }
+
+
+  // PROJECT: Implement multiset permutations.
+  
+  
 
 } // namespace origin
 

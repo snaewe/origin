@@ -13,7 +13,7 @@
 #include <origin/utility/typestr.hpp>
 #include <origin/concepts.hpp>
 
-#include <boost/logic/tribool.hpp>
+// #include <boost/logic/tribool.hpp>
 
 #include "check.hpp"
 
@@ -41,7 +41,7 @@ int main()
   static_assert(!tInt<float>::value, "");
 
   static_assert(tLogical_And<bool>::value, "");
-  static_assert(tLogical_And<boost::tribool>::value, "");
+  // static_assert(tLogical_And<boost::tribool>::value, "");
   static_assert(!tLogical_And<string>::value, "");
 
   static_assert(cOrdered<int>::value, "");
@@ -58,7 +58,7 @@ int main()
   static_assert(cBoolean<bool>::value, "");
   static_assert(!cBoolean<string>::value, "");
   static_assert(!cBoolean<int*>::value, "");            // !Constructible<int*, bool>
-  static_assert(!cBoolean<boost::tribool>::value, "");  // tribool is not Ordered
+  // static_assert(!cBoolean<boost::tribool>::value, "");  // tribool is not Ordered
 
   // FIXME: Write more functional checks.
   tProcedure<func, int>{};

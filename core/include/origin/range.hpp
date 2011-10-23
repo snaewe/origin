@@ -59,6 +59,7 @@ namespace origin
     struct range_traits
     {
       typedef decltype(std::begin(std::declval<R&>())) iterator;
+      typedef typename std::iterator_traits<iterator>::value_type value_type;
       typedef decltype(size(std::declval<R&>())) size_type;
     };
 
@@ -66,8 +67,9 @@ namespace origin
   template<typename R>
     struct range_traits<R const>
     {
-      typedef decltype(std::begin(std::declval<R const&>())) iterator;
-      typedef decltype(size(std::declval<R const&>())) size_type;
+      typedef decltype(std::begin(std::declval<R const&>()))      iterator;
+      typedef typename std::iterator_traits<iterator>::value_type value_type;
+      typedef decltype(size(std::declval<R const&>()))            size_type;
     };
 
 } // namespace origin
@@ -76,5 +78,6 @@ namespace origin
 #include <origin/range/array.hpp>
 #include <origin/range/bounded.hpp>
 #include <origin/range/filter.hpp>
+#include <origin/range/permutation.hpp>
 
 #endif
