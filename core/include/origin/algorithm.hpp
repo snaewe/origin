@@ -14,6 +14,8 @@
 
 namespace origin
 {
+  template<typename R> struct range_traits;
+  
   //--- Quantifiers ---//
   
   // Note that:
@@ -141,6 +143,9 @@ namespace origin
 
   //--- Find ---//
   
+  // NOTE: There are two overloads of find and find_if because we should be
+  // able to return non-const iterators for non-const ranges.
+  
   // Return the first iterator i in the given range that is equal to value.
   template<typename R, typename T>
     auto find(R& range, T const& value) -> decltype(std::begin(range))
@@ -153,6 +158,8 @@ namespace origin
     {
       return std::find(std::begin(range), std::end(range), value);
     }
+    
+  // FIXME: Specialize find() for associative containers.
     
   // Return the first iterator i in the range that satisfies the given 
   // predicate.
@@ -168,20 +175,11 @@ namespace origin
       return std::find_if(std::begin(range), std::end(range), pred);
     }
 
+  
+  // NOTE: first_if and next_if don't have overloads for Ranges. They are
+  // helper functions for traversing a range, and aren't really usable as
+  // range-based algorithms. I may decide otherwise in the future.
 
-  // Return the first element in [first, last) that satisfies the predicate
-  // pred, or last if no such element exists.
-  //
-  // This function, along with next_if, can be used to iterate over the
-  // subsequence of values satisfying some predicate.
-  //
-  // precondition: readable_range(first, last)
-  template<typename Iter, typename Pred>
-    inline Iter first_if(Iter first, Iter last, Pred pred)
-    {
-      return std::find_if(first, last, pred);
-    }
-    
   // Return the first element in [first, last) that is equal to value or
   // last if no such element exists.
   //
@@ -195,6 +193,33 @@ namespace origin
       return std::find(first, last, value);
     }
 
+  // Return the next element in [first + 1, last) that is equal to value, or
+  // last if no such element exists.
+  //
+  // precondition: readable_range(first, last)
+  template<typename Iter, typename T>
+    inline Iter next_equal(Iter first, Iter last, T const& value)
+    {
+      if(first != last)
+        return std::find(first + 1, last, value);
+      else
+        return last;
+    }
+
+    
+  // Return the first element in [first, last) that satisfies the predicate
+  // pred, or last if no such element exists.
+  //
+  // This function, along with next_if, can be used to iterate over the
+  // subsequence of values satisfying some predicate.
+  //
+  // precondition: readable_range(first, last)
+  template<typename Iter, typename Pred>
+    inline Iter first_if(Iter first, Iter last, Pred pred)
+    {
+      return std::find_if(first, last, pred);
+    }
+    
   // Return the next element in [first, last) that satisfies pred, or last if
   // no such element exists.
   //
@@ -208,60 +233,166 @@ namespace origin
         return last;
     }
     
-  // Return the next element in [first + 1, last) that is equal to value, or
-  // last if no such element exists.
-  //
-  // precondition: readable_range(first, last)
-  template<typename Iter, typename T>
-    inline Iter next_equal(Iter first, Iter last, T const& value)
-    {
-      if(first != last)
-        return std::find(first + 1, last, value);
-      else
-        return last;
-    }
-    
-  // Return an iterator to the nth element in [first, last) that satisfies
-  // pred, or last if no such element exists.
-  //
-  // precondition: readable_range(first, last)
-  // precondition: count >= 0
-  //
-  // TODO: Replace Size with DistanceType.
-  template<typename Iter, typename Size, typename Pred>
-    Iter find_nth_if(Iter first, Iter last, Size count, Pred pred)
-    {
-      if(count == 0)
-        return last;
-      
-      first = first_if(first, last, pred);
-      --count;
-      while(count != 0 && first != last) {
-        first = next_if(first, last, pred);
-        --count;
-      }
-      return first;
-    }
 
   // Return an iterator to the nth element in [first, last) that is equal to
   // value, or last if no such element exists.
   //
   // precondition: readable_range(first, last)
-  // precondition: count >= 0
-  template<typename Iter, typename Size, typename T>
-    Iter find_nth(Iter first, Iter last, Size count, T const& value)
+  // precondition: n >= 0
+  template<typename Iter, typename T>
+    Iter find_nth(Iter first, 
+                  Iter last, 
+                  typename std::iterator_traits<Iter>::difference_type n, 
+                  T const& value)
     {
-      if(count == 0)
+      if(n == 0)
         return last;
       
       first = first_equal(first, last, value);
-      --count;
-      while(count != 0 && first != last) {
+      --n;
+      while(n != 0 && first != last) {
         first = next_equal(first, last, value);
-        --count;
+        --n;
       }
       return first;
     }
+    
+  // Return an iterator to the nth element in r that is equal to value.
+  template<typename R, typename T>
+    inline auto find_nth(R& range, 
+                         typename range_traits<R>::size_type n,
+                         T const& value)
+      -> decltype(std::begin(range))
+    {
+      return find_nth(std::begin(range), std::end(range), n, value);
+    }
+    
+  template<typename R, typename T>
+    inline auto find_nth(R const& range, 
+                         typename range_traits<R const>::size_type n,
+                         T const& value)
+      -> decltype(std::begin(range))
+    {
+      return find_nth(std::begin(range), std::end(range), n, value);
+    }    
+
+
+  // Return an iterator to the nth element in [first, last) that satisfies
+  // pred, or last if no such element exists.
+  //
+  // precondition: readable_range(first, last)
+  // precondition: n >= 0
+  template<typename Iter, typename Pred>
+    Iter find_nth_if(Iter first, 
+                     Iter last, 
+                     typename std::iterator_traits<Iter>::difference_type n, 
+                     Pred pred)
+    {
+      if(n == 0)
+        return last;
+      
+      first = first_if(first, last, pred);
+      --n;
+      while(n != 0 && first != last) {
+        first = next_if(first, last, pred);
+        --n;
+      }
+      return first;
+    }
+    
+  // Return an iterator to the nth element in r that satisfies pred, or return
+  // last if there is no such element.
+  template<typename R, typename Pred>
+    inline auto find_nth_if(R& range, 
+                            typename range_traits<R>::size_type n, 
+                            Pred pred)
+      -> decltype(std::begin(range))
+    {
+      return find_nth_if(std::begin(range), std::end(range), n, pred);
+    }
+    
+  template<typename R, typename Pred>
+    inline auto find_nth_if(R& range, 
+                            typename range_traits<R const>::size_type n, 
+                            Pred pred)
+      -> decltype(std::begin(range))
+    {
+      return find_nth_if(std::begin(range), std::end(range), n, pred);
+    }
+  
+
+    
+  //--- Count ---//
+  
+  // Return the number of elements in r that are equal to value.
+  template<typename R, typename T>
+    inline auto count(R const& range, T const& value)
+      -> typename range_traits<R>::size_type
+    {
+      return std::count(std::begin(range), std::end(range), value);
+    }
+   
+  // Return the number of elements in r that satisfy pred.
+  template<typename R, typename Pred>
+    inline auto count_if(R const& range, Pred pred)
+      -> typename range_traits<R>::size_type
+    {
+      return std::count_if(std::begin(range), std::end(range), pred);
+    }
+
+  // Return the number of elements in [first, last) that are not equal to
+  // value.
+  //
+  // requires: InputIterator<Iter>
+  // requires: EqualityComparable<ValueType<Iter>, T>
+  // precondition: readable_range(first, last)
+  template<typename Iter, typename T>
+    inline auto count_not_equal(Iter first, Iter last, T const& value)
+      -> typename std::iterator_traits<Iter>::difference_type
+    {
+      typename std::iterator_traits<Iter>::difference_type n = 0;
+      while(first != last) {
+        if(*first != value)
+          ++n;
+        ++first;
+      }
+      return n;
+    }
+
+  // Return the number of elements in r that are not equal to value.
+  template<typename R, typename T>
+    inline auto count_not_equal(R const& range, T const& value)
+      -> typename range_traits<R>::size_type
+    {
+      return count_not_equal(std::begin(range), std::end(range), value);
+    }
+    
+  // Return the number of elements in [first, last) that do not satisfy pred.
+  //
+  // requires: InputIterator<Iter>
+  // precondition: readable_range(first, last)
+  template<typename Iter, typename Pred>
+    inline auto count_if_not(Iter first, Iter last, Pred pred)
+      -> typename std::iterator_traits<Iter>::difference_type
+    {
+      typename std::iterator_traits<Iter>::difference_type n = 0;
+      while(first != last) {
+        if(!pred(*first))
+          ++n;
+        ++first;
+      }
+      return n;
+    }
+
+  // Return the number of elements in r that do not satisfy pred.
+  template<typename R, typename Pred>
+    inline auto count_if_not(R const& range, Pred pred)
+      -> typename range_traits<R>::size_type
+    {
+      return count_if_not(std::begin(range), std::end(range), pred);
+    }
+    
+    
 
 
   // Extract the elements of [first, last) that are equal to value by moving 
