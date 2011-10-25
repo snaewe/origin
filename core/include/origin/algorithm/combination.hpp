@@ -5,7 +5,7 @@
 // for terms and conditions.
 
 // NOTE: These algorithms are adapted from the TR Proposal and library in the
-// Boost Vault by Ben Bear. Note that this code is(currently) licensed under 
+// Boost Vault by Ben Bear. Note that this code is (currently) licensed under 
 // a different set of terms.
 
 #ifndef ORIGIN_ALGORITHM_COMBINATION_HPP

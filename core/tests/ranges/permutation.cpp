@@ -23,20 +23,6 @@ template<typename R>
     cout << "\n";
   }
 
-// This is a very useful technique for just naming an operation without
-// giving the types of its arguments. I should push this into functional and
-// reproduce it for a bunch of operators.
-//
-// NOTE: I'm not actually using this right now...
-struct op_less
-{
-  template<typename T, typename U>
-    bool operator()(T const& a, U const& b) const
-    {
-      return a < b;
-    }
-};
-
 int main()
 {
   {
@@ -48,11 +34,9 @@ int main()
   
   {
     vector<int> v = {1, 2, 3, 4, 5};
-    auto f = v.begin();
-    auto l = f + 3;
     for(auto r : permutations(v, 3)) {
-      for(auto i = f; i != l; ++i)
-        cout << *i << ' ';
+      for(auto x : r)
+        cout << x << ' ';
       cout << '\n';
     }
   }

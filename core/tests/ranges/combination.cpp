@@ -26,11 +26,12 @@ template<typename R>
 int main()
 {
   vector<int> v = {1, 2, 3, 4, 5};
-  auto f = v.begin();
-  auto l = f + 3;
-  for(auto r : combinations(v, 3)) {
-    for(auto i = f; i != l; ++i)
-      cout << *i << ' ';
-    cout << '\n';
-  }
+  for(auto r : combinations(v, 3))
+    print(r);
+
+  cout << "\n";
+  vector<int> v2 = {1, 1, 1, 2, 2};
+  for(auto r : combinations(v2, 3))
+    print(r);
+
 }

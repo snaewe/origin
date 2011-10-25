@@ -12,6 +12,7 @@
 #include <origin/algorithm.hpp>
 #include <origin/range/traits.hpp>
 #include <origin/range/utility.hpp>
+#include <origin/range/bounded.hpp>
 
 namespace origin
 {
@@ -47,14 +48,18 @@ namespace origin
     class permutation_range_iterator
     {
     public:
-      typedef typename R::base_range value_type;
-      typedef value_type& reference;
-      typedef value_type* pointer;
+      typedef bounded_range<typename R::base_iterator> value_type;
+      typedef value_type const& reference;
+      typedef value_type const* pointer;
       typedef std::ptrdiff_t difference_type;
       typedef std::input_iterator_tag iterator_category;
     
-      permutation_range_iterator(R const* r = nullptr)
-        : range(const_cast<R*>(r))
+      permutation_range_iterator()
+        : range(nullptr)
+      { }
+    
+      permutation_range_iterator(R const* r)
+        : range(const_cast<R*>(r)), value(r->first(), r->middle())
       { }
       
       // Equality_comparable
@@ -62,8 +67,8 @@ namespace origin
       bool operator!=(permutation_range_iterator const& x) const { return range != x.range; }
 
       // Readable
-      reference operator*()  const { return range->base(); }
-      pointer   operator->() const { return &range->base(); }
+      reference operator*()  const { return value; }
+      pointer   operator->() const { return &value; }
 
       // Incrementable
       permutation_range_iterator& operator++()
@@ -82,6 +87,7 @@ namespace origin
       
       private:
         R* range;
+        value_type value;   // The "current" range.
     };
 
   // A permutation range implements a traversal over a sequence of permutations
@@ -120,7 +126,13 @@ namespace origin
 
       // Range properties
       base_range&       base() const       { return range; }
+      
+      // Range iterators
+      base_iterator     first() const      { return range.begin(); }
       base_iterator     middle() const     { return mid; }
+      base_iterator     last() const       { return range.end(); }
+
+      // Functions
       range_permute     range_perm() const { return perm; }
       value_compare     value_comp() const { return comp; }
       
@@ -190,8 +202,12 @@ namespace origin
   // Return a range over the k first lexicographically sorted combinations of a 
   // range of n elements.
   //
-  // The size of the returned range is given by binomial_coefficient(n, k). This
-  // operation is found in the math library.
+  // If the elements in r are unique (i.e., r is a set), the size of the 
+  // returned range is given by binomial_coefficient(n, k). This operation is 
+  // found in the math library. 
+  //
+  // If the elements are not unique (i.e., r is a multiset), the size of the 
+  // returned range is given by multinomial_coefficient(n, k).
   template<typename R, typename Size>
     inline auto combinations(R& range, Size k)
       -> permutation_range<
