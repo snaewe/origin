@@ -180,8 +180,8 @@ namespace origin
   //
   // The size of the returned range is given by falling_factorial(n, k). This 
   // operation is in the math library.
-  template<typename R, typename Size>
-    inline auto permutations(R& range, Size k)
+  template<typename R>
+    inline auto permutations(R& range, typename range_traits<R>::size_type k)
       -> permutation_range<
         R, next_permutation_func, std::less<typename range_traits<R>::value_type>
       > 
@@ -190,8 +190,8 @@ namespace origin
       return {range, std::next(std::begin(range), k), next_permutation_func{}};
     }
 
-  template<typename R, typename Size, typename Comp>
-    inline auto permutations(R& range, Size k, Comp comp)
+  template<typename R, typename Comp>
+    inline auto permutations(R& range, typename range_traits<R>::size_type k, Comp comp)
       -> permutation_range<R, next_permutation_func, Comp>
     {
       assert(( std::size_t{k} < size(range) ));
@@ -208,21 +208,21 @@ namespace origin
   //
   // If the elements are not unique (i.e., r is a multiset), the size of the 
   // returned range is given by multinomial_coefficient(n, k).
-  template<typename R, typename Size>
-    inline auto combinations(R& range, Size k)
+  template<typename R>
+    inline auto combinations(R& range, typename range_traits<R>::size_type k)
       -> permutation_range<
         R, next_combination_func, std::less<typename range_traits<R>::value_type>
       > 
     {
-      assert(( std::size_t{k} < size(range) ));
+      assert(( k <= size(range) ));
       return {range, std::next(std::begin(range), k), next_combination_func{}};
     }
 
-  template<typename R, typename Size, typename Comp>
-    inline auto combinations(R& range, Size k, Comp comp)
+  template<typename R, typename Comp>
+    inline auto combinations(R& range, typename range_traits<R>::size_type k, Comp comp)
       -> permutation_range<R, next_combination_func, Comp> 
     {
-      assert(( std::size_t{k} < size(range) ));
+      assert(( k <= size(range) ));
       return {range, std::next(std::begin(range), k), next_combination_func{}, comp};
     }
 

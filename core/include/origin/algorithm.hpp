@@ -14,7 +14,58 @@
 
 namespace origin
 {
+  //--- Quantifiers ---//
+  
+  // Note that:
+  //   !all_of == any_not_of
+  //   !none_of == any_of
+
+  // Return true if and only if all of the the elements in the range r satisfy 
+  // the given predicate, or if r is empty.
+  template<typename R, typename Pred>
+    inline bool all_of(R const& range, Pred pred)
+    {
+      return std::all_of(begin(range), end(range), pred);
+    }
+    
+  // Return true if and only if the range r is non-empty and any of its
+  // elements satisfy the given predicate.
+  template<typename R, typename Pred>
+    inline bool any_of(R const& range, Pred pred)
+    {
+      return std::any_of(std::begin(range), std::end(range), pred);
+    }
+    
+  // Return true if and only if the range [first, last) is non-empty and any
+  // of its elements do not satisfy the given prdicate.
+  template<typename Iter, typename Pred>
+    bool any_not_of(Iter first, Iter last, Pred pred)
+    {
+      while(first != last) {
+        if(!pred(*first))
+          return true;
+      }
+      return false;
+    }
+  
+  // Return true if and only if the range r is non-empty and any of its 
+  // elements do not satisfy the given prdicate.
+  template<typename R, typename Pred>
+    inline bool any_not_of(R const& range, Pred pred)
+    {
+      return any_not_of(std::begin(range), std::end(range), pred);
+    }
+
+  // Return true if and only if none of the the elements in the range r satisfy
+  // the given predicate or r is empty.
+  template<typename R, typename Pred>
+    inline bool none_of(R const& range, Pred pred)
+    {
+      return std::none_of(std::begin(range), std::end(range), pred);
+    }
  
+  //--- Equality Quantifiers ---//
+
   // Returns true if and only if all elements in [first, last) are equal to
   // value or [first, last) is an empty range.
   //
@@ -29,6 +80,12 @@ namespace origin
       }
       return true;
     }
+   
+  template<typename R, typename T>
+    inline bool all_equal(R const& range, T const& value)
+    {
+      return all_equal(std::begin(range), std::end(range), value);
+    }
     
   // Returns true if and only if [first, last) is not an empty range and at
   // least one element in [first, last) is equal to value.
@@ -37,12 +94,33 @@ namespace origin
   template<typename Iter, typename T>
     bool any_equal(Iter first, Iter last, T const& value)
     {
-      while(first != last)
-      {
+      while(first != last) {
         if(*first == value)
           return true;
       }
       return false;
+    }
+
+  template<typename R, typename T>
+    inline bool any_equal(R const& range, T const& value)
+    {
+      return any_equal(std::begin(range), std::end(range), value);
+    }
+    
+  template<typename Iter, typename T>
+    bool any_not_equal(Iter first, Iter last, T const& value)
+    {
+      while(first != last) {
+        if(!first != value)
+          return true;
+      }
+      return false;
+    }
+    
+  template<typename R, typename T>
+    inline bool any_not_equal(R const& range, T const& value)
+    {
+      return any_not_equal(std::begin(range), std::end(range), value);
     }
     
   // Returns true if and only if [first, last) is an empty range or there
@@ -59,6 +137,35 @@ namespace origin
           return false;
       }
       return true;
+    }
+
+  //--- Find ---//
+  
+  // Return the first iterator i in the given range that is equal to value.
+  template<typename R, typename T>
+    auto find(R& range, T const& value) -> decltype(std::begin(range))
+    {
+      return std::find(std::begin(range), std::end(range), value);
+    }
+
+  template<typename R, typename T>
+    auto find(R const& range, T const& value) -> decltype(std::begin(range))
+    {
+      return std::find(std::begin(range), std::end(range), value);
+    }
+    
+  // Return the first iterator i in the range that satisfies the given 
+  // predicate.
+  template<typename R, typename Pred>
+    auto find_if(R& range, Pred pred) -> decltype(std::begin(range))
+    {
+      return std::find_if(std::begin(range), std::end(range), pred);
+    }
+
+  template<typename R, typename Pred>
+    auto find_if(R const& range, Pred pred) -> decltype(std::begin(range))
+    {
+      return std::find_if(std::begin(range), std::end(range), pred);
     }
 
 
