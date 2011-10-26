@@ -8,3 +8,4 @@
 origin_run_test(counting_factorial factorial.cpp)
 origin_run_test(counting_falling_factorial falling_factorial.cpp)
 origin_run_test(counting_rising_factorial rising_factorial.cpp)
+origin_run_test(counting_binomial_coefficient binomial_coefficient.cpp)

@@ -22,33 +22,15 @@ namespace origin
   
   // Return n! (the factorial of n).
   //
-  // requires: MultiplicativeMonoid
+  // requires: Semiring<T>
   // precondition: n >= 0
-  //
-  // TODO: Does * need to be commutative?
   template<typename T>
     T factorial(T n)
     {
-      assert(( n >= 0 ));
-      T result = T{1};
-      while(n >= T{1}) {
+      assert(( n >= T{0} ));
+      T result = 1;
+      while(n > T{0}) {
         result = result * n;
-        --n;
-      }
-      return result;
-    }
-
-  // Return n! using op instead of the usual multiplication.
-  //
-  // requires: MultiplicativeMonoid
-  // precondition: identity_element(T{}, op) == T{1}
-  template<typename T, typename Op>
-    T factorial(T n, Op op)
-    {
-      assert(( n >= 0 ));
-      T result = T{1};
-      while(n >= T{1}) {
-        result = op(result, n);
         --n;
       }
       return result;
@@ -59,13 +41,13 @@ namespace origin
 
   // Return n to the power of k falling.
   //
-  // requires: MultiplicativeMonoid<T>
+  // requires: Semiring<T>
   // precondition: 0 <= k <= n
   template<typename T>
     T falling_factorial(T n, T k)
     {
-      assert(( 0 <= k && k <= n ));
-      T result = T{1};
+      assert(( T{0} <= k && k <= n ));
+      T result = 1;
       while(k >= T{1}) {
         result = result * n;
         --n;
@@ -74,32 +56,16 @@ namespace origin
       return result;
     }
     
-  // Return n to the power of k falling using op to multiply successive terms.
-  //
-  // requires: Monoid<T, Op>
-  // precondition: 0 <= k <= n
-  template<typename T, typename Op>
-    T falling_factorial(T n, T k, Op op)
-    {
-      assert(( 0 <= k && k <= n ));
-      T result = T{1};
-      while(k >= T{1}) {
-        result = op(result, n);
-        --n;
-        --k;
-      }
-      return result;
-    }
 
   // Retrun n to the power of k rising.
   //
-  // requires: MultiplicativeMonoid<T>
+  // requires: Semiring<T>
   // precondition: 0 <= k
   template<typename T>
     T rising_factorial(T n, T k)
     {
-      assert(( 0 <= k ));
-      T result = T{1};
+      assert(( T{0} <= k ));
+      T result = 1;
       while(k >= T{1}) {
         result = result * n;
         ++n;
@@ -108,23 +74,33 @@ namespace origin
       return result;
     }
 
-  // Return n to the power of k rising using op to multiply successive terms.
+
+
+  // Return the kth coefficient of binomial (1 + x) raised to the nth power.
   //
-  // requires: Monoid<T, Op>
-  // precondition: 0 <= k
-  template<typename T, typename Op>
-    T rising_factorial(T n, T k, Op op)
+  // requires: Semiring<T>
+  // precondition: 0 <= k <= n
+  template<typename T>
+    T binomial_coefficient(T n, T k)
     {
-      assert(( 0 <= k ));
-      T result = T{1};
-      while(k >= T{1}) {
-        result = result * n;
-        ++n;
-        --k;
+      assert(( T{0} <= k && k <= n ));
+      
+      // Take advantage of symmetry, making the loop shorter.
+      if(k > n - k)
+        k = n - k;
+      
+      // Divide in each step to reduce the chance of overflow.
+      T result = 1;
+      T r = 1;
+      while(r <= k) {
+        result = (result * n) / r;
+        --n;
+        ++r;
       }
       return result;
     }
-    
+
+
 } // namespace origin
 
 #endif
