@@ -8,7 +8,6 @@
 origin_executable(adjacency_list adjacency_list.cpp)
 
 origin_run_test(generator generator.cpp)
-origin_run_test(operator operator.cpp)
 origin_run_test(breadth_first breadth_first.cpp)
 origin_run_test(depth_first depth_first.cpp)
 origin_run_test(bipartite bipartite.cpp)
@@ -19,4 +18,4 @@ origin_run_test(topological_sort topological_sort.cpp)
 # origin_run_test(floyd_warshall floyd_warshall.cpp)
 # origin_run_test(bellman_ford bellman_ford.cpp)
 
-# add_subdirectory(io)
+add_subdirectory(operators)

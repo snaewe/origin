@@ -20,8 +20,12 @@ int main()
 {
   typedef directed_adjacency_list<char, int> Digraph;
   
-  
-  Digraph g = iota_cycle_graph<Digraph>({'a', 'b', 'c', 'd'}, 1);
-  Digraph h = graph_transpose(g);
+  // Make the graph a -> b -> c -> d.
+  Digraph g = iota_path_graph<Digraph>({'a', 'b', 'c', 'd'}, 1);
+  write_edge_list(cout, g);
+  cout << "---\n";
+
+  // The complement should be:
+  Digraph h = graph_complement(g);
   write_edge_list(cout, h);
 }

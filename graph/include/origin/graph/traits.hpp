@@ -244,6 +244,7 @@ namespace origin
     {
       return g.add_vertex(value);
     }
+
     
   // Return the edge set of a graph
   template<typename G>
@@ -251,6 +252,22 @@ namespace origin
     {
       return g.edges();
     }
+    
+  // Return an edge descriptor connecting the vertices u and v, if one exists.
+  // If not, return a null edge descriptor.
+  template<typename G, typename V>
+    inline auto get_edge(G& g, V u, V v) -> decltype(g.get_edge(u, v))
+    {
+      return g.get_edge(u, v);
+    }
+
+  // Const version of the previous function.
+  template<typename G, typename V>
+    inline auto get_edge(G const& g, V u, V v) -> decltype(g.get_edge())
+    {
+      return g.edge();
+    }
+
     
   // FIXME: Replace E with EdgeType<G> for source and target.
 
