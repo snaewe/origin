@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include <origin/iterator.hpp>
+#include <origin/range.hpp>
 #include <origin/algorithm/combination.hpp>
 
 namespace origin
@@ -392,8 +394,21 @@ namespace origin
       return count_if_not(std::begin(range), std::end(range), pred);
     }
     
-    
+  //--- Equal ---//
 
+  // Return true if the range a is equal to the range b. Two ranges are equal
+  // if they have the same size and elements.
+  //
+  // requires EqualityComparable<ValueType<R1>, ValueType<R2>>
+  template<typename R1, typename R2>
+    inline bool equal(R1 const& a, R2 const& b)
+    {
+      return size(a) == size(b) 
+          && std::equal(std::begin(a), std::end(a), std::begin(b));
+    }
+
+
+  //--- Extract ---//
 
   // Extract the elements of [first, last) that are equal to value by moving 
   // them into the output range. This algorithm is similar to remove, except 
