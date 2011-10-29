@@ -14,9 +14,9 @@ include(Origin)
 origin_component(
   math
   VERSION 0.1.0
-  DEPENDS core range data
+  DEPENDS core
   AUTHORS
-    Andrew Sutton <asutton -at- cse.tamu.edu>
+    Andrew Sutton <andrew.n.sutton -at- gmail.com>
 )
 
 add_subdirectory(tests)

@@ -5,6 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(math_number number.cpp)
-
-add_subdirectory(counting)
+origin_run_test(math_factorial factorial.cpp)
+origin_run_test(math_falling_factorial falling_factorial.cpp)
+origin_run_test(math_rising_factorial rising_factorial.cpp)
+origin_run_test(math_binomial_coefficient binomial_coefficient.cpp)
