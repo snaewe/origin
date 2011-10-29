@@ -29,6 +29,12 @@ namespace origin
   
   // Return the size of the given range, if the range is counted (i.e., has a
   // size member function). This is expected to be a constant-time operation.
+  //
+  // FIXME: This operation is extremely general. It applies, for example, to
+  // Containers, and Graphs. There's probably a unifying concept (Sized?),
+  // but the operation doesn't belong here. Note that this wouldn't be an issue
+  // ADL included x.size() as a candidate for size(x). Then, there wouldn't be
+  // any overload issues.
   template<typename R>
     inline auto size(R const& r) -> decltype(r.size())
     {
@@ -46,6 +52,8 @@ namespace origin
     }
 
   // Return true if the counted range r is emtpy.
+  //
+  // FIXME: See comments on size(), for Sized? types.
   template<typename R>
     inline auto empty(R const& r) -> decltype(r.empty())
     {
