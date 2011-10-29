@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <origin/utility/empty.hpp>
-#include <origin/range/iterator_range.hpp>
+#include <origin/range.hpp>
 #include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
 #include <origin/graph/edge.hpp>
@@ -99,14 +99,14 @@ namespace origin
       // handles in the incident edge lists.
       typedef typename vertex_type::edge_list::const_iterator incident_edge_iterator;
     public:
-      typedef iterator_range<vertex_iterator>        vertex_range;
-      typedef iterator_range<vertex_iterator>        const_vertex_range;
-      typedef iterator_range<edge_iterator>          edge_range;
-      typedef iterator_range<edge_iterator>          const_edge_range;
-      typedef iterator_range<incident_edge_iterator> out_edge_range;
-      typedef iterator_range<incident_edge_iterator> const_out_edge_range;
-      typedef iterator_range<incident_edge_iterator> in_edge_range;
-      typedef iterator_range<incident_edge_iterator> const_in_edge_range;
+      typedef bounded_range<vertex_iterator>        vertex_range;
+      typedef bounded_range<vertex_iterator>        const_vertex_range;
+      typedef bounded_range<edge_iterator>          edge_range;
+      typedef bounded_range<edge_iterator>          const_edge_range;
+      typedef bounded_range<incident_edge_iterator> out_edge_range;
+      typedef bounded_range<incident_edge_iterator> const_out_edge_range;
+      typedef bounded_range<incident_edge_iterator> in_edge_range;
+      typedef bounded_range<incident_edge_iterator> const_in_edge_range;
       
       struct graph_category : directed_graph_tag, buildable_graph_tag { };
       

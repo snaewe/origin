@@ -11,17 +11,16 @@
 #include <iterator>
 #include <functional>
 
-#include <origin/iterator/facades.hpp>
-#include <origin/range/support.hpp>
+#include <origin/range.hpp>
 #include <origin/graph/traits.hpp>
 
 namespace origin
 {
   // The edge_t type represents an ordinal reference to an edge in a Graph.
   // The integral value -1u corresponds to a null edge.
-  class edge_t : public implicit_bool_facade<edge_t>
+  class edge_t
   {
-    typedef bool (edge_t::*unspecified_bool_type)() const;
+    typedef bool (edge_t::*safe_bool_type)() const;
   public:
     typedef std::size_t value_type;
     
@@ -44,6 +43,7 @@ namespace origin
     bool operator>=(edge_t x) const { return value >= x.value; }
     
     // Safe bool
+    operator safe_bool_type() const { return valid() ? &edge_t::valid : nullptr; }
     bool valid() const { return value != value_type{-1ul}; }
 
     value_type value;
@@ -131,8 +131,9 @@ namespace origin
   // vertex handles: the source and target vertices, respectively. Note that 
   // equality and inequality comparisons are predicated on the underlying edge 
   // and do not include the end points in comparison.
-  class undirected_edge_t : public implicit_bool_facade<edge_t>
+  class undirected_edge_t
   {
+    typedef bool (undirected_edge_t::*safe_bool_type)() const;
   public:
     undirected_edge_t()
       : edge{}, source{}, target{}
@@ -155,7 +156,8 @@ namespace origin
     bool operator>=(undirected_edge_t const& x) const { return edge >= x.edge; }
 
     // Safe bool
-    bool valid() const { return edge; }
+    operator safe_bool_type() const { return valid() ? &undirected_edge_t::valid : nullptr; }
+    bool valid() const { return edge.valid(); }
 
     edge_t edge;
     vertex_t source;

@@ -178,8 +178,8 @@ namespace origin
     {
       G result = copy_vertices(g, va);
       auto verts = vertices(g);
-      for(auto i = begin(verts); i != end(verts); ++i)
-        for(auto j = std::next(i); j != end(verts); ++j)
+      for(auto i = std::begin(verts); i != std::end(verts); ++i)
+        for(auto j = std::next(i); j != std::end(verts); ++j)
           edge_complement(g, *i, *j, result, ea);
       return std::move(result);
     }
@@ -218,6 +218,39 @@ namespace origin
     }
 
 
+  // Return a graph containing the union of the vertex sets of a and b using
+  // the vertex accessor va to propagate vertex properties.
+  template<typename G, typename Vertex_Acc>
+    inline G union_vertices(G const& a, G const& b, Vertex_Acc va)
+    {
+      return std::move(copy_vertices(a.order() >= b.order() ? a : b, va));
+    }
+
+  // Same as above, but using the default propagation.
+  template<typename G>
+    inline G union_vertices(G const& a, G const& b)
+    {
+      return std::move(copy_vertices(a.order() >= b.order() ? a : b));
+    }
+
+
+  // Compute the union of the edge sets of graphs a and b into the result. Use
+  // the given edge accessor to propagate edgfe properties.
+  template<typename G, typename Edge_Acc>
+    inline void union_edges(G const& a, G const& b, G& result, Edge_Acc ea)
+    {
+      copy_edges(a, result, ea);
+      copy_edges(b, result, ea);
+    }
+  
+  // Same as above, but using the default propagation.
+  template<typename G>
+    inline void union_edges(G const& a, G const& b, G& result)
+    {
+      union_edges(a, b, result, label_accessor<G>{});
+    }
+
+
   // Compute the graph union, which is the (non-disjoint) union of the vertex
   // and edge sets of a and b. 
   //
@@ -230,9 +263,8 @@ namespace origin
   template<typename G, typename Vertex_Acc, typename Edge_Acc>
     G graph_union(G const& a, G const& b, Vertex_Acc va, Edge_Acc ea)
     {
-      G result = copy_vertices(a.order() >= b.order() ? a : b, va);
-      copy_edges(a, result, ea);
-      copy_edges(b, result, ea);
+      G result = union_vertices(a, b, va);
+      union_edges(a, b, result, ea);
       return std::move(result);
     }
     
@@ -240,13 +272,64 @@ namespace origin
   template<typename G>
     inline G graph_union(G const& a, G const& b)
     {
-      return std::move(graph_union(a, b, label_accessor<G>{}, label_accessor<G>{}));
+      G result = union_vertices(a, b);
+      union_edges(a, b, result);
+      return std::move(result);
     }
 
-  // Return the interscection of two graphs.
+
+  // Compute the interserction of edges in a and b into the result. This 
+  // iterates over the edges of a, searching the out edges of b.
+  template<typename G, typename Edge_Acc>
+    void left_intersect_edges(G const& a, G const& b, G& result, Edge_Acc ea)
+    {
+      for(auto e : edges(a)) {
+        auto u = source(a, e);
+        auto v = target(a, e);
+        if(auto x = get_edge(b, u, v)) {
+          add_edge(result, u, v, ea(a, e));
+        }
+      }
+    }
+
+  // Compute the intersection of edges in a and b into the result. Use the
+  // edge accessor ea to propagate values.
+  //
+  // The algorithm iterates over the graph with the smaller edge set, searching
+  // for edges in the larger edge set.
+  template<typename G, typename Edge_Acc>
+    void intersect_edges(G const& a, G const& b, G& result, Edge_Acc ea)
+    {
+      if(size(a) < size(b))
+        left_intersect_edges(a, b, result, ea);
+      else
+        left_intersect_edges(b, a, result, ea);
+    }
+
+  // Same as above, but using the default propagation.
+  template<typename G>
+    inline void intersect_edges(G const& a, G const& b, G& result)
+    {
+      intersect_edges(a, b, result, label_accessor<G>{});
+    }
+
+  // Return the interscection of two graphs. The resulting graph contains only
+  // the edges that are in both a and b. Note that the resulting graph is
+  // defined on the union of the vertex sets of a and b.
+  template<typename G, typename Vertex_Acc, typename Edge_Acc>
+    G graph_intersection(G const& a, G const& b, Vertex_Acc va, Edge_Acc ea)
+    {
+      G result = union_vertices(a, b, va);
+      intersect_edges(a, b, result, ea);
+      return std::move(result);
+    }
+  
   template<typename G>
     G graph_intersection(G const& a, G const& b)
     {
+      G result = union_vertices(a, b);
+      intersect_edges(a, b, result);
+      return std::move(result);
     }
 
   template<typename G>

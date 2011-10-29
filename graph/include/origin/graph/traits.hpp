@@ -169,6 +169,9 @@ namespace origin
 
   // The graph interface is exposed as free functions.
 
+  // FIXME: This is an extraordinarily general name. We're going to need to
+  // figure out how to adapt it more specifically.
+  // 
   // Return true if the graph has no vertices.
   template<typename G>
     inline typename std::enable_if<is_graph<G>::value, bool>::type 
@@ -184,21 +187,25 @@ namespace origin
       return g.order();
     }
 
+  // NOTE: empty() is generally defined in range.hpp.
+  //
   // Return true if the graph is empty.
-  template<typename G>
-    inline typename std::enable_if<is_graph<G>::value, bool>::type
-    empty(G const& g)
-    {
-      return g.empty();
-    }
+  // template<typename G>
+  //   inline typename std::enable_if<is_graph<G>::value, bool>::type
+  //   empty(G const& g)
+  //   {
+  //     return g.empty();
+  //   }
 
+  // NOTE: empty() is generally defined in range.hpp.
+  //
   // Return the size of a graph
-  template<typename G>
-    inline auto size(G const& g) ->
-      typename std::enable_if<is_graph<G>::value, decltype(g.size())>::type
-    {
-      return g.size();
-    }
+  // template<typename G>
+  //   inline auto size(G const& g)
+  //     -> typename std::enable_if<is_graph<G>::value, decltype(g.size())>::type
+  //   {
+  //     return g.size();
+  //   }
 
   // Return the out degree of the vertex v in the directed graph g.
   template<typename G, typename V>

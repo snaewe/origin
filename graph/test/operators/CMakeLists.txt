@@ -8,3 +8,4 @@
 origin_run_test(graph_transpose transpose.cpp)
 origin_run_test(graph_complement complement.cpp)
 origin_run_test(graph_union union.cpp)
+origin_run_test(graph_intersection intersection.cpp)

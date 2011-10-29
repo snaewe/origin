@@ -11,16 +11,15 @@
 #include <iterator>
 #include <functional>
 
-#include <origin/iterator/facades.hpp>
-
 namespace origin 
 {
   /**
    * The vertex_t type represents an ordinal reference to a vertex in a Graph.
    * The integral value -1u corresponds to a null vertex.
    */
-  class vertex_t : public implicit_bool_facade<vertex_t>
+  class vertex_t
   {
+    typedef bool (vertex_t::*safe_bool_type)() const;
   public:
     typedef std::size_t value_type;
     
@@ -42,6 +41,7 @@ namespace origin
     bool operator>=(vertex_t x) const { return value <= x.value; }
 
     // Safe bool
+    operator safe_bool_type() const { return valid() ? &vertex_t::valid : nullptr; }
     bool valid() const { return value != -1ul; }
 
     value_type value;

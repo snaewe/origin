@@ -18,4 +18,5 @@ origin_run_test(topological_sort topological_sort.cpp)
 # origin_run_test(floyd_warshall floyd_warshall.cpp)
 # origin_run_test(bellman_ford bellman_ford.cpp)
 
+add_subdirectory(generators)
 add_subdirectory(operators)

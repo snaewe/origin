@@ -322,7 +322,7 @@ namespace origin
       assert(( n != 0 ));
 
       G g(n);
-      make_path(g, begin(vertices(g)), end(vertices(g)), first);
+      make_path(g, std::begin(vertices(g)), std::end(vertices(g)), first);
       return std::move(g);
     }
 
@@ -337,7 +337,7 @@ namespace origin
       assert(( first != last ));
 
       G g(first, last);
-      make_path(g, begin(vertices(g)), end(vertices(g)));
+      make_path(g, std::begin(vertices(g)), std::end(vertices(g)));
       return std::move(g);
     }
 
@@ -349,7 +349,7 @@ namespace origin
       assert(( first1 != last1 ));
 
       G g(first1, last1);
-      make_path(g, begin(vertices(g)), end(vertices(g)), first2);
+      make_path(g, std::begin(vertices(g)), std::end(vertices(g)), first2);
       return std::move(g);
     }
 
@@ -378,7 +378,7 @@ namespace origin
       assert(( n != 0 ));
       
       G g(n);
-      iota_path(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_path(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -388,7 +388,7 @@ namespace origin
       assert(( first != last ));
       
       G g(first, last);
-      iota_path(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_path(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -535,7 +535,7 @@ namespace origin
       assert(( n != 0 ));
       
       G g(n);
-      iota_cycle(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_cycle(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -545,7 +545,7 @@ namespace origin
       assert(( first != last ));
       
       G g(first, last);
-      iota_cycle(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_cycle(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -563,12 +563,22 @@ namespace origin
   // K2 - the same as P2
   // K3 - a triangle
   // Kn - ...
-
-  // TODO: w.r.t. combinatorics, define binomial_coefficient, also define
-  // multiset_coefficient, and multinomial_coefficient. Useful functions, all.
-  // See http://photon.poly.edu/~hbr/boost/combinations.html for an extended
-  // proposal of permutations and combinations to the C++ standard. That would
-  // be a nice extension library for combinatorics.
+  //
+  // A complete directed graph has arcs between every pair of vertices, 
+  // including the arc (v, v). From the perspective of an adjacency matrix, it
+  // generates the "matrix of 1s", which is often called Jn. This definition
+  // appears in Knuth's The Art of Computer Programming vol. 4.
+  //
+  // A complete directed graph has n^2 edges.
+  //
+  // Another common interpretation of complete digraphs is that loops are not
+  // included. Such graphs would have n^2 - n edges. This definition is the same
+  // as that given on the Wolfram site.
+  //
+  // FIXME: Rethink the design of complete digraphs. If we choose Knuth, we're
+  // consistent with the adjacency matrix representations. If we choose the
+  // Wolfram definition, then we're consistent with the more common notion of
+  // simple graphs.
 
   // Traverse the vertices in the range  [first, last) in such a way that a
   // complete graph is constructed. The algorithm calls f for every combination
@@ -577,12 +587,27 @@ namespace origin
   //
   // requires Graph<G> && ForwardIterator<Iter> && EdgeFunction<F, G>.
   template<typename G, typename Iter, typename F>
-    F for_clique(G& g, Iter first, Iter last, F f)
+    auto for_clique(G& g, Iter first, Iter last, F f)
+      -> typename std::enable_if<is_undirected_graph<G>::value, F>::type
     {
       for( ; first != last; ++first) {
         for(Iter i = std::next(first); i != last; ++i) {
           f(g, *first, *i);
         }
+      }
+      return f;
+    }
+
+  // A specialization for directed graphs generates all pairs of vertices.
+  // FIXME: See comments above about possible interpretations of this
+  // graph generator.
+  template<typename G, typename Iter, typename F>
+    auto for_clique(G& g, Iter first, Iter last, F f)
+      -> typename std::enable_if<is_directed_graph<G>::value, F>::type
+    {
+      for(Iter i = first ; i != last; ++i) {
+        for(Iter j = first; j != last; ++j)
+          f(g, *i, *j);
       }
       return f;
     }
@@ -619,11 +644,13 @@ namespace origin
 
   // Make a complete graph with n vertices and binomial_coefficient(n, 2) edges.
   // Vertex and edge labels are default initialized.
+  //
+  // requires: Graph<G>
+  // precondition: n >= 0
   template<typename G>
     G make_complete_graph(typename graph_traits<G>::size_type n)
     {
-      assert(( n != 0 ));
-
+      assert(( n >= 0 ));
       G g(n);
       make_clique(g, begin(vertices(g)), end(verices(g)));
       return std::move(g);
@@ -635,34 +662,35 @@ namespace origin
   template<typename G, typename Iter>
     G make_complete_graph(typename graph_traits<G>::size_type n, Iter first)
     {
-      // assert(( readable_weak_range(first, n) ));
-      assert(( n != 0 ));
-      
+      // assert((  ));
+      assert(( n >= 0 ));
       G g(n);
-      make_clique(g, begin(vertices(g)), end(verices(g)), first);
+      make_clique(g, std::begin(vertices(g)), std::end(verices(g)), first);
       return std::move(g);
     }
 
+  // precondition: first != last
+  // precondition: readable_range(first, n)
   template<typename G, typename Iter>
     G make_complete_graph(Iter first, Iter last)
     {
-      // assert(( readable_bounded_range(first, last) ));
       assert(( first != last ));
 
       G g(first, last);
-      make_clique(g, begin(vertices(g)), end(verices(g)));
+      make_clique(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
+  // precondition: first != last
+  // precondition: readable_range(first1, last1)
+  // precondition: readable_range(firast2, binomial_coefficient(last1 - first1, 2))
   template<typename G, typename Iter1, typename Iter2>
     G make_complete_graph(Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      // assert(( readable_bounded_range(first1, last1) ));
-      // assert(( readable_weak_range(first2, binomial_coefficient(last1 - first1, 2)) ));
       assert(( first1 != last1 ));
 
       G g(first1, last1);
-      make_clique(g, begin(vertices(g)), end(verices(g)), first2);
+      make_clique(g, std::begin(vertices(g)), std::end(verices(g)), first2);
       return std::move(g);
     }
 
@@ -691,7 +719,7 @@ namespace origin
       assert(( n != 0 ));
       
       G g(n);
-      iota_clique(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_clique(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -701,7 +729,7 @@ namespace origin
       assert(( first != last ));
       
       G g(first, last);
-      iota_clique(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_clique(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -783,7 +811,7 @@ namespace origin
       assert(( n != 0 ));
 
       G g(n);
-      make_star(g, begin(vertices(g)), end(verices(g)));
+      make_star(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -794,7 +822,7 @@ namespace origin
       assert(( n != 0 ));
 
       G g(n);
-      make_star(g, begin(vertices(g)), end(verices(g)), first);
+      make_star(g, std::begin(vertices(g)), std::end(verices(g)), first);
       return std::move(g);
     }
 
@@ -805,7 +833,7 @@ namespace origin
       assert(( first != last ));
 
       G g(first, last);
-      make_star(g, begin(vertices(g)), end(verices(g)));
+      make_star(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -817,7 +845,7 @@ namespace origin
       assert(( first1 != last1 ));
       
       G g(first1, last1);
-      make_star(g, begin(vertices(g)), end(verices(g)), first2);
+      make_star(g, std::begin(vertices(g)), std::end(verices(g)), first2);
       return std::move(g);
     }
 
@@ -846,7 +874,7 @@ namespace origin
       assert(( n != 0 ));
       
       G g(n);
-      iota_star(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_star(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -856,7 +884,7 @@ namespace origin
       assert(( first != last ));
       
       G g(first, last);
-      iota_star(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_star(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -919,7 +947,7 @@ namespace origin
       assert(( n >= 4 ));
 
       G g(n);
-      make_wheel(g, begin(vertices(g)), end(verices(g)));
+      make_wheel(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -930,7 +958,7 @@ namespace origin
       assert(( n >= 4 ));
 
       G g(n);
-      make_wheel(g, begin(vertices(g)), end(verices(g)));
+      make_wheel(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -941,7 +969,7 @@ namespace origin
       // assert(( last - first >= 4 ));
 
       G g(first, last);
-      make_wheel(g, begin(vertices(g)), end(verices(g)));
+      make_wheel(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -953,7 +981,7 @@ namespace origin
       // assert(( last - first >= 4 ));
 
       G g(first1, last1);
-      make_wheel(g, begin(vertices(g)), end(verices(g)));
+      make_wheel(g, std::begin(vertices(g)), std::end(verices(g)));
       return std::move(g);
     }
 
@@ -982,7 +1010,7 @@ namespace origin
       assert(( n != 0 ));
       
       G g(n);
-      iota_wheel(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_wheel(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   
@@ -992,7 +1020,7 @@ namespace origin
       assert(( first != last ));
       
       G g(first, last);
-      iota_wheel(g, begin(vertices(g)), end(vertices(g)), num);
+      iota_wheel(g, std::begin(vertices(g)), std::end(vertices(g)), num);
       return std::move(g);
     }
   

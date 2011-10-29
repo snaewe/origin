@@ -48,14 +48,14 @@ namespace origin
       typedef undirected_incident_edge_iterator<this_type> incident_edge_iterator;
       typedef undirected_incident_edge_iterator<this_type const> const_incident_edge_iterator;
     public:
-      typedef iterator_range<vertex_iterator> vertex_range;
-      typedef iterator_range<vertex_iterator> const_vertex_range;
+      typedef bounded_range<vertex_iterator> vertex_range;
+      typedef bounded_range<vertex_iterator> const_vertex_range;
       
-      typedef iterator_range<edge_iterator>       edge_range;
-      typedef iterator_range<const_edge_iterator> const_edge_range;
+      typedef bounded_range<edge_iterator>       edge_range;
+      typedef bounded_range<const_edge_iterator> const_edge_range;
       
-      typedef iterator_range<incident_edge_iterator>       incident_edge_range;
-      typedef iterator_range<const_incident_edge_iterator> const_incident_edge_range;
+      typedef bounded_range<incident_edge_iterator>       incident_edge_range;
+      typedef bounded_range<const_incident_edge_iterator> const_incident_edge_range;
       
       struct graph_category : undirected_graph_tag, buildable_graph_tag { };
 
@@ -180,8 +180,8 @@ namespace origin
       edge_iterator       begin_edges()       { return {*this, get_edge(0)}; }
       const_edge_iterator begin_edges() const { return {*this, get_edge(0)}; }
       
-      edge_iterator       end_edges()       { return {*this, get_edge(order())}; }
-      const_edge_iterator end_edges() const { return {*this, get_edge(order())}; }
+      edge_iterator       end_edges()       { return {*this, get_edge(size())}; }
+      const_edge_iterator end_edges() const { return {*this, get_edge(size())}; }
       
       incident_edge_iterator       begin_incident_edges(vertex v)       { return {*this, v, 0}; }
       const_incident_edge_iterator begin_incident_edges(vertex v) const { return {*this, v, 0}; }
@@ -240,7 +240,7 @@ namespace origin
   template<typename V, typename E, typename A>
     auto undirected_adjacency_list<V, E, A>::
       add_edge(vertex u, vertex v, edge_value_type const& x) -> edge
-      { 
+      {
         return make_edge(base_.add_edge(u, v, x), u); 
       }
 
