@@ -5,7 +5,4 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(math_number number.cpp)
-
-add_subdirectory(counting)
-add_subdirectory(matrix)
+origin_run_test(math_matrix1 matrix1.cpp)
