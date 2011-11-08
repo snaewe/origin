@@ -5,14 +5,17 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
+
 # This module is responsible for the configuration of the build system with
 # respect to the local environment.
+
 
 # Define a Profile build mode.
 # TODO: Support for profiling is not very good right now. This should be
 # improved substantially.
 # set(CMAKE_C_FLAGS_PROFILE "-pg" CACHE STRING "Profile")
 # set(CMAKE_CXX_FLAGS_PROFILE "-pg" CACHE STRING "Profile")
+
 
 # Define C++0x flags - these get used in macros for creating binary libraries
 # and executables.

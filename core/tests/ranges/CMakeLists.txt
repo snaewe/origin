@@ -10,3 +10,4 @@ origin_run_test(range_filter filter.cpp)
 origin_run_test(range_permutation permutation.cpp)
 origin_run_test(range_combination combination.cpp)
 
+origin_executable(range_perf_counting perf_counting.cpp)
