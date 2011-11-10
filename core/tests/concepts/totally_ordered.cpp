@@ -6,14 +6,24 @@
 // and conditions.
 
 #include <cassert>
+#include <string>
+#include <complex>
 #include <iostream>
 
-#include <origin/traits.hpp>
+#include <origin/concepts.hpp>
 
 using namespace std;
 using namespace origin;
 
+struct failure { };
+
 int main()
 {
-  // FIXME: Write checks against standard type traits.
+  static_assert(Totally_ordered<int>(), "");
+  static_assert(!Totally_ordered<failure>(), "");
+
+  static_assert(Totally_ordered<char, int>(), "");
+  static_assert(Totally_ordered<string, const char*>(), "");
+  static_assert(!Totally_ordered<string, int>(), "");
 }
+

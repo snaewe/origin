@@ -6,14 +6,24 @@
 // and conditions.
 
 #include <cassert>
+#include <string>
+#include <complex>
 #include <iostream>
 
-#include <origin/traits.hpp>
+#include <origin/concepts.hpp>
 
 using namespace std;
 using namespace origin;
 
+struct failure { };
+
 int main()
 {
-  // FIXME: Write checks against standard type traits.
+  static_assert(Equality_comparable<int>(), "");
+  static_assert(!Equality_comparable<failure>(), "");
+
+  static_assert(Equality_comparable<char, int>(), "");
+  static_assert(Equality_comparable<string, const char*>(), "");
+  static_assert(!Equality_comparable<string, int>(), "");
 }
+

@@ -6,4 +6,7 @@
 # and conditions.
 
 origin_run_test(traits_std std.cpp)
+origin_run_test(traits_common common.cpp)
+origin_run_test(traits_convertible convertible.cpp)
+
 

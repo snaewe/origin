@@ -61,8 +61,10 @@ namespace origin
     
   // Adaptors for standard traits
   
-  // An alias for the std::enable_if psuedo-trait.
-  template<bool B, typename T>
+  // An alias for the std::enable_if psuedo-trait. Like Boost, we allow the
+  // type argument to default to void. This is useful when writing Requires<>
+  // expressions as function or template arguments.
+  template<bool B, typename T = void>
     using Requires = typename std::enable_if<B, T>::type;
 
     
@@ -510,7 +512,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x == y);
+        static auto check(X&& x, Y&& y) -> decltype(x == y);
         
       static subst_failure check(...);
     public:
@@ -535,7 +537,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x != y);
+        static auto check(X&& x, Y const&& y) -> decltype(x != y);
         
       static subst_failure check(...);
     public:
@@ -560,7 +562,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x < y);
+        static auto check(X&& x, Y&& y) -> decltype(x < y);
         
       static subst_failure check(...);
     public:
@@ -585,7 +587,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x > y);
+        static auto check(X&& x, Y&& y) -> decltype(x > y);
         
       static subst_failure check(...);
     public:
@@ -610,7 +612,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x <= y);
+        static auto check(X&& x, Y&& y) -> decltype(x <= y);
         
       static subst_failure check(...);
     public:
@@ -635,7 +637,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x >= y);
+        static auto check(X&& x, Y&& y) -> decltype(x >= y);
         
       static subst_failure check(...);
     public:
@@ -662,7 +664,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x + y);
+        static auto check(X&& x, Y&& y) -> decltype(x + y);
         
       static subst_failure check(...);
     public:
@@ -687,7 +689,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x - y);
+        static auto check(X&& x, Y&& y) -> decltype(x - y);
         
       static subst_failure check(...);
     public:
@@ -712,7 +714,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x * y);
+        static auto check(X&& x, Y&& y) -> decltype(x * y);
         
       static subst_failure check(...);
     public:
@@ -737,7 +739,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x / y);
+        static auto check(X&& x, Y&& y) -> decltype(x / y);
         
       static subst_failure check(...);
     public:
@@ -762,7 +764,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x % y);
+        static auto check(X&& x, Y&& y) -> decltype(x % y);
         
       static subst_failure check(...);
     public:
@@ -791,7 +793,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of +t.
@@ -816,7 +818,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of -t.
@@ -829,9 +831,110 @@ namespace origin
     {
       return Subst_succeeded<Unary_plus_result<T>>();
     }
+    
+    
+  
+  // Safely deduce the result of ++t;
+  template<typename T>
+    struct pre_increment_result
+    {
+    private:
+      template<typename X>
+        static auto check(X& x) -> decltype(++x);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T&>()));
+    };
+    
+  // An alias for the result of ++t.
+  template<typename T>
+    using Pre_increment_result = typename pre_increment_result<T>::type;
+
+  // Return true if the expression ++t is valid.
+  template<typename T>
+    constexpr bool Has_pre_increment()
+    {
+      return Subst_succeeded<Pre_increment_result<T>>();
+    }
+
+
+
+  // Safely deduce the result of t++;
+  template<typename T>
+    struct post_increment_result
+    {
+    private:
+      template<typename X>
+        static auto check(X& x) -> decltype(x++);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T&>()));
+    };
+    
+  // An alias for the result of t++.
+  template<typename T>
+    using Post_increment_result = typename post_increment_result<T>::type;
+
+  // Return true if the expostssion t++ is valid.
+  template<typename T>
+    constexpr bool Has_post_increment()
+    {
+      return Subst_succeeded<Post_increment_result<T>>();
+    }
 
     
-  // Logical operators
+    
+  // Safely deduce the result of --t;
+  template<typename T>
+    struct pre_decrement_result
+    {
+    private:
+      template<typename X>
+        static auto check(X& x) -> decltype(--x);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T&>()));
+    };
+    
+  // An alias for the result of --t.
+  template<typename T>
+    using Pre_decrement_result = typename pre_decrement_result<T>::type;
+
+  // Return true if the expression --t is valid.
+  template<typename T>
+    constexpr bool Has_pre_decrement()
+    {
+      return Subst_succeeded<Pre_decrement_result<T>>();
+    }
+
+
+
+  // Safely deduce the result of t--;
+  template<typename T>
+    struct post_decrement_result
+    {
+    private:
+      template<typename X>
+        static auto check(X& x) -> decltype(x--);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T&>()));
+    };
+    
+  // An alias for the result of t--.
+  template<typename T>
+    using Post_decrement_result = typename post_decrement_result<T>::type;
+
+  // Return true if the expostssion t-- is valid.
+  template<typename T>
+    constexpr bool Has_post_decrement()
+    {
+      return Subst_succeeded<Post_decrement_result<T>>();
+    }
+    
+    
+    
+    // Logical operators
   
   // Safely deduce the result type of the expression t && u.
   template<typename T, typename U>
@@ -839,7 +942,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x && y);
+        static auto check(X&& x, Y&& y) -> decltype(x && y);
         
       static subst_failure check(...);
     public:
@@ -864,7 +967,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x || y);
+        static auto check(X&& x, Y&& y) -> decltype(x || y);
         
       static subst_failure check(...);
     public:
@@ -893,7 +996,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of !t.
@@ -916,7 +1019,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x & y);
+        static auto check(X&& x, Y&& y) -> decltype(x & y);
         
       static subst_failure check(...);
     public:
@@ -940,14 +1043,14 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x | y);
+        static auto check(X&& x, Y&& y) -> decltype(x | y);
         
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>(), std::declval<U>()));
     };
 
-  // An alias fbit_or the result of t | u.
+  // An alias for bit_or the result of t | u.
   template<typename T, typename U = T>
     using Bit_or_result = typename bit_or_result<T, U>::type;
     
@@ -965,7 +1068,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x ^ y);
+        static auto check(X&& x, Y&& y) -> decltype(x ^ y);
         
       static subst_failure check(...);
     public:
@@ -990,7 +1093,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x << y);
+        static auto check(X&& x, Y&& y) -> decltype(x << y);
         
       static subst_failure check(...);
     public:
@@ -1015,7 +1118,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x >> y);
+        static auto check(X&& x, Y&& y) -> decltype(x >> y);
         
       static subst_failure check(...);
     public:
@@ -1044,7 +1147,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of ~t.
@@ -1071,7 +1174,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of &t.
@@ -1096,7 +1199,7 @@ namespace origin
       
       static subst_failure check(...);
     public:
-      using type = decltype(std::declval<T>());
+      using type = decltype(check(std::declval<T>()));
     };
 
   // An alias for the result of *t.
@@ -1117,7 +1220,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X const& x, Y const& y) -> decltype(x[y]);
+        static auto check(X&& x, Y&& y) -> decltype(x[y]);
         
       static subst_failure check(...);
     public:
@@ -1172,11 +1275,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x += y);
+        static auto check(X& x, Y&& y) -> decltype(x += y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fplus_assign the result of t += u.
@@ -1197,11 +1300,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x -= y);
+        static auto check(X& x, Y&& y) -> decltype(x -= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fminus_assign the result of t -= u.
@@ -1222,11 +1325,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x *= y);
+        static auto check(X& x, Y&& y) -> decltype(x *= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fmultiplies_assign the result of t *= u.
@@ -1247,11 +1350,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x /= y);
+        static auto check(X& x, Y&& y) -> decltype(x /= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fdivides_assign the result of t /= u.
@@ -1272,11 +1375,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x %= y);
+        static auto check(X& x, Y&& y) -> decltype(x %= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fmodulus_assign the result of t %= u.
@@ -1297,11 +1400,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x &= y);
+        static auto check(X& x, Y&& y) -> decltype(x &= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fbit_and_assign the result of t &= u.
@@ -1322,11 +1425,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x |= y);
+        static auto check(X& x, Y&& y) -> decltype(x |= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fbit_or_assign the result of t |= u.
@@ -1347,11 +1450,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x ^= y);
+        static auto check(X& x, Y&& y) -> decltype(x ^= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fbit_xor_assign the result of t ^= u.
@@ -1372,11 +1475,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x <<= y);
+        static auto check(X& x, Y&& y) -> decltype(x <<= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fleft_shift_assign the result of t <<= u.
@@ -1397,11 +1500,11 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X& x, Y const& y) -> decltype(x >>= y);
+        static auto check(X& x, Y&& y) -> decltype(x >>= y);
         
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<T&>(), std::declval<U>()));
     };
 
   // An alias fright_shift_assign the result of t >>= u.

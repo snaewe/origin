@@ -22,11 +22,12 @@ namespace origin
   // requires Input_iterator<Iter>
   // requires Predicate<Pred, ValueType<Iter>>
   //
+  // invariant: this->first == this->last || pred(*this->first) == true
+  //
   // TODO: Use EBO to eliminate the overhead of the predicate.
   template<typename Iter, typename Pred>
     class filter_iterator
     {
-      // invariant: first == last || pred(*first) == true
     public:
       typedef typename std::iterator_traits<Iter>::value_type value_type;
       typedef typename std::iterator_traits<Iter>::reference reference;

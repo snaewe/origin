@@ -5,8 +5,10 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-origin_run_test(iterator_concepts iterator_concepts.cpp)
-origin_run_test(counter counter.cpp)
-origin_run_test(filter filter.cpp)
-origin_run_test(enumerator enumerator.cpp)
-origin_run_test(stride_iterator stride_iterator.cpp)
+
+origin_run_test(iter_concepts concepts.cpp)
+# origin_run_test(iter_filter filter.cpp)
+
+# origin_run_test(counter counter.cpp)
+# origin_run_test(enumerator enumerator.cpp)
+# origin_run_test(stride_iterator stride_iterator.cpp)

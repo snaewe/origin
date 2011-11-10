@@ -7,13 +7,22 @@
 
 #include <cassert>
 #include <iostream>
+#include <chrono>
 
 #include <origin/traits.hpp>
 
 using namespace std;
+using namespace std::chrono;
 using namespace origin;
 
 int main()
 {
-  // FIXME: Write checks against standard type traits.
+  assert(( Common<int, char>() && Same<Common_type<int, char>, int>() ));
+  assert(( Common<int, double>() && Same<Common_type<int, double>, double>() ));
+  assert(( !Common<int, ostream>() ));
+
+  // FIXME: Write more common type tests.
+  
+  // FIXME: This is known to fail.
+  assert(( Common<duration<int, ratio<3, 5>>, duration<int, ratio<5, 7>>>() ));
 }
