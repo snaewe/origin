@@ -148,6 +148,20 @@ namespace origin
       return Subst_succeeded<Iterator_category<Iter>>();
     }
 
+  // Return an iterator category that is not more derived than the given limit. 
+  // For example, if Tag is "random access" and Limit is "forward", this will
+  // return limit. 
+  //
+  // Note that this does not guarantee that limit is actually derived from
+  // Tag. That's just assumed.
+  //
+  // TODO: This seems like it could generalize to any Tag hierarchy. Consider
+  // how this might be done (in terms of lattices?) and then move the 
+  // generalized solution into  Traits or Concepts.
+  template<typename Tag, typename Limit>
+    using Clamp_iterator_category = If<
+      Derived<Iterator_category<Tag>, Limit>(), Limit, Iterator_category<Tag>
+    >;
 
 
   // Returns true if Iter has all of the associated iterator types.
@@ -169,6 +183,21 @@ namespace origin
       return Has_iterator_types<T>();
     }
   
+      
+  // An alias for the associated reference type of the iterator. This supports 
+  // writing  backwards compatible iterators where the reference type is 
+  // actually named even though it should be deduced as decltype(*i).
+  template<typename Iter>
+    using Iterator_reference = typename std::iterator_traits<Iter>::reference;
+    
+  // An alias for the associated pointer type of the iterator. This supports 
+  // writing  backwards compatible iterators where the reference type is 
+  // actually named even though it is never used in any STL algorithms. Note
+  // that the pointer type cannot be deduced as decltype(&*i).
+  template<typename Iter>
+    using Iterator_pointer = typename std::iterator_traits<Iter>::pointer;
+    
+      
       
   // Input iterators
   // Unlike the TR, we start with Input_iterators, not Incrementable types.
@@ -490,40 +519,8 @@ namespace origin
     {
       return Mutable_iterator_concept<Iter>::check();
     }
-    
-/*
-  // A helper trait for deciding is_iterator.
-  template<typename T>
-    struct is_iterator__
-    {
-    private:
-      template<typename X>
-        static typename std::iterator_traits<X>::iterator_category check(X const&);
-      static subst_failure check(...);
-    public:
-      typedef decltype(check(std::declval<T>())) type;
-    };
-  
-  // Return true if T is an iterator.
-  template<typename T>
-    struct is_iterator
-      : substitution_succeeded<typename is_iterator__<T>::type>
-    { };
-
-
-  // Return an iterator category that is not more derived than the given limit. 
-  // For example, if Tag is "random access" and Limit is "forward", this will
-  // return limit.
-  template<typename Tag, typename Limit>
-  struct clamp_iterator_category
-    : std::conditional<std::is_base_of<Limit, Tag>::value, Limit, Tag>
-  { };
-*/
 
 } // namespace origin
-
-// Iterator adaptors
-// #include <origin/iterator/filter.hpp>
 
 
 #endif

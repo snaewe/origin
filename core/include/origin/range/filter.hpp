@@ -9,7 +9,7 @@
 #define ORIGIN_RANGE_FILTER_HPP
 
 #include <origin/algorithm.hpp>
-#include <origin/iterator/traits.hpp>
+#include <origin/iterator.hpp>
 #include <origin/range/traits.hpp>
 
 namespace origin
@@ -20,14 +20,11 @@ namespace origin
     class filter_range_iterator
     {
     public:
-      typedef typename std::iterator_traits<Iter>::value_type value_type;
-      typedef typename std::iterator_traits<Iter>::reference reference;
-      typedef typename std::iterator_traits<Iter>::pointer pointer;
-      typedef typename std::iterator_traits<Iter>::difference_type difference_type;
-      typedef typename clamp_iterator_category<
-        typename std::iterator_traits<Iter>::iterator_category, 
-        std::forward_iterator_tag
-      >::type iterator_category;
+      using value_type = Value_type<Iter>;
+      using reference = Iterator_reference<Iter>;
+      using pointer = Iterator_pointer<Iter>;
+      using difference_type = Distance_type<Iter>;
+      using iterator_category = Clamp_iterator_category<Iter, std::forward_iterator_tag>;
     
       filter_range_iterator(R const& r, Iter i)
         : range(const_cast<R&>(r)), iter(i)

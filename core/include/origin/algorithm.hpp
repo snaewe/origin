@@ -29,7 +29,7 @@ namespace origin
   template<typename R, typename Pred>
     inline bool all_of(R const& range, Pred pred)
     {
-      return std::all_of(begin(range), end(range), pred);
+      return std::all_of(std::begin(range), std::end(range), pred);
     }
     
   // Return true if and only if the range r is non-empty and any of its

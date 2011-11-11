@@ -21,7 +21,7 @@ namespace origin
     private:
       template<typename X>
         static auto check(X const& x) -> decltype(std::begin(x));
-      static substitution_failure check(...);
+      static subst_failure check(...);
     public:
       typedef decltype(check(std::declval<T>())) type;
     };
@@ -29,7 +29,7 @@ namespace origin
   // Return true if T is a Range.
   template<typename T>
     struct is_range
-      : substitution_succeeded<typename is_range__<T>::type>
+      : bool_constant<Subst_succeeded<typename is_range__<T>::type>()>
     { };
 
 
@@ -40,7 +40,7 @@ namespace origin
     private:
       template<typename X>
         static auto check(X const& x) -> decltype(x.size());
-      static substitution_failure check(...);
+      static subst_failure check(...);
     public:
       typedef decltype(check(std::declval<T>())) type;
     };
@@ -48,7 +48,7 @@ namespace origin
   // Return true if T has a size() member.
   template<typename T>
     struct has_member_size
-      : substitution_succeeded<typename has_member_size__<T>::type>
+      : bool_constant<Subst_succeeded<typename has_member_size__<T>::type>()>
     { };
 
 } // namespace origin

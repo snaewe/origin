@@ -7,7 +7,7 @@
 
 
 origin_run_test(iter_concepts concepts.cpp)
-# origin_run_test(iter_filter filter.cpp)
+origin_run_test(iter_filter filter.cpp)
 
 # origin_run_test(counter counter.cpp)
 # origin_run_test(enumerator enumerator.cpp)

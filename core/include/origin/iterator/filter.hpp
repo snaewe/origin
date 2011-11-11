@@ -8,10 +8,8 @@
 #ifndef ORIGIN_ITERATOR_FILTER_HPP
 #define ORIGIN_ITERATOR_FILTER_HPP
 
-#include <iterator>
-
 #include <origin/algorithm.hpp>
-#include <origin/iterator/traits.hpp>
+#include <origin/iterator.hpp>
 
 namespace origin
 {
@@ -28,22 +26,21 @@ namespace origin
   template<typename Iter, typename Pred>
     class filter_iterator
     {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
     public:
-      typedef typename std::iterator_traits<Iter>::value_type value_type;
-      typedef typename std::iterator_traits<Iter>::reference reference;
-      typedef typename std::iterator_traits<Iter>::pointer pointer;
-      typedef typename std::iterator_traits<Iter>::difference_type difference_type;
-      typedef typename clamp_iterator_category<
-        typename std::iterator_traits<Iter>::iterator_category, 
-        std::forward_iterator_tag
-      >::type iterator_category;
+      using value_type = Value_type<Iter>;
+      using reference = Iterator_reference<Iter>;
+      using pointer = Iterator_pointer<Iter>;
+      using difference_type = Distance_type<Iter>;
+      using iterator_category = Clamp_iterator_category<Iter, std::forward_iterator_tag>;
     
       // Initialize the filter iterator as its limit. The predicate may be 
       // omitted if Pred is Default_constructible.
       //
       // postcondition: this->base() == last.
-      filter_iterator(Iter last, Pred pred = Pred{})
-        : first{last}, last{last}, pred{pred}
+      filter_iterator(Iter last, Pred pred = {})
+        : first(last), last(last), pred(pred)
       { }
     
       // Initialize the iterator. Note that this->base() may not be equal to
@@ -52,7 +49,7 @@ namespace origin
       // postcondition: this->pred() == pred
       // postcondition: this->pred(**this) == true
       filter_iterator(Iter first, Iter last, Pred pred)
-        : first{first_if(first, last, pred)}, last{last}, pred{pred}
+        : first(first_if(first, last, pred)), last(last), pred(pred)
       { }
       
       // TODO: Do we need conversion constructors for const-interoperability?
@@ -96,9 +93,7 @@ namespace origin
     
   // Return an adapted filter iterator.
   template<typename Iter, typename Pred>
-    inline typename std::enable_if<
-      is_iterator<Iter>::value, filter_iterator<Iter, Pred>
-    >::type
+    inline Requires<Input_iterator<Iter>(), filter_iterator<Iter, Pred>>
     filter(Iter first, Iter last, Pred pred)
     {
       return {first, last, pred};
@@ -107,9 +102,7 @@ namespace origin
   // Return an adapted filter iterator that is initialized to its limit (i.e.,
   // past the end).
   template<typename Iter, typename Pred>
-    inline typename std::enable_if<
-      is_iterator<Iter>::value, filter_iterator<Iter, Pred>
-    >::type
+    inline Requires<Input_iterator<Iter>(), filter_iterator<Iter, Pred>>
     filter(Iter last, Pred pred)
     {
       return {last, pred};

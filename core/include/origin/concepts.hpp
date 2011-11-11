@@ -90,6 +90,8 @@ namespace origin
   // comparing for value equality.
   //
   // When given two types, the requirements are different.
+  //
+  // FIXME: Refactor requirements so Common<> won't generate lookup errors.
   template<typename T, typename U = T>
     struct Equality_comparable_concept
     {
@@ -145,6 +147,7 @@ namespace origin
   
   // The Totally_ordered concept defines the syntax and semantics of ordering
   // values.
+  // FIXME: Refactor requirements so Common<> won't generate lookup errors.
   template<typename T, typename U>
     struct Totally_ordered_concept
     {
@@ -316,14 +319,24 @@ namespace origin
     }
     
     
-    
   // Function concepts
+  // The following concept classes, predicates, and aliases implement 
+  // facilities for checking function types.
   
+    
+  // Functions
+  // A function type is one that can be called with a sequence of arguments,
+  // and producing some (possibly void) result. In general, functions are
+  // not required to be equality preserving.
   
   // A type F is a Function if it can be called with the given arguments.
   template<typename F, typename... Args>
     struct Function_concept
     {
+      static constexpr bool check()
+      {
+        return Has_call<F, Args...>();
+      }
     };
   
   template<typename F, typename... Args>
@@ -332,31 +345,72 @@ namespace origin
       return Function_concept<F, Args...>::check();
     }
     
+  // The result type of a Function.
+  template<typename F, typename... Args>
+    using Result_type = Call_result<F, Args...>;
+    
 
 
-  // A type F is a Regular_function if it is a Function and is also preserves
-  // equality.
+  // Regular Functions
+  // A regular function is a Function that is also equality preserving. This 
+  // is a purely semantic refinement of Function, so the two are statically 
+  // synonymous.
+    
   template<typename F, typename... Args>
     struct Regular_function_concept
     {
+      static constexpr bool check()
+      {
+        return Function<F, Args...>();
+      }
+      
+      static bool test(F f, std::tuple<Args...> a, std::tuple<Args...> b)
+      {
+        // a == b ? f(a...) == f(b...) : true;
+        return true;
+      }
     };
     
+  // Return true if F is a regular function.
   template<typename F, typename... Args>
     constexpr bool Regular_function()
     {
       return Regular_function_concept<F, Args...>::check();
     }
+
     
     
-    
-  // A Predicate (taking some arguments) is a Function that returns a
-  // boolean value.
+  // Predicates
+  // A predicate is a regular function whose result type is convertible to
+  // bool.
+
+  // A helper class to check syntactic requirements.
+  template<bool Prereqs, typename P, typename... Args>
+    struct Predicate_requirements
+    {
+      static constexpr bool check() { return false; }
+    };
+
+  template<typename P, typename... Args>
+    struct Predicate_requirements<true, P, Args...>
+    {
+      static constexpr bool check() 
+      {
+        return Convertible<Result_type<P, Args...>, bool>();
+      }
+    };
+
+  // Specification of the Predicate concept.
   template<typename P, typename... Args>
     struct Predicate_concept
     {
-      
+      static constexpr bool check()
+      {
+        return Predicate_requirements<Function<P, Args...>(), P, Args...>::check();
+      }
     };
     
+  // Return true if P is a Predicate.
   template<typename P, typename... Args>
     constexpr bool Predicate()
     {
@@ -365,17 +419,58 @@ namespace origin
     
     
     
+  // Relations
   // A Relation is a binary Predicate with a homogenous domain (i.e., the
   // argument types are the same). This can be generalized to different types
   // that share a common type.
-  template<typename T, typename U = T>
-    struct Relation_concept
+  
+  // A helper class for checking syntactic requirements of generalized
+  // Relations.
+  template<bool Prereqs, typename R, typename T, typename U>
+    struct Relation_requirements
     {
+      static constexpr bool check() { return false; }
     };
     
-  template<typename T>
-    struct Relation_concept<T, T>
+    
+  template<typename R, typename T, typename U>
+    struct Relation_requirements<true, R, T, U>
     {
+      static constexpr bool check()
+      {
+        return Predicate<R, T>()
+            && Predicate<R, U>()
+            && Predicate<Common_type<T, U>>()
+            && Predicate<R, T, U>()
+            && Predicate<R, U, T>();
+      }
+      
+      static bool test(R r, T a, U b)
+      {
+        using C = Common_type<T, U>;
+        return r(a, b) == r(C{a}, C{b})
+            && r(b, a) == r(C{b}, C{a});
+      }
+    };
+  
+  
+  // Specification of Relation syntax and semantics.
+  template<typename R, typename T, typename U = T>
+    struct Relation_concept
+    {
+      static constexpr bool check()
+      {
+        return Relation_requirements<Common<T, U>(), R, T, U>();
+      }
+    };
+    
+  template<typename R, typename T>
+    struct Relation_concept<R, T, T>
+    {
+      static constexpr bool check()
+      {
+        return Predicate<R, T, T>();
+      }
     };
     
   template<typename T, typename U = T>

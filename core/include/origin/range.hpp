@@ -85,7 +85,7 @@ namespace origin
 // Include range constructors
 #include <origin/range/array.hpp>
 #include <origin/range/bounded.hpp>
-#include <origin/range/filter.hpp>
-#include <origin/range/permutation.hpp>
+// #include <origin/range/filter.hpp>
+// #include <origin/range/permutation.hpp>
 
 #endif

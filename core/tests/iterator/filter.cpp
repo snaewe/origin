@@ -9,7 +9,6 @@
 #include <vector>
 #include <iostream>
 
-#include <origin/utility/typestr.hpp>
 #include <origin/iterator/filter.hpp>
 
 using namespace std;
