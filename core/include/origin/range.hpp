@@ -9,82 +9,144 @@
 #define ORIGIN_RANGE_HPP
 
 #include <origin/iterator.hpp>
-#include <origin/range/traits.hpp>
+#include <origin/iterator/range.hpp>
+#include <origin/container.hpp>
 
 namespace origin
 {
-  // Return the size of the given range by calculating its distance. The size
-  // type is a natural (unsigned) number.
-  template<typename R>
-    inline auto size(R const& r) 
-      -> typename std::enable_if<
-        !has_member_size<R>::value,
-        typename std::make_unsigned<
-          decltype(std::distance(std::begin(r), std::end(r)))
-        >::type
-      >::type
+  // Array Range
+  // Wraps a C array with static bounds and guarantees that it will behave like
+  // an array.
+  template<typename T, std::size_t N>
+    struct array_range
     {
-      return std::distance(std::begin(r), std::end(r));
+      using value_type = Remove_cv<T>;
+      
+      array_range(T(&a)[N]) : array(a) { }
+      
+      T* begin() const { return array; }
+      T* end()   const { return array + N; }
+
+      T(&array)[N];
+    };
+
+  // Return a wrapper around an array that makes it behave like a range.
+  // This can be used to disambiguate overloads for functions that take arrays
+  // as both ranges and pointers (through decay).
+  template<typename T, std::size_t N>
+    inline array_range<T, N> arr(T(&a)[N])
+    {
+      return {a};
     }
+
+  // A constant version of the function above.
+  template<typename T, std::size_t N>
+    inline array_range<T const, N> arr(T const(&a)[N])
+    {
+      return {a};
+    }
+
+
   
-  // Return the size of the given range, if the range is counted (i.e., has a
-  // size member function). This is expected to be a constant-time operation.
+  // Bounded_range
+  // A bounded range wraps a pair of iterators. This is essentially the same
+  // as the Boost iterator_range, or pair<Iter, Iter> with appropriate
+  // overloads.
   //
-  // FIXME: This operation is extremely general. It applies, for example, to
-  // Containers, and Graphs. There's probably a unifying concept (Sized?),
-  // but the operation doesn't belong here. Note that this wouldn't be an issue
-  // ADL included x.size() as a candidate for size(x). Then, there wouldn't be
-  // any overload issues.
-  template<typename R>
-    inline auto size(R const& r) -> decltype(r.size())
+  // requires: Input_iterator<Iter>
+  // invariant: bounded_range(this->first, this->last);
+  template<typename Iter>
+    class bounded_range
     {
-      return r.size();
-    }
+      static_assert(Input_iterator<Iter>(), "");
+    public:
+      using value_type = Value_type<Iter>;
+      using iterator = Iter;
 
-
-  // Return true if r is empty. A range is empty if its beginning value
-  // is equal to its limit (end).
-  template<typename R>
-    inline auto empty(R const& r)
-      -> typename std::enable_if<!has_member_size<R>::value, bool>::type
-    {
-      return std::begin(r) == std::end(r);
-    }
-
-  // Return true if the counted range r is emtpy.
-  //
-  // FIXME: See comments on size(), for Sized? types.
-  template<typename R>
-    inline auto empty(R const& r) -> decltype(r.empty())
-    {
-      return r.empty();
-    }
-
-
-  // The range traits class provides a facility for accessing the names of
-  // of the types associated with a range.
-  template<typename R>
-    struct range_traits
-    {
-      typedef decltype(std::begin(std::declval<R&>())) iterator;
-      typedef typename std::iterator_traits<iterator>::value_type value_type;
-      typedef decltype(size(std::declval<R&>())) size_type;
+      // Initialize the bounded range so that both values are the same. The
+      // range is initially empty.
+      bounded_range() : first(), last(first) { }
+    
+      // Initialize the bounded range.
+      //
+      // precondition: bounded_range(first, last)
+      // postcondition: this->begin() == first && this->end() == last
+      bounded_range(iterator first, iterator last)
+        : first(first), last(last)
+      { }
+      
+      iterator begin() const { return first; }
+      iterator end() const { return last; }
+      
+    private:
+      iterator first;
+      iterator last;
     };
 
-  // A specialization of the trait above for constant ranges.
-  template<typename R>
-    struct range_traits<R const>
+
+
+  // Wrapped Bounded Range
+  // The adapted range class defines a (right) half-open range over some
+  // incrementable type, Iter. Each element in the range is an an object in that
+  // underlying sequence.
+  //
+  // requires: Weakly_incrementable<Iter>
+  template<typename Iter>
+    class wrapped_bounded_range
     {
-      typedef decltype(std::begin(std::declval<R const&>()))      iterator;
-      typedef typename std::iterator_traits<iterator>::value_type value_type;
-      typedef decltype(size(std::declval<R const&>()))            size_type;
+      static_assert(Weakly_incrementable<Iter>(), "");
+    public:
+      using iterator = range_iterator<Iter>;
+      using value_type = Value_type<iterator>;
+
+      wrapped_bounded_range(Iter first, Iter last)
+        : first(first), last(last)
+      { }
+    
+      iterator begin() const { return first; }
+      iterator end()   const { return last; }
+
+    private:
+      Iter first;
+      Iter last;
     };
 
+  // Return a (right) half-open range [first, last) over the elements in that
+  // range. For example:
+  //
+  //    for(auto i : range(0, 5)) count << *i << ' ';
+  //
+  // prints "0 1 2 3 4". Similarly:
+  //
+  //    vector<int> v = {1, 2, 3}
+  //    for(auto i : range(v.begin(), v.end())) cout << **i << ' ';
+  //
+  // prints "1 2 3". Because the arguments to range are iterators, each value
+  // of i is also an iterator (hence the need to write **i).
+  //
+  // requires: Incrementable<Iter>
+  // precondition: bounded_range(first, last);
+  template<typename Iter>
+    wrapped_bounded_range<Iter> range(Iter first, Iter last)
+    {
+      return {first, last};
+    }
+    
+  // Return a closed range [first, last] over the incrementable values first
+  // and last.
+  //
+  // requires: Incrementable<Iter>
+  // precondition: bounded_range(first, last + 1);
+  template<typename Iter>
+    wrapped_bounded_range<Iter> closed_range(Iter first, Iter last)
+    {
+      return {first, std::next(last)};
+    }
+    
+    
 } // namespace origin
 
 // Include range constructors
-#include <origin/range/array.hpp>
-#include <origin/range/bounded.hpp>
 // #include <origin/range/filter.hpp>
 // #include <origin/range/permutation.hpp>
 

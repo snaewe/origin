@@ -67,10 +67,11 @@ namespace origin
   template<typename R, typename Pred>
     class filter_range
     {
-      typedef filter_range<R, Pred> this_type;
-      typedef typename range_traits<R>::iterator base_iterator;
+      using this_type = filter_range<R, Pred>;
+      using base_iterator = Iterator_type<R>;
     public:
-      typedef filter_range_iterator<this_type, base_iterator> iterator;
+      using value_type = Value_type<R>;
+      using iterator = filter_range_iterator<this_type, base_iterator>;
       
       // Construct a filter range over the underlying range. The predicate
       // may be omitted if Pred is Default_constructible.
@@ -100,20 +101,16 @@ namespace origin
     
   // Return an adapted filter over the given range.
   template<typename R, typename Pred>
-    inline typename std::enable_if<
-      is_range<R>::value, filter_range<R, Pred>
-    >::type
-    filter(R& range, Pred pred)
+    inline auto filter(R& range, Pred pred)
+      -> Requires<Range<R>(), filter_range<R, Pred>>
     {
       return {range, pred};
     }
 
   // A constant version of the function above.
   template<typename R, typename Pred>
-    inline typename std::enable_if<
-      is_range<R>::value, filter_range<R const, Pred>
-    >::type
-    filter(R const& range, Pred pred)
+    inline auto filter(R const& range, Pred pred)
+      -> Requires<Range<R>(), filter_range<R const, Pred>>
     {
       return {range, pred};
     }

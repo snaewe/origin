@@ -270,8 +270,8 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Destructible<T>()
-            && Default_constructible<T>() // FIXME: Nothrow?
+        return Destructible<T>() // FIXME: Nothrow?
+            && Default_constructible<T>()
             && Move_constructible<T>()
             && Move_assignable<T>()
             && Copy_constructible<T>()
@@ -482,7 +482,7 @@ namespace origin
     
     
   // Concepts for common associated types
-  
+
   
   // Value type.
   //
@@ -495,7 +495,7 @@ namespace origin
   //
   // User-defined types model this concept by providing a nested value_type
   // declaration (i.e., T::value_type must be a valid type name). The concept
-  // is implicitly satisfied for pointer types.
+  // is implicitly satisfied for pointer and array types.
   
   // Safely deduce the associated value type, returning the associated value
   // type if it exists, or subst_failure if it doesn't.
@@ -509,6 +509,7 @@ namespace origin
       template<typename X> static typename X::value_type check(X&&);
       template<typename X> static X check(X*);
       template<typename X> static X check(X const*);
+      template<typename X, std::size_t N> X check(X(&)[N]);
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>()));
@@ -541,7 +542,7 @@ namespace origin
   // User-defined types model this concepts by containing a nested member
   // called the difference_type (i.e., T::difference_type must be a valid
   // type name). The distance type is implicitly defined for integral types
-  // and pointers.
+  // pointers, and statically sized arrays.
   //
   // FIXME: What about a nested distance_type?
 
@@ -557,6 +558,9 @@ namespace origin
       template<typename X> 
         static auto check(X&&, Requires<Integral<X>() || Pointer<X>()>* = {})
           -> std::ptrdiff_t;
+          
+      template<typename X, std::size_t N>
+        static std::ptrdiff_t check(X(&&)[N]);
 
       static subst_failure check(...);
     public:

@@ -10,20 +10,6 @@
 
 namespace origin
 {
-  // The range proxy class is the result type of the post-increment operator.
-  // It can be dereferenced, but that's about it.
-  template<typename R>
-    class range_proxy
-    {
-      range_proxy(R const* r)
-        : range(r)
-      { }
-      
-      R const& operator*() const { return *range; }
-      
-      R const* range;
-    };
-
 } // namespace origin
 
 #endif

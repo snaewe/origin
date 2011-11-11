@@ -108,8 +108,60 @@ namespace origin
       return Writable_concept<Iter, T>::check();
     }
     
+
+  // Incrementable types
+  
+  // A weakly incrementable type is a semiregular type that can be pre- and
+  // post-incremented. Neither operation is requireed to be equality
+  // preserving, and the result of post-increment is unspecified.
+  template<typename I>
+    struct Weakly_incrementable_concept
+    {
+      static constexpr bool check()
+      {
+        return Semiregular<I>()
+            && Has_distance_type<I>()
+            
+            // I& == { ++i }
+            && Has_pre_increment<I>()
+            && Same<Pre_increment_result<I>, I&>()
+            
+            // i++
+            && Has_post_increment<I>();
+      }
+      
+      // FIXME: Write semantics? Not sure if it's really possible.
+    };
+
+  template<typename I>
+    constexpr bool Weakly_incrementable()
+    {
+      return Weakly_incrementable_concept<I>::check();
+    }
     
-    
+  
+  
+  // An Incrementable type is a Regular, weakly incrementable type with
+  // equality preserving pre- and post-increment operations.
+  template<typename I>
+    struct Incrementable_concept
+    {
+      static constexpr bool check()
+      {
+        return Regular<I> 
+            && Weakly_incrementable<I>()
+
+            // I == { i++ }
+            && Same<Post_increment_result<I>, I>();
+      }
+    };
+
+  template<typename I>
+    constexpr bool Incrementable()
+    {
+      return Incrementable_concept<I>::check();
+    }
+
   // Iterators
   // The following concept classes and predicates are define checking
   // capabilities for iterator concepts.
@@ -218,9 +270,8 @@ namespace origin
       static constexpr bool check()
       {
         return Derived<Iterator_category<Iter>, std::input_iterator_tag>()
-            && Has_pre_increment<Iter>()
-            && Same<Pre_increment_result<Iter>, Iter&>()
-            && Has_post_increment<Iter>()
+            && Equality_comparable<Iter>()
+            && Weakly_incrementable<Iter>()
             && Readable<Post_increment_result<Iter>>();
       }
     };
@@ -269,9 +320,8 @@ namespace origin
       static constexpr bool check()
       {
         return Derived<Iterator_category<Iter>, std::forward_iterator_tag>()
-        
-            // Iter == { i++ }
-            && Same<Post_increment_result<Iter>, Iter>();
+            && Incrementable<Iter>()
+            && Readable<Iter>();
       }
     };
 
@@ -374,6 +424,7 @@ namespace origin
       static constexpr bool check()
       {
         return Derived<Iterator_category<Iter>, std::random_access_iterator_tag>()
+            && Signed<Distance_type<Iter>>()
 
             // Iter& == { i += n }
             && Has_plus_assign<Iter, Distance_type<Iter>>()
@@ -521,6 +572,5 @@ namespace origin
     }
 
 } // namespace origin
-
 
 #endif

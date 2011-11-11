@@ -10,12 +10,31 @@
 
 #include <origin/functional.hpp>
 #include <origin/algorithm.hpp>
-#include <origin/range/traits.hpp>
-#include <origin/range/utility.hpp>
-#include <origin/range/bounded.hpp>
+#include <origin/range.hpp>
 
 namespace origin
 {
+  // The range proxy class is the result type of the post-increment operator.
+  // for some range types. It can be dereferenced, but that's about it.
+  //
+  // Because it's Readable, it has to have a value type.
+  template<typename R>
+    class range_proxy
+    {
+      using value_type = R;
+
+      range_proxy(R const* r)
+        : range(r)
+      { }
+      
+      R const& operator*() const { return *range; }
+      
+      R const* range;
+    };
+
+
+  // A function object that computes the next partial permutation on some
+  // given range.
   struct next_permutation_func
   {
     template<typename R, typename I, typename C>
@@ -25,6 +44,8 @@ namespace origin
       }
   };
   
+  
+  // A helper function that computes the next combionation on some given range.
   struct next_combination_func
   {
     template<typename R, typename I, typename C>
@@ -35,10 +56,11 @@ namespace origin
   };
 
 
+
   // A helper iterator for the permutation_range. Dereferncing this iterator
-  // yields a constant reference to the underlying range. We return a constant
-  // reference because modifying the dereferenced range could invalidate the
-  // iterator.
+  // yields a bounded range that some subset of the original range. The sub-
+  // range depends on the number of elements in the set of permutations or
+  // combinations.
   // 
   // Note that, despite the fact, that we could use prev_permutation to 
   // implement bidirectional features, the iterator is only actually an input
@@ -48,11 +70,11 @@ namespace origin
     class permutation_range_iterator
     {
     public:
-      typedef bounded_range<typename R::base_iterator> value_type;
-      typedef value_type const& reference;
-      typedef value_type const* pointer;
-      typedef std::ptrdiff_t difference_type;
-      typedef std::input_iterator_tag iterator_category;
+      using value_type = bounded_range<typename R::base_iterator>;
+      using reference = value_type const&;
+      using pointer = value_type const*;
+      using difference_type = std::ptrdiff_t;
+      using iterator_category = std::input_iterator_tag;
     
       permutation_range_iterator()
         : range(nullptr)
@@ -78,7 +100,10 @@ namespace origin
         return *this;
       }
       
-      permutation_range_iterator operator++(int)
+      // FIXME: I think this is totally broken, and I don't think I can get
+      // it to return the previous value. This may be a good argument against
+      // input iterators requiring post-increment.
+      range_proxy<R> operator++(int)
       {
         range_proxy<R> ret{range};
         operator++();
@@ -87,7 +112,7 @@ namespace origin
       
       private:
         R* range;
-        value_type value;   // The "current" range.
+        value_type value;   // The current selection.
     };
 
   // A permutation range implements a traversal over a sequence of permutations
@@ -106,17 +131,18 @@ namespace origin
     {
       typedef permutation_range<R, Perm, Comp> this_type;
     public:
-      typedef R                                     base_range;
-      typedef typename range_traits<R>::iterator    base_iterator;
-      typedef Comp                                  value_compare;
-      typedef Perm                                  range_permute;
-      typedef permutation_range_iterator<this_type> iterator;
+      using value_type = Value_type<R>;
+      using base_range = R
+      using base_iterator = Iterator_type<R>;
+      using value_compare = Comp;
+      using range_permute = Perm;
+      using iterator = permutation_range_iterator<this_type>;
 
-      permutation_range(base_range& range, Perm perm, Comp comp = Comp{})
+      permutation_range(base_range& range, Perm perm, Comp comp = {})
         : range(range), mid(std::end(range)), perm(perm), comp(comp)
       { }
 
-      permutation_range(base_range& r, base_iterator mid, Perm perm, Comp comp = Comp{})
+      permutation_range(base_range& r, base_iterator mid, Perm perm, Comp comp = {})
         : range(r), mid(mid), perm(perm), comp(comp)
       { }
 
@@ -152,6 +178,7 @@ namespace origin
   //
   // FIXME: Can this work in reverse using prev_permutation?
 
+
   // Return a range over the lexicographically sorted permutations of a range
   // of n elements.
   //
@@ -159,12 +186,9 @@ namespace origin
   // is found in the math library.
   template<typename R>
     inline auto all_permutations(R& range)
-      -> permutation_range<
-        R, next_permutation_func, std::less<typename range_traits<R>::value_type>
-      >
+      -> permutation_range<R, next_permutation_func, std::less<Value_type<R>>>
     {
-      typedef typename range_traits<R>::value_type Value;
-      return {range, next_permutation_func{}, std::less<Value>{}};
+      return {range, next_permutation_func{}, std::less<Value_type<R>>{}};
     }
 
   template<typename R, typename Comp>
@@ -181,17 +205,15 @@ namespace origin
   // The size of the returned range is given by falling_factorial(n, k). This 
   // operation is in the math library.
   template<typename R>
-    inline auto permutations(R& range, typename range_traits<R>::size_type k)
-      -> permutation_range<
-        R, next_permutation_func, std::less<typename range_traits<R>::value_type>
-      > 
+    inline auto permutations(R& range, Size_type<R> k)
+      -> permutation_range<R, next_permutation_func, std::less<Value_type<R>>> 
     {
       assert(( std::size_t{k} < size(range) ));
       return {range, std::next(std::begin(range), k), next_permutation_func{}};
     }
 
   template<typename R, typename Comp>
-    inline auto permutations(R& range, typename range_traits<R>::size_type k, Comp comp)
+    inline auto permutations(R& range, Size_type<R> k, Comp comp)
       -> permutation_range<R, next_permutation_func, Comp>
     {
       assert(( std::size_t{k} < size(range) ));
@@ -209,17 +231,15 @@ namespace origin
   // If the elements are not unique (i.e., r is a multiset), the size of the 
   // returned range is given by multinomial_coefficient(n, k).
   template<typename R>
-    inline auto combinations(R& range, typename range_traits<R>::size_type k)
-      -> permutation_range<
-        R, next_combination_func, std::less<typename range_traits<R>::value_type>
-      > 
+    inline auto combinations(R& range, Size_type<R> k)
+      -> permutation_range<R, next_combination_func, std::less<Value_type<R>>>
     {
       assert(( k <= size(range) ));
       return {range, std::next(std::begin(range), k), next_combination_func{}};
     }
 
   template<typename R, typename Comp>
-    inline auto combinations(R& range, typename range_traits<R>::size_type k, Comp comp)
+    inline auto combinations(R& range, Size_type<R> k, Comp comp)
       -> permutation_range<R, next_combination_func, Comp> 
     {
       assert(( k <= size(range) ));

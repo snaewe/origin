@@ -20,19 +20,18 @@ namespace origin
   template<typename Iter>
     class range_iterator
     {
+      static_assert(Weakly_incrementable<Iter>(), "");
     public:
-      typedef Iter value_type;
-      typedef Iter const& reference;
-      typedef Iter const* pointer;
+      using value_type = Iter;
+      using reference = Iter const&;
+      using pointer = Iter const*;
+      using difference_type = Distance_type<Iter>;
       
-      // FIXME: Write traits to generate difference and traversal categories
-      // for integral types.
-      typedef std::ptrdiff_t difference_type;
-      typedef std::forward_iterator_tag iterator_category;
+      // FIXME: This could be maximally random access.
+      using iterator_category = std::forward_iterator_tag;
     
-      range_iterator(Iter i)
-        : iter(i)
-      { }
+      // Initialize...
+      range_iterator(Iter i) : iter(i) { }
       
       // Equality_comparable
       bool operator==(range_iterator const& x) const { return iter == x.iter; }

@@ -9,8 +9,7 @@
 #include <vector>
 #include <iostream>
 
-#include <origin/utility/typestr.hpp>
-#include <origin/range.hpp>
+#include <origin/range/permutation.hpp>
 
 using namespace std;
 using namespace origin;

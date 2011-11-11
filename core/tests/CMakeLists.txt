@@ -15,5 +15,6 @@ add_subdirectory(traits)
 add_subdirectory(concepts)
 
 add_subdirectory(iterator)
+add_subdirectory(containers)
 add_subdirectory(ranges)
 add_subdirectory(algorithms)
