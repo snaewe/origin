@@ -20,26 +20,26 @@ struct failure { };
 int main()
 {
   // Check adaptation for some arithmetic types
-  static_assert(Has_difference_type<int>(), "");
-  static_assert(Same<Difference_type<int>, ptrdiff_t>(), "");
+  static_assert(Has_distance_type<int>(), "");
+  static_assert(Same<Distance_type<int>, ptrdiff_t>(), "");
 
   // Check adaptation for pointers.
-  static_assert(Has_difference_type<int*>(), "");
-  static_assert(Same<Difference_type<int*>, ptrdiff_t>(), "");
-  static_assert(Has_difference_type<int const*>(), "");
-  static_assert(Same<Difference_type<int const*>, ptrdiff_t>(), "");
+  static_assert(Has_distance_type<int*>(), "");
+  static_assert(Same<Distance_type<int*>, ptrdiff_t>(), "");
+  static_assert(Has_distance_type<int const*>(), "");
+  static_assert(Same<Distance_type<int const*>, ptrdiff_t>(), "");
 
   
   // Containers...
   using Vec = vector<int>;
-  static_assert(Has_difference_type<Vec>(), "");
-  static_assert(Same<Difference_type<Vec>, ptrdiff_t>(), "");
+  static_assert(Has_distance_type<Vec>(), "");
+  static_assert(Same<Distance_type<Vec>, ptrdiff_t>(), "");
 
   // ... and their iterators
   using Iter = Vec::iterator;
-  static_assert(Has_difference_type<Iter>(), "");
-  static_assert(Same<Difference_type<Iter>, ptrdiff_t>(), "");
+  static_assert(Has_distance_type<Iter>(), "");
+  static_assert(Same<Distance_type<Iter>, ptrdiff_t>(), "");
 
-  static_assert(!Has_difference_type<failure>(), "");
+  static_assert(!Has_distance_type<failure>(), "");
 }
 

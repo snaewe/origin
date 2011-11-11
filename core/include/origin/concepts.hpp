@@ -390,23 +390,17 @@ namespace origin
   
   
   // Value type.
-  
-  // The associated value_type traits class provides a default association
-  // of an associated value type to T. It is the nested type.
   //
-  // The template can be specialized when the default is not appropriate, but
-  // this should be extremely rare. Note that if this traits class is
-  // specialized, then the get_value_type below must also be specialized.
-  template<typename T>
-    struct value_type_traits
-    {
-      using type = typename T::value_type;
-    };
-    
-  // Specializations are provided for pointer types as a special case.
-  template<typename T> struct value_type_traits<T*> { using type = T; };
-  template<typename T> struct value_type_traits<T const*> { using type = T; };
-    
+  // A value type is the type of a value contained or referred to by another
+  // object. For example, the value type of a container is the type of objects
+  // it contains. The value type of an iterator is the type of object it
+  // refers to.
+  //
+  // Note that value types are never references or cv-qualified.
+  //
+  // User-defined types model this concept by providing a nested value_type
+  // declaration (i.e., T::value_type must be a valid type name). The concept
+  // is implicitly satisfied for pointer types.
   
   // Safely deduce the associated value type, returning the associated value
   // type if it exists, or subst_failure if it doesn't.
@@ -425,57 +419,40 @@ namespace origin
       using type = decltype(check(std::declval<T>()));
     };
 
+  // The Value_type alias associates a value type with another type, usually
+  // the type of a sub-object or contained object.
+  template<typename T>
+    using Value_type = typename get_value_type<T>::type;
+  
   // Return true if T has an associated value type.
   template<typename T>
     constexpr bool Has_value_type()
     {
-      return Subst_succeeded<typename get_value_type<T>::type>();
+      return Subst_succeeded<Value_type<T>>();
     }
 
-  // The Value_type alias associates a value type with another type, usually
-  // the type of a sub-object or contained object.
-  template<typename T>
-    using Value_type = typename value_type_traits<T>::type;
-  
     
 
-  // Difference Type
+  // Distance Type
   //
-  // The difference type is an integral type that can express the difference
+  // The distance type is an integral type that can express the distance
   // between two positions (e.g., iterators, pointers, and integral types
   // in general).
   //
-  // This should be called distance type, but it may be too hard to turn back 
-  // the clock now; I'd have to have an adaptation layer that switched between
-  // the name difference type and distance type.
+  // This is called difference type in the standard library. We rename it
+  // to be an accordance with the Palo Alto TR. Distance is also easier to
+  // write than difference.
+  //
+  // User-defined types model this concepts by containing a nested member
+  // called the difference_type (i.e., T::difference_type must be a valid
+  // type name). The distance type is implicitly defined for integral types
+  // and pointers.
+  //
+  // FIXME: What about a nested distance_type?
 
-  // A helper function for accessing difference types.
-  template<typename T, bool IntOrPtr = false>
-    struct difference_type_traits_base;
-    
-  // When T isn't integral or a pointer, the difference type is explicitly
-  // associated.
+  // Safely deduce the distance type.
   template<typename T>
-    struct difference_type_traits_base<T, false>
-    {
-      using type = typename T::difference_type;
-    };
-
-  // For pointers and integral types, the difference type is ptrdiff_t.
-  template<typename T>
-    struct difference_type_traits_base<T, true>
-    {
-      using type = std::ptrdiff_t;
-    };
-
-  template<typename T>
-    struct difference_type_traits
-      : difference_type_traits_base<T, Integral<T>() || Pointer<T>()>
-    { };
-    
-  // Safely deduce the difference type.
-  template<typename T>
-    struct get_difference_type
+    struct get_distance_type
     {
     private:
       template<typename X> 
@@ -491,17 +468,17 @@ namespace origin
       using type = decltype(check(std::declval<T>()));
     };
   
+  // An alias to the associated distance type, if supported.
+  template<typename T>
+    using Distance_type = typename get_distance_type<T>::type;
+    
   // Returns true if T has an associated difference type.
   template<typename T>
-    constexpr bool Has_difference_type()
+    constexpr bool Has_distance_type()
     {
-      return Subst_succeeded<typename get_difference_type<T>::type>();
+      return Subst_succeeded<Distance_type<T>>();
     }
 
-  // An alias to the associated difference type, if supported.
-  template<typename T>
-    using Difference_type = typename difference_type_traits<T>::type;
-    
     
 } // namespace origin
 

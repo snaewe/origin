@@ -5,6 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
+origin_run_test(concepts_copyable copyable.cpp)
 origin_run_test(concepts_equality_comparable equality_comparable.cpp)
 origin_run_test(concepts_totally_ordered totally_ordered.cpp)
 
