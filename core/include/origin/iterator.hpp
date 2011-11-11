@@ -148,7 +148,7 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Regular<I> 
+        return Regular<I>()
             && Weakly_incrementable<I>()
 
             // I == { i++ }
@@ -571,6 +571,42 @@ namespace origin
       return Mutable_iterator_concept<Iter>::check();
     }
 
+
+    
+  // Iterator operations
+  //
+  // The standard iterator operations simply assert the minimum requirements
+  // before delegating to the usual algorithm. This library does not dispatch
+  // based on iterator type.
+    
+  template<typename Iter>
+    inline void std_advance(Iter& i, Distance_type<Iter> n = 1)
+    {
+      static_assert(Weakly_incrementable<Iter>(), "");
+      std::advance(i, n);
+    }
+    
+  template<typename Iter>
+    inline Iter std_next(Iter i, Distance_type<Iter> n = 1)
+    {
+      static_assert(Weakly_incrementable<Iter>(), "");
+      return std::next(i, n);
+    }
+    
+  template<typename Iter>
+    inline Iter std_prev(Iter i, Distance_type<Iter> n = 1)
+    {
+      static_assert(Bidirectional_iterator<Iter>(), "");
+      return std::prev(i, n);
+    }
+  
+  template<typename Iter>
+    inline Distance_type<Iter> std_distance(Iter i, Iter j)
+    {
+      static_assert(Weakly_incrementable<Iter>(), "");
+      return std::distance(i, j);
+    }
+    
 } // namespace origin
 
 #endif
