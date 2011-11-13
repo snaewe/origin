@@ -295,6 +295,15 @@ namespace origin
       static constexpr bool check() { return false; }
     };
     
+  // FIXME: Should containers require member size, and member begin/end, etc?
+  // The difference between a member and a generalized algorithm is that the
+  // member is typically an optimization on the algorithm: consider swap for
+  // an extreme example.
+  //
+  // If we have a tag hierarchy for containers, we could conceivably do this.
+  // For example, a container is associative if find(x, y) is valid and 
+  // efficient.
+  
   template<typename C>
     struct Container_requirements<true, C>
     {
@@ -343,6 +352,52 @@ namespace origin
       return Container_concept<C>::check();
     }
 
+
+
+  // Safely get the type associated with the result of t.find(x)
+  template<typename T, typename U>
+    struct member_find_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(x.find(y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+    };
+    
+  // An alias to the result of the expression empty(x).
+  template<typename T, typename U>
+    using Member_find_result = typename member_find_result<T>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename T>
+    bool constexpr Has_member_find()
+    {
+      return Subst_succeeded<Member_find_result <T>>();
+    }
+
+
+  // Associative Container
+  template<typename C>
+    struct Associative_container_concept
+    {
+      static constexpr bool check()
+      {
+        return Container<C>() 
+            && Has_member_find<C>()
+            && Same<Member_find_result<C>, Iterator_type<C>>()
+            && Has_member_find<C const>()
+            && Same<Member_find_result<C const>, Iterator_type<C const>>();
+      }
+    };
+    
+  // Return true if C is an associative container.
+  template<typename C>
+    constexpr bool Associative_container()
+    {
+      return Associative_container_concept<C>::check();
+    }
     
 } // namespace origin
 
