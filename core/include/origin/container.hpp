@@ -12,99 +12,10 @@
 // include any specific containers.
 
 #include <origin/iterator.hpp>
+#include <origin/range.hpp>
 
 namespace origin
 {
-  // Begin iterator
-  // Ranges and containers have begin and end operations that return iterators.
-
-  // Safely get the type returned by std::begin(x).
-  template<typename T>
-    struct begin_result
-    {
-    private:
-      template<typename X>
-        static auto check(X&& x) -> decltype(std::begin(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
-    };
-    
-  // An alias to the result of the expression empty(x).
-  template<typename T>
-    using Begin_result = typename begin_result<T>::type;
-    
-  // Return true if empty(t) is a valid expression.
-  template<typename T>
-    bool constexpr Has_begin()
-    {
-      return Subst_succeeded<Begin_result<T>>();
-    }
-
-  // Safely get the type returned by std::end(x).
-  template<typename T>
-    struct end_result
-    {
-    private:
-      template<typename X>
-        static auto check(X&& x) -> decltype(std::end(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
-    };
-    
-  // An alias to the result of the expression empty(x).
-  template<typename T>
-    using End_result = typename end_result<T>::type;
-    
-  // Return true if empty(t) is a valid expression.
-  template<typename T>
-    bool constexpr Has_end()
-    {
-      return Subst_succeeded<End_result<T>>();
-    }
-
-
-  // Ranges
-  // A range is simply a class that exposes a pair of iterators called begin()
-  // and end(). It is, in some senses, a very lightweight container.
-  
-  // Ranges
-  // A range is a type that provides a pair of iterators that is accessed
-  // through the begin(x) and end(x) operations.
-  //
-  // FIXME: Should ranges have initialization requirements? If so, I imagine
-  // that they're basically the same as lambda closure types.
-  template<typename R>
-    struct Range_concept
-    {
-      static constexpr bool check()
-      {
-        return Has_begin<R>() 
-            && Iterator<Begin_result<R>>()
-            && Has_end<R>()
-            && Iterator<End_result<R>>()
-            && Same<Begin_result<R>, End_result<R>>();
-      }
-      
-      // FIXME Write semantics.
-    };
-  
-  // Return true if R is a range.
-  template<typename R>
-    constexpr bool Range()
-    {
-      return Range_concept<R>::check();
-    }
-    
-  // An alias to the iterator type of a range. This is the same as the
-  // result of the begin operation on the same type. Note that "const R" may
-  // yield a different type than an unqualifed "R".
-  template<typename R>
-    using Iterator_type = Begin_result<R>;
-
-    
-    
   // Size
   // The following type traits and type predicates establish the notion of
   // sized type, some type for which size(x) is valid query. Size is defined
@@ -161,8 +72,7 @@ namespace origin
       return std::distance(std::begin(r), std::end(r));
     }
   
-  // Safely get the type associated with the result of the size() query.
-  // Note that size() is expected to be constant.
+  // Safely get the result type of the expression size(r).
   template<typename T>
     struct size_result
     {
@@ -173,19 +83,21 @@ namespace origin
     public:
       using type = decltype(check(std::declval<T>()));
     };
-    
-  // Return T's associated size type, if defined.
+  
+  // An alias for the result of the size(t) expression. Every type for which
+  // size(t) is valid has an associated size type. This includes ranges,
+  // containers, matrices, and graphs.
   template<typename T>
     using Size_type = typename size_result<T>::type;
-    
-  // Return true if size(t) is a valid expression.
+
+  // Returns true if size(t) is a valid expression.
   template<typename T>
-    bool constexpr Has_size()
+    constexpr bool Has_size()
     {
       return Subst_succeeded<Size_type<T>>();
     }
 
-    
+
     
   // Empty
   // A type may support empty queries as in empty(x). Like size(), empty is
@@ -205,7 +117,7 @@ namespace origin
     public:
       using type = decltype(check(std::declval<T>()));
     };
-    
+
   // An alias to the result of the expression empty(x).
   template<typename T>
     using Member_empty_result = typename member_empty_result<T>::type;
@@ -241,8 +153,7 @@ namespace origin
       return std::begin(r) == std::end(r);
     }
 
-  // Safely get the type associated with the result of the empty() query. Note
-  // that empty is expected to be constant.
+  // Safely get the result type of the expression empty(r).
   template<typename T>
     struct empty_result
     {
@@ -253,35 +164,79 @@ namespace origin
     public:
       using type = decltype(check(std::declval<T>()));
     };
-    
-  // An alias to the result of the expression empty(x).
+  
+  // An alias for the result of the empty(t) expression.
   template<typename T>
     using Empty_result = typename empty_result<T>::type;
-    
-  // Return true if empty(t) is a valid expression.
+
+  // Returns true if empty(t) is a valid expression.
   template<typename T>
-    bool constexpr Has_empty()
+    constexpr bool Has_empty()
     {
       return Subst_succeeded<Empty_result<T>>();
     }
-
     
-  // Concepts
+    
+    
+  // Swap
+  // Safely get the result type of the expression swap(a, b).
+  template<typename T>
+    struct swap_result
+    {
+    private:
+      template<typename X>
+        static auto check(X& x, X& y) -> decltype(swap(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>(), std::declval<T>()));
+    };
   
+  // An alias for the result of the swap(a, b) expression. This is always
+  // void, unless swap is not defined.
+  template<typename T>
+    using Swap_result = typename swap_result<T>::type;
+
+  // Returns true if swap(a, b) is a valid expression.
+  template<typename T>
+    constexpr bool Has_swap()
+    {
+      return Subst_succeeded<Empty_result<T>>();
+    }
+  
+    
+    
   // Containers
-  // A container is a collection of sub-objects.
+  // A container is a collection of sub-objects. The container concept is
+  // defined generally in terms of types that can be used as containers. This
+  // essentially means that C is a container if it has the following type names
+  // and valid expressions:
+  //
+  //    - Value_type<C>     // The type of sub-object
+  //    - Distance_type<C>  // Distance between sub-object positions
+  //    - begin(c)          // An iterator to the first sub-object
+  //    - end(c)            // An iterator past the last sub-object
+  //    - size(c)           // The number of sub-objects
+  //    - empty(c)          // True if size(c) == 0
+  //    - swap(a, b)        // Conainers can bee swapped
+  //
+  // Note that the results of begin and end must be Forward_iterators. The
+  // following template aliases are valid for Containers:
+  //
+  //    - Iterator_type<C>
+  //    - Iterator_type<C const>
+  //    - Size_type<C>
+  //
+  // Note that we are not explicitly checking for member functions. This is
+  // because container is very general and there are some built-in types that
+  // can be made to model the concept: arrays, in particular. More advanced
+  // container types require member functions.
+  //
+  // FIXME: Initialization requirements? I don't think there are any.
   
-  // There are two types for containers that are not readily derived from the
-  // interface. The other types, e.g., Size_type, Iterator_type, etc are 
-  // derived from the interface and don't need to be specified.
-  //
-  // NOTE: This is not strictly true for containers. The value type can be
-  // deduced by decaying decltype(*begin(c)) and the distance type can be
-  // deduced as decltype(distance(begin(c), end(c))). The reason that we can
-  // get the value type from begin() is that it must be a Forward_iterator.
-  //
-  // FIXME: Consider automatically deriving the value type and distance type
-  // for the container.
+
+  // Returns true if C has all the requisite associated types. Note that this
+  // only checks the non-derivable associated types. The size type and iterator
+  // type are trivially deduced from required expressions.
   template<typename C>
     constexpr bool Has_container_types()
     {
@@ -295,28 +250,21 @@ namespace origin
       static constexpr bool check() { return false; }
     };
     
-  // FIXME: Should containers require member size, and member begin/end, etc?
-  // The difference between a member and a generalized algorithm is that the
-  // member is typically an optimization on the algorithm: consider swap for
-  // an extreme example.
-  //
-  // If we have a tag hierarchy for containers, we could conceivably do this.
-  // For example, a container is associative if find(x, y) is valid and 
-  // efficient.
-  
   template<typename C>
     struct Container_requirements<true, C>
     {
       static constexpr bool check()
       {
-        return Unsigned<Size_type<C>>()
+        return Forward_iterator<Iterator_type<C>>()
 
-            // Size_type<C> == { size(c) };
-            && Has_size<C>()
+            // Size_type<C> == { size(a) }
+            && Has_size<C>() && Unsigned<Size_type<C>>()
             
-            // bool { empty(c) }
-            && Has_empty<C>()
-            && Convertible<Empty_result<C>, bool>();
+            // bool { empty(a) }
+            && Has_empty<C>() && Boolean<Empty_result<C>>()
+            
+            // swap(a, b)
+            && Has_swap<C>();
       }
     };
     
@@ -330,17 +278,13 @@ namespace origin
       static constexpr bool check()
       {
         return Container_requirements<
-             Regular<C>() 
-          && Range<C>() 
-          && Range<C const>() 
-          && Has_container_types<C>(), 
-          C
+          Range<C>() && Has_container_types<C>(), C
         >::check();
       }
       
       static bool test()
       {
-        // FIXME: Semantics
+        // FIXME: Write semantics
         return true;
       }
     };
@@ -354,8 +298,18 @@ namespace origin
 
 
 
-  // Safely get the type associated with the result of t.find(x)
-  template<typename T, typename U>
+  // Associative containers
+  // An associative container supports efficient search.
+  //
+  // The associated container concept requires the member function c.find(k) 
+  // instead of the more general expression find(c, k). Not every searchable
+  // container is associative; we require find() to have sub-linear complexity
+  // (i.e., O(log n) for search trees and O(1) for hash tables).
+  //
+  // FIXME: This is completely unfinished.
+  
+  // Safely get the type associated with the result of t.find(x).
+  template<typename C, typename K>
     struct member_find_result
     {
     private:
@@ -363,35 +317,49 @@ namespace origin
         static auto check(X&& x, Y&& y) -> decltype(x.find(y));
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+      using type = decltype(check(std::declval<C>(), std::declval<K>()));
     };
     
   // An alias to the result of the expression empty(x).
-  template<typename T, typename U>
-    using Member_find_result = typename member_find_result<T>::type;
+  template<typename C, typename K>
+    using Member_find_result = typename member_find_result<C, K>::type;
     
   // Return true if empty(t) is a valid expression.
-  template<typename T>
+  template<typename C, typename K>
     bool constexpr Has_member_find()
     {
-      return Subst_succeeded<Member_find_result <T>>();
+      return Subst_succeeded<Member_find_result <C, K>>();
     }
 
 
-  // Associative Container
+    
+  // A helper class for checking syntactic requirements
+  template<bool Prereqs, typename C>
+    struct Associative_container_requirements
+    {
+      static constexpr bool check() { return false; }
+    };
+
+  template<typename C>
+    struct Associative_container_requirements<true, C>
+    {
+      static constexpr bool check()
+      {
+        return Has_member_find<C, Value_type<C>>()
+            && Forward_iterator<Member_find_result<C, Value_type<C>>>();
+      }
+    };
+
+  // Specification of the associative container concept.
   template<typename C>
     struct Associative_container_concept
     {
       static constexpr bool check()
       {
-        return Container<C>() 
-            && Has_member_find<C>()
-            && Same<Member_find_result<C>, Iterator_type<C>>()
-            && Has_member_find<C const>()
-            && Same<Member_find_result<C const>, Iterator_type<C const>>();
+        return Associative_container_requirements<Container<C>(), C>::check();
       }
     };
-    
+
   // Return true if C is an associative container.
   template<typename C>
     constexpr bool Associative_container()

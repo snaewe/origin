@@ -20,7 +20,6 @@ namespace origin
   // The integral value -1u corresponds to a null edge.
   class edge_t
   {
-    typedef bool (edge_t::*safe_bool_type)() const;
   public:
     typedef std::size_t value_type;
     
@@ -42,9 +41,8 @@ namespace origin
     bool operator<=(edge_t x) const { return value <= x.value; }
     bool operator>=(edge_t x) const { return value >= x.value; }
     
-    // Safe bool
-    operator safe_bool_type() const { return valid() ? &edge_t::valid : nullptr; }
-    bool valid() const { return value != value_type{-1ul}; }
+    // Boolean
+    explicit operator bool() const { return value != value_type{-1ul}; }
 
     value_type value;
   };
@@ -133,7 +131,6 @@ namespace origin
   // and do not include the end points in comparison.
   class undirected_edge_t
   {
-    typedef bool (undirected_edge_t::*safe_bool_type)() const;
   public:
     undirected_edge_t()
       : edge{}, source{}, target{}
@@ -155,9 +152,8 @@ namespace origin
     bool operator<=(undirected_edge_t const& x) const { return edge <= x.edge; }
     bool operator>=(undirected_edge_t const& x) const { return edge >= x.edge; }
 
-    // Safe bool
-    operator safe_bool_type() const { return valid() ? &undirected_edge_t::valid : nullptr; }
-    bool valid() const { return edge.valid(); }
+    // Boolean
+    explicit operator bool() const { return edge.valid(); }
 
     edge_t edge;
     vertex_t source;

@@ -58,6 +58,67 @@ namespace origin
       return subst_succeeded<T>::value;
     }
     
+
+    
+  // Type relations
+
+  // Common Type
+  //
+  // We only define common type in terms of two types. It can be generalized
+  // to any number of types if we find the need later.
+  
+  // Yields the common type of the T and U.
+  //
+  // NOTE: This supercedes the std implementation of common type, which is
+  // inherently unsafe. Unlike this version, it can't be reliably tested
+  // without causing errors. We provide supplemental specializations of
+  // common type to ensure interoperability with the std::common_type.
+  template<typename T, typename U>
+    struct common_type
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& a, Y&& b) -> decltype(true ? a : b);
+
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>(), std::declval<U>()));
+    };
+    
+  // FIXME: Add specializations for std::duration.
+
+
+  // The alias yields the common type of T and U if it exists, and 
+  // subst_failure if it does not. Note that the common type of T and U may
+  // not be T or U.
+  template<typename T, typename U>
+    using Common_type = typename common_type<T, U>::type;
+
+
+  // The Common predicate is true if T and U share a common type.
+  template<typename T, typename U>
+    constexpr bool Common()
+    {
+      return Subst_succeeded<Common_type<T, U>>();
+    }
+
+    
+    
+  // Returns true if T is convertible to U.
+  template<typename T, typename U>
+    constexpr bool Convertible()
+    {
+      return std::is_convertible<T, U>::value;
+    }
+
+    
+    
+  // Returns true if T is derived from U.
+  template<typename T, typename U>
+    constexpr bool Derived()
+    {
+      return std::is_base_of<U, T>::value;
+    }    
     
   // Adaptors for standard traits
   
@@ -73,6 +134,8 @@ namespace origin
     using If = typename std::conditional<B, T, F>::type;
   
     
+    
+    
   // Return true if T is void, and false otherwise.
   template<typename T>
     constexpr bool Void()
@@ -81,42 +144,68 @@ namespace origin
     }
     
     
+    
+  // Boolean expressions
+  // Returns true if and only if Convertible<T,  bool>() is true. This
+  // predciate provides a more coherent way of expressing requirements on
+  // the results of expressions.
+  template<typename T>
+    constexpr bool Boolean()
+    {
+      return Convertible<T, bool>();
+    }
+    
+    
+    
   // Integral types
+  // Predicates describing standard (language-defined) integral types.
 
+  // Returns true if T is a signed or unsigned, possibly cv-qualified, char, 
+  // short, int, long or long long.
+  //
+  // FIXME: Is this true if T is bool?
   template<typename T>
     constexpr bool Integral()
     {
       return std::is_integral<T>::value;
     }
     
+  // Returns true if T is a signed integral type.
   template<typename T>
     constexpr bool Signed()
     {
       return std::is_signed<T>::value;
     }
     
+  // Returns true if T is an unsigned integral type.
   template<typename T>
     constexpr bool Unsigned()
     {
       return std::is_unsigned<T>::value;
     }
     
-  // The As_signed alias is a signed integral type with the same width as T.
+  // An alias for the signed integral type with the same width as T.
   template<typename T>
     using Make_signed = typename std::make_signed<T>::type;
 
-  // The As_unsigned alias is an unsigned integral type with the same width
-  // as T.
+  // An alias for the unsigned integral type with the same width as T.
   template<typename T>
     using Make_unsigned = typename std::make_unsigned<T>::type;
     
   
+    
+  // Floating point types.
+    
+  // Returns true if T is a possibly cv-qualified float, double, or long
+  // double.
   template<typename T>
     constexpr bool Floating_point()
     {
       return std::is_floating_point<T>::value;
     }
 
+    
+    
   // Arrays
   
   // Return true if T is an array type fo the form T[n].
@@ -148,6 +237,7 @@ namespace origin
     using Remove_all_extents = typename std::remove_all_extents<T>::type;
   
 
+    
   // Pointers
     
   template<typename T>
@@ -446,62 +536,7 @@ namespace origin
   // of arguments.
   template<typename F>
     using Result_of = typename std::result_of<F>::type;
-    
- 
-  // Common Type
-  //
-  // We only define common type in terms of two types. It can be generalized
-  // to any number of types if we find the need later.
-  
-  // Yields the common type of the T and U.
-  //
-  // NOTE: This supercedes the std implementation of common type, which is
-  // inherently unsafe. Unlike this version, it can't be reliably tested
-  // without causing errors. We provide supplemental specializations of
-  // common type to ensure interoperability with the std::common_type.
-  template<typename T, typename U>
-    struct common_type
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& a, Y&& b) -> decltype(true ? a : b);
 
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>(), std::declval<U>()));
-    };
-    
-  // FIXME: Add specializations for std::duration.
-
-
-  // The alias yields the common type of T and U if it exists, and 
-  // subst_failure if it does not. Note that the common type of T and U may
-  // not be T or U.
-  template<typename T, typename U>
-    using Common_type = typename common_type<T, U>::type;
-
-
-  // The Common predicate is true if T and U share a common type.
-  template<typename T, typename U>
-    constexpr bool Common()
-    {
-      return Subst_succeeded<Common_type<T, U>>();
-    }
-
-    
-  // Return true if T is convertible to U.
-  template<typename T, typename U>
-    constexpr bool Convertible()
-    {
-      return std::is_convertible<T, U>::value;
-    }
-    
-  // True if T is derived from U.
-  template<typename T, typename U>
-    constexpr bool Derived()
-    {
-      return std::is_base_of<U, T>::value;
-    }
 
     
   // Relational operator traits

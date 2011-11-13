@@ -15,150 +15,177 @@
 
 namespace origin
 {
-  /**
-   * @ingroup types
-   * The optional template implements an "uninitialized" state for types that
-   * do not normally include one in their set of values. An optional type
-   * behaves similarly to pointer types. The underlying value can be accessed
-   * by dereferencing the optional object and members may be accessed using
-   * the arrow operator.
-   *
-   * Optional types can also be compared for equality and ordered. When both
-   * objects are initialized, these comparisons are the same as the underlying
-   * type. Otherwise, the unitialized state acts like nullptr.
-   *
-   * An optional type has two states, initialized or uninitialized. A default
-   * initialized optional type is uninitialized. Note that the the underlying
-   * type is _not_ initialized until needed. Accessing the value of an optional
-   * object in an uninitialized state results in undefined behavior.
-   */
+  // The optional class template implements an optional "qualifier". The 
+  // optional class extends the set of values of an underlying value type
+  // with an "invalid" value, much like nullptr for pointer types.
+  //
+  // Optional types can also be compared for equality and ordered. When both
+  // objects are initialized, these comparisons are the same as the underlying
+  // type. Otherwise, the unitialized state acts like nullptr.
+  //
+  // An optional type has two states, initialized or uninitialized. A default
+  // initialized optional type is uninitialized. Note that the the underlying
+  // type is _not_ initialized until needed. Accessing the value of an optional
+  // object in an uninitialized state results in undefined behavior.
   template<typename T>
-  class optional
-    : public implicit_bool_facade<optional<T>>
-  {
-  public:
-    typedef T value_type;
-    typedef T& reference;
-    typedef T const& const_reference;
-    typedef T* pointer;
-    typedef T const* const_pointer;
-
-    // Default constructor
-    optional()
-      : init_{false}
-    { }
-
-    ~optional()
-    { if(init_) ptr()->~T(); }
-
-    // FIXME: Are copies and moves any more complex than the trivial versions?
-
-    // FIXME: Make sure that we have as strong exception guarantees as possible.
-
-    // Copy value initialization
-    optional(T const& x)
-      : init_{true}
-    { new (ptr()) T{x}; }
-
-    optional& operator=(T const& x)
-    { optional tmp{x}; swap(tmp); return *this; }
-
-    // Nullptr initialization
-    optional(std::nullptr_t)
-      : init_{false}
-    { }
-
-    optional& operator=(std::nullptr_t)
-    { clear(); return *this; }
-
-    // Return a reference to the underlying object.
-    reference operator*()
-    { return *ptr(); }
-
-    const_reference operator*() const
-    { return *ptr(); }
-
-    // Return a pointer to the underlying object.
-    pointer operator->()
-    { return ptr(); }
-
-    const_pointer operator->() const
-    { return ptr(); }
-
-    // Facade functions
-    bool valid() const
-    { return init_; }
-
-    bool equal(optional const& x) const
+    class optional
     {
-      if(init_ == x.init_)
-        return init_ ? *ptr() == *x.ptr() : true;
-      else
-        return false;
-    }
+    public:
+      typedef T value_type;
+      typedef T& reference;
+      typedef T const& const_reference;
+      typedef T* pointer;
+      typedef T const* const_pointer;
 
-    static bool equal(optional const& x, T const& y)
-    { return x.init_ && *x.ptr() == y; }
-
-    static bool equal(optional const& x, std::nullptr_t)
-    { return !x.init_; }
-
-
-    bool less(optional const& x) const
-    {
-      if(!x.init_)
-        return false;
-      else if(!init_)
-        return true;
-      else
-        return *ptr() < *x.ptr();
-    }
-
-    // FIXME: It would probably be more efficient to implement comparisons
-    // without explicitly constructing new optional values.
-    static bool less(optional const& x, T const& y)
-    { return x < optional{y}; }
-
-    static bool less(T const& x, optional const& y)
-    { return optional{x} < y; }
-
-    static bool less(optional const& x, std::nullptr_t)
-    { return x < optional{nullptr}; }
-
-    static bool less(std::nullptr_t, optional const& x)
-    { return optional{nullptr} < x; }
-
-    void swap(optional& x)
-    {
-      std::swap(init_, x.init_);
-      std::swap(obj_, x.obj_);
-    }
-
-    void clear()
-    {
-      if(init_) {
-        ptr()->~T();
-        init_ = false;
+      // Default constructor
+      optional() : init(false) { }
+      
+      // Movable
+      // FIXME: Generalize over convertible types?
+      optional(optional&& x)
+        : init(x.init)
+      {
+        if(init)
+          new(ptr()) T(std::move(x));
+        x.init = false;
       }
-    }
+      
+      optional& operator=(optional&& x)
+      {
+        optional tmp(std::move(x));
+        swap(tmp);
+        return *this;
+      }
+      
+      // Copyable
+      // FIXME: Generalize over convertible types?
+      optional(optional const& x)
+        : init(x.init)
+      {
+        if(init)
+          new(ptr()) T(x);
+      }
+      
+      optional& operator=(optional const& x)
+      {
+        optional tmp(x);
+        swap(tmp);
+        return *this;
+      }
+      
+      optional(value_type&& x)
+        : init(true)
+      {
+        new(ptr()) T(std::move(x));
+      }
 
-  private:
-    pointer ptr()
-    {
-      assert(( init_ ));
-      return reinterpret_cast<T*>(obj_);
-    }
+      // Value copy initialization
+      // FIXME: Should this be explicit?
+      optional(value_type const& x)
+        : init(true)
+      { 
+        new (ptr()) T(x); 
+      }
 
-    const_pointer ptr() const
-    {
-      assert(( init_ ));
-      return reinterpret_cast<T const*>(obj_);
-    }
+      optional& operator=(T const& x)
+      { optional tmp{x}; swap(tmp); return *this; }
 
-  private:
-    bool init_;
-    char obj_[sizeof(T)];
-  };
+      // Nullptr initialization
+      optional(std::nullptr_t)
+        : init{false}
+      { }
+
+      optional& operator=(std::nullptr_t)
+      { clear(); return *this; }
+
+      
+      
+      ~optional()
+      {
+        if(init) ptr()->~T(); 
+      }
+
+      
+      // Return a reference to the underlying object.
+      reference operator*()
+      { return *ptr(); }
+
+      const_reference operator*() const
+      { return *ptr(); }
+
+      // Return a pointer to the underlying object.
+      pointer operator->()
+      { return ptr(); }
+
+      const_pointer operator->() const
+      { return ptr(); }
+
+      // Facade functions
+      bool valid() const
+      { return init; }
+
+      bool equal(optional const& x) const
+      {
+        if(init == x.init)
+          return init ? *ptr() == *x.ptr() : true;
+        else
+          return false;
+      }
+
+      static bool equal(optional const& x, T const& y)
+      { return x.init && *x.ptr() == y; }
+
+      static bool equal(optional const& x, std::nullptr_t)
+      { return !x.init; }
+
+
+      bool less(optional const& x) const
+      {
+        if(!x.init)
+          return false;
+        else if(!init)
+          return true;
+        else
+          return *ptr() < *x.ptr();
+      }
+
+      // FIXME: It would probably be more efficient to implement comparisons
+      // without explicitly constructing new optional values.
+      static bool less(optional const& x, T const& y)
+      { return x < optional{y}; }
+
+      static bool less(T const& x, optional const& y)
+      { return optional{x} < y; }
+
+      static bool less(optional const& x, std::nullptr_t)
+      { return x < optional{nullptr}; }
+
+      static bool less(std::nullptr_t, optional const& x)
+      { return optional{nullptr} < x; }
+
+      void swap(optional& x)
+      {
+        std::swap(init, x.init);
+        std::swap(mem, x.mem);
+      }
+
+      void clear()
+      {
+        if(init) {
+          ptr()->~T();
+          init = false;
+        }
+      }
+
+    private:
+      // Return a pointer to the underlying memory.
+      pointer       ptr()       { return reinterpret_cast<T*>(mem); }
+      const_pointer ptr() const { return reinterpret_cast<T const*>(mem); }
+
+    private:
+      bool init;
+      char mem[sizeof(T)];
+    };
 
 } // namespace origin
 

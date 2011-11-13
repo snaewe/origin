@@ -19,7 +19,6 @@ namespace origin
    */
   class vertex_t
   {
-    typedef bool (vertex_t::*safe_bool_type)() const;
   public:
     typedef std::size_t value_type;
     
@@ -40,9 +39,8 @@ namespace origin
     bool operator<=(vertex_t x) const { return value <= x.value; }
     bool operator>=(vertex_t x) const { return value <= x.value; }
 
-    // Safe bool
-    operator safe_bool_type() const { return valid() ? &vertex_t::valid : nullptr; }
-    bool valid() const { return value != -1ul; }
+    // Boolean
+    explicit operator bool() const { return value != -1ul; }
 
     value_type value;
   };

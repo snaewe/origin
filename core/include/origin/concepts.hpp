@@ -101,10 +101,10 @@ namespace origin
             && Equality_comparable<T>()
             && Equality_comparable<U>()
             && Equality_comparable<Common_type<T, U>>()
-            && Has_equal<T, U>()     && Convertible<Equal_result<T, U>, bool>()
-            && Has_equal<U, T>()     && Convertible<Equal_result<U, T>, bool>()
-            && Has_not_equal<T, U>() && Convertible<Equal_result<T, U>, bool>()
-            && Has_not_equal<U, T>() && Convertible<Equal_result<T, U>, bool>();
+            && Has_equal<T, U>()     && Boolean<Equal_result<T, U>>()
+            && Has_equal<U, T>()     && Boolean<Equal_result<U, T>>()
+            && Has_not_equal<T, U>() && Boolean<Equal_result<T, U>>()
+            && Has_not_equal<U, T>() && Boolean<Equal_result<T, U>>();
         }
       
       static bool test(T a, U b)
@@ -122,8 +122,8 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Has_equal<T>()     && Convertible<Equal_result<T>, bool>()
-            && Has_not_equal<T>() && Convertible<Not_equal_result<T>, bool>();
+        return Has_equal<T>()     && Boolean<Equal_result<T>>()
+            && Has_not_equal<T>() && Boolean<Not_equal_result<T>>();
       }
 
       static bool test(T a, T b, T c) 
@@ -157,14 +157,14 @@ namespace origin
             && Totally_ordered<T>()
             && Totally_ordered<T>()
             && Totally_ordered<Common_type<T, U>>()
-            && Has_less<T, U>()          && Convertible<Less_result<T, U>, bool>()
-            && Has_less<U, T>()          && Convertible<Less_result<U, T>, bool>()
-            && Has_greater<T, U>()       && Convertible<Greater_result<T, U>, bool>()
-            && Has_greater<U, T>()       && Convertible<Greater_result<U, T>, bool>()
-            && Has_less_equal<T, U>()    && Convertible<Less_equal_result<T, U>, bool>()
-            && Has_less_equal<U, T>()    && Convertible<Less_equal_result<U, T>, bool>()
-            && Has_greater_equal<T, U>() && Convertible<Greater_equal_result<T, U>, bool>()
-            && Has_greater_equal<U, T>() && Convertible<Greater_equal_result<U, T>, bool>();
+            && Has_less<T, U>()          && Boolean<Less_result<T, U>>()
+            && Has_less<U, T>()          && Boolean<Less_result<U, T>>()
+            && Has_greater<T, U>()       && Boolean<Greater_result<T, U>>()
+            && Has_greater<U, T>()       && Boolean<Greater_result<U, T>>()
+            && Has_less_equal<T, U>()    && Boolean<Less_equal_result<T, U>>()
+            && Has_less_equal<U, T>()    && Boolean<Less_equal_result<U, T>>()
+            && Has_greater_equal<T, U>() && Boolean<Greater_equal_result<T, U>>()
+            && Has_greater_equal<U, T>() && Boolean<Greater_equal_result<U, T>>();
       }
       
       static bool test(T a, U b)
@@ -186,10 +186,10 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Has_less<T>()          && Convertible<Less_result<T>, bool>()
-            && Has_greater<T>()       && Convertible<Greater_result<T>, bool>()
-            && Has_less_equal<T>()    && Convertible<Less_equal_result<T>, bool>()
-            && Has_greater_equal<T>() && Convertible<Greater_equal_result<T>, bool>();
+        return Has_less<T>()          && Boolean<Less_result<T>>()
+            && Has_greater<T>()       && Boolean<Greater_result<T>>()
+            && Has_less_equal<T>()    && Boolean<Less_equal_result<T>>()
+            && Has_greater_equal<T>() && Boolean<Greater_equal_result<T>>();
       }
       
       static bool test(T a, T b, T c)

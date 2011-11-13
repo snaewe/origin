@@ -19,23 +19,14 @@ using namespace origin;
 int main()
 {
   using Vec = vector<double>;
-  static_assert(Same<Value_type<Vec>, double>(), "");
-  static_assert(Same<Iterator_type<Vec>, vector<double>::iterator>(), "");
-  static_assert(Same<Iterator_type<Vec const>, vector<double>::const_iterator>(), "");
-  static_assert(Same<Size_type<Vec>, size_t>(), "");
-  static_assert(Same<Distance_type<Vec>, ptrdiff_t>(), "");
   static_assert(Range<Vec>(), "");
-  static_assert(Range<Vec const>(), "");
   static_assert(Container<Vec>(), "");
+  static_assert(!Associative_container<Vec>(), "");
   
   using Arr = double[5];
-  static_assert(Same<Value_type<Arr>, double>(), "");
-  static_assert(Same<Iterator_type<Arr>, double*>(), "");
-  static_assert(Same<Iterator_type<Arr const>, double const*>(), "");
-  static_assert(Same<Size_type<Arr>, size_t>(), "");
-  static_assert(Same<Distance_type<Arr>, ptrdiff_t>(), "");
   static_assert(Range<Arr>(), "");
-  static_assert(Range<Arr const>(), "");
-//   static_assert(Container<Vec>(), "");
+  static_assert(Container<Vec>(), "");
+  
+  static_assert(!Range<int>(), "");
 }
 

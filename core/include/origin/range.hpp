@@ -10,10 +10,115 @@
 
 #include <origin/iterator.hpp>
 #include <origin/iterator/range.hpp>
-#include <origin/container.hpp>
 
 namespace origin
 {
+  // The Range concept
+  //
+  // A range is simply a class that exposes a pair of iterators called begin(r)
+  // and end(r). It is, in some senses, a very lightweight container.
+  //
+  // Note that for a range R, the following type aliases are available:
+  //
+  //    - Iterator_type<R>
+  //    - Iterator_type<R const>
+  //
+  // By const-qualifying R, we can differentiate between const and non-const
+  // iterators for the range. This is particularly helpful for containers.
+  
+
+  // Begin iterator
+  // Ranges and containers have begin and end operations that return iterators.
+
+  // Safely get the type returned by std::begin(x).
+  template<typename T>
+    struct begin_result
+    {
+    private:
+      template<typename X>
+        static auto check(X&& x) -> decltype(std::begin(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+    
+  // An alias to the result of the expression empty(x).
+  template<typename T>
+    using Begin_result = typename begin_result<T>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename T>
+    bool constexpr Has_begin()
+    {
+      return Subst_succeeded<Begin_result<T>>();
+    }
+    
+  // End iterator
+
+  // Safely get the type returned by std::end(x).
+  template<typename T>
+    struct end_result
+    {
+    private:
+      template<typename X>
+        static auto check(X&& x) -> decltype(std::end(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+    
+  // An alias to the result of the expression empty(x).
+  template<typename T>
+    using End_result = typename end_result<T>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename T>
+    bool constexpr Has_end()
+    {
+      return Subst_succeeded<End_result<T>>();
+    }
+    
+  // Iterator type
+  // Any type that exposes begin()/end() members has an associated iterator
+  // type. The actual iterator type depends on the const-ness of the alias'
+  // argument type. For example, a const-container will have a constant
+  // iterator, while a non-const container will have a non-constant iterator.
+  
+  // An alias to the iterator type of a range. This is the same as the
+  // result of the begin operation on the same type. Note that "const R" may
+  // yield a different type than an unqualified "R".
+  template<typename R>
+    using Iterator_type = Begin_result<R>;
+    
+  // Range concept
+    
+  // The specification of the Range concept.
+  template<typename R>
+    struct Range_concept
+    {
+      static constexpr bool check()
+      {
+        return Has_begin<R>() 
+            && Input_iterator<Begin_result<R>>()
+            && Has_end<R>()
+            && Input_iterator<End_result<R>>()
+            && Same<Begin_result<R>, End_result<R>>();
+      }
+      
+      // FIXME Write semantics.
+    };
+  
+  // Returns true if R is a range.
+  template<typename R>
+    constexpr bool Range()
+    {
+      return Range_concept<R>::check();
+    }
+
+    
+    
+  // Range adaptors
+  
   // Array Range
   // Wraps a C array with static bounds and guarantees that it will behave like
   // an array.

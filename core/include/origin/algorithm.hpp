@@ -12,6 +12,7 @@
 
 #include <origin/iterator.hpp>
 #include <origin/range.hpp>
+#include <origin/container.hpp>
 #include <origin/algorithm/combination.hpp>
 
 namespace origin
@@ -33,6 +34,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
       return std::all_of(first, last, pred);
     }
 
@@ -43,7 +45,8 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std::all_of(std::begin(range), std::end(range), pred);
+      
+      return std_all_of(std::begin(range), std::end(range), pred);
     }
     
     
@@ -55,6 +58,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
       return std::any_of(first, last, pred);
     }
 
@@ -65,7 +69,8 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std::any_of(std::begin(range), std::end(range), pred);
+      
+      return std_any_of(std::begin(range), std::end(range), pred);
     }
 
 
@@ -78,7 +83,8 @@ namespace origin
     bool any_not_of(Iter first, Iter last, Pred pred)
     {
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
       while(first != last) {
         if(!pred(*first))
           return true;
@@ -93,6 +99,7 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
+      
       return any_not_of(std::begin(range), std::end(range), pred);
     }
 
@@ -105,6 +112,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
       return std::none_of(first, last, pred);
     }
 
@@ -115,7 +123,8 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std::none_of(std::begin(range), std::end(range), pred);
+      
+      return std_none_of(std::begin(range), std::end(range), pred);
     }
  
  
@@ -131,6 +140,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
       while(first != last) {
         if(*first != value)
           return false;
@@ -144,6 +154,7 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      
       return all_equal(std::begin(range), std::end(range), value);
     }
     
@@ -160,6 +171,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
       while(first != last) {
         if(*first == value)
           return true;
@@ -172,6 +184,7 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      
       return any_equal(std::begin(range), std::end(range), value);
     }
     
@@ -184,6 +197,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
       while(first != last) {
         if(!first != value)
           return true;
@@ -213,6 +227,7 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
       while(first != last)
       {
         if(*first == value)
@@ -225,8 +240,9 @@ namespace origin
     inline bool none_equal(R const& range, T const& value)
     {
       static_assert(Range<R>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      return none_equal(std::begin(range), std::end(range), value));
+      static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      
+      return none_equal(std::begin(range), std::end(range), value);
     }
     
 
@@ -238,28 +254,32 @@ namespace origin
   // Find
   
   template<typename Iter, typename T>
-    Iter std_find(Iter first, Iter last, T const& x)
+    Iter std_find(Iter first, Iter last, T const& value)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
+      return std::find(first, last, value);
     }
-  
+    
   // Return the first iterator i in the given range that is equal to value.
   template<typename R, typename T>
     auto find(R& range, T const& value)
       -> Requires<Range<R>() && !Associative_container<R>(), Iterator_type<R>>
     {
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
-      return std::find(std::begin(range), std::end(range), value);
+      
+      return std_find(std::begin(range), std::end(range), value);
     }
 
   // A constant version of the algorithm above.
   template<typename R, typename T>
     auto find(R const& range, T const& value)
-      -> Requires<Range<R const>() && !Associative_container<R>(), Iterator_type<R const>>
+      -> Requires<Range<R>() && !Associative_container<R>(), Iterator_type<R const>>
     {
-      static_assert(Equality_comparable<Value_type<R const>, T>(), "");
-      return std::find(std::begin(range), std::end(range), value);
+      static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      
+      return std_find(std::begin(range), std::end(range), value);
     }
     
   // Specialization for associatie containers.
@@ -286,7 +306,8 @@ namespace origin
     inline Iter std_find_if(Iter first, Iter last, Pred pred)
     {
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
       return std::find_if(first, last, pred);
     }
 
@@ -297,15 +318,18 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std::find_if(std::begin(range), std::end(range), pred);
+      
+      return std_find_if(std::begin(range), std::end(range), pred);
     }
 
+  // A constant version of the function above.
   template<typename R, typename Pred>
     inline Iterator_type<R const> find_if(R const& range, Pred pred)
     {
       static_assert(Range<R const>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std::find_if(std::begin(range), std::end(range), pred);
+      
+      return std_find_if(std::begin(range), std::end(range), pred);
     }
 
   
@@ -324,7 +348,7 @@ namespace origin
     inline Iter first_equal(Iter first, Iter last, const T& value)
     {
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
       return std::find(first, last, value);
     }
 
@@ -336,7 +360,7 @@ namespace origin
     inline Iter next_equal(Iter first, Iter last, T const& value)
     {
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
       if(first != last)
         return std::find(first + 1, last, value);
       else
@@ -399,7 +423,7 @@ namespace origin
     
   // Return an iterator to the nth element in r that is equal to value.
   template<typename R, typename T>
-    inline Iterator_type<R> find_nth(R& range, Distance_type<R>, T const& value)
+    inline Iterator_type<R> find_nth(R& range, Distance_type<R> n, T const& value)
     {
       static_assert(Range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
@@ -444,6 +468,7 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
+      
       return find_nth_if(std::begin(range), std::end(range), n, pred);
     }
     
@@ -452,31 +477,159 @@ namespace origin
     {
       static_assert(Range<R>(), "");
       static_assert(Predicate<Pred, Value_type<R>>(), "");
+      
       return find_nth_if(std::begin(range), std::end(range), n, pred);
     }
   
 
+  
+  // Find first of
+  // Note that there are two overloads of the range-basedd find_first_of that
+  // are differentiated by the const-ness of the first range. The second range
+  // is always passed as a const range because we dont' return an iterator
+  // for it.
+  
+  template<typename Iter1, typename Iter2>
+    inline Iter1 std_find_first_of(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+    {
+      static_assert(Input_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      
+      return std::find_first_of(first1, last1, first2, last2);
+    }
+    
+  template<typename R1, typename R2>
+    inline Iterator_type<R1> find_first_of(R1& range1, R2 const& range2)
+    {
+      static_assert(Range<R1>(), "");
+      static_assert(Range<R2>(), "");
+      static_assert(Equality_comparable<Value_type<R1>, Value_type<R2>>(), "");
+      
+      return std_find_first_of(std::begin(range1), std::end(range1),
+                               std::begin(range2), std::end(range2));
+    }
+  
+  template<typename R1, typename R2>
+    inline Iterator_type<R1 const> find_first_of(R1 const& range1, R2 const& range2)
+    {
+      static_assert(Range<R1>(), "");
+      static_assert(Range<R2>(), "");
+      static_assert(Equality_comparable<Value_type<R1>, Value_type<R2>>(), "");
+      
+      return std_find_first_of(std::begin(range1), std::end(range1),
+                               std::begin(range2), std::end(range2));
+    }
+    
+  template<typename Iter1, typename Iter2, typename Rel>
+    inline Iter1 std_find_first_of(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Rel r)
+    {
+      static_assert(Input_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Relation<Rel, Value_type<Iter1>, Value_type<Iter2>>(), "");
+      
+      return std::find_first_of(first1, last1, first2, last2, r);
+    }
+    
+  template<typename R1, typename R2, typename Rel>
+    inline Iterator_type<R1> find_first_of(R1& range1, R2 const& range2, Rel r)
+    {
+      static_assert(Range<R1>(), "");
+      static_assert(Range<R2>(), "");
+      static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
+      
+      return std_find_first_of(std::begin(range1), std::end(range1),
+                               std::begin(range2), std::end(range2), r);
+    }
+    
+  template<typename R1, typename R2, typename Rel>
+    inline Iterator_type<R1 const> find_first_of(R1 const& range1, R2 const& range2, Rel r)
+    {
+      static_assert(Range<R1>(), "");
+      static_assert(Range<R2>(), "");
+      static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
+      
+      return std_find_first_of(std::begin(range1), std::end(range1),
+                               std::begin(range2), std::end(range2), r);
+    }
+  
+  
+  
+  // Adjacent find
+  
+  template<typename Iter>
+    inline Iter std_adjacent_find(Iter first, Iter last)
+    {
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>>(), "");
+
+      return std::adjacent_find(first, last);
+    }
+    
+  template<typename R>
+    inline Iterator_type<R> adjacent_find(R& range)
+    {
+      static_assert(Range<R>(), "");
+      static_assert(Equality_comparable<Value_type<R>>(), "");
+
+      return std_adjacent_find(std::begin(range), std::end(range));
+    }
+  
+  template<typename R>
+    inline Iterator_type<R const> adjacent_find(R const& range)
+    {
+      static_assert(Range<R>(), "");
+      static_assert(Equality_comparable<Value_type<R>>(), "");
+
+      return std_adjacent_find(std::begin(range), std::end(range));
+    }
+
+    
     
   // Count
   
+  template<typename Iter, typename T>
+    inline Distance_type<Iter> std_count(Iter first, Iter last, T const& value)
+    {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      return std::count(first, last, value);
+    }
+    
   // Return the number of elements in r that are equal to value.
   template<typename R, typename T>
     inline Size_type<R> count(R const& range, T const& value)
     {
       static_assert(Range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
-      return std::count(std::begin(range), std::end(range), value);
+      return std_count(std::begin(range), std::end(range), value);
+    }
+   
+   
+   
+  // Count if
+  
+  template<typename Iter, typename Pred>
+    inline Distance_type<Iter> std_count_if(Iter first, Iter last, Pred pred)
+    {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      return std::count_if(first, last, pred);
     }
    
   // Return the number of elements in r that satisfy pred.
   template<typename R, typename Pred>
-    inline Size_type<R const> count_if(R const& range, Pred pred)
+    inline Size_type<R> count_if(R const& range, Pred pred)
     {
-      static_assert(Range<R const>(), "");
-      static_assert(Equality_comparable<Value_type<R const>, T>(), "");
-      return std::count_if(std::begin(range), std::end(range), pred);
+      static_assert(Range<R>(), "");
+      static_assert(Predicate<Pred, Value_type<R>>(), "");
+      return std_count_if(std::begin(range), std::end(range), pred);
     }
 
+    
+    
+  // Count not equal
+  
   // Return the number of elements in [first, last) that are not equal to
   // value.
   //
@@ -484,10 +637,12 @@ namespace origin
   // requires: EqualityComparable<ValueType<Iter>, T>
   // precondition: readable_range(first, last)
   template<typename Iter, typename T>
-    inline auto count_not_equal(Iter first, Iter last, T const& value)
-      -> typename std::iterator_traits<Iter>::difference_type
+    inline Distance_type<Iter> count_not_equal(Iter first, Iter last, T const& value)
     {
-      typename std::iterator_traits<Iter>::difference_type n = 0;
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      
+      Distance_type<Iter> n = 0;
       while(first != last) {
         if(*first != value)
           ++n;
@@ -498,21 +653,28 @@ namespace origin
 
   // Return the number of elements in r that are not equal to value.
   template<typename R, typename T>
-    inline auto count_not_equal(R const& range, T const& value)
-      -> typename range_traits<R>::size_type
+    inline Size_type<R> count_not_equal(R const& range, T const& value)
     {
+      static_assert(Range<R>(), "");
+      static_assert(Equality_comparable<Value_type<R>, T>(), "");
       return count_not_equal(std::begin(range), std::end(range), value);
     }
     
+    
+  
+  // Count if not
+  
   // Return the number of elements in [first, last) that do not satisfy pred.
   //
   // requires: InputIterator<Iter>
   // precondition: readable_range(first, last)
   template<typename Iter, typename Pred>
-    inline auto count_if_not(Iter first, Iter last, Pred pred)
-      -> typename std::iterator_traits<Iter>::difference_type
+    inline Distance_type<Iter> count_if_not(Iter first, Iter last, Pred pred)
     {
-      typename std::iterator_traits<Iter>::difference_type n = 0;
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      
+      Distance_type<Iter> n = 0;
       while(first != last) {
         if(!pred(*first))
           ++n;
@@ -523,13 +685,14 @@ namespace origin
 
   // Return the number of elements in r that do not satisfy pred.
   template<typename R, typename Pred>
-    inline auto count_if_not(R const& range, Pred pred)
-      -> typename range_traits<R>::size_type
+    inline Size_type<R> count_if_not(R const& range, Pred pred)
     {
+      static_assert(Range<R>(), "");
+      static_assert(Predicate<Pred, Value_type<R>>(), "");
       return count_if_not(std::begin(range), std::end(range), pred);
     }
     
-  //--- Equal ---//
+  // Equal
 
   // Return true if the range a is equal to the range b. Two ranges are equal
   // if they have the same size and elements.
