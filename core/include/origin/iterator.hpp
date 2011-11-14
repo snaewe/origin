@@ -251,13 +251,34 @@ namespace origin
     
       
       
-  // Input iterators
-  // Unlike the TR, we start with Input_iterators, not Incrementable types.
-  // Also, there is no such thing as a weak input iterator. We always assume
-  // equality exists.
+  // Input and output iterators
   //
-  // FIXME: How closely should this follow the TR?
-  
+  // Note that this design does not require the expression *i++ for input
+  // iterators. The semantics of that operation limit the generality of the
+  // concept.
+
+  // Weak input iterator
+  // A weak input iterator is weakly incrementable and readable.
+    
+  template<typename Iter>
+    struct Weak_input_iterator_concept
+    {
+      static constexpr bool check()
+      {
+        return Weakly_incrementable<Iter>()
+            && Readable<Iter>();
+      }
+    };
+
+  // Returns true if Iter is a weak input iterator.
+  template<typename Iter>
+    constexpr bool Weak_input_iterator()
+    {
+      return Weak_input_iterator_concept<Iter>::check();
+    }
+    
+    
+  // Input iterators
   template<typename Iter, bool Prereqs>
     struct Input_iterator_requirements
     {
@@ -271,8 +292,7 @@ namespace origin
       {
         return Derived<Iterator_category<Iter>, std::input_iterator_tag>()
             && Equality_comparable<Iter>()
-            && Weakly_incrementable<Iter>()
-            && Readable<Post_increment_result<Iter>>();
+            && Weakly_incrementable<Iter>();
       }
     };
     
@@ -350,7 +370,7 @@ namespace origin
       return Forward_iterator_concept<Iter>::check();
     }
     
-    
+
     
   // Bidirectional Iterators
   // A bidirectional iterator is a forward iterator that can also move 
@@ -572,6 +592,18 @@ namespace origin
     }
 
 
+    
+  // A strict input iterator is at most an input iterator. That is I is not
+  // a forward iterator.
+  template<typename Iter>
+    constexpr bool Strict_input_iterator()
+    {
+      return Weak_input_iterator<Iter>() && !Forward_iterator<Iter>();
+    }
+    
+  // FIXME: Write Strict_output_iterator.
+  
+  
     
   // Iterator operations
   //

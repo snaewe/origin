@@ -296,7 +296,13 @@ namespace origin
       return Container_concept<C>::check();
     }
 
-
+  template<typename C>
+    using Container_reference = Dereference_result<Iterator_type<C>>;
+    
+  template<typename C>
+    using Container_pointer = Address_result<Iterator_type<C>>;
+    
+    
 
   // Associative containers
   // An associative container supports efficient search.

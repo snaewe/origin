@@ -160,10 +160,8 @@ namespace origin
   // Integral types
   // Predicates describing standard (language-defined) integral types.
 
-  // Returns true if T is a signed or unsigned, possibly cv-qualified, char, 
-  // short, int, long or long long.
-  //
-  // FIXME: Is this true if T is bool?
+  // Returns true if T is a signed or unsigned, possibly cv-qualified, bool,
+  // char, short, int, long or long long.
   template<typename T>
     constexpr bool Integral()
     {
@@ -183,14 +181,67 @@ namespace origin
     {
       return std::is_unsigned<T>::value;
     }
-    
-  // An alias for the signed integral type with the same width as T.
+
+  
+  
+  // Extend the make_unsigned trait to work for bool types also. Note that
+  // using this trait with non-integral types will result in compilation errors.
   template<typename T>
-    using Make_signed = typename std::make_signed<T>::type;
+    struct make_ext_unsigned
+    {
+      using type = typename std::make_unsigned<T>::type;
+    };
+  
+  template<> struct make_ext_unsigned<bool> { using type = bool; };
+  
+  // Guard against invalid instantiations of Make_unsigned.
+  template<typename T, bool Int = Integral<T>()>
+    struct safe_make_unsigned 
+    { 
+      using type = subst_failure; 
+    };
+  
+  template<typename T> 
+    struct safe_make_unsigned<T, true>
+    {
+      using type = typename make_ext_unsigned<T>::type;
+    };
 
   // An alias for the unsigned integral type with the same width as T.
   template<typename T>
-    using Make_unsigned = typename std::make_unsigned<T>::type;
+    using Make_unsigned = typename safe_make_unsigned<T>::type;
+
+
+    
+  // Extend the make_signed trait to work for bool types. A signed bool type 
+  // is just a char.
+  //
+  // FIXME: Technically, we should be selecting a signed type with the same 
+  // width as the native bool.
+  template<typename T>
+    struct make_ext_signed
+    {
+      using type = typename std::make_signed<T>::type;
+    };
+  
+  template<> struct make_ext_signed<bool> { using type = char; };
+  
+  // Guard against invalid instantiations of Make_signed.
+  template<typename T, bool Int = Integral<T>()>
+    struct safe_make_signed
+    {
+      using type = subst_failure;
+    };
+    
+  template<typename T>
+    struct safe_make_signed<T, true>
+    {
+      using type = typename make_ext_signed<T>::type;
+    };
+
+  // An alias for the signed integral type with the same width as T.
+  template<typename T>
+    using Make_signed = typename safe_make_signed<T>::type;
     
   
     

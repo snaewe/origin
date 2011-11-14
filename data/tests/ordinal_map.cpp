@@ -14,6 +14,8 @@ using namespace std;
 using namespace origin;
 
 struct num {
+  num() = default;
+
   num(size_t n)
     : n(n)
   { }
@@ -50,17 +52,17 @@ int main()
   assert(( v.find(zero) != v.end() ));
   assert(( v.count(zero) == 1 ));
   
-//   v.insert({1, 'b'});
-//   assert(( v.size() == 2 ));
-//   assert(( v[1] == 'b' ));
-//   assert(( v.find(1) != v.end() ));
-//   assert(( v.count(1) == 1 ));
+  v.insert({1, 'b'});
+  assert(( v.size() == 2 ));
+  assert(( v[1] == 'b' ));
+  assert(( v.find(1) != v.end() ));
+  assert(( v.count(1) == 1 ));
   
-//   v[0] = 'z';
-//   assert(( v[0] == 'z' ));
+  v[0] = 'z';
+  assert(( v[0] == 'z' ));
   
-//   v[2] = 'c';
-//   assert(( v.size() == 3 ));
-//   assert(( v[2] == 'c' ));
-//   assert(( v.count(2) == 1 ));
+  v[2] = 'c';
+  assert(( v.size() == 3 ));
+  assert(( v[2] == 'c' ));
+  assert(( v.count(2) == 1 ));
 }

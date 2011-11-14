@@ -28,5 +28,9 @@ int main()
   static_assert(Container<Vec>(), "");
   
   static_assert(!Range<int>(), "");
+  
+  
+  cout << typestr<Container_reference<Vec>>() << "\n";
+  cout << typestr<Container_reference<Vec const>>() << "\n";
 }
 

@@ -8,7 +8,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <origin/utility/typestr.hpp>
+#include <origin/traits.hpp>
 #include <origin/ordinal.hpp>
 
 using namespace std;
@@ -20,11 +20,6 @@ enum class enu { a, b, c };
 size_t ord(enu x)
 {
   return static_cast<size_t>(x);
-}
-
-enu from_ord(size_t x, enu)
-{
-  return static_cast<enu>(x);
 }
 
 // Test for classes.
@@ -45,23 +40,18 @@ struct num
 
 int main()
 {
+  
   assert(( ord(false) == 0 ));
   assert(( ord(true) == 1 ));
-  assert(( aOrdinal_Identity(true) ));
-  assert(( aOrdinal_Equality(false, false) ));
 
   assert(( ord(numeric_limits<char>::min()) == 0 ));
-  assert(( ord(0) == uint{numeric_limits<int>::max() + 1} ));
+  assert(( ord(0) == uint(numeric_limits<int>::max()) + 1 ));
 
   int o = ord(char{0});
   int c = ordinal_cast<char>(o);
-  assert(( aOrdinal_Identity(0) ));
-  assert(( aOrdinal_Equality(0, 0) ));
   
   assert(( ord(0u) == 0 ));
   assert(( ord(1u) == 1 ));
-  assert(( aOrdinal_Identity(0u) ));
-  assert(( aOrdinal_Equality(0u, 0u) ));
 
   // The ordinals of the max of integral enus (of the same size) are equal.
   assert(( ord(numeric_limits<int>::max()) == ord(numeric_limits<unsigned int>::max()) ));
@@ -70,11 +60,8 @@ int main()
   assert(( ord(enu::a) == 0 ));
   assert(( ord(enu::b) == 1 ));
   assert(( ord(enu::c) == 2 ));
-//   assert(( aOrdinal_Identity(enu::a) ));
-//   assert(( aOrdinal_Equality(enu::b, enu::b) ));
 
   num x;
   assert(( ord(x) == 0 ));
   assert(( ord(num{1}) == 1 ));
-  assert(( aOrdinal_Identity(num{}) ));
 }

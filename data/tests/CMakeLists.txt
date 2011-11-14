@@ -5,13 +5,13 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-add_subdirectory(dynarray)
-add_subdirectory(heap)
+# add_subdirectory(dynarray)
+# add_subdirectory(heap)
 
-origin_run_test(stack stack.cpp)
-origin_run_test(queue queue.cpp)
+# origin_run_test(stack stack.cpp)
+# origin_run_test(queue queue.cpp)
 
 origin_run_test(ordinal ordinal.cpp)
 origin_run_test(ordinal_map ordinal_map.cpp)
 
-add_subdirectory(perf)
+# add_subdirectory(perf)

@@ -5,6 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
+origin_run_test(range_concepts concepts.cpp)
 origin_run_test(range_bounded bounded.cpp)
 origin_run_test(range_filter filter.cpp)
 origin_run_test(range_permutation permutation.cpp)
