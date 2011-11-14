@@ -5,9 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <iostream>
+#include <cassert>
 
-#include <origin/utility/typestr.hpp>
 #include <origin/optional.hpp>
 
 using namespace std;
@@ -19,7 +18,7 @@ int main()
   T x1;
   assert(( !x1 ));
 
-  T x2 = 5;
+  T x2{5};
   assert(( x2 ));
   assert(( *x2 == 5 ));
 
@@ -31,7 +30,7 @@ int main()
   assert(( !x3 ));
 
   // Test relational operators.
-  T x4 = 3;
+  T x4{3};
   assert(( x2 == x2 ));
   assert(( x1 == x1 ));
   assert(( x2 != x4 ));
@@ -54,7 +53,4 @@ int main()
   assert(( 5 == x2 ));
   assert(( x2 != 3 ));
   assert(( 3 != x2 ));
-
-  x2 < nullptr;
-  nullptr < x2;
 }

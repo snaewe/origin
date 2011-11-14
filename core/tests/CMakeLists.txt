@@ -6,7 +6,6 @@
 # and conditions.
 
 origin_run_test(tuple tuple.cpp)
-origin_run_test(range range.cpp)
 origin_run_test(optional optional.cpp)
 origin_run_test(functional functional.cpp)
 
