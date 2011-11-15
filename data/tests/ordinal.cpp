@@ -35,12 +35,12 @@ struct num
   }
   
   size_t ord() const { return val; }
-  static num chr(size_t n) { return num{n}; }
+  // static num chr(size_t n) { return num{n}; }
 };
 
 int main()
 {
-  
+    
   assert(( ord(false) == 0 ));
   assert(( ord(true) == 1 ));
 

@@ -148,36 +148,6 @@ namespace origin
   { };
   //@}
 
-  /**
-   * The graph traits class abstracts the access to associated types of a graph
-   * class, providing a uniform and simplified abstraction. The traits class
-   * effetively hides the difference between graphs and const graphs.
-   */
-  template<typename Graph>
-  struct graph_traits
-  {
-    typedef typename Graph::size_type size_type;
-    typedef typename Graph::vertex_data vertex_data;
-    typedef typename Graph::edge_data edge_data;
-
-    typedef typename Graph::vertex vertex;
-    typedef typename Graph::edge edge;
-    typedef typename Graph::vertex_range vertex_range;
-    typedef typename Graph::edge_range edge_range;
-  };
-
-  template<typename Graph>
-  struct graph_traits<Graph const>
-  {
-    typedef typename Graph::size_type size_type;
-
-    typedef typename Graph::const_vertex vertex;
-    typedef typename Graph::const_edge edge;
-    typedef typename Graph::const_vertex_range vertex_range;
-    typedef typename Graph::const_edge_range edge_range;
-  };
-
-  
   
   // Graph interface
   // There are 3 primary features of every graph type:
@@ -307,12 +277,12 @@ namespace origin
 
     
     
-  // Vertex value type
-  // The vertex value type is the user-defined data type associated with
-  // each vertex. User-defined vertex data is accessed by the expression g[v]
-  // where v is a vertex in g.
+  // Vertex data
+  // Vertex data is the user-defined data type associated with each vertex. 
+  // User-defined vertex data is accessed by the expression g[v] where v is a 
+  // vertex in g.
   
-  // Safely get the vertex value type
+  // Safely get the vertex data type
   template<typename G, typename V>
     struct vertex_data
     {
@@ -324,11 +294,13 @@ namespace origin
       using type = decltype(check(std::declval<G>(), std::declval<V>));
     };
 
-  // An alias for the vertex value type of the graph.
+  // An alias for the vertex data type of the graph. Note that the vertex data
+  // is a value type: non-reference and unqualified. It does not depend on
+  // the const-ness of G.
   template<typename G>
-    using Vertex_data = typename vertex_data<G, Vertex<G>>::type;
+    using Vertex_data = Decay<typename vertex_data<G, Vertex<G>>::type>;
     
-  // Returns true if G has an associated vertex value type.
+  // Returns true if G has an associated vertex data type.
   template<typename G>
     static constexpr bool Has_vertex_data()
     {
@@ -479,12 +451,12 @@ namespace origin
     
     
     
-  // Edge value type.
-  // The edge value type is a user-defined data type associated with each edge.
-  // User-defined edge data is accessed by the expression g[e] where e is an
+  // Edge data
+  // Edge data is a user-defined data type associated with each edge. User-
+  // defined edge data is accessed by the expression g[e] where e is an
   // edge in g.
 
-  // Safely get the edge value type
+  // Safely get the edge data type
   template<typename G, typename V>
     struct edge_data
     {
@@ -496,11 +468,13 @@ namespace origin
       using type = decltype(check(std::declval<G>(), std::declval<V>));
     };
 
-  // An alias for the edge value type of the graph.
+  // An alias for the edge data type of the graph. Note that edge data is
+  // neither a reference, nor qualified. It does not depend on the const-ness
+  // of G.
   template<typename G>
     using Edge_data = typename edge_data<G, Edge<G>>::type;
     
-  // Returns true if G has an associated edge value type.
+  // Returns true if G has an associated edge data type. 
   template<typename G>
     static constexpr bool Has_edge_data()
     {
@@ -995,6 +969,29 @@ namespace origin
       return source(g, e) == v ? target(g, e) : v; 
     }
 
+    
+  
+  // Miscellaneous graph concepts
+  
+  // Returns true if F is an edge function over a Graph G. An edge function is 
+  // a ternary function with the syntax f(g, u, v) where g has type G, and
+  // u and v are vertices of g.
+  template<typename F, typename G>
+    constexpr bool Edge_function()
+    {
+      return Graph<G> && Function<F, G, Vertex<G>, Vertex<G>>();
+    }
+    
+  // Returns true if G is an edge data generator. An edge data generator is an 
+  // edge function whose result type is convertible to the graph's edge data
+  // type.
+  template<typename F, typename G>
+    constexpr bool Edge_data_generator()
+    {
+      return Edge_function<F, G> 
+          && Convertible<Function<F, G, Vertex<G>, Vertex<G>>, Edge_data<G>>();
+    }
+    
 } // namesapce origin
 
 #endif

@@ -40,6 +40,8 @@ namespace origin
       return x.ord();
     }
 
+    
+    
   // Safely get the result of the expression ord(t).
   template<typename T>
     struct ord_result
@@ -96,15 +98,18 @@ namespace origin
       return Ordinal_type<T>(std::numeric_limits<T>::max()) - n + 1;
     }
 
-  // For classes with a static chr() method that takes a value n, return the
-  // result of that operation.
+  // For non-integral classes, we can compute an ordinal cast if T is
+  // constructible over its ordinal type.
+  //
+  // FIXME: This may be problematic. What if T has another constructor over
+  // an integral type that is *not* an ordinal constructor?
   template<typename T>
-    inline auto ordinal_cast(Ordinal_type<T> n) -> decltype(T::chr(n))
+    inline auto ordinal_cast(Ordinal_type<T> n)
+      -> Requires<!Integral<T>() && Constructible<T, Ordinal_type<T>>(), T>
     {
-      return T::chr(n);
+      return {n};
     }
 
-    
 
   // Ordinal types
   // An ordinal type is a semiordinal type whose ordinal values can be mapped

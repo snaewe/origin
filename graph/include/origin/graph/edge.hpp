@@ -63,6 +63,10 @@ namespace origin
     typedef std::ptrdiff_t difference_type;
     typedef std::random_access_iterator_tag iterator_category;
 
+    edge_iterator()
+      : edge()
+    { }
+    
     edge_iterator(edge_t e)
       : edge(e)
     { }
@@ -249,21 +253,25 @@ namespace origin
   //
   // Note that we don't cache the referenced edge, so we dereference a copy.
   // This means that you can't use -> with these iterators.
-  template<typename Graph>
+  template<typename G>
     class undirected_incident_edge_iterator
     {
-      typedef typename graph_traits<Graph>::size_type Size;
+      static_assert(Undirected_graph<G>(), "");
     public:
-      typedef undirected_edge_t value_type;
-      typedef undirected_edge_t reference;
-      typedef undirected_edge_t pointer;
-      typedef std::ptrdiff_t difference_type;
-      typedef std::random_access_iterator_tag iterator_category;
+      using vaule_type = undirected_edge_t;
+      using reference = undirected_edge_t;
+      using pointer = undirected_edge_t;
+      using difference_type = std::ptrdiff_t;
+      using iterator_category = std::random_access_iterator_tag;
+      
+      undirected_incident_edge_iterator()
+        : graph(nullptr), source(), index()
+      { }
       
       // Initialize the iterator so that it refers to the nth incident edge
       // of v where n < degree(g, v).
-      undirected_incident_edge_iterator(Graph& g, vertex_t v, Size n)
-        : graph{&g}, source{v}, index{n}
+      undirected_incident_edge_iterator(G& g, Vertex<G> v, Size_type<G> n)
+        : graph(&g), source(v), index(n)
       { }
       
       // Readable
@@ -331,72 +339,58 @@ namespace origin
       }
 
     private:
-      Graph* graph;
-      vertex_t source;
-      Size index;
+      G* graph;
+      Vertex<G> source;
+      Size_type<G> index;
     };
  
-  
-  
-  /**
-   * The has_target Predicate is used to evaluate whether or not an edge
-   * has a given vertex as its target.
-   */
-  template<typename Graph>
+    
+  // FIXME: What are these functions for? Where are they being used? 
+    
+  // The has_target Predicate is used to evaluate whether or not an edge
+  // has a given vertex as its target.
+  template<typename G>
     struct has_target_pred
     {
-      typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename graph_traits<Graph>::edge Edge;
-      
-      has_target_pred(Graph& g, Vertex v)
-        : graph(g), vertex{v}
+      has_target_pred(G& g, Vertex<G> v)
+        : graph(g), vertex(v)
       { }
       
-      bool operator()(Edge e) const { return graph.target(e) == vertex; }
+      bool operator()(Edge<G> e) const { return target(graph, e) == vertex; }
       
-      Graph& graph;
-      Vertex vertex;
+      G& graph;
+      Vertex<G> vertex;
     };
     
-  /**
-   * Return a predicate that can be used to determine if the given graph has
-   * an edge with the specified vertex.
-   */
-  template<typename Graph>
-    inline has_target_pred<Graph> 
-    if_has_target(Graph& g, typename graph_traits<Graph>::vertex v)
+  // Return a predicate that can be used to determine if the given graph has
+  // an edge with the specified vertex.
+  template<typename G>
+    inline has_target_pred<G> if_has_target(G& g, Vertex<G> v)
     {
       return {g, v};
     }
 
-  // FIXME: Requires bidirectional edges?
-  /**
-   * The has_source Predicate is used to evaluate whether or not an edge
-   * has a given vertex as its source.
-   */
-  template<typename Graph>
+
+    
+  // The has_source Predicate is used to evaluate whether or not an edge
+  // has a given vertex as its source.
+  template<typename G>
     struct has_source_pred
     {
-      typedef typename graph_traits<Graph>::vertex Vertex;
-      typedef typename graph_traits<Graph>::edge Edge;
-      
-      has_source_pred(Graph& g, Vertex v)
-        : graph(g), vertex{v}
+      has_source_pred(G& g, Vertex<G> v)
+        : graph(g), vertex(v)
       { }
       
-      bool operator()(Edge e) const { return graph.source(e) == vertex; }
+      bool operator()(Edge<G> e) const { return source(graph, e) == vertex; }
       
-      Graph& graph;
-      Vertex vertex;
+      G& graph;
+      Vertex<G> vertex;
     };
 
-  /**
-   * Return a predicate that can be used to determine if the given graph has
-   * an edge with the specified vertex.
-   */
-  template<typename Graph>
-    inline has_source_pred<Graph> 
-    if_has_source(Graph& g, typename graph_traits<Graph>::vertex v)
+  // Return a predicate that can be used to determine if the given graph has
+  // an edge with the specified vertex.
+  template<typename G>
+    inline has_source_pred<G> if_has_source(G& g, Vertex<G> v)
     {
       return {g, v};
     }

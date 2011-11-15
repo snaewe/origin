@@ -602,8 +602,81 @@ namespace origin
     }
     
   // FIXME: Write Strict_output_iterator.
+
   
+  // Iterator range properties
+  // The following properties are just used to indicate un-checkable
+  // preconditions.
+  //
+  // Even though these could be constexpr function, they are not intended to
+  // be used in constant expressions.
   
+  // Return true if [first, n) is a valid weak range.
+  template<typename I>
+    inline bool is_weak_range(I first, Distance_type<I> n) 
+    { 
+      static_assert(Weakly_incrementable<I>(), "");
+      return true; 
+    }
+  
+  template<typename I>
+    inline bool is_counted_range(I first, Distance_type<I> n) 
+    { 
+      static_assert(Weakly_incrementable<I>(), "");
+      return true; 
+    }
+    
+  template<typename I>
+    inline bool is_bounded_range(I first, I last) 
+    {
+      static_assert(Weakly_incrementable<I>(), "");
+      static_assert(Equality_comparable<I>(), "");
+      return true; 
+    }
+    
+  template<typename I>
+    inline bool is_readable_range(I first, Distance_type<I> n) 
+    {
+      static_assert(Readable<I>(), "");
+      return is_weak_range(first, n) && true; 
+    }
+    
+  template<typename I>
+    inline bool is_readable_range(I first, I last) 
+    { 
+      static_assert(Readable<I>(), "");
+      return is_bounded_range(first, last) && true; 
+    }
+    
+  template<typename I, typename T>
+    inline bool is_writable_range(I first, Distance_type<I> n, T const& value)
+    {
+      static_assert(Writable<I, T>(), "");
+      return is_weak_range(first, n) && true;
+    }
+    
+    template<typename I, typename T>
+    inline bool is_writable_range(I first, I last, T const& value) 
+    { 
+      static_assert(Writable<I>(), "");
+      return is_bounded_range(first, last) && true; 
+    }
+    
+  template<typename I, typename T>
+    inline bool is_movable_range(I first, Distance_type<I> n, T const& value)
+    {
+      static_assert(Move_writable<I>(), "");
+      return is_weak_range(first, n) && true;
+    }
+  
+  template<typename I, typename T>
+    inline bool is_movable_range(I first, I last, T const& value) 
+    {
+      static_assert(Move_writable<I>(), "");
+      return is_bounded_range(first, last) && true; 
+    }
+    
+    
     
   // Iterator operations
   //
@@ -615,6 +688,8 @@ namespace origin
     inline void std_advance(Iter& i, Distance_type<Iter> n = 1)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
+      assert(( is_weak_range(i, n) ));
+
       std::advance(i, n);
     }
     
@@ -622,21 +697,27 @@ namespace origin
     inline Iter std_next(Iter i, Distance_type<Iter> n = 1)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
+      assert(( is_weak_range(i, n) ));
+      
       return std::next(i, n);
     }
     
   template<typename Iter>
     inline Iter std_prev(Iter i, Distance_type<Iter> n = 1)
     {
+      // FIXME: How do you write the precondition here?
       static_assert(Bidirectional_iterator<Iter>(), "");
+
       return std::prev(i, n);
     }
   
   template<typename Iter>
-    inline Distance_type<Iter> std_distance(Iter i, Iter j)
+    inline Distance_type<Iter> std_distance(Iter first, Iter last)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
-      return std::distance(i, j);
+      assert(( is_bounded_range(first, last) ));
+      
+      return std::distance(first, last);
     }
     
 } // namespace origin

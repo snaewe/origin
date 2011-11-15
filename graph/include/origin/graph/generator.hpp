@@ -16,50 +16,63 @@
 
 namespace origin
 {
+  // FIXME: Design concepts for mutable graphs and use them in this library.
+  
   // Add a vertex to the graph labeled with the given value, using map to
   // ensure that each vertex is uniquely labeled. If the given value is already
   // in the graph, the associated vertex is added.
   //
-  // requires UniqueMap<VertexType<G>, T> && Convertible<T, VertexValueType<G>>
+  // requires Unique_map<Vertex<G>, T> && Convertible<T, Vertex_data<G>>
   //
   // TODO: Move to traits?
   template<typename G, typename Map, typename T>
-    typename graph_traits<G>::vertex 
-    add_labeled_vertex(G& g, Map& map, T const& value)
+    Vertex<G> add_labeled_vertex(G& g, Map& map, Vertex_data<G> const& value)
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      auto x = map.insert({value, Vertex{}});
+      static_assert(Graph<G>(), "");
+      
+      auto x = map.insert({value, Vertex<G>()});
       if(x.second)
         x.first->second = g.add_vertex(value);
       return x.first->second;
     }
   
-  // Return the edge label from the edge triple t.
+  
+  
+  // Return the edge label from the edge tuple t.
   template<typename G, typename Tuple>
-    inline auto 
-    edge_label_from_tuple(G const& g, Tuple const& t) -> decltype(std::get<2>(t))
+    inline auto edge_label_from_tuple(G const& g, Tuple const& t) 
+      -> decltype(std::get<2>(t))
     {
+      static_assert(Graph<G>(), "");
+
       return std::get<2>(t);
     }
   
-  // Return the default edge label when given an edge pair.
-  template<typename G, typename V>
-    inline typename graph_traits<G>::edge_value_type
-    edge_from_tuple(G const& g, std::pair<V, V> const& p)
+  // Return the default edge label when given an edge pair. 
+  template<typename G>
+    inline Edge_data<G>
+    edge_from_tuple(G const& g, std::pair<Vertex<G const>, Vertex<G const>> const& p)
     {
-      return typename graph_traits<G>::edge_value_type{};
+      static_assert(Graph<G>(), "");
+      static_assert(Default_constructible<Edge_data<G>>(), "");
+
+      return {};
     }
 
+    
+    
   // Build a graph from the given sequence of edge tuples, using the given map 
   // to uniquely associate each vertex with its given label.
   template<typename G, typename Map, typename Iter>
     void build_edge_graph(G& g, Map& map, Iter first, Iter last)
     {
-      typedef typename graph_traits<G>::vertex Vertex;
+      static_assert(Graph<G>(), "");
+      static_assert(Default_constructible<Edge_data<G>>(), "");
+
       while(first != last) {
         auto const& t = *first;
-        Vertex u = add_labeled_vertex(g, map, std::get<0>(t));
-        Vertex v = add_labeled_vertex(g, map, std::get<1>(t));
+        Vertex<G> u = add_labeled_vertex(g, map, std::get<0>(t));
+        Vertex<G> v = add_labeled_vertex(g, map, std::get<1>(t));
         add_edge(g, u, v, edge_from_tuple(g, t));
         ++first;
       }
@@ -71,27 +84,20 @@ namespace origin
   template<typename G, typename Iter>
     void build_edge_graph(G& g, Iter first, Iter last)
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::vertex_value_type Value;
-      std::unordered_map<Value, Vertex> map;
+      static_assert(Graph<G>(), "");
+
+      std::unordered_map<Vertex_data<G>, Vertex<G>> map;
       build_edge_graph(g, map, first, last);
     }
   
 
-  // TODO: There's an EdgeFunction concept, which is a function with the
-  // syntax f(g, u, v).
-  
-  
   // An edge function that adds an edge between two vertices.
-  //
-  // requires EdgeBuildableGraph<G>
   template<typename G>
     struct make_edge
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::edge Edge;
-      
-      void operator()(G& g, Vertex u, Vertex v) const
+      static_assert(Graph<G>(), "");
+
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v);
       }
@@ -99,23 +105,20 @@ namespace origin
 
   // An edge function that adds an edge between two vertices, assigning it
   // the a value specified by an increasing iterator.
-  //
-  // requires EdgeBuildableGraph<G>
-  //       && WeakInputIterator<Iter>
-  //       && Same<VertexValueType<G>, ValueType<Iter>>
   template<typename G, typename Iter>
     struct copy_edge
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::edge Edge;
-      
-      copy_edge(Iter i)
-        : iter{i}
+      static_assert(Graph<G>(), "");
+      static_assert(Weak_input_iterator<Iter>(), "");
+
+      copy_edge(Iter i) 
+        : iter(i) 
       { }
       
-      void operator()(G& g, Vertex u, Vertex v)
+      void operator()(G& g, Vertex<G> u, Vertex<G> v)
       {
-        add_edge(g, u, v, *iter++);
+        add_edge(g, u, v, *iter);
+        iter++;
       }
       
       Iter iter;
@@ -123,44 +126,36 @@ namespace origin
   
   // An edge function that adds an edge between two vertices, assigning
   // it the specified property.
-  //
-  // requires EdgeBuildableGraph<G> && Convertible<T, VertexValueType<G>>
-  // FIXME: Remove T?
-  template<typename G, typename T>
+  template<typename G>
     struct fill_edge
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::edge Edge;
+      static_assert(Graph<G>(), "");
       
-      fill_edge(T const& x)
-        : value(x)
+      fill_edge(Edge_data<G> const& x) 
+        : value(x) 
       { }
       
-      void operator()(G& g, Vertex u, Vertex v) const
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v, value);
       }
       
-      T const& value;
+      Edge_data<G> const& value;
     };
 
   // An edge function that adds an edge between two vertices, assigning it the
   // result of the configured edge function.
-  //
-  // requires EdgeBuildableGraph<G>
-  //       && EdgeFunction<Gen, G>
-  //       && Convertible<EdgeFunctionResultType<Gen, G>, VertexValueType<G>>
   template<typename G, typename Gen>
     struct generate_edge
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::edge Edge;
+      static_assert(Graph<G>(), "");
+      static_assert(Edge_data_generator<Gen, G>(), "");
       
       generate_edge(Gen g)
-        : gen{g}
+        : gen(g)
       { }
       
-      void operator()(G& g, Vertex u, Vertex v) const
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v, gen(g, u, v));
       }
@@ -170,18 +165,18 @@ namespace origin
 
   // An edge function that adds an edge between two vertices, assigning it
   // a value that increases with each subsequent edge addition.
-  // requires EdgeBuildableGraph<G> && Same<VertexType<G>, Num>
   template<typename G, typename Num>
     struct iota_edge
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      typedef typename graph_traits<G>::edge Edge;
+      static_assert(Graph<G>(), "");
+      static_assert(Incrementable<Vertex_data<G>>(), "");
+      static_assert(Convertible<Num, Vertex_data<G>>(), "");
       
       iota_edge(Num& n)
         : num(n)
       { }
       
-      void operator()(G& g, Vertex u, Vertex v)
+      void operator()(G& g, Vertex<G> u, Vertex<G> v)
       {
         add_edge(g, u, v, num++);
       }
@@ -196,7 +191,11 @@ namespace origin
   template<typename G>
     inline G make_null_graph()
     {
-      return std::move(G{});
+      // FIXME: What are the minimum initialization and value transfer
+      // requirements for graphs. The same as containers, certainly.
+      static_assert(Graph<G>(), "");
+
+      return std::move(G());
     }
 
   // Make a trivial graph with 1 vertex and no edges.
@@ -205,6 +204,9 @@ namespace origin
   template<typename G>
     inline G make_trivial_graph()
     {
+      // FIXME: Write initialization concepts for graphs.
+      static_assert(Graph<G>(), "");
+
       G g(1);
       return std::move(g);
     }
@@ -214,20 +216,20 @@ namespace origin
   //
   // requires VertexInitializedGraph<G>
   //
-  // FIXME: Replace V with VertexType<G>
   template<typename G, typename V>
-    inline G make_trivial_graph(V const& value)
+    inline G make_trivial_graph(Vertex_data<G> const& value)
     {
       // Kind of tricky, but &x and &x+1 define a range of 1 element.
       G g(&value, &value + 1);
       return std::move(g);
     }
 
+    
+    
   // Path graphs have n vertices and n - 1 edges.
   // P_1 - singleton graph, no edges
   // P_2 - two vertices, 1 edge (u -- v)
   // P_n - n vertices n - 1 edges (v1 -- v2 -- ... -- vn)
-  
   
   // Traverse the given range of vertices as a path, calling f for every
   // consecutive pair of vertices.
@@ -241,12 +243,14 @@ namespace origin
   template<typename G, typename Iter, typename F>
     F for_path(G& g, Iter first, Iter last, F f) 
     {
-      typedef typename graph_traits<G>::vertex Vertex;
+      static_assert(Graph<G>(), "");
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Edge_function<F, G>(), "");
       assert(( first != last ));
 
-      Vertex u = *first++;
+      Vertex<G> u = *first++;
       while(first != last) {
-        Vertex v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
         u = v;
       }
@@ -264,20 +268,30 @@ namespace origin
   template<typename G, typename Iter>
     void make_path(G& g, Iter first, Iter last)
     {
-      for_path(g, first, last, make_edge<G>{});
+      static_assert(Graph<G>(), "");
+      static_assert(Input_iterator<Iter>(), "");
+
+      for_path(g, first, last, make_edge<G>());
     }
 
   template<typename G, typename Iter1, typename Iter2>
     void make_path(G& g, Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      for_path(g, first1, last1, copy_edge<G, Iter2>{first2});
+      static_assert(Graph<G>(), "");
+      static_assert(Input_iterator<Iter1>(), "");
+      static_assert(Weak_input_iterator<Iter2>(), "");
+
+      for_path(g, first1, last1, copy_edge<G, Iter2>(first2));
     }
 
   // Create a path as per make_path, assigning each edge an the given value.
-  template<typename G, typename Iter, typename T>
-    void fill_path(G& g, Iter first, Iter last, T const& value)
+  template<typename G, typename Iter>
+    void fill_path(G& g, Iter first, Iter last, Edge_data<G> const& value)
     {
-      for_path(g, first, last, fill_edge<G, T>{value});
+      static_assert(Graph<G>(), "");
+      static_assert(Input_iterator<Iter>(), "");
+
+      for_path(g, first, last, fill_edge<G>(value));
     }
 
   // Create a path as per make_path, assigning each edge the result of the
@@ -285,14 +299,22 @@ namespace origin
   template<typename G, typename Iter, typename Gen>
     void generate_path(G& g, Iter first, Iter last, Gen gen)
     {
-      for_path(g, first, last, fill_edge<G, Gen>{gen});
+      static_assert(Graph<G>(), "");
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Edge_data_generator<Gen, G>(), "");
+      
+      for_path(g, first, last, generate_edge<G, Gen>(gen));
     }
 
   // Create a path as per make_path, assigning each edge an increasing value.
   template<typename G, typename Iter, typename Num>
     void iota_path(G& g, Iter first, Iter last, Num num)
     {
-      for_path(g, first, last, iota_edge<G, Num>{num});
+      static_assert(Graph<G>(), "");
+      static_assert(Incrementable<Num>(), "");
+      static_assert(Convertible<Num, Edge_data<G>>(), "");
+      
+      for_path(g, first, last, iota_edge<G, Num>(num));
     }
 
   // These might also be nice? Maybe...
@@ -306,8 +328,9 @@ namespace origin
   //
   // requires VertexInitializedGraph<G> && EdgeBuildableGraph<G>
   template<typename G>
-    inline G make_path_graph(typename G::size_type n)
+    inline G make_path_graph(Size_type<G> n)
     {
+      static_assert(Graph<G>(), "");
       assert(( n != 0 ));
 
       G g(n);
@@ -410,18 +433,18 @@ namespace origin
   // Traverse the given range of vertices as a cycle, calling f for every
   // consecutive pair of vertices and lastly for the vertices 
   // (*(last - 1), *first).
-  // 
-  // requires Graph<Graph> && InputIterator<Iter> && EdgeFunction<F, G>
   template<typename G, typename Iter, typename F>
     F for_cycle(G& g, Iter first, Iter last, F f)
     {
-      typedef typename graph_traits<G>::vertex Vertex;
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Edge_function<F, G>(), "");
       assert(( first != last ));
 
-      Vertex u = *first++;
-      Vertex h = u;
+      Vertex<G> u = *first++;
+      Vertex<G> h = u;
       while(first != last) {
-        Vertex v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
         u = v;
       }
@@ -432,37 +455,65 @@ namespace origin
   // Create cycle on the vertices in the range [first, last), that is a path
   // on [first, last) and *(last - 1) is also connected to *first.
   // is connected to *first.
-  // requires: EdgeBuildable<Graph> && InputIterator<Iter>
   template<typename G, typename Iter>
     void make_cycle(G& g, Iter first, Iter last)
     {
-      for_cycle(g, first, last, make_edge<G>{});
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      
+      for_cycle(g, first, last, make_edge<G>());
+    }
+    
+  // Create a cycle over the vertices in [first1, last1) where edge values are
+  // taken from the range [firs2, last1 - first1).
+  template<typename G, typename Iter1, typename Iter2>
+    void make_cycle(G& g, Iter1 first1, Iter1 last1, Iter2 first2)
+    {
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Weak_input_iterator<Iter2>(), "");
+      static_assert(Convertible<Value_type<Iter2>, Edge_data<G>>(), "");
+      
+      for_cycle(g, first1, last1, copy_edge<G, Iter2>(first2));
     }
 
   // Create a cycle
-  template<typename G, typename Iter, typename T>
-    void fill_cycle(G& g, Iter first, Iter last, T const& value)
+  template<typename G, typename Iter>
+    void fill_cycle(G& g, Iter first, Iter last, Edge_data<G> const& value)
     {
-      for_cycle(g, first, last, fill_edge<G, T>{value});
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      
+      for_cycle(g, first, last, fill_edge<G>(value));
     }
 
   template<typename G, typename Iter, typename Gen>
     void generate_cycle(G& g, Iter first, Iter last, Gen gen)
     {
-      for_cycle(g, first, last, generate_edge<G, Gen>{gen});
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Edge_data_generator<Gen, G>(), "");
+      
+      for_cycle(g, first, last, generate_edge<G, Gen>(gen));
     }
 
   template<typename G, typename Iter, typename Num>
     void iota_cycle(G& g, Iter first, Iter last, Num num)
     {
-      for_cycle(g, first, last, iota_edge<G, Num>{num});
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Incrementable<Num>(), "");
+      static_assert(Convertible<Num, Edge_data<G>>(), "");
+
+      for_cycle(g, first, last, iota_edge<G, Num>(num));
     }
 
   // Make a cycle graph with n vertices and edges. Vertex and edge labels are 
   // default initialized.
   template<typename G>
-    G make_cycle_graph(typename graph_traits<G>::size_type n)
+    G make_cycle_graph(Size_type<G> n)
     {
+      static_assert(Graph<G>(), "");
       assert((n != 0 ));
 
       G g(n);
@@ -474,9 +525,12 @@ namespace origin
   // constructed and edge labels are assigned consecutive values in the weak 
   // range [first, n). 
   template<typename G, typename Iter>
-    inline G make_cycle_graph(typename G::size_type n, Iter first)
+    inline G make_cycle_graph(Size_type<G> n, Iter first)
     {
-      // assert(( pre: readable_weak_range(first, n) ));
+      static_assert(Graph<G>(), "");
+      static_assert(Weak_input_iterator<Iter>(), "");
+      static_assert(Convertible<Value_type<Iter>, Edge_data<G>>(), "");
+      assert(( is_readable_range(first, n) ));
       assert(( n != 0 ));
 
       G g(n);
@@ -487,6 +541,10 @@ namespace origin
   template<typename G, typename Iter>
     G make_cycle_graph(Iter first, Iter last)
     {
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter>(), "");
+      assert(( is_readable_range(first, last) ));
+
       G g(first, last);
       make_cycle(g, begin(vertices(g)), end(vertices(g)));
       return std::move(g);
@@ -499,8 +557,11 @@ namespace origin
   template<typename G, typename Iter1, typename Iter2>
     inline G make_cycle_graph(Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      // assert(( readable_bounded_range(first1, last1) ));
-      // assert(( readable_weak_range(first, distance(first1, last1)) ));
+      static_assert(Graph<G>(), "");
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Weak_input_iterator<Iter2>(), "");
+      assert(( is_readable_range(first1, last1) ));
+      // assert(( is_readable_range(first2, last1 - first1) ));
       assert(( first1 != last1 ));
 
       G g(first1, last1);
@@ -624,10 +685,10 @@ namespace origin
       for_clique(g, first1, last1, copy_edge<G, Iter2>{first2});
     }
     
-  template<typename G, typename Iter, typename T>
-    void fill_clique(G& g, Iter first, Iter last, T const& value)
+  template<typename G, typename Iter>
+    void fill_clique(G& g, Iter first, Iter last, Edge_data<G> const& value)
     {
-      for_clique(g, first, last, fill_edge<G, T>{value});
+      for_clique(g, first, last, fill_edge<G>(value));
     }
 
   template<typename G, typename Iter, typename Gen>

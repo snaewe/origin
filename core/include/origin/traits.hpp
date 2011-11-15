@@ -33,10 +33,7 @@ namespace origin
   // The Subst_failed predicate returns true when the given type indicates
   // a substitution failure.
   template<typename T>
-    constexpr bool Subst_failed()
-    {
-      return subst_failed<T>::value;
-    }
+    constexpr bool Subst_failed() { return subst_failed<T>::value; }
 
     
   // Returns true if the given type indicates a successful substitution. This
@@ -53,11 +50,8 @@ namespace origin
   // The Subst_succeeded predicate returns true when its given type argument
   // does not indicate a substitution failure.
   template<typename T>
-    constexpr bool Subst_succeeded()
-    {
-      return subst_succeeded<T>::value;
-    }
-    
+    constexpr bool Subst_succeeded() { return subst_succeeded<T>::value; }
+
 
     
   // Type relations
@@ -88,37 +82,26 @@ namespace origin
   // FIXME: Add specializations for std::duration.
 
 
+    
   // The alias yields the common type of T and U if it exists, and 
   // subst_failure if it does not. Note that the common type of T and U may
   // not be T or U.
   template<typename T, typename U>
     using Common_type = typename common_type<T, U>::type;
 
-
   // The Common predicate is true if T and U share a common type.
   template<typename T, typename U>
-    constexpr bool Common()
-    {
-      return Subst_succeeded<Common_type<T, U>>();
-    }
-
-    
+    constexpr bool Common() { return Subst_succeeded<Common_type<T, U>>(); }
     
   // Returns true if T is convertible to U.
   template<typename T, typename U>
-    constexpr bool Convertible()
-    {
-      return std::is_convertible<T, U>::value;
-    }
-
-    
+    constexpr bool Convertible() { return std::is_convertible<T, U>::value; }
     
   // Returns true if T is derived from U.
   template<typename T, typename U>
-    constexpr bool Derived()
-    {
-      return std::is_base_of<U, T>::value;
-    }    
+    constexpr bool Derived() { return std::is_base_of<U, T>::value; }    
+
+    
     
   // Adaptors for standard traits
   
@@ -138,10 +121,7 @@ namespace origin
     
   // Return true if T is void, and false otherwise.
   template<typename T>
-    constexpr bool Void()
-    {
-      return std::is_void<T>::value;
-    }
+    constexpr bool Void() { return std::is_void<T>::value; }
     
     
     
@@ -150,10 +130,7 @@ namespace origin
   // predciate provides a more coherent way of expressing requirements on
   // the results of expressions.
   template<typename T>
-    constexpr bool Boolean()
-    {
-      return Convertible<T, bool>();
-    }
+    constexpr bool Boolean() { return Convertible<T, bool>(); }
     
     
     
@@ -163,24 +140,15 @@ namespace origin
   // Returns true if T is a signed or unsigned, possibly cv-qualified, bool,
   // char, short, int, long or long long.
   template<typename T>
-    constexpr bool Integral()
-    {
-      return std::is_integral<T>::value;
-    }
+    constexpr bool Integral() { return std::is_integral<T>::value; }
     
   // Returns true if T is a signed integral type.
   template<typename T>
-    constexpr bool Signed()
-    {
-      return std::is_signed<T>::value;
-    }
+    constexpr bool Signed() { return std::is_signed<T>::value; }
     
   // Returns true if T is an unsigned integral type.
   template<typename T>
-    constexpr bool Unsigned()
-    {
-      return std::is_unsigned<T>::value;
-    }
+    constexpr bool Unsigned() { return std::is_unsigned<T>::value; }
 
   
   
@@ -247,39 +215,26 @@ namespace origin
     
   // Floating point types.
     
-  // Returns true if T is a possibly cv-qualified float, double, or long
-  // double.
+  // Returns true if T is a float, double, or long double.
   template<typename T>
-    constexpr bool Floating_point()
-    {
-      return std::is_floating_point<T>::value;
-    }
+    constexpr bool Floating_point() { return std::is_floating_point<T>::value; }
 
     
     
   // Arrays
   
-  // Return true if T is an array type fo the form T[n].
+  // Return true if T is an array type of type U[N].
   template<typename T>
-    constexpr bool Array()
-    {
-      return std::is_array<T>::value;
-    }
+    constexpr bool Array() { return std::is_array<T>::value; }
 
   // Return the number of dimensions of the array type T. If T is not an
   // Array, it has 0 dimensions.
   template<typename T>
-    constexpr unsigned Rank()
-    {
-      return std::rank<T>::value;
-    }
+    constexpr unsigned Rank() { return std::rank<T>::value; }
     
   // Return the extent of the array type T...
   template<typename T, unsigned I = 0>
-    constexpr std::size_t Extent()
-    {
-      return std::extent<T, I>::value;
-    }
+    constexpr std::size_t Extent() { return std::extent<T, I>::value; }
   
   template<typename T>
     using Remove_extent = typename std::remove_extent<T>::type;
@@ -291,11 +246,9 @@ namespace origin
     
   // Pointers
     
+  // Returns true if T is a pointer.
   template<typename T>
-    constexpr bool Pointer()
-    {
-      return std::is_pointer<T>::value;
-    }
+    constexpr bool Pointer() { return std::is_pointer<T>::value; }
     
   template<typename T>
     using Add_pointer = typename std::add_pointer<T>::type;
@@ -306,23 +259,17 @@ namespace origin
   
   // References
     
+  // Returns true if T is an lvalue reference.
   template<typename T>
-    constexpr bool Lvalue_reference()
-    {
-      return std::is_lvalue_reference<T>::value;
-    }
+    constexpr bool Lvalue_reference() { return std::is_lvalue_reference<T>::value; }
     
+  // Returns true if T is rvalue reference.
   template<typename T>
-    constexpr bool Rvalue_reference()
-    {
-      return std::is_rvalue_reference<T>::value;
-    }
+    constexpr bool Rvalue_reference() { return std::is_rvalue_reference<T>::value; }
     
+  // Returns true if T is either an lvalue or rvalue reference.
   template<typename T>
-    constexpr bool Reference()
-    {
-      return std::is_reference<T>::value;
-    }
+    constexpr bool Reference() { return std::is_reference<T>::value; }
     
   template<typename T>
     using Add_lvalue_reference = typename std::add_lvalue_reference<T>::type;
@@ -334,19 +281,47 @@ namespace origin
     using Remove_reference = typename std::remove_reference<T>::type;
 
     
+    
+  // Composite ctaegories
+    
+  // Returns true if T is an object type. References and function types are
+  // not object types.
+  template<typename T>
+    constexpr bool Object() { return std::is_object<T>::value; }
+    
+  // Returns true if T is a scalar type (i.e,. not compound).
+  template<typename T>
+    constexpr bool Scalar() { return std::is_scalar<T>::value; }
+    
+  // Returns true if T is a compound type (i.e., is comprised of 1 or more 
+  // sub-objects).
+  template<typename T>
+    constexpr bool Compound() { return std::is_compound<T>::value; }
+    
+  // Returns true if T is a built-in type.
+  template<typename T>
+    constexpr bool Fundamental() { return std::is_fundamental<T>::value; }
+    
+  // Returns true if T is an arithmetic type (Integral() || Floating_point()).
+  template<typename T>
+    constexpr bool Arithmetic() { return std::is_arithmetic<T>::value; }
+    
+    
+    
   // Qualifiers
+  
+  // Returns true if T is const-qualified
   template<typename T>
-    constexpr bool Const()
-    {
-      return std::is_const<T>::value;
-    }
+    constexpr bool Const() { return std::is_const<T>::value; }
     
+  // Returns true if T is volatile-qualified
   template<typename T>
-    constexpr bool Volatile()
-    {
-      return std::is_volatile<T>::value;
-    }
+    constexpr bool Volatile() { return std::is_volatile<T>::value; }
     
+  // Returns true if T is cv-qualified.
+  template<typename T>
+    constexpr bool Qualified() { return Const<T>() || Volatile<T>(); }
+
   template<typename T>
     using Add_const = typename std::add_const<T>::type;
     
@@ -365,47 +340,42 @@ namespace origin
   template<typename T>
     using Remove_cv = typename std::remove_cv<T>::type;
     
+    
 
+  // Remove all qualifiers and reference types.
+  template<typename T>
+    using Decay = typename std::decay<T>::type;
+
+    
+    
   // Classes and unions
     
+  // Return true if T is a class or struct.
   template<typename T>
-    constexpr bool Class()
-    {
-      return std::is_class<T>::value;
-    };
+    constexpr bool Class() { return std::is_class<T>::value; };
     
+  // Return true if T is a union.
   template<typename T>
-    constexpr bool Union()
-    {
-      return std::is_union<T>::value;
-    }
+    constexpr bool Union() { return std::is_union<T>::value; }
     
+  // Return true if T has no member variables.
   template<typename T>
-    constexpr bool Empty()
-    {
-      return std::is_empty<T>::value;
-    }
+    constexpr bool Empty() { return std::is_empty<T>::value; }
     
+  // Return true if T has at least one virtual method.
   template<typename T>
-    constexpr bool Polymorphic()
-    {
-      return std::is_polymorphic<T>::value;
-    }
+    constexpr bool Polymorphic() { return std::is_polymorphic<T>::value; }
     
+  // Return true if T has at least one pure virtual method.
   template<typename T>
-    constexpr bool Abstract()
-    {
-      return std::is_abstract<T>::value;
-    }
+    constexpr bool Abstract() { return std::is_abstract<T>::value; }
  
 
   // Class destruction and construction.
   
+  // Return true if T is destructible.
   template<typename T>
-    constexpr bool Destructible()
-    {
-      return std::is_destructible<T>::value;
-    }
+    constexpr bool Destructible() { return std::is_destructible<T>::value; }
     
 //   template<typename T>
 //     constexpr bool Trivially_destructible()
@@ -419,17 +389,19 @@ namespace origin
 //       return std::is_nothrow_destructible<T>::value;
 //     }
     
+  // Return true if T has a virtual destructor
   template<typename T>
-    constexpr bool Has_virtual_destructor()
-    {
-      return std::has_virtual_destructor<T>::value;
+    constexpr bool Has_virtual_destructor() 
+    { 
+      return std::has_virtual_destructor<T>::value; 
     }
     
 
+  // Return trie if T can be constructed over Args...
   template<typename T, typename... Args>
-    constexpr bool Constructible()
-    {
-      return std::is_constructible<T, Args...>::value;
+    constexpr bool Constructible() 
+    { 
+      return std::is_constructible<T, Args...>::value; 
     }
     
 //   template<typename T, typename... Args>
@@ -438,13 +410,16 @@ namespace origin
 //       return std::is_trivially_constructible<T, Args...>::value;
 //     }
     
+  // Return true if T can be constructed over Args... and does not throw
+  // an exception.
   template<typename T, typename... Args>
-    constexpr bool Nothrow_constructible()
-    {
-      return std::is_nothrow_constructible<T, Args...>::vlaue;
+    constexpr bool Nothrow_constructible() 
+    { 
+      return std::is_nothrow_constructible<T, Args...>::vlaue; 
     }
     
     
+  // Return true if T has a default constructor.
   template<typename T>
     constexpr bool Default_constructible()
     {

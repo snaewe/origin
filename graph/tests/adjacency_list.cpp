@@ -8,23 +8,12 @@
 #include <iostream>
 #include <cassert>
 
-// #include <origin/graph/adjacency_list.hpp>
-// #include <origin/graph/generator.hpp>
-
-#include <origin/graph/vertex.hpp>
-#include <origin/graph/edge.hpp>
+#include <origin/graph/adjacency_list.hpp>
+#include <origin/graph/generator.hpp>
 
 using namespace std;
 using namespace origin;
 
-int main()
-{
-  cout << "HERE\n";
-//   cout << Input_iterator<vertex_iterator>() << "\n";
-}
-
-
-/*
 template<typename G>
   void test_null_graph()
   {
@@ -115,4 +104,3 @@ int main()
 typedef directed_adjacency_list<char, int> Digraph;
   test<Digraph>();
 }
-*/

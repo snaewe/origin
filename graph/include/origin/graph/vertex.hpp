@@ -58,6 +58,10 @@ namespace origin
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::random_access_iterator_tag;
 
+    vertex_iterator()
+      : vert()
+    { }
+    
     vertex_iterator(vertex_t e)
       : vert(e)
     { }
