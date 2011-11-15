@@ -24,11 +24,11 @@ namespace origin
     typedef std::size_t value_type;
     
     edge_t()
-      : value{-1ul}
+      : value(-1ul)
     { }
 
     edge_t(value_type n)
-      : value{n}
+      : value(n)
     { }
 
     // Equality_comparable
@@ -42,34 +42,16 @@ namespace origin
     bool operator>=(edge_t x) const { return value >= x.value; }
     
     // Boolean
-    explicit operator bool() const { return value != value_type{-1ul}; }
+    explicit operator bool() const { return value != -1ul; }
+
+    // Ordinal
+    std::size_t ord() const { return value; }
 
     value_type value;
   };
 
-  // Ordinal<edge_t>
-  inline edge_t::value_type ord(edge_t e)
-  {
-    return e.value;
-  }
-} // namespace origin
-
-// FIXME: When are we going to have Origin::Hashable?
-// Support std::hash interoperability.
-namespace std
-{
-  template<>
-    struct hash<origin::edge_t>
-    {
-      std::size_t operator()(origin::edge_t e) const
-      { 
-        return std::hash<std::size_t>{}(e.value); 
-      }
-    };
-} // namespace std
-
-namespace origin
-{
+  
+  
   // The edge iterator provides a random access iterator over an edge index
   // types. The result of dereferencing an edge iterator is an edge_t object.
   class edge_iterator
@@ -82,17 +64,17 @@ namespace origin
     typedef std::random_access_iterator_tag iterator_category;
 
     edge_iterator(edge_t e)
-      : edge{e}
+      : edge(e)
     { }
 
     edge_t const& operator*() const { return edge; }
     edge_t const* operator->() const { return &edge; }
 
-    // Equatable
+    // Equality_comparable
     bool operator==(edge_iterator x) const { return edge == x.edge; }
     bool operator!=(edge_iterator x) const { return edge != x.edge; }
 
-    // TotallyOrdered
+    // Totally_ordered
     bool operator<(edge_iterator x) const { return edge < x.edge; }
     bool operator>(edge_iterator x) const { return edge > x.edge; }
     bool operator<=(edge_iterator x) const { return edge <= x.edge; }
@@ -133,13 +115,13 @@ namespace origin
   {
   public:
     undirected_edge_t()
-      : edge{}, source{}, target{}
+      : edge(), source(), target()
     { }
 
     // Initialize the graph over a triple of values describing the current
     // edge handle, the source vertex, and the target vertex.
     undirected_edge_t(edge_t e, vertex_t s, vertex_t t)
-      : edge{e}, source{s}, target{t}
+      : edge(e), source(s), target(t)
     { }
 
     // Equality_comparable
@@ -153,41 +135,17 @@ namespace origin
     bool operator>=(undirected_edge_t const& x) const { return edge >= x.edge; }
 
     // Boolean
-    explicit operator bool() const { return edge.valid(); }
+    explicit operator bool() const { return (bool)edge; }
+    
+    // Ordinal
+    std::size_t ord() const { return edge.ord(); }
 
     edge_t edge;
     vertex_t source;
     vertex_t target;
   };
 
-  // Semi_ordinal<undirected_edge_t>
-  // Undirected edges are not Ordinal because they cannot be uniquely 
-  // constructed from an ordinal value. The source and target vertex handles
-  // must be assigned by a graph.
-  inline std::size_t ord(undirected_edge_t const& e)
-  {
-    return ord(e.edge);
-  }
-
-} // namespace origin
-
-// FIXME: This is gross. A better solution would be to abandon the std's overly
-// strict hash model and adopt our own.
-namespace std {
-  // Hashable<undirected_edge_t>.
-  template<>
-    struct hash<origin::undirected_edge_t>
-    {
-      std::size_t operator()(origin::undirected_edge_t const& x) const
-      {
-        hash<origin::edge_t> h;
-        return h(x.edge);
-      }
-    };
-} // namespace std
-
-namespace origin {
-
+  
   // The undirected edge iterator is used to iterate over the edges in the
   // edge set of an undirected graph.
   //
@@ -444,5 +402,34 @@ namespace origin {
     }
   
 } // namesapce origin
+
+
+// FIXME: When are we going to have Origin::Hashable?
+// Support std::hash interoperability.
+namespace std
+{
+  // Hashable<edge_t>
+  template<>
+    struct hash<origin::edge_t>
+    {
+      std::size_t operator()(origin::edge_t e) const
+      { 
+        return std::hash<std::size_t>{}(e.value); 
+      }
+    };
+  
+  // Hashable<undirected_edge_t>.
+  template<>
+    struct hash<origin::undirected_edge_t>
+    {
+      std::size_t operator()(origin::undirected_edge_t const& x) const
+      {
+        hash<origin::edge_t> h;
+        return h(x.edge);
+      }
+    };
+    
+} // namespace std
+
 
 #endif

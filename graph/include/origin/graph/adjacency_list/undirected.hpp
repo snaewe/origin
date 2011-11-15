@@ -8,9 +8,6 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_LIST_UNDIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACENCY_LIST_UNDIRECTED_HPP
 
-#include <vector>
-
-#include <origin/utility/facades.hpp>
 #include <origin/graph/adjacency_list/directed.hpp>
 
 namespace origin
@@ -21,11 +18,11 @@ namespace origin
   //is represented by a single directed edge.
   template<typename Vertex = empty_t,
            typename Edge = empty_t,
-            typename Alloc = std::allocator<void>>
+           typename Alloc = std::allocator<void>>
     class undirected_adjacency_list
     {
-      typedef directed_adjacency_list<Vertex, Edge, Alloc> base_type;
-      typedef undirected_adjacency_list<Vertex, Edge, Alloc> this_type;
+      using base_type = directed_adjacency_list<Vertex, Edge, Alloc>;
+      using this_type = undirected_adjacency_list<Vertex, Edge, Alloc>;
     public:
       typedef typename base_type::vertex_allocator_type vertex_allocator_type;
       typedef typename base_type::edge_allocator_type   edge_allocator_type;

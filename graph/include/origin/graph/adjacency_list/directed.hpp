@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <origin/utility/empty.hpp>
+#include <origin/utility.hpp>
 #include <origin/range.hpp>
 #include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
@@ -20,20 +20,18 @@
 
 namespace origin
 {
-  // FIXME: Consider splitting on dependent, non-dependent features of the
-  // adj_vec components. Also, the value types might be optimized using EBO.
+  // FIXME: Split dependent, non-dependent features of the adj_vec components. 
+  // Also, the value types might be optimized using EBO.
 
   // The edge node for a directed adjacency list stores the source and vertex
   // indices of the graph.
   template<typename E>
     struct adjacency_list_edge
     {
-      typedef E value_type;
+      using value_type = E;
       
-      // FIXME: Should be using {x} for initializer of value, but there seems
-      // to be a GCC bug that's preventing me from doing so.
-      adjacency_list_edge(vertex_t src, vertex_t tgt, value_type const& x = value_type{})
-        : source{src}, target{tgt}, value(x)
+      adjacency_list_edge(vertex_t s, vertex_t t, value_type const& x = {})
+        : source(s), target(t), value(x)
       { }
 
       vertex_t source;
@@ -46,11 +44,11 @@ namespace origin
   template<typename V>
     struct adjacency_list_vertex
     {
-      typedef V value_type;
-      typedef std::vector<edge_t> edge_list;
+      using value_type = V;
+      using edge_list = std::vector<edge_t>;
       
-      adjacency_list_vertex(value_type const& x = value_type{})
-        : value{x}
+      adjacency_list_vertex(value_type const& x = {})
+        : value(x)
       { }
       
       std::size_t degree() const      { return out.size() + in.size(); }
@@ -74,58 +72,58 @@ namespace origin
     class directed_adjacency_list
     {
     public:
-      typedef typename Alloc::template rebind<Vertex>::other vertex_allocator_type;
-      typedef typename Alloc::template rebind<Edge>::other   edge_allocator_type;
+      using vertex_allocator_type = typename Alloc::template rebind<Vertex>::other;
+      using edge_allocator_type = typename Alloc::template rebind<Edge>::other;
 
-      typedef std::size_t    size_type;
-      typedef std::ptrdiff_t difference_type;
+      using size_type = std::size_t;
+      using difference_type = std::ptrdiff_t;
       
-      typedef Vertex vertex_value_type;
-      typedef Edge   edge_value_type;
+      using vertex_value_type = Vertex;
+      using edge_value_type = Edge;
     private:
-      typedef adjacency_list_vertex<vertex_value_type> vertex_type;
-      typedef adjacency_list_edge<edge_value_type>     edge_type;
+      using vertex_type = adjacency_list_vertex<vertex_value_type>;
+      using edge_type = adjacency_list_edge<edge_value_type>;
 
-      typedef std::vector<vertex_type, vertex_allocator_type> vertex_list;
-      typedef std::vector<edge_type, edge_allocator_type>     edge_list;
+      using vertex_list = std::vector<vertex_type, vertex_allocator_type>;
+      using edge_list = std::vector<edge_type, edge_allocator_type>;
     public:
-      typedef vertex_t vertex;
-      typedef vertex_t const_vertex;
+      using vertex = vertex_t;
+      using const_vertex = vertex_t;
       
-      typedef edge_t edge;
-      typedef edge_t const_edge;
+      using edge = edge_t;
+      using const_edge = edge_t;
     private:
-      // Const so that we can't accidentally modify the values in the vertex
-      // handles in the incident edge lists.
+      // The incident edge iterator is const so that we can't accidentally 
+      // modify the vertex handles in the incident edge lists.
       typedef typename vertex_type::edge_list::const_iterator incident_edge_iterator;
     public:
-      typedef bounded_range<vertex_iterator>        vertex_range;
-      typedef bounded_range<vertex_iterator>        const_vertex_range;
-      typedef bounded_range<edge_iterator>          edge_range;
-      typedef bounded_range<edge_iterator>          const_edge_range;
-      typedef bounded_range<incident_edge_iterator> out_edge_range;
-      typedef bounded_range<incident_edge_iterator> const_out_edge_range;
-      typedef bounded_range<incident_edge_iterator> in_edge_range;
-      typedef bounded_range<incident_edge_iterator> const_in_edge_range;
+      using vertex_range       = bounded_range<vertex_iterator>;
+      using const_vertex_range = bounded_range<vertex_iterator>;
+      using edge_range       = bounded_range<edge_iterator>;
+      using const_edge_range = bounded_range<edge_iterator>;
+      using out_edge_range       = bounded_range<incident_edge_iterator>;
+      using const_out_edge_range = bounded_range<incident_edge_iterator>;
+      using in_edge_range       = bounded_range<incident_edge_iterator>;
+      using const_in_edge_range = bounded_range<incident_edge_iterator>;
       
       struct graph_category : directed_graph_tag, buildable_graph_tag { };
       
       // Semiregular
       // Copy and move constructors and assignment operators are generated.
       directed_adjacency_list()
-        : vertices_{}, edges_{}
+        : vlist(), elist()
       { }
       
       // Vertex fill constructor
-      directed_adjacency_list(size_type n, vertex_value_type const& x = vertex_value_type{})
-        : vertices_(n, x), edges_{}
+      directed_adjacency_list(size_type n, vertex_value_type const& x = {})
+        : vlist(n, x), elist()
       { }
 
       // Vertex range constructor
       // TODO: Specialize for ranges of edge pairs and edge tuples
       template<typename Iter>
         directed_adjacency_list(Iter first, Iter last)
-          : vertices_{}, edges_{}
+          : vlist(), elist()
         {
           while(first != last) {
             add_vertex(*first);
@@ -133,9 +131,9 @@ namespace origin
           }
         }
         
-      // Vertex initialization constructor
+      // Vertex list initialization
       directed_adjacency_list(std::initializer_list<vertex_value_type> list)
-        : vertices_{}, edges_{}
+        : vlist(), elist()
       {
         for(auto const& x : list)
           add_vertex(x);
@@ -143,7 +141,7 @@ namespace origin
       
       // TODO: Generalize for edge tuples
       directed_adjacency_list(std::initializer_list<std::pair<vertex_value_type, vertex_value_type>> list)
-        : vertices_{}, edges_{}
+        : vlist{}, elist{}
       {
         build_edge_graph(*this, list.begin(), list.end());
       }
@@ -151,10 +149,10 @@ namespace origin
       // Container properties.
       
       // Return the maximum number of vertices possible for the graph.
-      constexpr size_type max_order() const { return vertices_.max_size(); }
+      constexpr size_type max_order() const { return vlist.max_size(); }
       
       // Return the maximum number of edges possible for the graph.
-      constexpr size_type max_size() const  { return edges_.max_size(); }
+      constexpr size_type max_size() const  { return elist.max_size(); }
       
       // Return the graph's vertex allocator.
       vertex_allocator_type get_vertex_allocator() const { return vertex_allocator_type{}; }
@@ -165,16 +163,16 @@ namespace origin
       // Graph properties
 
       // Return true if the graph has no vertices.
-      bool null() const { return vertices_.empty(); }
+      bool null() const { return vlist.empty(); }
       
       // Return the number of vertices in the graph.
-      size_type order() const { return vertices_.size(); }
+      size_type order() const { return vlist.size(); }
       
       // Return true if the graph has no edges.
-      bool empty() const { return edges_.empty(); }
+      bool empty() const { return elist.empty(); }
       
       // Return the number of edges in the graph.
-      size_type size() const { return edges_.size(); }
+      size_type size() const { return elist.size(); }
       
       // Return the value associated with the vertex v.
       vertex_value_type&       operator[](vertex v)       { return get(v).value; }
@@ -222,18 +220,18 @@ namespace origin
 
       // Add a value to the graph, returning a handle to the added vertex. The 
       // associated value may be specified.
-      vertex add_vertex(vertex_value_type const& x = vertex_value_type{})
+      vertex add_vertex(vertex_value_type const& x = {})
       {
-        vertices_.push_back(vertex_type{x});
-        return vertex{vertices_.size() - 1};
+        vlist.push_back(vertex_type{x});
+        return vertex{vlist.size() - 1};
       }
 
       // Add an edge to the graph so that u is connected to v, returning a 
       // handle to the added edge. The associated value may be specified.
-      edge add_edge(vertex u, vertex v, edge_value_type const& x = edge_value_type{})
+      edge add_edge(vertex u, vertex v, edge_value_type const& x = {})
       {
-        edges_.push_back(edge_type{u, v, x});
-        edge e = edges_.size() - 1;
+        elist.push_back(edge_type{u, v, x});
+        edge e = elist.size() - 1;
         get(u).add_out(e);
         get(v).add_in(e);
         return e;
@@ -259,12 +257,12 @@ namespace origin
 
     private:
       // Return the vertex object associated with the given handle.
-      vertex_type&       get(vertex v)             { return vertices_[v.value]; }
-      vertex_type const& get(const_vertex v) const { return vertices_[v.value]; }
+      vertex_type&       get(vertex v)             { return vlist[v.value]; }
+      vertex_type const& get(const_vertex v) const { return vlist[v.value]; }
       
       // Return the edge object associated with the given handle.
-      edge_type&       get(edge e)             { return edges_[e.value]; }
-      edge_type const& get(const_edge e) const { return edges_[e.value]; }
+      edge_type&       get(edge e)             { return elist[e.value]; }
+      edge_type const& get(const_edge e) const { return elist[e.value]; }
       
       // Return an iterator to the first vertex
       vertex_iterator begin_vertices()       { return vertex_t{0}; }
@@ -299,8 +297,8 @@ namespace origin
       incident_edge_iterator end_in_edges(vertex v) const { return get(v).in.end(); }
 
     private:
-      vertex_list vertices_;
-      edge_list edges_;
+      vertex_list vlist;
+      edge_list elist;
     };
 
     

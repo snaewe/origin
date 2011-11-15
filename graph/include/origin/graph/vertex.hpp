@@ -13,24 +13,22 @@
 
 namespace origin 
 {
-  /**
-   * The vertex_t type represents an ordinal reference to a vertex in a Graph.
-   * The integral value -1u corresponds to a null vertex.
-   */
+  // The vertex_t type represents an ordinal reference to a vertex in a Graph.
+  // The integral value -1u corresponds to a null vertex.
   class vertex_t
   {
   public:
     typedef std::size_t value_type;
     
     vertex_t()
-      : value{-1ul}
+      : value(-1ul)
     { }
 
     explicit vertex_t(value_type n)
-      : value{n}
+      : value(n)
     { }
 
-    // Equatable
+    // Equality_comparable
     bool operator==(vertex_t x) const { return value == x.value; }
     bool operator!=(vertex_t x) const { return value != x.value; }
 
@@ -41,51 +39,27 @@ namespace origin
 
     // Boolean
     explicit operator bool() const { return value != -1ul; }
+    
+    // Ordinal
+    std::size_t ord() const { return value; }
 
     value_type value;
   };
 
-  /**
-   * Return the ordinal value of the given vertex index.
-   */
-  vertex_t::value_type ord(vertex_t v)
-  {
-    return v.value;
-  }
-} // namespace origin
-
-// FIXME: Is there anything we can do about this short of rewriting our own
-// hash table. Probably not. This is pretty bad, though.
-// Support std::hash<> interoperability.
-namespace std 
-{
-  template<>
-    struct hash<origin::vertex_t>
-    {
-      std::size_t operator()(origin::vertex_t const& v) const
-      { 
-        return std::hash<std::size_t>{}(v.value); 
-      }
-  };
-} // namespace std
-
-namespace origin
-{
-  /**
-   * The vertex iterator implements a random access iterator over a vertex 
-   * index. Dereferencing a vertex iterator yields a vertex_t object.
-   */
+  
+  // The vertex iterator implements a random access iterator over a vertex 
+  // index. Dereferencing a vertex iterator yields a vertex_t object.
   class vertex_iterator
   {
   public:
-    typedef vertex_t value_type;
-    typedef vertex_t const& reference;
-    typedef vertex_t const* pointer;
-    typedef std::ptrdiff_t difference_type;
-    typedef std::random_access_iterator_tag iterator_category;
+    using value_type = vertex_t;
+    using reference = vertex_t const&;
+    using pointer = vertex_t const*;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::random_access_iterator_tag;
 
     vertex_iterator(vertex_t e)
-      : vert{e}
+      : vert(e)
     { }
 
     vertex_t const& operator*() const { return vert; }
@@ -119,7 +93,7 @@ namespace origin
     friend vertex_iterator operator-(vertex_iterator i, difference_type n) { i -= n; return i; }
     
     // Distance
-    friend difference_type operator-(vertex_iterator i, vertex_iterator j) 
+    friend difference_type operator-(vertex_iterator i, vertex_iterator j)
     {
       return i->value - j->value; 
     }
@@ -129,5 +103,21 @@ namespace origin
   };
 
 } // namespace origin
+
+// FIXME: Is there anything we can do about this short of rewriting our own
+// hash table. Probably not. This is pretty bad, though. Support std::hash<> 
+// interoperability.
+namespace std 
+{
+  template<>
+    struct hash<origin::vertex_t>
+    {
+      std::size_t operator()(origin::vertex_t const& v) const
+      {
+        return std::hash<std::size_t>()(v.value); 
+      }
+    };
+} // namespace std
+
 
 #endif
