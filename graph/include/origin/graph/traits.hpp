@@ -291,7 +291,7 @@ namespace origin
         static auto check(X&& x, Y&& y) -> decltype(x[y]);
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>));
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
     };
 
   // An alias for the vertex data type of the graph. Note that the vertex data
@@ -465,14 +465,14 @@ namespace origin
         static auto check(X&& x, Y&& y) -> decltype(x[y]);
       static subst_failure check(...);
     public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>));
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
     };
 
   // An alias for the edge data type of the graph. Note that edge data is
   // neither a reference, nor qualified. It does not depend on the const-ness
   // of G.
   template<typename G>
-    using Edge_data = typename edge_data<G, Edge<G>>::type;
+    using Edge_data = Decay<typename edge_data<G, Edge<G>>::type>;
     
   // Returns true if G has an associated edge data type. 
   template<typename G>
@@ -566,7 +566,7 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Graph_requirements<Has_graph_category<G>(), G>();
+        return Graph_requirements<Has_graph_category<G>(), G>::check();
       }
     };    
     
@@ -636,7 +636,7 @@ namespace origin
   template<typename G>
     constexpr bool Has_out_edges()
     {
-      return Subst_succeeded<G, Out_edge_range<G>>();
+      return Subst_succeeded<Out_edge_range<G>>();
     }
 
     
@@ -684,7 +684,7 @@ namespace origin
   template<typename G>
     constexpr bool Has_in_edges()
     {
-      return Subst_succeeded<G, In_edge_range<G>>();
+      return Subst_succeeded<In_edge_range<G>>();
     }
   
   
@@ -755,8 +755,8 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Has_out_edges<G>() && Range<Out_edge_range<G>>
-            && Has_in_edges<G> && Range<In_edge_range<G>>();
+        return Has_out_edges<G>() && Range<Out_edge_range<G>>()
+            && Has_in_edges<G>() && Range<In_edge_range<G>>();
       }
     };
   
@@ -806,7 +806,7 @@ namespace origin
     {
     private:
       template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(undirected_edges(x, y));
+        static auto check(X&& x, Y&& y) -> decltype(edges(x, y));
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<G>(), std::declval<V>()));
@@ -820,7 +820,7 @@ namespace origin
   template<typename G>
     constexpr bool Has_undirected_edges()
     {
-      return Subst_succeeded<G, Undirected_edge_range<G>>();
+      return Subst_succeeded<Undirected_edge_range<G>>();
     }
 
   // Return the neighbors of v in g, the set of vertices reachable from v's
@@ -979,8 +979,11 @@ namespace origin
   template<typename F, typename G>
     constexpr bool Edge_function()
     {
-      return Graph<G> && Function<F, G, Vertex<G>, Vertex<G>>();
+      return Graph<G>() && Function<F, G, Vertex<G>, Vertex<G>>();
     }
+    
+  template<typename F, typename G>
+    using Edge_function_result = Result_type<F, G, Vertex<G>, Vertex<G>>;
     
   // Returns true if G is an edge data generator. An edge data generator is an 
   // edge function whose result type is convertible to the graph's edge data
@@ -989,7 +992,7 @@ namespace origin
     constexpr bool Edge_data_generator()
     {
       return Edge_function<F, G> 
-          && Convertible<Function<F, G, Vertex<G>, Vertex<G>>, Edge_data<G>>();
+          && Convertible<Edge_function_result<F, G>, Edge_data<G>>();
     }
     
 } // namesapce origin

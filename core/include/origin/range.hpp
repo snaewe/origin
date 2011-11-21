@@ -25,7 +25,6 @@ namespace origin
   //
   // By const-qualifying R, we can differentiate between const and non-const
   // iterators for the range. This is particularly helpful for containers.
-  
 
   // Begin iterator
   // Ranges and containers have begin and end operations that return iterators.
@@ -163,7 +162,6 @@ namespace origin
   template<typename Iter>
     class bounded_range
     {
-      static_assert(Input_iterator<Iter>(), "");
     public:
       using value_type = Value_type<Iter>;
       using iterator = Iter;

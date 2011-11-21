@@ -30,7 +30,7 @@ namespace origin
       static constexpr bool check()
       {
         return Has_dereference<Iter>()
-            && Convertible<Dereference_result<Iter>, Value_type<Iter> const&>();
+            && Convertible<Dereference_result<Iter>, const Value_type<Iter>&>();
       }
     };
   
@@ -45,7 +45,7 @@ namespace origin
       
       static bool test(Iter i)
       {
-        Value_type<Iter> const& x = *i; // NOTE: Not an axiom.
+        const Value_type<Iter>& x = *i; // NOTE: Not an axiom.
         return true;
       }
     };

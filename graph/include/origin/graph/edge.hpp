@@ -166,11 +166,11 @@ namespace origin
       typedef std::random_access_iterator_tag iterator_category;
 
       undirected_edge_iterator()
-        : graph{nullptr}, edge{}
+        : graph(nullptr), edge()
       { }
       
       undirected_edge_iterator(Graph& g, undirected_edge_t e)
-        : graph{&g}, edge{e}
+        : graph(&g), edge(e)
       { }
 
       // Readable
@@ -253,12 +253,15 @@ namespace origin
   //
   // Note that we don't cache the referenced edge, so we dereference a copy.
   // This means that you can't use -> with these iterators.
+  //
+  // NOTE: Do not static assert that G is an undirected graph. Doing so results
+  // in mutually recursive concept checks. G is an undirected graph if it has
+  // this as an iterator. This a valid iterator if F is an undirected graph.
   template<typename G>
     class undirected_incident_edge_iterator
     {
-      static_assert(Undirected_graph<G>(), "");
     public:
-      using vaule_type = undirected_edge_t;
+      using value_type = undirected_edge_t;
       using reference = undirected_edge_t;
       using pointer = undirected_edge_t;
       using difference_type = std::ptrdiff_t;

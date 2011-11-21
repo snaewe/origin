@@ -34,7 +34,7 @@ template<typename G>
 
 // Test for directed graphs
 template<typename G>
-  void test_cycle1_graph(G const& g, std::true_type)
+  Requires<Directed_graph<G>(), void> test_cycle1_graph(const G& g)
   {
     auto v = *begin(vertices(g));
     assert(( out_degree(g, v) == 1 ));
@@ -44,7 +44,7 @@ template<typename G>
 
 // Test for undirected graphs
 template<typename G>
-  void test_cycle1_graph(G const& g, std::false_type)
+  Requires<Undirected_graph<G>(), void> test_cycle1_graph(const G& g)
   {
     auto v = *begin(vertices(g));
     assert(( degree(g, v) == 2 ));
@@ -62,19 +62,19 @@ template<typename G>
     assert(( distance(begin(edges(g)), end(edges(g))) == 1 ));
     
     // Test directed/undirected aspects
-    test_cycle1_graph(g, is_directed_graph<G>{});
+    test_cycle1_graph(g);
   }
 
-
+// FIXME: Implement the testing for path graphs.
 // Test for directed graphs
 template<typename G>
-  void test_path2_graph(G const& g, std::true_type)
+  Requires<Directed_graph<G>(), void> test_path2_graph(const G& g)
   {
   }
 
 // Test for undirected graphs
 template<typename G>
-  void test_path2_graph(G const& g, std::false_type)
+  Requires<Undirected_graph<G>(), void> test_path2_graph(const G& g)
   {
   }
 
@@ -84,7 +84,7 @@ template<typename G>
     G g = iota_path_graph<G>({'a', 'b'}, 0);
     assert(( order(g) == 2 )) ;
     assert(( size(g) == 1 ));
-    test_path2_graph(g, is_directed_graph<G>{});
+    test_path2_graph(g);
   }
 
 template<typename G>
@@ -98,9 +98,9 @@ template<typename G>
   
 int main()
 {
-//   typedef undirected_adjacency_list<char, int> Graph;
-//   test<Graph>();
+  using Graph = undirected_adjacency_list<char, int>;
+  test<Graph>();
 
-typedef directed_adjacency_list<char, int> Digraph;
+  using Digraph = directed_adjacency_list<char, int>;
   test<Digraph>();
 }

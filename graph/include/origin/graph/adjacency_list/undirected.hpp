@@ -24,118 +24,121 @@ namespace origin
       using base_type = directed_adjacency_list<Vertex, Edge, Alloc>;
       using this_type = undirected_adjacency_list<Vertex, Edge, Alloc>;
     public:
-      typedef typename base_type::vertex_allocator_type vertex_allocator_type;
-      typedef typename base_type::edge_allocator_type   edge_allocator_type;
+      using vertex_allocator_type = typename base_type::vertex_allocator_type;
+      using edge_allocator_type   = typename base_type::edge_allocator_type;
 
-      typedef typename base_type::size_type       size_type;
-      typedef typename base_type::difference_type difference_type;
+      using size_type       = typename base_type::size_type;
+      using difference_type = typename base_type::difference_type;
       
-      typedef Vertex vertex_value_type;
-      typedef Edge   edge_value_type;
+      using vertex_value_type = Vertex;
+      using edge_value_type   = Edge;
       
-      typedef vertex_t vertex;
-      typedef vertex_t const_vertex;
+      using vertex       = vertex_t;
+      using const_vertex = vertex_t;
       
-      typedef undirected_edge_t edge;
-      typedef undirected_edge_t const_edge;
-    private:
-      typedef undirected_edge_iterator<this_type> edge_iterator;
-      typedef undirected_edge_iterator<this_type const> const_edge_iterator;
-      
-      typedef undirected_incident_edge_iterator<this_type> incident_edge_iterator;
-      typedef undirected_incident_edge_iterator<this_type const> const_incident_edge_iterator;
+      using edge       = undirected_edge_t;
+      using const_edge = undirected_edge_t;
+    // private:
+      // These are used to shorten subsequent declarations.
+      using edge_iterator       = undirected_edge_iterator<this_type>;
+      using const_edge_iterator = undirected_edge_iterator<const this_type>;
+      using incident_edge_iterator       = undirected_incident_edge_iterator<this_type>;
+      using const_incident_edge_iterator = undirected_incident_edge_iterator<const this_type>;
     public:
-      typedef bounded_range<vertex_iterator> vertex_range;
-      typedef bounded_range<vertex_iterator> const_vertex_range;
-      
-      typedef bounded_range<edge_iterator>       edge_range;
-      typedef bounded_range<const_edge_iterator> const_edge_range;
-      
-      typedef bounded_range<incident_edge_iterator>       incident_edge_range;
-      typedef bounded_range<const_incident_edge_iterator> const_incident_edge_range;
+      using vertex_range       = bounded_range<vertex_iterator>;
+      using const_vertex_range = bounded_range<vertex_iterator>;
+      using edge_range       = bounded_range<edge_iterator>;
+      using const_edge_range = bounded_range<const_edge_iterator>;
+      using incident_edge_range       = bounded_range<incident_edge_iterator>;
+      using const_incident_edge_range = bounded_range<const_incident_edge_iterator>;
       
       struct graph_category : undirected_graph_tag, buildable_graph_tag { };
 
       // Initialization
       
       // Semiregular
-      // Copy and move constructors and assignment operators are generated.
+      // NOTE: Copy and move constructors and assignment operators are generated.
       undirected_adjacency_list()
-        : base_{}
+        : base()
       { }
 
-      undirected_adjacency_list(size_type n, vertex_value_type const& value = vertex_value_type{})
-        : base_(n, value)
+      undirected_adjacency_list(size_type n, vertex_value_type const& value = {})
+        : base(n, value)
       { }
 
+      // Vertex range initialization
+      // FIXME: Specialize for edge-list initialization.
       template<typename Iter>
         undirected_adjacency_list(Iter first, Iter last)
-          : base_(first, last)
+          : base(first, last)
         { }
         
+      // Vertex list initialization
       undirected_adjacency_list(std::initializer_list<vertex_value_type> list)
-        : base_(list)
+        : base(list)
       { }
+      
+      // FIXME: Write more constructors.
 
       // Container properties
       
       // Return the maximum number of vertices possible for the graph.
-      constexpr size_type max_order() const { return base_.max_order(); }
+      constexpr size_type max_order() const { return base.max_order(); }
 
       // Return the maximum number of edges possible for the graph.
-      constexpr size_type max_size() const  { return base_.max_size(); }
+      constexpr size_type max_size() const  { return base.max_size(); }
       
       // Return the graph's vertex allocator.
-      vertex_allocator_type get_vertex_allocator() const { return base_.get_vertex_allocator(); }
+      vertex_allocator_type get_vertex_allocator() const { return base.get_vertex_allocator(); }
 
       // Return the graph's edge allocator.
-      edge_allocator_type get_edge_allocator() const { return base_.get_edge_allocator(); }
+      edge_allocator_type get_edge_allocator() const { return base.get_edge_allocator(); }
 
       // Return the underlying directed graph.
-      base_type&        base()       { return base_; }
-      base_type const&  base() const { return base_; } 
+      base_type&        impl()       { return base; }
+      base_type const&  impl() const { return base; } 
 
       // Graph properties
       
       // Return true if the graph has no vertices.
-      bool null() const { return base_.null(); }
+      bool null() const { return base.null(); }
 
       // Return the number of vertices in the graph.
-      size_type order() const{ return base_.order(); }
+      size_type order() const{ return base.order(); }
       
       // Return true if the graph has no edges.
-      bool empty() const { return base_.empty(); }
+      bool empty() const { return base.empty(); }
 
       // Return the number of edges in the graph.
-      size_type size() const { return base_.size(); }
+      size_type size() const { return base.size(); }
 
       // Return the value associated with the vertex v.
-      vertex_value_type&       operator[](vertex v)       { return base_[v]; }
-      vertex_value_type const& operator[](vertex v) const { return base_[v]; }
+      vertex_value_type&       operator[](vertex v)       { return base[v]; }
+      vertex_value_type const& operator[](vertex v) const { return base[v]; }
 
       // Return the value associated with the edge e.
-      edge_value_type&       operator[](edge e)       { return base_[e.edge]; }
-      edge_value_type const& operator[](edge e) const { return base_[e.edge]; }
+      edge_value_type&       operator[](edge e)       { return base[e.edge]; }
+      edge_value_type const& operator[](edge e) const { return base[e.edge]; }
       
       // Get the nth vertex in the graph.
       vertex       get_vertex(size_type n)       { return n; }
       const_vertex get_vertex(size_type n) const { return n; }
     
       // Return the degree of the the vertex v, the number of incident edges.
-      size_type degree(vertex v) const { return base_.degree(v); }
+      size_type degree(vertex v) const { return base.degree(v); }
 
       // Get the nth edge in the graph.
       edge       get_edge(size_type n)       { return make_edge(edge_t{n}); }
       const_edge get_edge(size_type n) const { return make_edge(edge_t{n}); }
 
+      // Get the edge connecting the vertices u and v.
+      edge       get_edge(vertex u, vertex v);
+      const_edge get_edge(vertex u, vertex v) const;
+      
       // Get the nth incident edge of vertex v.
       edge       get_incident_edge(vertex v, size_type n);
       const_edge get_incident_edge(vertex v, size_type n) const;
-          
-      // Get the edge connecting the vertices u and v.
-      edge get_edge(vertex u, vertex v);
-      const_edge get_edge(vertex u, vertex v) const;
-      
+
       // Get the source vertex of the edge e.
       vertex       source(edge e)       { return e.source; } 
       const_vertex source(edge e) const { return e.source; }
@@ -153,26 +156,26 @@ namespace origin
       // Ranges 
       
       // Return the range of vertices in the graph.
-      vertex_range       vertices()       { return base_.vertices(); }
-      const_vertex_range vertices() const { return base_.vertices(); }
+      vertex_range       vertices()       { return base.vertices(); }
+      const_vertex_range vertices() const { return base.vertices(); }
 
       // Return the range of all edges in the graph.
       edge_range       edges()       { return {begin_edges(), end_edges()}; }
       const_edge_range edges() const { return {begin_edges(), end_edges()}; }
 
       // REturn the range of edges incident to the vertex v.
-      incident_edge_range       incident_edges(vertex v);
-      const_incident_edge_range incident_edges(vertex v) const;
+      incident_edge_range       edges(vertex v);
+      const_incident_edge_range edges(vertex v) const;
 
     private:
       // Create an undirected edge using the underlying edge and source vertex.
-      edge       make_edge(edge_t e, vertex_t v)       { return {e, v, base_.target(e)}; }
-      const_edge make_edge(edge_t e, vertex_t v) const { return {e, v, base_.target(e)}; }
+      edge       make_edge(edge_t e, vertex_t v)       { return {e, v, base.target(e)}; }
+      const_edge make_edge(edge_t e, vertex_t v) const { return {e, v, base.target(e)}; }
 
       // Create an undirected edge over the underlying edge type. Use underlying
       // source of the edge as the source vertex.
-      edge       make_edge(edge_t e)       { return make_edge(e, base_.source(e)); }
-      const_edge make_edge(edge_t e) const { return make_edge(e, base_.source(e)); }
+      edge       make_edge(edge_t e)       { return make_edge(e, base.source(e)); }
+      const_edge make_edge(edge_t e) const { return make_edge(e, base.source(e)); }
 
       edge_iterator       begin_edges()       { return {*this, get_edge(0)}; }
       const_edge_iterator begin_edges() const { return {*this, get_edge(0)}; }
@@ -186,7 +189,7 @@ namespace origin
       incident_edge_iterator       end_incident_edges(vertex v)       { return {*this, v, degree(v)}; }
       const_incident_edge_iterator end_incident_edges(vertex v) const { return {*this, v, degree(v)}; }
     private:
-      base_type base_;
+      base_type base;
     };
 
   // FIXME: I think that this might be optimized by searching the vertex
@@ -195,16 +198,16 @@ namespace origin
     auto undirected_adjacency_list<V, E, A>::
       get_edge(vertex u, vertex v) -> edge
       {
-        typename base_type::edge e = base_.get_edge(u, v);
-        return e ? make_edge(e, u) : make_edge(base_.get_edge(v, u), v);
+        typename base_type::edge e = base.get_edge(u, v);
+        return e ? make_edge(e, u) : make_edge(base.get_edge(v, u), v);
       }
     
   template<typename V, typename E, typename A>
     auto undirected_adjacency_list<V, E, A>::
       get_edge(vertex u, vertex v) const -> const_edge
       {
-        typename base_type::edge e = base_.get_edge(u, v);
-        return e ? make_edge(e, u) : make_edge(base_.get_edge(v, u), v);
+        typename base_type::edge e = base.get_edge(u, v);
+        return e ? make_edge(e, u) : make_edge(base.get_edge(v, u), v);
       }
 
 
@@ -212,8 +215,8 @@ namespace origin
     auto undirected_adjacency_list<V, E, A>::
       get_incident_edge(vertex v, size_type n) -> edge
       {
-        size_type d = base_.out_degree(v);
-        edge_t e = n < d ? base_.get_out_edge(v, n) : base_.get_in_edge(v, n - d);
+        size_type d = base.out_degree(v);
+        edge_t e = n < d ? base.get_out_edge(v, n) : base.get_in_edge(v, n - d);
         return {e, v, target(make_edge(e, v))};
       }
 
@@ -221,36 +224,35 @@ namespace origin
     auto undirected_adjacency_list<V, E, A>::
       get_incident_edge(vertex v, size_type n) const -> const_edge
       {
-        size_type d = base_.out_degree(v);
-        edge_t e = n < d ? base_.get_out_edge(v, n) : base_.get_in_edge(v, n - d);
+        size_type d = base.out_degree(v);
+        edge_t e = n < d ? base.get_out_edge(v, n) : base.get_in_edge(v, n - d);
         return {e, v, target(make_edge(e, v))};
       }
 
-
   template<typename V, typename E, typename A>
-    auto undirected_adjacency_list<V, E, A>::
+    inline auto undirected_adjacency_list<V, E, A>::
       add_vertex(vertex_value_type const& x) -> vertex
       { 
-        return base_.add_vertex(x);
+        return base.add_vertex(x);
       }
 
   template<typename V, typename E, typename A>
-    auto undirected_adjacency_list<V, E, A>::
+    inline auto undirected_adjacency_list<V, E, A>::
       add_edge(vertex u, vertex v, edge_value_type const& x) -> edge
       {
-        return make_edge(base_.add_edge(u, v, x), u); 
+        return make_edge(base.add_edge(u, v, x), u); 
       }
 
   template<typename V, typename E, typename A>
-    auto undirected_adjacency_list<V, E, A>::
-      incident_edges(vertex v) -> incident_edge_range
+    inline auto undirected_adjacency_list<V, E, A>::
+      edges(vertex v) -> incident_edge_range
       {
         return {begin_incident_edges(v), end_incident_edges(v)};
       }
 
   template<typename V, typename E, typename A>
-    auto undirected_adjacency_list<V, E, A>::
-      incident_edges(vertex v) const -> const_incident_edge_range
+    inline auto undirected_adjacency_list<V, E, A>::
+      edges(vertex v) const -> const_incident_edge_range
       {
         return {begin_incident_edges(v), end_incident_edges(v)};
       }

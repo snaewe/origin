@@ -109,18 +109,18 @@ namespace origin
       struct graph_category : directed_graph_tag, buildable_graph_tag { };
       
       // Semiregular
-      // Copy and move constructors and assignment operators are generated.
+      // NOTE: Copy and move constructors and assignment operators are generated.
       directed_adjacency_list()
         : vlist(), elist()
       { }
       
-      // Vertex fill constructor
+      // Vertex fill initialization
       directed_adjacency_list(size_type n, vertex_value_type const& x = {})
         : vlist(n, x), elist()
       { }
 
-      // Vertex range constructor
-      // TODO: Specialize for ranges of edge pairs and edge tuples
+      // Vertex range initialization
+      // FIXME: Specialize edge-list initialization
       template<typename Iter>
         directed_adjacency_list(Iter first, Iter last)
           : vlist(), elist()
@@ -130,7 +130,7 @@ namespace origin
             ++first;
           }
         }
-        
+
       // Vertex list initialization
       directed_adjacency_list(std::initializer_list<vertex_value_type> list)
         : vlist(), elist()
@@ -139,7 +139,7 @@ namespace origin
           add_vertex(x);
       }
       
-      // TODO: Generalize for edge tuples
+      // FIXME: Generalize for edge tuples
       directed_adjacency_list(std::initializer_list<std::pair<vertex_value_type, vertex_value_type>> list)
         : vlist{}, elist{}
       {

@@ -25,8 +25,8 @@ namespace origin
   // requires Unique_map<Vertex<G>, T> && Convertible<T, Vertex_data<G>>
   //
   // TODO: Move to traits?
-  template<typename G, typename Map, typename T>
-    Vertex<G> add_labeled_vertex(G& g, Map& map, Vertex_data<G> const& value)
+  template<typename G, typename Map>
+    Vertex<G> add_labeled_vertex(G& g, Map& map, const Vertex_data<G>& value)
     {
       static_assert(Graph<G>(), "");
       
@@ -40,7 +40,7 @@ namespace origin
   
   // Return the edge label from the edge tuple t.
   template<typename G, typename Tuple>
-    inline auto edge_label_from_tuple(G const& g, Tuple const& t) 
+    inline auto edge_label_from_tuple(const G& g, const Tuple& t) 
       -> decltype(std::get<2>(t))
     {
       static_assert(Graph<G>(), "");
@@ -51,7 +51,7 @@ namespace origin
   // Return the default edge label when given an edge pair. 
   template<typename G>
     inline Edge_data<G>
-    edge_from_tuple(G const& g, std::pair<Vertex<G const>, Vertex<G const>> const& p)
+    edge_from_tuple(const G& g, std::pair<Vertex<const G>, Vertex<const G>> const& p)
     {
       static_assert(Graph<G>(), "");
       static_assert(Default_constructible<Edge_data<G>>(), "");
@@ -70,7 +70,7 @@ namespace origin
       static_assert(Default_constructible<Edge_data<G>>(), "");
 
       while(first != last) {
-        auto const& t = *first;
+        const auto& t = *first;
         Vertex<G> u = add_labeled_vertex(g, map, std::get<0>(t));
         Vertex<G> v = add_labeled_vertex(g, map, std::get<1>(t));
         add_edge(g, u, v, edge_from_tuple(g, t));
@@ -216,8 +216,8 @@ namespace origin
   //
   // requires VertexInitializedGraph<G>
   //
-  template<typename G, typename V>
-    inline G make_trivial_graph(Vertex_data<G> const& value)
+  template<typename G>
+    inline G make_trivial_graph(const Vertex_data<G>& value)
     {
       // Kind of tricky, but &x and &x+1 define a range of 1 element.
       G g(&value, &value + 1);
@@ -245,7 +245,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Edge_function<F, G>(), "");
+      static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
       Vertex<G> u = *first++;
@@ -438,7 +438,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Edge_function<F, G>(), "");
+      static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
       Vertex<G> u = *first++;
@@ -585,6 +585,7 @@ namespace origin
                              std::initializer_list<E> list2)
     {
       assert(( list1.size() == list2.size() ));
+
       return std::move(make_cycle_graph<G>(list1.begin(), list1.end(), list2.begin()));
     }
 
@@ -614,6 +615,7 @@ namespace origin
     inline G iota_cycle_graph(std::initializer_list<V> list, Num num)
     {
       assert(( list.size() != 0 ));
+
       return std::move(iota_cycle_graph<G>(list.begin(), list.end(), num));
     }
 
@@ -633,8 +635,8 @@ namespace origin
   // A complete directed graph has n^2 edges.
   //
   // Another common interpretation of complete digraphs is that loops are not
-  // included. Such graphs would have n^2 - n edges. This definition is the same
-  // as that given on the Wolfram site.
+  // included. Such graphs would have n^2 - n edges. This definition is the 
+  // same as that given on the Wolfram site.
   //
   // FIXME: Rethink the design of complete digraphs. If we choose Knuth, we're
   // consistent with the adjacency matrix representations. If we choose the
@@ -649,7 +651,7 @@ namespace origin
   // requires Graph<G> && ForwardIterator<Iter> && EdgeFunction<F, G>.
   template<typename G, typename Iter, typename F>
     auto for_clique(G& g, Iter first, Iter last, F f)
-      -> typename std::enable_if<is_undirected_graph<G>::value, F>::type
+      -> Requires<Undirected_graph<G>(), F>
     {
       for( ; first != last; ++first) {
         for(Iter i = std::next(first); i != last; ++i) {
@@ -664,7 +666,7 @@ namespace origin
   // graph generator.
   template<typename G, typename Iter, typename F>
     auto for_clique(G& g, Iter first, Iter last, F f)
-      -> typename std::enable_if<is_directed_graph<G>::value, F>::type
+      -> Requires<Directed_graph<G>, F>
     {
       for(Iter i = first ; i != last; ++i) {
         for(Iter j = first; j != last; ++j)
@@ -709,9 +711,11 @@ namespace origin
   // requires: Graph<G>
   // precondition: n >= 0
   template<typename G>
-    G make_complete_graph(typename graph_traits<G>::size_type n)
+    G make_complete_graph(Size_type<G> n)
     {
+      static_assert(Graph<G>(), "");
       assert(( n >= 0 ));
+      
       G g(n);
       make_clique(g, begin(vertices(g)), end(verices(g)));
       return std::move(g);
@@ -721,10 +725,11 @@ namespace origin
   // Vertex labels are default initialized and edge labels are assigned
   // consecutive values from the weak range [|first, n|).
   template<typename G, typename Iter>
-    G make_complete_graph(typename graph_traits<G>::size_type n, Iter first)
+    G make_complete_graph(Size_type<G> n, Iter first)
     {
-      // assert((  ));
+      static_assert(Graph<G>(), "");
       assert(( n >= 0 ));
+
       G g(n);
       make_clique(g, std::begin(vertices(g)), std::end(verices(g)), first);
       return std::move(g);
@@ -735,6 +740,7 @@ namespace origin
   template<typename G, typename Iter>
     G make_complete_graph(Iter first, Iter last)
     {
+      static_assert(Graph<G>(), "");
       assert(( first != last ));
 
       G g(first, last);
@@ -748,6 +754,7 @@ namespace origin
   template<typename G, typename Iter1, typename Iter2>
     G make_complete_graph(Iter1 first1, Iter1 last1, Iter2 first2)
     {
+      static_assert(Graph<G>(), "");
       assert(( first1 != last1 ));
 
       G g(first1, last1);
@@ -758,7 +765,9 @@ namespace origin
   template<typename G, typename V>
     G make_complete_graph(std::initializer_list<V> list)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() != 0 ));
+      
       return std::move(make_complete_graph<G>(list.begin(), list.end()));
     }
 
@@ -766,6 +775,7 @@ namespace origin
     G make_complete_graph(std::initializer_list<V> list1,
                           std::initializer_list<E> list2)
     {
+      static_assert(Graph<G>(), "");
       assert(( list1.size() != 0 ));
       // assert(( list2.size() == binomial_coefficient(list1.size(), 2) ));
 
@@ -775,8 +785,9 @@ namespace origin
   // TODO: Add overloads for fill/generate path graph.
 
   template<typename G, typename Num>
-    inline G iota_complete_graph(typename G::size_type n, Num num)
+    inline G iota_complete_graph(Size_type<G> n, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( n != 0 ));
       
       G g(n);
@@ -787,6 +798,7 @@ namespace origin
   template<typename G, typename Iter, typename Num>
     inline G iota_complete_graph(Iter first, Iter last, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( first != last ));
       
       G g(first, last);
@@ -797,7 +809,9 @@ namespace origin
   template<typename G, typename V, typename Num>
     inline G iota_complete_graph(std::initializer_list<V> list, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() != 0 ));
+      
       return std::move(iota_complete_graph<G>(list.begin(), list.end(), num));
     }
 
@@ -816,13 +830,13 @@ namespace origin
   template<typename G, typename Iter, typename F>
     F for_star(G& g, Iter first, Iter last, F f)
     {
-      typedef typename graph_traits<G>::vertex Vertex;
-      // assert(( readable_bounded_range(first, last) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first, last) ));
       assert(( first != last ));
       
-      Vertex u = *first++;
+      Vertex<G> u = *first++;
       while(first != last) {
-        Vertex v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
       }
       return f;
@@ -837,38 +851,44 @@ namespace origin
   template<typename G, typename Iter>
     void make_star(G& g, Iter first, Iter last) 
     {
-      for_star(g, first, last, make_edge<G>{});
+      static_assert(Graph<G>(), "");
+      for_star(g, first, last, make_edge<G>());
     }
     
   template<typename G, typename Iter1, typename Iter2>
     void make_star(G& g, Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      for_star(g, first1, last1, copy_edge<G, Iter2>{first2});
+      static_assert(Graph<G>(), "");
+      for_star(g, first1, last1, copy_edge<G, Iter2>(first2));
     }
 
-  template<typename G, typename Iter, typename T>
-    void fill_star(G& g, Iter first, Iter last, T const& value)
+  template<typename G, typename Iter>
+    void fill_star(G& g, Iter first, Iter last, const Edge_data<G>& value)
     {
-      for_star(g, first, last, fill_edge<G, T>{value});
+      static_assert(Graph<G>(), "");
+      for_star(g, first, last, fill_edge<G>(value));
     }
     
   template<typename G, typename Iter, typename Gen>
     void generate_star(G& g, Iter first, Iter last, Gen gen)
     {
+      static_assert(Graph<G>(), "");
       for_star(g, first, last, generate_edge<G, Gen>{gen});
     }
     
   template<typename G, typename Iter, typename Num>
     void iota_star(G& g, Iter first, Iter last, Num num)
     {
-      for_star(g, first, last, iota_edge<G, Num>{num});
+      static_assert(Graph<G>(), "");
+      for_star(g, first, last, iota_edge<G, Num>(num));
     }
 
   // Make a star graph with n vertices and n - 1 edges. Vertex and edge labels
   // are default initialized.
   template<typename G>
-    G make_star_graph(typename graph_traits<G>::size_type n)
+    G make_star_graph(Size_type<G> n)
     {
+      static_assert(Graph<G>(), "");
       assert(( n != 0 ));
 
       G g(n);
@@ -877,9 +897,10 @@ namespace origin
     }
 
   template<typename G, typename Iter>
-    G make_star_graph(typename graph_traits<G>::size_type n, Iter first)
+    G make_star_graph(Size_type<G> n, Iter first)
     {
-      // assert(( readable_weak_range(first, n) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first, n) ));
       assert(( n != 0 ));
 
       G g(n);
@@ -890,7 +911,8 @@ namespace origin
   template<typename G, typename Iter>
     G make_star_graph(Iter first, Iter last)
     {
-      // assert(( readable_bounded_range(first, last) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first, last) ));
       assert(( first != last ));
 
       G g(first, last);
@@ -901,7 +923,8 @@ namespace origin
   template<typename G, typename Iter1, typename Iter2>
     G make_star_graph(Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      // assert(( readable_bounded_range(first1, last1) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first1, last1) ));
       // assert(( readable_weak_range(first2, last1 - first1) ));
       assert(( first1 != last1 ));
       
@@ -913,6 +936,7 @@ namespace origin
   template<typename G, typename V>
     G make_star_graph(std::initializer_list<V> list)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() != 0 ));
 
       return std::move(make_star_graph<G>(list.begin(), list.end()));
@@ -921,6 +945,7 @@ namespace origin
   template<typename G, typename V, typename E>
     G make_star_graph(std::initializer_list<V> list1, std::initializer_list<E> list2)
     {
+      static_assert(Graph<G>(), "");
       assert(( list1.size() != 0 ));
       assert(( list2.size() == list1.size() - 1 ));
 
@@ -930,8 +955,9 @@ namespace origin
   // TODO: Write fill/generate overloads.
 
   template<typename G, typename Num>
-    inline G iota_star_graph(typename G::size_type n, Num num)
+    inline G iota_star_graph(Size_type<G> n, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( n != 0 ));
       
       G g(n);
@@ -942,6 +968,7 @@ namespace origin
   template<typename G, typename Iter, typename Num>
     inline G iota_star_graph(Iter first, Iter last, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( first != last ));
       
       G g(first, last);
@@ -952,7 +979,9 @@ namespace origin
   template<typename G, typename V, typename Num>
     inline G iota_star_graph(std::initializer_list<V> list, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() != 0 ));
+
       return std::move(iota_star_graph<G>(list.begin(), list.end(), num));
     }
 
@@ -961,8 +990,10 @@ namespace origin
   // and 2(n - 1) vertices.
 
   template<typename G, typename Iter, typename F>
-    F for_wheel(G& g, Iter first, Iter last, F f)
+    inline F for_wheel(G& g, Iter first, Iter last, F f)
     {
+      static_assert(Graph<G>(), "");
+
       for_star(g, first, last, f);
       for_cycle(g, std::next(first), last, f);
       return f;
@@ -975,36 +1006,42 @@ namespace origin
   template<typename G, typename Iter>
     void make_wheel(G& g, Iter first, Iter last)
     {
-      for_wheel(g, first, last, make_edge<G>{});
+      static_assert(Graph<G>(), "");
+      for_wheel(g, first, last, make_edge<G>());
     }
     
   template<typename G, typename Iter1, typename Iter2>
     void make_wheel(G& g, Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      for_wheel(g, first1, last1, copy_edge<G, Iter2>{first2});
+      static_assert(Graph<G>(), "");
+      for_wheel(g, first1, last1, copy_edge<G, Iter2>(first2));
     }
     
-  template<typename G, typename Iter, typename T>
-    void fill_wheel(G& g, Iter first, Iter last, T const& value)
+  template<typename G, typename Iter>
+    void fill_wheel(G& g, Iter first, Iter last, const Edge_data<G>& value)
     {
-      for_wheel(g, first, last, fill_edge<G, T>{value});
+      static_assert(Graph<G>(), "");
+      for_wheel(g, first, last, fill_edge<G>(value));
     }
     
   template<typename G, typename Iter, typename Gen>
     void generate_wheel(G& g, Iter first, Iter last, Gen gen)
     {
-      for_wheel(g, first, last, generate_edge<G, Gen>{gen});
+      static_assert(Graph<G>(), "");
+      for_wheel(g, first, last, generate_edge<G, Gen>(gen));
     }
     
   template<typename G, typename Iter, typename Num>
     void iota_wheel(G& g, Iter first, Iter last, Num num)
     {
-      for_wheel(g, first, last, iota_edge<G, Num>{num});
+      static_assert(Graph<G>(), "");
+      for_wheel(g, first, last, iota_edge<G, Num>(num));
     }
 
   template<typename G>
-    G make_wheel_graph(typename graph_traits<G>::size_type n)
+    G make_wheel_graph(Size_type<G> n)
     {
+      static_assert(Graph<G>(), "");
       assert(( n >= 4 ));
 
       G g(n);
@@ -1013,9 +1050,10 @@ namespace origin
     }
 
   template<typename G, typename Iter>
-    G make_wheel_graph(typename graph_traits<G>::size_type n, Iter first)
+    G make_wheel_graph(Size_type<G> n, Iter first)
     {
-      // assert(( readable_weak_range(first, 2 * (n - 1)) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first, 2 * (n - 1)) ));
       assert(( n >= 4 ));
 
       G g(n);
@@ -1026,7 +1064,8 @@ namespace origin
   template<typename G, typename Iter>
     G make_wheel_graph(Iter first, Iter last)
     {
-      // assert(( readable_bounded_range(first, last) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first, last) ));
       // assert(( last - first >= 4 ));
 
       G g(first, last);
@@ -1037,7 +1076,8 @@ namespace origin
   template<typename G, typename Iter1, typename Iter2>
     G make_wheel_graph(Iter1 first1, Iter1 last1, Iter2 first2)
     {
-      // assert(( readable_bounded_range(first1, last1) ));
+      static_assert(Graph<G>(), "");
+      assert(( readable_range(first1, last1) ));
       // assert(( readable_weak_range(first2, 2 * (last1 - first1 - 1) ));
       // assert(( last - first >= 4 ));
 
@@ -1049,6 +1089,7 @@ namespace origin
   template<typename G, typename V>
     G make_wheel_graph(std::initializer_list<V> list)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() >= 4 ));
 
       return std::move(make_wheel_graph<G>(list.begin(), list.end()));
@@ -1057,6 +1098,7 @@ namespace origin
   template<typename G, typename V, typename E>
     G make_wheel_graph(std::initializer_list<V> list1, std::initializer_list<E> list2)
     {
+      static_assert(Graph<G>(), "");
       assert(( list1.size() >= 4 ));
       assert(( list2.size() == 2 * (list1.size() - 1) ));
 
@@ -1066,8 +1108,9 @@ namespace origin
   // TODO: Write fill/generate overloads
 
   template<typename G, typename Num>
-    inline G iota_wheel_graph(typename G::size_type n, Num num)
+    inline G iota_wheel_graph(Size_type<G> n, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( n != 0 ));
       
       G g(n);
@@ -1078,6 +1121,7 @@ namespace origin
   template<typename G, typename Iter, typename Num>
     inline G iota_wheel_graph(Iter first, Iter last, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( first != last ));
       
       G g(first, last);
@@ -1088,6 +1132,7 @@ namespace origin
   template<typename G, typename V, typename Num>
     inline G iota_wheel_graph(std::initializer_list<V> list, Num num)
     {
+      static_assert(Graph<G>(), "");
       assert(( list.size() != 0 ));
 
       return std::move(iota_wheel_graph<G>(list.begin(), list.end(), num));
