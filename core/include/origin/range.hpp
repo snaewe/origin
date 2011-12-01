@@ -25,6 +25,7 @@ namespace origin
   //
   // By const-qualifying R, we can differentiate between const and non-const
   // iterators for the range. This is particularly helpful for containers.
+  
 
   // Begin iterator
   // Ranges and containers have begin and end operations that return iterators.
@@ -157,11 +158,13 @@ namespace origin
   // as the Boost iterator_range, or pair<Iter, Iter> with appropriate
   // overloads.
   //
-  // requires: Input_iterator<Iter>
+  // requires: Weakly_incrementable<Iter> && Equality_comparable<Iter>
   // invariant: bounded_range(this->first, this->last);
   template<typename Iter>
     class bounded_range
     {
+      static_assert(Weakly_incrementable<Iter>(), "");
+      static_assert(Equality_comparable<Iter>(), "");
     public:
       using value_type = Value_type<Iter>;
       using iterator = Iter;
@@ -198,6 +201,7 @@ namespace origin
     class wrapped_bounded_range
     {
       static_assert(Weakly_incrementable<Iter>(), "");
+      static_assert(Equality_comparable<Iter>(), "");
     public:
       using iterator = range_iterator<Iter>;
       using value_type = Value_type<iterator>;
@@ -245,7 +249,6 @@ namespace origin
     {
       return {first, std::next(last)};
     }
-    
     
 } // namespace origin
 
