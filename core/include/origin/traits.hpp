@@ -92,6 +92,16 @@ namespace origin
   // The Common predicate is true if T and U share a common type.
   template<typename T, typename U>
     constexpr bool Common() { return Subst_succeeded<Common_type<T, U>>(); }
+
+  // Return a value that has the common type of its function arguments. Like
+  // declval, this is only intended to be used in un-evaluated contexts.
+  template<typename T, typename U>
+    Common_type<T, U> commonval(T&& a, U&& b)
+    {
+      return std::declval<Common_type<T, U>>();
+    }
+
+    
     
   // Returns true if T is convertible to U.
   template<typename T, typename U>

@@ -15,5 +15,5 @@ using namespace origin;
 
 int main()
 {
-  // FIXME: Write checks against standard type traits.
+  // FIXME: Write tests.
 }

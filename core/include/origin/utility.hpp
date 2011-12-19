@@ -45,6 +45,13 @@ namespace origin
     { 
       return is; 
     }
+    
+    
+  template<typename T>
+    constexpr bool lazy_false()
+    {
+      return false;
+    }
 
 } // namespace origin
 

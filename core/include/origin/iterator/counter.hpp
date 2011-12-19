@@ -10,8 +10,6 @@
 
 #include <iterator>
 
-#include <origin/iterator/facades.hpp>
-
 namespace origin
 {
   // FIXME: Is int really the best type for the count? It's certainly the
@@ -20,83 +18,67 @@ namespace origin
   // but I can't easily do the same for the accessor function, which is really
   // too bad. I'm not so sure that it's really worth the effort.
 
-  /**
-   * @ingroup iter
-   *
-   * A counter is an integral value masquerading as a random access iterator.
-   * When dereferenced, counters simply return the current value.
-   *
-   * The counter is parameterized over its underlying count type and a
-   * statically defined step value, which defaults to 1. If the step is
-   * negative, then the counter will decrement.
-   *
-   * Note that if the step is not 1 or -1, care must be taken with comparisons
-   * against PTE iterators. Use < or > for comparisons in those cases.
-   *
-   * @tparam Count  An Integral type
-   * @tparam Step   A step value
-   */
+  // A counter is an integral value masquerading as a random access iterator.
+  // When dereferenced, counters simply return the current value.
+  //
+  // The counter is parameterized over its underlying count type and a
+  // statically defined step value, which defaults to 1. If the step is
+  // negative, then the counter will decrement.
+  //
+  // Note that if the step is not 1 or -1, care must be taken with comparisons
+  // against iterators. Use < or > for comparisons in those cases.
   template<typename Count, int Step = 1>
-  class counter
-    : public random_access_iterator_facade<
-        counter<Count, Step>,
-        Count,                                  // value type
-        Count const&,                           // reference
-        Count const*,                           // pointer
-        typename std::make_signed<Count>::type  // difference
-      >
-  {
-    static_assert(Step != 0, "Step cannot be 0");
-    typedef random_access_iterator_facade<
-        counter<Count>, Count, Count const&, Count const*,
-        typename std::make_signed<Count>::type
-    > base_type;
-  public:
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::reference reference;
-    typedef typename base_type::difference_type difference_type;
-
-    counter(value_type n = 0)
-      : count_{n}
-    { }
-
-    // Return the step increment step.
-    static constexpr difference_type step()
-    { return Step; }
-
-    reference dereference() const
-    { return count_; }
-
-    bool equal(counter const& x) const
-    { return count_ == x.count_; }
-
-    bool less(counter const& x) const
-    { return count_ < x.count_; }
-
-    void increment()
-    { count_ += Step; }
-
-    void decrement()
-    { count_ -= Step; }
-
-    void advance(difference_type n)
-    { count_ += n * Step; }
-
-    difference_type distance(counter const& x)
+    class counter 
     {
-      return distance(count_, x.count_, bool_constant<(Step > 0)>{});
-    }
+      static_assert(Integral<Count>(), "");
+      static_assert(Step != 0, "");
+    public:
+      using value_type = Count;
+      using reference = const Count&;
+      using pointer = const Count*;
+      using Make_signed
 
-  private:
-    static difference_type distance(value_type x, value_type y, std::true_type)
-    { return (x - y) / Step; }
+      counter(value_type n = 0)
+        : count_{n}
+      { }
 
-    static difference_type distance(value_type x, value_type y, std::false_type)
-    { return (y - x) / -Step; }
+      // Return the step increment step.
+      static constexpr difference_type step()
+      { return Step; }
 
-  private:
-    value_type count_;
-  };
+      reference dereference() const
+      { return count_; }
+
+      bool equal(counter const& x) const
+      { return count_ == x.count_; }
+
+      bool less(counter const& x) const
+      { return count_ < x.count_; }
+
+      void increment()
+      { count_ += Step; }
+
+      void decrement()
+      { count_ -= Step; }
+
+      void advance(difference_type n)
+      { count_ += n * Step; }
+
+      difference_type distance(counter const& x)
+      {
+        return distance(count_, x.count_, bool_constant<(Step > 0)>{});
+      }
+
+    private:
+      static difference_type distance(value_type x, value_type y, std::true_type)
+      { return (x - y) / Step; }
+
+      static difference_type distance(value_type x, value_type y, std::false_type)
+      { return (y - x) / -Step; }
+
+    private:
+      value_type count_;
+    };
 
   /**
    * Create a counter that starts from the given value n.

@@ -10,6 +10,19 @@
 
 namespace origin
 {
+  // Deduce the iterator category. If I is an iterator, then use the known
+  // iterator category. Otherwise if I is integral, the category is
+  // a random access iterator.
+  template<typename I>
+    using Range_iterator_category = 
+      If<Iterator<I>, 
+         Iterator_category<I>, 
+         If<Integral<I>,
+            std::random_access_iterator_tag,
+            substitution_failure
+         >
+      >;
+  
   // A range iterator adapts any incrementable type into an iterator.
   // Advancing the iterator causes the wrapped object to be advanced. 
   // Dereferencing a range iterator returns (a const reference to the) wrapped 
@@ -26,9 +39,7 @@ namespace origin
       using reference = Iter const&;
       using pointer = Iter const*;
       using difference_type = Distance_type<Iter>;
-      
-      // FIXME: This could be maximally random access.
-      using iterator_category = std::forward_iterator_tag;
+      using iterator_category = Iterator_cateogry<Iter>;
     
       // Initialize...
       range_iterator(Iter i) : iter(i) { }
