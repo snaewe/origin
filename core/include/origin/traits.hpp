@@ -194,8 +194,8 @@ namespace origin
   // Extend the make_signed trait to work for bool types. A signed bool type 
   // is just a char.
   //
-  // FIXME: Technically, we should be selecting a signed type with the same 
-  // width as the native bool.
+  // FIXME: Maybe Make_signed shouldn't be defined for bool types. Maybe it
+  // should. Check the ordinal libraryto see if I need this or not.
   template<typename T>
     struct make_ext_signed
     {

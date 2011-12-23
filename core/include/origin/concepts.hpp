@@ -578,7 +578,141 @@ namespace origin
       return Subst_succeeded<Distance_type<T>>();
     }
 
+
+  
+  // Streaming concepts
+  // There are 3 concepts describing streaming operations.
+  // - Input_streamable<T>
+  // - Output_streamable<T>
+  // - Streamable<T>
+
+
+
+  // Input streamable
+  // Describes types that can be read from a stream using the input stream
+  // operator (>>). There are two overloads of this concept:
+  // - Input_streamable<T>
+  // - Input_streamable<S, T>
+  //
+  // The first determines if T can be read from a stream derived from either 
+  // istream or wistream. Note that the two are equivalent are equivalent if 
+  // the >> overloads are defined in terms of basic_istream.
+  //
+  // The second determines if T can be read from the stream S.
+  
+  // Safely deduce the result type of an input streaming operator, s >> x, for
+  // any Stream s.
+  template<typename S, typename T>
+    struct get_input_stream_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X& x, Y& y) -> decltype(x >> y);
+      
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<S&>(), std::declval<T&>()));
+    };
+
+  // An alias for the result type of the expression, s >> x, for any Stream s.
+  template<typename S, typename T>
+    using Input_stream_result = typename get_input_stream_result<S, T>::type;
+
+  // The Input_streamable concept.
+  template<typename S, typename T>
+    struct Input_streamable_concept
+    {
+      static constexpr bool check()
+      {
+        return Subst_succeeded<Input_stream_result<S, T>>();
+      }
+    };
     
+  template<typename T>
+    struct Input_streamable_concept<T, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Subst_succeeded<Input_stream_result<std::istream, T>>();
+      }
+    };
+
+  // Return true if values of type T can be read from an input stream.
+  template<typename T, typename U = default_t>
+    constexpr bool Input_streamable()
+    {
+      return Input_streamable_concept<T, U>::check();
+    }
+
+
+
+  // Output streamable
+  // Describes types that can be written to a stream using output stream
+  // operator (<<). There are two overloads of this concept:
+  // - Output_streamable<T>
+  // - Output_streamable<S, T>
+  //
+  // The first determines if T can be written to a stream derived from either 
+  // ostream or wostream. Note that the two are equivalent are equivalent if 
+  // the >> overloads are defined in terms of basic_ostream.
+  //
+  // The second determines if T can be written to the stream S.
+  
+  // Safely deduce the result type of an input streaming operator, s << x, for
+  // any Stream s.
+  template<typename S, typename T>
+    struct get_output_stream_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X& x, Y const& y) -> decltype(x << y);
+      
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<S&>(), std::declval<T const&>()));
+    };
+
+  // An alias for the result type of the expression, s >> x, for any Stream s.
+  template<typename S, typename T>
+    using Output_stream_result = typename get_output_stream_result<S, T>::type;
+
+  // The Input_streamable concept.
+  template<typename S, typename T>
+    struct Output_streamable_concept
+    {
+      static constexpr bool check()
+      {
+        return Subst_succeeded<Output_stream_result<S, T>>();
+      }
+    };
+    
+  template<typename T>
+    struct Output_streamable_concept<T, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Subst_succeeded<Output_stream_result<std::ostream, T>>();
+      }
+    };
+
+  // Return true if values of type T can be read from an input stream.
+  template<typename T, typename U = default_t>
+    constexpr bool Output_streamable()
+    {
+      return Output_streamable_concept<T, U>::check();
+    }
+
+
+
+  // Return true if the values of T can be streamed: read from and written to
+  // a stream.
+  template<typename T, typename U = default_t>
+    constexpr bool Streamable()
+    {
+      return Input_streamable<T, U>() && Output_streamable<T, U>();
+    }
+
+
 } // namespace origin
 
 #endif

@@ -11,3 +11,5 @@ origin_run_test(concepts_totally_ordered totally_ordered.cpp)
 
 origin_run_test(concepts_value_type value_type.cpp)
 origin_run_test(concepts_difference_type difference_type.cpp)
+
+origin_run_test(concepts_streamable streamable.cpp)
