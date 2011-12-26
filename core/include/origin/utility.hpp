@@ -13,6 +13,12 @@
 
 #include <iosfwd>
 
+// The assume macro is used in conjunction with assert. It is used to state
+// a preconditon that is not intended to be evaluated or even compiled. This is 
+// useful for documenting uncheckable preconditions or those that would induce
+// complex dependencies, etc.
+#define assume(X)
+
 namespace origin
 {
   // Utility types:

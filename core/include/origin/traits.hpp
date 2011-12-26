@@ -561,8 +561,11 @@ namespace origin
   // Functions
     
   // Returns true if T is a function.
+  //
+  // Note that the name of this trait differs from the standard to avoid 
+  // collision with the Function concept.
   template<typename T>
-    constexpr bool Function()
+    constexpr bool Function_type()
     {
       return std::is_function<T>();
     }

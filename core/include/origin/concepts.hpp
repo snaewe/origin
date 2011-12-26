@@ -19,72 +19,231 @@ namespace origin
   template<typename T, typename U = T> constexpr bool Totally_ordered();
   
   
-  // Relational properties
+  // The Axiom class is the base class of all axioms specifications. It derives
+  // from bool_constant<true>, making axiom objects convertible to bool.
+  struct axiom_type
+  {
+    explicit operator bool() const
+    {
+      return true;
+    }
+  };
   
-  // For all a, r(a, a) is true.
-  template<typename R, typename T>
-    bool reflexive(R r, T a)
-    {
-      return r(a, a);
-    }
+  
+  
+  // Properties of relations
     
-  // For all a, r(a, a) is false.
-  template<typename R, typename T>
-    bool irreflexive(R r, T a, T b)
+  // A relation is reflexive if, for all a, r(a, a) is true.
+  template<typename R>
+    struct reflexive_property : axiom_type
     {
-      return !r(a, a);
-    }
+      reflexive_property(R r) : r{r} { }
+      
+      template<typename T>
+        bool operator()(T a) const { return r(a, a); }
+      
+      R r;
+    };
     
-  // For all a and b, r(a, b) => r(b, a)
-  template<typename R, typename T>
-    bool symmetric(R r, T a, T b)
-    {
-      return r(a, b) ? r(b, a) : true;
-    }
-
-    
-  // For all a and b, r(a, b) => !r(b, a)
-  template<typename R, typename T>
-    bool asymmetric(R r, T a, T b)
-    {
-      return r(a, b) ? !r(b, a) : true;
-    }
-
-  // For all a, b, and c, r(a, b) && r(b, c) => r(a, c)
-  template<typename R, typename T>
-    bool transitive(R r, T a, T b, T c)
-    {
-      return r(a, b) && r(b, c) ? r(a, c) : true;
-    }
-    
-  // R is reflexive, symmetric, and transitive.
-  template<typename R, typename T>
-    bool equivalence_relation(R r, T a, T b, T c)
-    {
-      return reflexive(r, a) 
-          && symmetric(r, a, b) 
-          && transitive(r, a, b, c);
-    }
-    
-  template<typename R, typename T>
-    bool strict_weak_ordering(R r, T a, T b, T c)
-    {
-      return irreflexive(r, a)
-          && asymmetric(r, a, b)
-          && transitive(r, a, b, c);
-    }
-    
-  template<typename R, typename T>
-    bool strict_total_ordering(R r, T a, T b, T c)
-    {
-      static_assert(Equality_comparable<T>(), "");
-
-      // FIXME: The totality condition needs to exclusive
-      return strict_weak_ordering(r, a, b, c)
-          && (r(a, b) || r(b, a) || a == b);  
-    }
+  template<typename R>
+    reflexive_property<R> reflexive(R r) { return r; }
 
 
+
+  // A relation is irreflexive if, for all a, r(a, a) is false.
+  template<typename R>
+    struct irreflexive_property : axiom_type
+    {
+      irreflexive_property(R r) : r{r} { }
+      
+      template<typename T>
+        bool operator()(R r, T a, T b) const { return !r(a, a); }
+      
+      R r;
+    };
+    
+  template<typename R>
+    irreflexive_property<R> irreflexive(R r) { return r; }
+
+
+
+  // A relation is symmetric if, for all a and b, r(a, b) => r(b, a).
+  template<typename R>
+    struct symmetric_property : axiom_type
+    {
+      symmetric_property(R r) : r{r} { }
+    
+      template<typename T>
+        bool operator()(R r, T a, T b) const 
+        { 
+          return r(a, b) ? r(b, a) : true; 
+        }
+      
+      R r;
+    };
+
+  template<typename R>
+    symmetric_property<R> symmetric(R r) { return r; }
+
+
+    
+  // A relation is asymmetric if, for all a and b, r(a, b) => !r(b, a)
+  template<typename R>
+    struct asymmetric_property : axiom_type
+    {
+      asymmetric_property(R r) : r{r} { }
+    
+      template<typename T>
+        bool operator()(T a, T b) const
+        {
+          return r(a, b) ? !r(b, a) : true;
+        }
+      
+      R r;
+    };
+  
+  template<typename R>
+    asymmetric_property<R> asymmetric(R r) { return r; }
+    
+  
+  
+  // A relation is antisymmetric if, for all a and b, 
+  // r(a, b) && r(b, a) => a == b.
+  template<typename R>
+    struct antisymmetric_property : axiom_type
+    {
+      antisymmetric_property(R r) : r{r} { }
+      
+      template<typename T>
+        bool operator()(T a, T b) const
+        {
+          static_assert(Equality_comparable<T>(), "");
+          
+          return r(a, b) && r(b, a) ? a == b : true;
+        }
+      
+      R r;
+    };
+    
+  template<typename R>
+    antisymmetric_property<R> antisymmetric(R r) { return r; }
+
+
+
+  // A relation is transitive if, for all a, b, and c, 
+  // r(a, b) && r(b, c) => r(a, c)
+  template<typename R>
+    struct transitive_property : axiom_type
+    {
+      transitive_property(R r) : r{r} { }
+      
+      template<typename T>
+        bool operator()(T a, T b, T c) const
+        {
+          return r(a, b) && r(b, c) ? r(a, c) : true;
+        }
+      
+      R r;
+    };
+    
+  template<typename R>
+    transitive_property<R> transitive(R r)
+    {
+      return r;
+    }
+    
+  
+  
+  // A relation is trichotomous if, for all a and b, exactly one of the 
+  // following are true: a < b, b < a, or a == b.
+  template<typename R>
+    struct trichotomous_property : axiom_type
+    {
+      trichotomous_property(R r) : r{r} { }
+      
+      template<typename T>
+        bool operator()(T a, T b) const
+        {
+          static_assert(Equality_comparable<T>(), "");
+
+          if(r(a, b))
+            return !(r(b, a) || a == b);
+          else if(r(b, a))
+            return a != b;
+          else
+            return a == b;
+        }
+      
+      R r;
+    };
+    
+  template<typename R>
+    trichotomous_property<R> trichotomous(R r) { return r; }
+    
+    
+    
+  // An equivalence relation is reflexive, symmetric, and transitive.
+  template<typename R>
+    struct equivalence_relation_properties : axiom_type
+    {
+      equivalence_relation_properties(R r)
+        : reflexive{r}, symmetric{r}, transitive{r}
+      { }
+
+      reflexive_property<R> reflexive;
+      symmetric_property<R> symmetric;
+      transitive_property<R> transitive;
+    };
+    
+  template<typename R>
+    equivalence_relation_properties<R> equivalence_relation(R r)
+    {
+      return r;
+    }
+    
+    
+    
+  // A strict weak ordering is irreflexive, asymmetric, and transitive.
+  template<typename R>
+    struct strict_weak_ordering_properties : axiom_type
+    {
+      strict_weak_ordering_properties(R r)
+        : irreflexive{r}, asymmetric{r}, transitive{r}
+      { }
+    
+      irreflexive_property<R> irreflexive;
+      asymmetric_property<R> asymmetric;
+      transitive_property<R> transitive;
+    };
+    
+  template<typename R>
+    strict_weak_ordering_properties<R> strict_weak_ordering(R r)
+    {
+      return r;
+    }
+    
+    
+    
+  // A strict total ordering is antisymmetric, transitive, and trichotomous.
+  template<typename R>
+    struct strict_total_ordering_properties : axiom_type
+    {
+      strict_total_ordering_properties(R r)
+        : antisymmetric{r}, transitive{r}, trichotomous{r}
+      { }
+    
+      antisymmetric_property<R> antisymmetric;
+      transitive_property<R> transitive;
+      trichotomous_property<R> trichotomous;
+    };
+
+  template<typename R>
+    strict_total_ordering_properties<R> strict_total_ordering(R r)
+    {
+      return r;
+    }
+    
+    
     
   // The Equality_comparable concept defines the syntax and semantics of
   // comparing for value equality.
@@ -126,13 +285,18 @@ namespace origin
             && Has_not_equal<T>() && Boolean<Not_equal_result<T>>();
       }
 
-      static bool test(T a, T b, T c) 
+
+      // Semantics
+      
+      // Return the equivalence properties for testing
+      static equivalence_relation_properties<std::equal_to<T>> equivalence()
       {
-        std::equal_to<T> eq;
-        return reflexive(eq, a)
-            && symmetric(eq, a, b)
-            && transtitive(eq, a, b, c)
-            && (a != b) == !(a == b);
+        return equivalence_relation(std::equal_to<T>{});
+      }
+
+      static bool test_not_equal(T a, T b) 
+      {
+        return (a != b) == !(a == b);
       }
     };
     
@@ -191,14 +355,28 @@ namespace origin
             && Has_less_equal<T>()    && Boolean<Less_equal_result<T>>()
             && Has_greater_equal<T>() && Boolean<Greater_equal_result<T>>();
       }
+
+      // Semantics
       
-      static bool test(T a, T b, T c)
+      // Return the ordering properties for testing.
+      static strict_total_ordering_properties<std::less<T>> ordering()
       {
-        std::less<T> less;
-        return strict_total_ordering(less, a, b, c)
-            && (a > b) == (b < a)
-            && (a <= b) == !(b < a)
-            && (a >= b) == !(a < b);
+        return srict_total_ordering(std::less<T>{});
+      }
+      
+      static bool test_greater(T a, T b)
+      {
+        return a > b == b < a;
+      }
+      
+      static bool test_less_equal(T a, T b)
+      {
+        return a <= b == !(b < a);
+      }
+      
+      static bool test_greater_equal(T a, T b)
+      {
+        return a >= b == !(a < b);
       }
     };
 

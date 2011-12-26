@@ -104,8 +104,12 @@ namespace origin
             && Input_iterator<End_result<R>>()
             && Same<Begin_result<R>, End_result<R>>();
       }
-      
-      // FIXME Write semantics.
+
+      static bool test(const R& r)
+      {
+        // A range encapsulates a (possibly empty) bounded range.
+        return is_bounded_range(r.begin(), r.end());
+      }
     };
   
   // Returns true if R is a range.
@@ -114,8 +118,64 @@ namespace origin
     {
       return Range_concept<R>::check();
     }
-
     
+  // Returns true if R is an input range. An input range is a range of input
+  // iterators.
+  //
+  // An input range is readable everywhere except its limit.
+  template<typename R>
+    constexpr bool Input_range()
+    {
+      return Range<R>() && Readable<Iterator_type<R>>();
+    }
+
+  // Returns true if R is an output range. An output range is a range of 
+  // writable iterators.
+  //
+  // An output range is writable everywhere except its limit.
+  template<typename R, typename T>
+    constexpr bool Output_range()
+    {
+      return Range<R>() && Writable<Iterator_type<R>, T>();
+    }
+    
+  // Returns true if R is a permutable range.
+  template<typename R>
+    constexpr bool Permutable_range()
+    {
+      return Range<R>() && Permutable_iterator<Iterator_type<R>>();
+    }
+    
+  // Returns true if R is a mutable range.
+  template<typename R>
+    constexpr bool Mutable_range()
+    {
+      return Range<R>() && Mutable_iterator<Iterator_type<R>>();
+    }
+    
+  // Returns true if R is a forward range. A forward range is a range whose 
+  // iterator type is a forward iterator.
+  template<typename R>
+    constexpr bool Forward_range()
+    {
+      return Range<R>() && Forward_iterator<Iterator_type<R>>();
+    }
+  
+  // Returns true if R is a bidirectional range.
+  template<typename R>
+    constexpr bool Bidirectional_range()
+    {
+      return Range<R>() && Bidirectional_iterator<Iterator_type<R>>();
+    }
+    
+  // Return true if R is a random access range.
+  template<typename R>
+    constexpr bool Random_access_range()
+    {
+      return Range<R>() && Random_access_iterator<Iterator_type<R>>();
+    }
+  
+  
     
   // Range adaptors
   

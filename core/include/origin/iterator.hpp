@@ -594,7 +594,7 @@ namespace origin
 
     
   // A strict input iterator is at most an input iterator. That is I is not
-  // a forward iterator.
+  // a forward iterator. This is provided for convenience.
   template<typename Iter>
     constexpr bool Strict_input_iterator()
     {
@@ -603,6 +603,95 @@ namespace origin
     
   // FIXME: Write Strict_output_iterator.
 
+
+
+  // Rearrangements
+  
+  // Mergeable
+  // The mergeable concept describes common requirements on the family of
+  // (non-inplace) merge and set operations. There are two mergeable concepts:
+  // - Mergeable<Iter1, Iter2, Out>
+  // - Mergeable<Iter1, Iter2, Out, R>
+  // The first requires the value types of Iter1 and Iter2 to be totally
+  // ordered. The second is generalized over a relation.
+  
+  // This specialization implements the requirements for the generalized
+  // version.
+  template<typename Iter1, typename Iter2, typename Out, typename R>
+    struct Mergeable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<Iter1>() && 
+               Input_iterator<Iter2>() &&
+               Weakly_incrementable<Out>() &&
+               Writable<Out, Value_type<Iter1>>() &&
+               Writable<Out, Value_type<Iter2>>() &&
+               Relation<R, Value_type<Iter1>, Value_type<Iter2>>();
+      }
+    };
+
+  // This specialization implements the requirements for algorithms that 
+  // directly use the < operator.
+  template<typename Iter1, typename Iter2, typename Out>
+    struct Mergeable_concept<Iter1, Iter2, Out, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<Iter1>() && 
+               Input_iterator<Iter2>() &&
+               Weakly_incrementable<Out>() &&
+               Writable<Out, Value_type<Iter1>>() &&
+               Writable<Out, Value_type<Iter2>>() &&
+               Totally_ordered<Value_type<Iter1>, Value_type<Iter2>>();
+      }
+    };
+    
+  // Returns true when Iter1 and Iter2 can be merged into Out.
+  template<typename Iter1, typename Iter2, typename Out, typename R = default_t>
+    constexpr bool Mergeable()
+    {
+      return Mergeable_concept<Iter1, Iter2, Out, R>::check();
+    }
+
+
+
+  // Sortable
+  // The Sortable concept describes the requiremnts of algorithms that permute
+  // ranges sequences in some sorted order. There are two:
+  // - Sortable<Iter>
+  // - Sortable<Iter, R>
+  // The first describes requirements for sorting the < operator. The second
+  // is generalized over a Relation R.
+  
+  // Requrements for the generalized overload.
+  template<typename Iter, typename R>
+    struct Sortable_concept
+    {
+      static constexpr bool check()
+      {
+        return Permutable_iterator<Iter>() && Relation<R, Value_type<Iter>>();
+      }
+    };
+    
+  // Requirements using operator <.
+  template<typename Iter>
+    struct Sortable_concept<Iter, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Permutable_iterator<Iter>() && Totally_ordered<Value_type<Iter>>();
+      }
+    };
+    
+  // Returns true if Iter is sortable.
+  template<typename Iter, typename R = default_t>
+    constexpr bool Sortable()
+    {
+      return Sortable_concept<Iter, R>::check();
+    }
+  
+  
   
   // Iterator range properties
   // The following properties are just used to indicate un-checkable
@@ -611,21 +700,23 @@ namespace origin
   // Even though these could be constexpr function, they are not intended to
   // be used in constant expressions.
   
-  // Return true if [first, n) is a valid weak range.
+  // Returns true if [first, n) is a weak range.
   template<typename I>
     inline bool is_weak_range(I first, Distance_type<I> n) 
     { 
       static_assert(Weakly_incrementable<I>(), "");
-      return true; 
+      return n >= 0;
     }
   
+  // Returns true if [first, n) is a counted range.
   template<typename I>
     inline bool is_counted_range(I first, Distance_type<I> n) 
     { 
       static_assert(Weakly_incrementable<I>(), "");
-      return true; 
+      return n >= 0;
     }
     
+  // Returns true if [first, last) is a bounded range.
   template<typename I>
     inline bool is_bounded_range(I first, I last) 
     {
@@ -634,56 +725,101 @@ namespace origin
       return true; 
     }
     
+  // Returns true if the weak range [first, n) is readable everywhere except
+  // its limit.
   template<typename I>
     inline bool is_readable_range(I first, Distance_type<I> n) 
     {
       static_assert(Readable<I>(), "");
-      return is_weak_range(first, n) && true; 
+      return is_weak_range(first, n); 
     }
-    
+  
+  // Returns true if the bounded range [first, last) is readable everywhere
+  // except its limit.
   template<typename I>
     inline bool is_readable_range(I first, I last) 
     { 
       static_assert(Readable<I>(), "");
-      return is_bounded_range(first, last) && true; 
+      return is_bounded_range(first, last); 
     }
     
+  // Returns true if the weak range [first, n) is writable everywhere except
+  // its limit.
   template<typename I, typename T>
     inline bool is_writable_range(I first, Distance_type<I> n, T const& value)
     {
       static_assert(Writable<I, T>(), "");
-      return is_weak_range(first, n) && true;
+      return is_weak_range(first, n);
     }
-    
-    template<typename I, typename T>
+   
+  // Returns true if the bounded range [first, last) is writable everywhere 
+  // except its limit.
+  template<typename I, typename T>
     inline bool is_writable_range(I first, I last, T const& value) 
     { 
-      static_assert(Writable<I>(), "");
-      return is_bounded_range(first, last) && true; 
+      static_assert(Writable<I, T>(), "");
+      return is_bounded_range(first, last);
     }
     
+  // Returns true if the weak range [first, n) is movable everywhere except its
+  // limit.
   template<typename I, typename T>
     inline bool is_movable_range(I first, Distance_type<I> n, T const& value)
     {
-      static_assert(Move_writable<I>(), "");
-      return is_weak_range(first, n) && true;
+      static_assert(Move_writable<I, T>(), "");
+      return is_weak_range(first, n);
     }
   
+  // Returns true if the bounded range [first, last) is movable everywhere except
+  // its limit.
   template<typename I, typename T>
     inline bool is_movable_range(I first, I last, T const& value) 
     {
-      static_assert(Move_writable<I>(), "");
-      return is_bounded_range(first, last) && true; 
+      static_assert(Move_writable<I, T>(), "");
+      return is_bounded_range(first, last); 
     }
     
+  // Returns true if the weak range [first, n) is mutable everywhere except its
+  // limit.
+  template<typename I>
+    inline bool is_mutable_range(I first, Distance_type<I> n)
+    {
+      return n > 0 ? is_writable_range(first, n, *first) : true;
+    }
     
+  // Returns true if the bounded range [first, last) is mutable everywhere
+  // except its limit.
+  template<typename I>
+    inline bool is_mutable_range(I first, I last)
+    {
+      return first != last ? is_writable_range(first, last, *first) : true;
+    }
+
+  // Return true if the weak range [first, n) is permutable everywhere except
+  // its limit.
+  template<typename I>
+    inline bool is_permutable_range(I first, Distance_type<I> n)
+    {
+      return n > 0 ? is_movable_range(first, n, *first) : true;
+    }
     
+  // Return true if the bounded range [first, n) is permutable everywhere
+  // except its limit.
+  template<typename I>
+    inline bool is_permutable_range(I first, I last)
+    {
+      return first != last ? is_movable_range(first, last, *first) : true;
+    }
+
+
+
   // Iterator operations
   //
   // The standard iterator operations simply assert the minimum requirements
   // before delegating to the usual algorithm. This library does not dispatch
   // based on iterator type.
     
+  // Advance i by n positions.
   template<typename Iter>
     inline void std_advance(Iter& i, Distance_type<Iter> n = 1)
     {
@@ -693,6 +829,7 @@ namespace origin
       std::advance(i, n);
     }
     
+  // Return the nth iterator past i.
   template<typename Iter>
     inline Iter std_next(Iter i, Distance_type<Iter> n = 1)
     {
@@ -702,15 +839,18 @@ namespace origin
       return std::next(i, n);
     }
     
+  // Return the nth iterator before i.
   template<typename Iter>
     inline Iter std_prev(Iter i, Distance_type<Iter> n = 1)
     {
       // FIXME: How do you write the precondition here?
       static_assert(Bidirectional_iterator<Iter>(), "");
+      // assert(( weak_range(prev(i, n), n) )) ???
 
       return std::prev(i, n);
     }
   
+  // Return the distance between i and j.
   template<typename Iter>
     inline Distance_type<Iter> std_distance(Iter first, Iter last)
     {
