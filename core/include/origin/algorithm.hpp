@@ -17,7 +17,6 @@
 
 namespace origin
 {
-
   // NOTE: The std_* algorithms simply add Origin-style concept checking to
   // std algorithms. They are primiarly used for testing
 
@@ -884,8 +883,94 @@ namespace origin
 
 
 
+  // Search
+  //
+  // FIXME: Write range variants.
+
+  template<typename Iter1, typename Iter2>
+    inline Iter1 std_search(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+    {
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      assert(( is_readable_range(first1, last1) ));
+      assert(( is_readable_range(first2, last2) ));
+      
+      return std::search(first1, last1, first2, last2);
+    }
+    
+  template<typename Iter1, typename Iter2, typename Pred>
+    inline Iter1 std_search(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Pred pred)
+    {
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      assert(( is_readable_range(first1, last1) ));
+      assert(( is_readable_range(first2, last2) ));
+
+      return std::search(first1, last1, first2, last2);
+    }
+    
+    
+  
+  // Search end
+  // This is the same as std::find_end, but named more appropriately.
+  //
+  // FIXME: Write range variants.
+
+  template<typename Iter1, typename Iter2>
+    inline Iter1 search_end(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+    {
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      assert(( is_readable_range(first1, last1) ));
+      assert(( is_readable_range(first2, last2) ));
+      
+      return std::find_end(first1, last1, first2, last2);
+    }
+    
+  template<typename Iter1, typename Iter2, typename Pred>
+    inline Iter1 search_end(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Pred pred)
+    {
+      static_assert(Forward_iterator<Iter1>(), "");
+      static_assert(Forward_iterator<Iter2>(), "");
+      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      assert(( is_readable_range(first1, last1) ));
+      assert(( is_readable_range(first2, last2) ));
+
+      return std::find_end(first1, last1, first2, last2);
+    }
+    
+  
+  
+  // Search n
+  //
+  // FIXME: Write range variants.
+  template<typename Iter, typename T>
+    inline Iter std_search_n(Iter first, Iter last, Distance_type<Iter> n, const T& value)
+    {
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      return std::search_n(first, last, n, value);
+    }
+    
+  template<typename Iter, typename T, typename Pred>
+    inline Iter std_search_n(Iter first, Iter last, Distance_type<Iter> n, const T& value, Pred pred)
+    {
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>, T>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      return std::search_n(first, last, n, value, pred);
+    }
+    
+    
+
   // Copy
-  // Copy the elements in a range a into a range b.
+  // Copy the elements in a range a into another range b.
   
   template<typename Iter, typename Out>
     inline Out std_copy(Iter first, Iter last, Out result)
@@ -894,6 +979,7 @@ namespace origin
       static_assert(Writable<Out, Value_type<Iter>>(), "");
       assert(( is_readable_range(first, last) ));
       assume(( is_writable_range(result, distance(first, last), *first) ));
+      // FIXME: Overlapping requirements
       
       return std::copy(first, last, result);
     }
@@ -904,14 +990,113 @@ namespace origin
       static_assert(Input_range<In>(), "");
       static_assert(Output_range<Out, Value_type<In>>(), "");
       assume(( size(i) <= size(o) ));
+      // FIXME: Overlapping requirements
+      
+      return std_copy(std::begin(i), std::end(i), std::begin(o));
+    }
+    
+    
+    
+  // Copy
+  template<typename Iter, typename Out>
+    inline Out std_copy_n(Iter first, Distance_type<Iter> n, Out result)
+    {
+      return std::copy_n(first, n, result);
+    }
+
+
+
+  // Copy if
+  template<typename Iter, typename Out, typename Pred>
+    inline Out std_copy_if(Iter first, Iter last, Out result, Pred pred)
+    {
+      return std::copy_if(first, last, result, pred);
+    }
+    
+    
+    
+  // Copy backward
+  template<typename Iter, typename Out>
+    inline Out std_copy_backward(Iter first, Iter last, Out result)
+    {
+      return std::copy_backward(first, last, result);
+    }
+
+
+
+  // Move
+  // Move the elements in a range a into another range b.
+
+  template<typename Iter, typename Out>
+    inline Out std_move(Iter first, Iter last, Out result)
+    {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Move_writable<Out, Value_type<Iter>>(), "");
+      assert(( is_readable_range(first, last) ));
+      assume(( is_movable_range(result, distance(first, last), *first) ));
+      
+      return std::copy(first, last, result);
+    }
+  
+  template<typename In, typename Out>
+    inline Iterator_type<Out> move(const In& i, Out& o)
+    {
+      static_assert(Input_range<In>(), "");
+      static_assert(Move_range<Out, Value_type<In>>(), "");
+      assume(( size(i) <= size(o) ));
       
       return std_copy(std::begin(i), std::end(i), std::begin(o));
     }
 
 
 
-  // Extract
+  // Move backward
+  template<typename Iter, typename Out>
+    inline Out std_move_backward(Iter first, Iter last, Out result)
+    {
+      return std::move_backward(first, last, result);
+    }
+
+
+
+  // Iterator swap
+  template<typename Iter1, typename Iter2>
+    inline void std_iter_swap(Iter1 i, Iter2 j)
+    {
+      std::iter_swap(i, j);
+    }
+    
+
+
+  // Swap ranges
+  template<typename Iter1, typename Iter2>
+    inline Iter2 std_swap_ranges(Iter1 first1, Iter1 last1, Iter2 first2)
+    {
+      return std::swap_ranges(first1, last1, first2);
+    }
+    
+    
   
+  // Transform (unary)
+  template<typename Iter, typename Out, typename F>
+    inline Out std_transform(Iter first, Iter last, Out result, F f)
+    {
+      return std::transform(first, last, result, f);
+    }
+    
+    
+    
+  // Transform (binary)
+  template<typename Iter1, typename Iter2, typename Out, typename F>
+    inline Out std_transform(Iter1 first1, Iter1 last1, Iter2 first2, Out result, F f)
+    {
+      return std::transform(first1, last1, first2, result, f);
+    }
+
+
+
+  // Extract
+  //
   // Extract the elements of [first, last) that are equal to value by moving 
   // them into the output range. This algorithm is similar to remove_copy, 
   // except that the elements are moved into the output range instead of being 
@@ -947,6 +1132,10 @@ namespace origin
       return {hole, result};
     }
     
+    
+    
+  // Extract (predicate)
+  //
   // Extract the elements of [first, last) by moving them into the output
   // range. This algorithm is similar to remove_if, except that the elements
   // are moved into the output range instead of being overwritten.
@@ -982,8 +1171,10 @@ namespace origin
     }
 
 
+
   // Permutation Generators
   
+  // Next permutation
   template<typename Iter>
     inline bool std_next_permutation(Iter first, Iter last)
     {
@@ -994,6 +1185,9 @@ namespace origin
       return std::next_permutation(first, last);
     }
     
+    
+    
+  // Next permutation (relation)
   template<typename Iter, typename R>
     inline bool std_next_permutation(Iter first, Iter last, R comp)
     {
@@ -1006,59 +1200,112 @@ namespace origin
 
     }
 
-  // Compute the next lexicographical permutation of the ranger.
-  //
-  // requires: BidirectionalIterator<IteratorType<R>>
-  template<typename R>
-    inline bool next_permutation(R& range)
+
+
+  // Next permutation (range)
+  template<typename Rng>
+    inline bool next_permutation(Rng& range)
     {
+      static_assert(Sortable_range<Rng>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return std::next_permutation(std::begin(range), std::end(range));
     }
 
-  template<typename R, typename Comp>
-    inline bool next_permutation(R& range, Comp comp)
+
+
+  // Next permutation (range, relation)
+  template<typename Rng, typename R>
+    inline bool next_permutation(Rng& range, R comp)
     {
+      static_assert(Sortable_range<Rng, R>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+    
       return std::next_permutation(std::begin(range), std::end(range), comp);
     }
 
 
-  // Compute the previous lexicographical permutation of the range r.
-  //
-  // requires: BidirectionalIterator<IteratorType<R>>
-  template<typename R>
-    inline bool prev_permutation(R& range)
+
+  // Previous permutation
+  template<typename Iter>
+    inline bool std_prev_permutation(Iter first, Iter last)
     {
+      static_assert(Bidirectional_iterator<Iter>(), "");
+      static_assert(Sortable<Iter>(), "");
+      assert(( is_permutable_range(first, last) ));
+
+      return std::prev_permutation(first, last);
+    }
+    
+    
+    
+  // Previous permutation (relation)
+  template<typename Iter, typename R>
+    inline bool std_prev_permutation(Iter first, Iter last, R comp)
+    {
+      static_assert(Bidirectional_iterator<Iter>(), "");
+      static_assert(Relation<Value_type<Iter>>(), "");
+      assert(( is_permutable_range(first, last) ));
+      assert(( strict_weak_ordering(comp) ));
+      
+      return std::prev_permutation(first, last);
+
+    }
+
+
+
+  // Previous permutation (range)
+  template<typename Rng>
+    inline bool prev_permutation(Rng& range)
+    {
+      static_assert(Sortable_range<Rng>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return std::prev_permutation(std::begin(range), std::end(range));
     }
 
-  template<typename R, typename Comp>
-    inline bool prev_permutation(R& range, Comp comp)
+
+
+  // Previous permutation (range, relation)
+  template<typename Rng, typename R>
+    inline bool prev_permutation(Rng& range, R comp)
     {
+      static_assert(Sortable_range<Rng, R>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return std::prev_permutation(std::begin(range), std::end(range), comp);
     }
 
 
-  // TODO: I'm not wild about the name _partial_*. These are often called
+
+  // NOTE: I'm not wild about the name _partial_*. These are often called
   // k-permutations (and similarly k-combination). In general, I would have
-  // have preferred next_permutaiton to increment to k-permutations instead
-  // of entire sequences.
+  // have preferred next_permutation to increment to k-permutations instead
+  // of entire sequences in order to make it look like the combination
+  // algorithms below.
+  
+  // NOTE: The implementation of the *_partial_permutation and the the
+  // *_combination algorithms is in algorithm/combination.hpp. The algorithms
+  // are separated for licensing issues.
 
   // Compute the next lexicographical permutation of elements in [first, mid) 
   // from r where first is begin(r). Return false if there is no next 
   // permutation.
-  //
-  // requires: See above.
-  // requires: SameType<IteratorType<R>>, Iter>
-  // precondition: mid in range
-  template<typename R, typename Iter>
-    inline bool next_partial_permutation(R& range, Iter mid)
+  template<typename Rng>
+    inline bool next_partial_permutation(Rng& range, Iterator_type<Rng> mid)
     {
+      static_assert(Sortable_range<Rng>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return next_partial_permutation(std::begin(range), mid, std::end(range));
     }
 
-  template<typename R, typename Iter, typename Comp>
-    inline bool next_partial_permutation(R& range, Iter mid, Comp comp)
+  template<typename Rng, typename R>
+    inline bool next_partial_permutation(Rng& range, Iterator_type<Rng> mid, R comp)
     {
+      static_assert(Sortable_range<Rng, R>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return next_partial_permutation(std::begin(range), mid, std::end(range), comp);
     }
 
@@ -1066,19 +1313,21 @@ namespace origin
   // Compute the next lexicographical permutation of elements in [first, mid) 
   // from r where first is begin(r). Return false if there is no next 
   // permutation.
-  //
-  // requires: See above.
-  // requires: SameType<IteratorType<R>>, Iter>
-  // precondition: mid in range
-  template<typename R, typename Iter>
-    inline bool prev_partial_permutation(R& range, Iter mid)
+  template<typename Rng>
+    inline bool prev_partial_permutation(Rng& range, Iterator_type<Rng> mid)
     {
+      static_assert(Sortable_range<Rng>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return prev_partial_permutation(std::begin(range), mid, std::end(range));
     }
 
-  template<typename R, typename Iter, typename Comp>
-    inline bool prev_partial_permutation(R& range, Iter mid, Comp comp)
+  template<typename Rng, typename R>
+    inline bool prev_partial_permutation(Rng& range, Iterator_type<Rng> mid, R comp)
     {
+      static_assert(Sortable_range<Rng, R>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return prev_partial_permutation(std::begin(range), mid, std::end(range), comp);
     }
 
@@ -1086,15 +1335,21 @@ namespace origin
   // Compute the next lexicographical combination of elements in [first, mid)
   // from the range r where first is equal to begin(r). Return false if there
   // is no next combination.
-  template<typename R, typename Iter>
-    inline bool next_combination(R& range, Iter mid)
+  template<typename Rng>
+    inline bool next_combination(Rng& range, Iterator_type<Rng> mid)
     {
+      static_assert(Sortable_range<Rng>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return next_combination(std::begin(range), mid, std::end(range));
     }
 
-  template<typename R, typename Iter, typename Comp>
-    inline bool next_combination(R& range, Iter mid, Comp comp)
+  template<typename Rng, typename R>
+    inline bool next_combination(Rng& range, Iterator_type<Rng> mid, R comp)
     {
+      static_assert(Sortable_range<Rng, R>(), "");
+      static_assert(Bidirectional_range<Rng>(), "");
+
       return next_combination(std::begin(range), mid, std::end(range), comp);
     }
 
@@ -1102,20 +1357,20 @@ namespace origin
   // Compute the previous lexicographical combination of elements in 
   // [first, mid) from the range r where first is equal to begin(r). Return 
   // false if there is no next combination.
-  template<typename R, typename Iter>
-    inline bool prev_combination(R& range, Iter mid)
+  template<typename Rng>
+    inline bool prev_combination(Rng& range, Iterator_type<Rng> mid)
     {
       return prev_combination(std::begin(range), mid, std::end(range));
     }
 
-  template<typename R, typename Iter, typename Comp>
-    inline bool prev_combination(R& range, Iter mid, Comp comp)
+  template<typename Rng, typename R>
+    inline bool prev_combination(Rng& range, Iterator_type<Rng> mid, R comp)
     {
       return prev_combination(std::begin(range), mid, std::end(range), comp);
     }
 
 
-  // PROJECT: Implement multiset permutations.
+  // TODO: Implement multiset permutations.
   
   
 

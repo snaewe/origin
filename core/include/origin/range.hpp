@@ -119,10 +119,18 @@ namespace origin
       return Range_concept<R>::check();
     }
     
-  // Returns true if R is an input range. An input range is a range of input
-  // iterators.
+    
+    
+  // NOTE: The meaning of saying "is fooable everywhere except its limit" is
+  // analogous to asserting the corresponding property for all ranges r of 
+  // some Range type R:
   //
-  // An input range is readable everywhere except its limit.
+  //   is_fooable_range(begin(r), end(r))
+  //
+  // as an invariant of the type.
+    
+  // Returns true if R is an input range. An input range is a range of input
+  // iterators. An input range is readable everywhere except its limit.
   template<typename R>
     constexpr bool Input_range()
     {
@@ -130,16 +138,25 @@ namespace origin
     }
 
   // Returns true if R is an output range. An output range is a range of 
-  // writable iterators.
-  //
-  // An output range is writable everywhere except its limit.
+  // writable iterators and is writable everywhere except its limit.
   template<typename R, typename T>
     constexpr bool Output_range()
     {
       return Range<R>() && Writable<Iterator_type<R>, T>();
     }
+  
+  // Returns true if R is a move range. A move range is a range of movable
+  // iterators and is movable everywhere except its limit.
+  //
+  // FIXME: Is there a better name for this?
+  template<typename R, typename T>
+    constexpr bool Move_range()
+    {
+      return Range<R>() && Move_writable<Iterator_type<R>, T>();
+    }
     
-  // Returns true if R is a permutable range.
+  // Returns true if R is a permutable range. A permutable range is permutable
+  // everywhere except its limit.
   template<typename R>
     constexpr bool Permutable_range()
     {
@@ -168,7 +185,7 @@ namespace origin
       return Range<R>() && Bidirectional_iterator<Iterator_type<R>>();
     }
     
-  // Return true if R is a random access range.
+  // Returns true if R is a random access range.
   template<typename R>
     constexpr bool Random_access_range()
     {
@@ -176,6 +193,42 @@ namespace origin
     }
   
   
+  
+  // A sortable range is a permutable range whose values are either totally
+  // ordered or weakly ordered by some relation. 
+  
+  // Weakly ordered by R.
+  template<typename Rng, typename R>
+    struct Sortable_range_concept
+    {
+      static constexpr bool check()
+      {
+        return Forward_range<Rng>() 
+            && Permutable_range<Rng>() 
+            && Relation<R, Value_type<Rng>>();
+      }
+    };
+  
+  // Totally ordered.
+  template<typename Rng>
+    struct Sortable_range_concept<Rng, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Forward_range<Rng>()
+            && Permutable_range<Rng>()
+            && Totally_ordered<Value_type<Rng>>();
+      }
+    };
+  
+  // Returns true if Rng is sortable (with respect to the relation R).
+  template<typename Rng, typename R = default_t>
+    constexpr bool Sortable_range()
+    {
+      return Sortable_range_concept<Rng, R>::check();
+    }
+    
+    
     
   // Range adaptors
   

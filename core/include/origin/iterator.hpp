@@ -50,6 +50,11 @@ namespace origin
       }
     };
     
+    
+  // Returns true if Iter is readable.
+  //
+  // FIXME: To better align this with standard terminology, this should be
+  // called Value_readable.
   template<typename Iter>
     constexpr bool Readable()
     {
@@ -76,6 +81,10 @@ namespace origin
       }
     };
     
+  // Returns true if values of T can be moved through an Iter object.
+  //
+  // FIXME: To better align this with standard terminology, this should be
+  // called Value_movable.
   template<typename Iter, typename T>
     constexpr bool Move_writable()
     {
@@ -102,6 +111,10 @@ namespace origin
       }
     };
     
+  // Returns true if values of T can be written through an Iter object.
+  //
+  // FIXME: To better align this with standard terminology, this should be
+  // called Value_writable.
   template<typename Iter, typename T>
     constexpr bool Writable()
     {
