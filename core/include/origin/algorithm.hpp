@@ -20,14 +20,19 @@ namespace origin
   // NOTE: The std_* algorithms simply add Origin-style concept checking to
   // std algorithms. They are primiarly used for testing
 
+
+
   // Quantifiers
   //
   // Note that:
   //   !all_of == any_not_of
   //   !none_of == any_of
 
-  // All of
 
+
+  // All of
+  // Returns true if first == last or pred(x) is true for all elements x in 
+  // [first, last).
   template<typename Iter, typename Pred>
     inline bool std_all_of(Iter first, Iter last, Pred pred)
     {
@@ -38,21 +43,24 @@ namespace origin
       return std::all_of(first, last, pred);
     }
 
-  // Return true if and only if all of the the elements in the range r satisfy 
-  // the given predicate, or if r is empty.
-  template<typename R, typename Pred>
-    inline bool all_of(R const& range, Pred pred)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
 
-      return std_all_of(std::begin(range), std::end(range), pred);
+
+  // All of (range)
+  // Return true empty(r) or pred(x) is true for all elements x in r.
+  template<typename Rng, typename Pred>
+    inline bool all_of(const Rng& r, Pred pred)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
+
+      return std_all_of(std::begin(r), std::end(r), pred);
     }
     
     
   
   // Any of
-    
+  // Returns true if first != last and pred(x) is true for some element x in 
+  // [first, last).
   template<typename Iter, typename Pred>
     inline bool std_any_of(Iter first, Iter last, Pred pred)
     {
@@ -63,23 +71,23 @@ namespace origin
       return std::any_of(first, last, pred);
     }
 
-  // Return true if and only if the range r is non-empty and any of its
-  // elements satisfy the given predicate.
-  template<typename R, typename Pred>
-    inline bool any_of(R const& range, Pred pred)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
 
-      return std_any_of(std::begin(range), std::end(range), pred);
+
+  // Any of (range)
+  // Returns true if !empty(r) and pred(x) is true for some element x in r.
+  template<typename Rng, typename Pred>
+    inline bool any_of(const Rng& r, Pred pred)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
+
+      return std_any_of(std::begin(r), std::end(r), pred);
     }
 
 
 
   // Any not of
-  
-  // Return true if and only if the range [first, last) is non-empty and any
-  // of its elements do not satisfy the given prdicate.
+  // Returns true first != last and !pred(x) is true for some element x in r.
   template<typename Iter, typename Pred>
     bool any_not_of(Iter first, Iter last, Pred pred)
     {
@@ -94,21 +102,24 @@ namespace origin
       return false;
     }
   
-  // Return true if and only if the range r is non-empty and any of its 
-  // elements do not satisfy the given prdicate.
-  template<typename R, typename Pred>
-    inline bool any_not_of(R const& range, Pred pred)
+  
+  
+  // Any not of (range)
+  // Returns true !empty(r) and !pred(x) for some element x in r.
+  template<typename Rng, typename Pred>
+    inline bool any_not_of(const Rng& r, Pred pred)
     {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
       
-      return any_not_of(std::begin(range), std::end(range), pred);
+      return std::any_not_of(std::begin(r), std::end(r), pred);
     }
 
 
 
   // None of
-
+  // Returns true if first == last or !pred(x) is true for all elements x in 
+  // [first, last).
   template<typename Iter, typename Pred>
     inline bool std_none_of(Iter first, Iter last, Pred pred)
     {
@@ -119,27 +130,26 @@ namespace origin
       return std::none_of(first, last, pred);
     }
 
-  // Return true if and only if none of the the elements in the range r satisfy
-  // the given predicate or r is empty.
-  template<typename R, typename Pred>
-    inline bool none_of(R const& range, Pred pred)
+
+
+  // None of (range)
+  // Returns true if empty(r) or !pred(x) for all elements x in r.
+  template<typename Rng, typename Pred>
+    inline bool none_of(const Rng& range, Pred pred)
     {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
       
-      return std_none_of(std::begin(range), std::end(range), pred);
+      return std_none_of(std::begin(r), std::end(r), pred);
     }
  
  
  
   // All equal
-
-  // Returns true if and only if all elements in [first, last) are equal to
-  // value or [first, last) is an empty range.
-  //
-  // precondition: readable_range(first, last)
+  // Returns true first == last or x == value for all elements x in 
+  // [first, last).
   template<typename Iter, typename T>
-    bool all_equal(Iter first, Iter last, T const& value)
+    bool all_equal(Iter first, Iter last, const T& value)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
@@ -153,23 +163,24 @@ namespace origin
       return true;
     }
    
-  template<typename R, typename T>
-    inline bool all_equal(const R& range, const T& value)
+   
+   
+  // All equal (range)
+  // Returns true if empty(r) or x == value for all elements x in r.
+  template<typename Rng, typename T>
+    inline bool all_equal(const Rng& r, const T& value)
     {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
 
-      return all_equal(std::begin(range), std::end(range), value);
+      return std::all_equal(std::begin(r), std::end(r), value);
     }
     
     
     
   // Any equal
-    
-  // Returns true if and only if [first, last) is not an empty range and at
-  // least one element in [first, last) is equal to value.
-  //
-  // precondition: readable_range(first, last)
+  // Returns true if first != last and x == value for some element x in 
+  // [first, last).
   template<typename Iter, typename T>
     bool any_equal(Iter first, Iter last, const T& value)
     {
@@ -184,19 +195,24 @@ namespace origin
       return false;
     }
 
-  template<typename R, typename T>
-    inline bool any_equal(const R& range, const T& value)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
 
-      return any_equal(std::begin(range), std::end(range), value);
+
+  // Any equal (range)
+  // Returns true if !empty(r) and x == value for some element x in r.
+  template<typename Rng, typename T>
+    inline bool any_equal(const R& r, const T& value)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
+
+      return std::any_equal(std::begin(r), std::end(r), value);
     }
     
     
     
   // Any not equal
-    
+  // Returns true if first != last and x != value for some element x in 
+  // [first, last).
   template<typename Iter, typename T>
     bool any_not_equal(Iter first, Iter last, const T& value)
     {
@@ -211,24 +227,24 @@ namespace origin
       return false;
     }
     
+    
+    
+  // Any not of (range)
+  // Returns true if !empty(r) and x != value for some element x in r.
   template<typename R, typename T>
-    inline bool any_not_equal(const R& range, const T& value)
+    inline bool any_not_equal(const R& r, const T& value)
     {
       static_assert(Input_range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>, T>(), "");
 
-      return any_not_equal(std::begin(range), std::end(range), value);
+      return any_not_equal(std::begin(r), std::end(r), value);
     }
     
     
     
   // None equal
-    
-  // Returns true if and only if [first, last) is an empty range or there
-  // are no elements in [first, last) that are equal to value (or equivalently,
-  // all elements are not equal to value).
-  //
-  // precondition: readable_range(first, last)
+  // Returns true if first == last or x != value for all elements x in 
+  // [first, last).
   template<typename Iter, typename T>
     bool none_equal(Iter first, Iter last, T const& value)
     {
@@ -244,25 +260,32 @@ namespace origin
       return true;
     }
     
-  template<typename R, typename T>
-    inline bool none_equal(const R& range, const T& value)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
-
-      return none_equal(std::begin(range), std::end(range), value);
-    }
     
+  
+  // None equal (range)
+  // Returns true if !empty(r) or x != value for all elements x in r.
+  template<typename Rng, typename T>
+    inline bool none_equal(const Rng& r, const T& value)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
+
+      return none_equal(std::begin(r), std::end(r), value);
+    }
+
+
 
   // Find algorithms
-  //
-  // NOTE: There are two overloads of find and find_if because we should be
-  // able to return non-const iterators for non-const ranges.
+  // These algorithms search a range of elements for an element that satisfies
+  // some property.
+  
+  
   
   // Find
-  
+  // Return the first iterator i in [first, last) such that *i == value or
+  // last if no such iterator exists.
   template<typename Iter, typename T>
-    Iter std_find(Iter first, Iter last, T const& value)
+    Iter std_find(Iter first, Iter last, const T& value)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
@@ -271,38 +294,54 @@ namespace origin
       return std::find(first, last, value);
     }
     
-  // Return the first iterator i in the given range that is equal to value.
-  template<typename R, typename T>
-    auto find(R& range, T const& value)
-      -> Requires<Input_range<R>() && !Associative_container<R>(), Iterator_type<R>>
+  
+  
+  // Find (range)
+  // Returns the first iterator i in r such that *i == value or end(r) if no
+  // such iterator exists.
+  template<typename Rng, typename T>
+    auto find(Rng& r, const T& value)
+      -> Requires<Input_range<Rng>() && !Associative_container<Rng>(), Iterator_type<Rng>>
     {
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
       
-      return std_find(std::begin(range), std::end(range), value);
+      return std_find(std::begin(r), std::end(r), value);
     }
 
-  // A constant version of the algorithm above.
-  template<typename R, typename T>
-    auto find(R const& range, T const& value)
-      -> Requires<Input_range<R>() && !Associative_container<R>(), Iterator_type<R const>>
-    {
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
 
-      return std_find(std::begin(range), std::end(range), value);
+
+  // Find (const range)
+  // Returns the first iterator i in r such that *i == value or end(r) if no
+  // such iterator exists.
+  template<typename Rng, typename T>
+    auto find(const Rng& r, const T& value)
+      -> Requires<Input_range<Rng>() && !Associative_container<Rng>(), Iterator_type<const Rng>>
+    {
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
+
+      return std_find(std::begin(r), std::end(r), value);
     }
     
-  // Specialization for associative containers.
+    
+    
+  // Find (associative container)
+  // Returns the first iterator i in c such that *i == value or end(c) if no
+  // such iterator exists. The result is comptued in O(log(size(c))).
   template<typename C, typename T>
-    auto find(C& c, T const& x) 
+    auto find(C& c, const T& x) 
       -> Requires<Associative_container<C>(), Iterator_type<C>>
     {
       return c.find(x);
     }
 
-  // Const-specialization of the above function.
+
+
+  // Find (const associative container)
+  // Returns the first iterator i in c such that *i == value or end(c) if no
+  // such iterator exists. The result is comptued in O(log(size(c))).
   template<typename C, typename T>
-    auto find(C const& c, T const& x) 
-      -> Requires<Associative_container<C>(), Iterator_type<C const>>
+    auto find(const C& c, T const& x) 
+      -> Requires<Associative_container<C>(), Iterator_type<const C>>
     {
       return c.find(x);
     }
@@ -310,7 +349,7 @@ namespace origin
     
     
   // Find_if
-  
+  // Returns the first iterator i in [first, last) such that pred(*i) is true.
   template<typename Iter, typename Pred>
     inline Iter std_find_if(Iter first, Iter last, Pred pred)
     {
@@ -321,8 +360,10 @@ namespace origin
       return std::find_if(first, last, pred);
     }
 
-  // Return the first iterator i in the range that satisfies the given 
-  // predicate.
+
+
+  // Find_if (range)
+  // Returns the first iterator i in r such that pred(*i) is true.
   template<typename R, typename Pred>
     inline Iterator_type<R> find_if(R& range, Pred pred) 
     {
@@ -331,8 +372,11 @@ namespace origin
       
       return std_find_if(std::begin(range), std::end(range), pred);
     }
+    
+    
 
-  // A constant version of the function above.
+  // Find_if (const range)
+  // Returns the first iterator i in r such that pred(*i) is true.
   template<typename R, typename Pred>
     inline Iterator_type<R const> find_if(R const& range, Pred pred)
     {
@@ -343,18 +387,21 @@ namespace origin
     }
 
 
-  
-  // NOTE: first_if and next_if don't have overloads for Ranges. They are
-  // helper functions for traversing a range, and aren't really usable as
-  // range-based algorithms. I may decide otherwise in the future.
 
-  // Return the first element in [first, last) that is equal to value or
-  // last if no such element exists.
+  // Find first and next
+  // The first_equal and next_equal algorithms can be used to iterate over
+  // subranges of elements that are equal to a given value. Similarly, the
+  // first_if and next_if algorithms can be used to iterate over subranges of
+  // elements that satisfy a given predicate. These are useful for filtering
+  // the elements of a range.
+  
+  
+
+  // First equal
+  // Returns the first iterator i in [first, last) such that *i == value or
+  // last if no such iterator exists. 
   //
-  // This function, along with next_equal, can be used to iterate over the
-  // subsequence of values that are equal to another.
-  //
-  // precondition: readable_range(first, last)
+  // This is equivalent to find(first, last, value).
   template<typename Iter, typename T>
     inline Iter first_equal(Iter first, Iter last, const T& value)
     {
@@ -1093,14 +1140,128 @@ namespace origin
       return std::transform(first1, last1, first2, result, f);
     }
 
+    
+    
+  // Fill
+  template<typename Out, typename T>
+    inline void std_fill(Out first, Out last, const T& value)
+    {
+      return std::fill(first, last, value);
+    }
+    
+    
+    
+  // Fill n
+  template<typename Out, typename T>
+    inline Out std_fill_n(Out first, Distance_type<Out> n, const T& value)
+    {
+      return std::fill(first, n, value);
+    }
+    
+    
+    
+  // Generate
+  template<typename Out, typename F>
+    inline F std_generate(Out first, Out last, F gen)
+    {
+      std::generate(first, last, gen);
+      return gen;
+    }
+    
+    
+    
+  // Generate n
+  template<typename Out, typename F>
+    inline std::pair<Out, F> std_generate_n(Out first, Distance_type<Out> n, F gen)
+    {
+      auto result = std::generate(first, n, gen);
+      return {result, gen};
+    }
+  
+  
+  
+  // The Replace Family
+
+  // Replace
+  template<typename Iter, typename T>
+    inline void std_replace(Iter first, Iter last, const T& old_value, const T& new_value)
+    {
+      return std::replace(first, last, old_value, new_value);
+    }
+    
+  
+
+  // Replace_if
+  template<typename Iter, typename Pred, typename T>
+    inline void std_replace_if(Iter first, Iter last, Pred pred, const T& new_value)
+    {
+      return std::replace_if(first, last, pred, new_value);
+    }
+    
+    
+  
+  // Replace copy
+  template<typename Iter, typename Out, typename T>
+    inline Out std_replace_copy(Iter first, Iter last, Out result, const T& old_value, const T& new_value)
+    {
+      return std::replace_copy(first, last, result, old_value, new_value);
+    }
+    
+    
+  
+  // Replace copy if
+  template<typename Iter, typename Out, typename Pred, typename T>
+    inline Out std_replace_copy(Iter first, Iter last, Out result, Pred pred, const T& new_value)
+    {
+      return std::replace_copy_if(first, last, result, pred, new_value);
+    }
 
 
+
+  // The Remove Family
+
+  // Remove
+  template<typename Iter, typename T>
+    Iter std_remove(Iter first, Iter last, const T& value)
+    {
+      return std::remove(first, last, value);
+    }
+  
+  
+  
+  // Remove if
+  template<typename Iter, typename Pred>
+    Iter std_remove_if(Iter first, Iter last, Pred pred)
+    {
+      return std::remove_if(first, last, pred);
+    }
+    
+    
+  // Remove copy  
+  template<typename Iter, typename Out, typename T>
+    Out std_remove_copy(Iter first, Iter last, Out result, const T& value)
+    {
+      return std::remove_copy(first, last, result, value);
+    }
+    
+  
+  
+  // Remove copy if
+  template<typename Iter, typename Out, typename Pred>
+    Out std_remove_copy_if(Iter first, Iter last, Out result, Pred pred)
+    {
+      return std::remove_copy_if(first, last, result, pred);
+    }
+    
+  
+  
   // Extract
   //
   // Extract the elements of [first, last) that are equal to value by moving 
-  // them into the output range. This algorithm is similar to remove_copy, 
-  // except that the elements are moved into the output range instead of being 
-  // overwritten.
+  // them into the output range [result, last - first). The algorithm returns
+  // a pair {new_last, result_last} where the range [first, new_last) is a
+  // bounded range containing the elements not extracted and the output range
+  // [result, result_last) contains the extracted elements.
   template<typename Iter, typename Out, typename T>
     std::pair<Iter, Out> extract(Iter first, Iter last, Out result, T const& value)
     {
@@ -1108,8 +1269,7 @@ namespace origin
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
       static_assert(Move_writable<Out, Value_type<Iter>>(), "");
       assert(( is_readable_range(first, last) ));
-      if(first != last) 
-        assert(( is_movable_range(result, std_count(first, last, value), *first) ));
+      assume(( is_movable_range(result, std_count(first, last, value), *first) ));
 
       first = std::find(first, last, value);
       if(first == last)
@@ -1134,11 +1294,13 @@ namespace origin
     
     
     
-  // Extract (predicate)
+  // Remove move if
   //
-  // Extract the elements of [first, last) by moving them into the output
-  // range. This algorithm is similar to remove_if, except that the elements
-  // are moved into the output range instead of being overwritten.
+  // Remove the elements of [first, last) that satisfy pred by moving them
+  // into the output range [result, last - first). The algorithm returns
+  // a pair {new_last, result_last} where the range [first, new_last) is a
+  // bounded range containing the elements not extracted and the output range
+  // [result, result_last) contains the extracted elements.
   template<typename Iter, typename Out, typename Pred>
     std::pair<Iter, Out> extract_if(Iter first, Iter last, Out result, Pred pred)
     {
@@ -1146,8 +1308,7 @@ namespace origin
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
       static_assert(Move_writable<Out, Value_type<Iter>>(), "");
       assert(( is_readable_range(first, last) ));
-      if(first != last)
-        assume(( is_movable_range(result, std_count_if(first, last, pred), *first) ));
+      assume(( is_movable_range(result, std_count_if(first, last, pred), *first) ));
 
       first = std::find_if(first, last, pred);
       if(first == last)
@@ -1172,7 +1333,377 @@ namespace origin
 
 
 
+  // The Unique Family
+  
+  // Unique
+  template<typename Iter>
+    Iter std_unique(Iter first, Iter last)
+    {
+      return std::unique(first, last);
+    }
+    
+  
+  
+  // Unique (predicate)
+  template<typename Iter, typename R>
+    Iter std_unique(Iter first, Iter last, R comp)
+    {
+      return std::unique(first, last, comp);
+    }
+    
+    
+  
+  // Unique copy
+  template<typename Iter, typename Out>
+    Out std_unique_copy(Iter first, Iter last, Out result)
+    {
+      return std::unique(first, last, result);
+    }
+    
+    
+    
+  // Unique copy (predicate)
+  template<typename Iter, typename Out, typename R>
+    Out std_unique_copy(Iter first, Iter last, Out result, R comp)
+    {
+      return std::unique_copy(first, last, result, comp);
+    }
+
+
+
+  // Reverse and Rotate Permutations
+  // The reverse and rotate algorithms define permutations of a sequence.
+  //
+  // TODO: Implement a (perfect) riffle algorithm.
+
+  // Reverse
+  template<typename Iter>
+    void std_reverse(Iter first, Iter last)
+    {
+      std::reverse(first, last);
+    }
+  
+  
+  
+  // Reverse copy
+  template<typename Iter, typename Out>
+    void std_reverse_copy(Iter first, Iter last, Out result)
+    {
+      std::reverse(first, last, result);
+    }
+    
+    
+
+  // Rotate
+  template<typename Iter>
+    Iter std_rotate(Iter first, Iter mid, Iter last)
+    {
+      return std::rotate(first, mid, last);
+    }
+    
+  
+  
+  // Rotate copy
+  template<typename Iter, typename Out>
+    Iter std_rotate_copy(Iter first, Iter mid, Iter last, Out result)
+    {
+      return std::rotate_copy(first, mid, last, result);
+    }
+
+
+
+  // Random Permutations
+  // This family of algorithmsm randomly permute a sequence of elements by
+  // shuffling them.
+  //
+  // TODO: Implement a randomized riffle algorithm.
+
+  // Random shuffle
+  template<typename Iter>
+    void std_random_shuffle(Iter first, Iter last)
+    {
+      return std::random_shuffle(first, last);
+    }
+    
+  
+  
+  // Random shuffle (generator)
+  template<typename Iter, typename Gen>
+    void std_random_shuffle(Iter first, Iter last, Gen&& rand)
+    {
+      return std::random_shuffle(first, last, rand);
+    }
+    
+  
+  
+  // Shuffle
+  template<typename Iter, typename Gen>
+    void std_shuffle(Iter first, Iter last, Gen&& rand)
+    {
+      return std::shuffle(first, last, rand);
+    }
+    
+
+  
+  // Partitions
+  // This family of algorithms deals with partitions of a sequence.
+  
+  // Is partitioned
+  template<typename Iter, typename Pred>
+    bool std_is_partitioned(Iter first, Iter last, Pred pred)
+    {
+      return std::is_partitioned(first, last, pred);
+    }
+    
+  
+  
+  // Partition point
+  template<typename Iter, typename Pred>
+    Iter std_partition_point(Iter first, Iter last, Pred pred)
+    {
+      return std::partition_point(first, last, pred);
+    }
+    
+  
+  
+  // Paritition
+  template<typename Iter, typename Pred>
+    Iter std_partition(Iter first, Iter last, Pred pred)
+    {
+      return std::partition(first, last, pred);
+    }
+  
+  
+  
+  // Stable partition
+  template<typename Iter, typename Pred>
+    Iter std_stable_partition(Iter first, Iter last, Pred pred)
+    {
+      return std::stable_partition(first, last, pred);
+    }
+    
+    
+  
+  // Partition copy
+  template<typename Iter, typename Out1, typename Out2, typename Pred>
+    std::pair<Out1, Out2> std_partition_copy(Iter first, Iter last, 
+                                             Out1 out_true, Out2 out_false, 
+                                             Pred pred)
+    {
+      return std::partition_copy(first, last, out_true, out_false, pred);
+    }
+
+
+
+  // Sorting
+  // This family of algorithms deals with the ordering of the elements of
+  // a sequence.
+  
+  // Is sorted
+  template<typename Iter>
+    bool std_is_sorted(Iter first, Iter last)
+    {
+      return std::is_sorted(first, last);
+    }
+  
+  
+  
+  // Is sorted (relation)
+  template<typename Iter, typename Ord>
+    bool std_is_sorted(Iter first, Iter last, Ord comp)
+    {
+      return std::is_sorted(first, last, comp);
+    }
+
+
+
+  // Is sorted until
+  template<typename Iter>
+    Iter std_is_sorted_until(Iter first, Iter last)
+    {
+      return std::is_sorted(first, last);
+    }
+  
+  
+  
+  // Is sorted until (relation)
+  template<typename Iter, typename Ord>
+    Iter std_is_sorted_until(Iter first, Iter last, Ord comp)
+    {
+      return std::is_sorted(first, last, comp);
+    }
+
+
+
+  // Sort
+  template<typename Iter>
+    void std_sort(Iter first, Iter last)
+    {
+      return std::sort(first, last);
+    }
+    
+    
+    
+  // Sort (relation)
+  template<typename Iter, typename Ord>
+    void std_sort(Iter first, Iter last, Ord comp)
+    {
+      return std::sort(first, last, comp);
+    }
+    
+    
+  
+  // Stable sort
+  template<typename Iter>
+    void std_stable_sort(Iter first, Iter last)
+    {
+      return std::stable_sort(first, last);
+    }
+    
+    
+    
+  // Stable sort (relation)
+  template<typename Iter, typename Ord>
+    void std_stable_sort(Iter first, Iter last, Ord comp)
+    {
+      return std::stable_sort(first, last, comp);
+    }
+
+
+
+  // Partial sort
+  template<typename Iter>
+    void std_partial_sort(Iter first, Iter middle, Iter last)
+    {
+      return std::partial_sort(first, last);
+    }
+    
+    
+    
+  // Partial sort (relation)
+  template<typename Iter, typename Ord>
+    void std_partial_sort(Iter first, Iter middle, Iter last, Ord comp)
+    {
+      return std::partial_sort(first, last, comp);
+    }
+    
+    
+
+  // Partial sort copy
+  template<typename Iter1, typename Iter2>
+    void std_partial_sort_copy(Iter1 first, Iter1 last, 
+                               Iter2 result_first, Iter2 result_last)
+    {
+      return std::partial_sort_copy(first, last, result_first, result_last);
+    }
+    
+    
+    
+  // Partial sort copy (relation)
+  template<typename Iter1, typename Iter2, typename Ord>
+    void std_partial_sort_copy(Iter1 first, Iter1 last, 
+                               Iter2 result_first, Iter2 result_last, Ord comp)
+    {
+      return std::partial_sort_copy(first, last, result_first, result_last, comp);
+    }
+
+
+
+  // Nth element
+  template<typename Iter>
+    void std_nth_element(Iter first, Iter last)
+    {
+      return std::nth_element(first, last);
+    }
+
+
+
+  // Nth element (relation)
+  template<typename Iter, typename Ord>
+    void std_nth_element(Iter first, Iter last, Ord ord)
+    {
+      return std::nth_element(first, last);
+    }
+    
+    
+
+  // Binary search
+  // This family of algorithms is admitted by sorted sequences.
+  
+  // Lower bound
+  template<typename Iter, typename T>
+    Iter std_lower_bound(Iter first, Iter last, const T& value)
+    {
+      retrn std::lower_bound(first, last, value);
+    }
+    
+  
+  
+  // Lower bound (relation)
+  template<typename Iter, typename T, typename Ord>
+    Iter std_lower_bound(Iter first, Iter last, const T& value, Ord comp)
+    {
+      return std::lower_bound(first, last, value, comp);
+    }
+
+
+
+  // Upper bound
+  template<typename Iter, typename T>
+    Iter std_upper_bound(Iter first, Iter last, const T& value)
+    {
+      return std::upper_bound(first, last, value);
+    }
+    
+  
+  
+  // Upper bound (relation)
+  template<typename Iter, typename T, typename Ord>
+    Iter std_upper_bound(Iter first, Iter last, const T& value, Ord comp)
+    {
+      return std::upper_bound(first, last, value, comp);
+    }
+
+
+
+  // Equal range
+  template<typename Iter, typename T>
+    Iter std_equal_range(Iter first, Iter last, const T& value)
+    {
+      return std::equal_range(first, last, value);
+    }
+    
+  
+  
+  // Equal range (relation)
+  template<typename Iter, typename T, typename Ord>
+    Iter std_equal_range(Iter first, Iter last, const T& value, Ord comp)
+    {
+      return std::equal_range(first, last, value, comp);
+    }
+    
+  
+  
+  // Binary search
+  template<typename Iter, typename T>
+    Iter std_binary_search(Iter first, Iter last, const T& value)
+    {
+      return std::binary_search(first, last, value);
+    }
+    
+  
+  
+  // Binary search (relation)
+  template<typename Iter, typename T, typename Ord>
+    Iter std_binary_search(Iter first, Iter last, const T& value, Ord comp)
+    {
+      return std::binary_search(first, last, value, comp);
+    }
+
+  
+
   // Permutation Generators
+  // These algorithms iterate through successive permutations of a sequence.
   
   // Next permutation
   template<typename Iter>
