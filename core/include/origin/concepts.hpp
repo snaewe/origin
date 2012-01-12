@@ -651,13 +651,14 @@ namespace origin
       }
     };
     
-  template<typename T, typename U = T>
+  // Returns true if R is a Relation on T x U.
+  template<typename R, typename T, typename U = T>
     constexpr bool Relation()
     {
-      return Relation_concept<T, U>::check();
+      return Relation_concept<R, T, U>::check();
     }
 
-    
+
     
   // Concepts for common associated types
 

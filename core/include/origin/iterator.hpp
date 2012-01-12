@@ -122,7 +122,15 @@ namespace origin
     }
     
 
+
   // Incrementable types
+  //
+  // FIXME: Rewrite the incrementable concepts so that equality comparison is
+  // always required. Weakly_incrementable should be Semi_incrementable and
+  // Incrementable should be as it is. This will let me get rid of
+  // Weak_input_iterator.
+  
+  
   
   // A weakly incrementable type is a semiregular type that can be pre- and
   // post-incremented. Neither operation is requireed to be equality
@@ -175,9 +183,13 @@ namespace origin
       return Incrementable_concept<I>::check();
     }
 
+
+
   // Iterators
   // The following concept classes and predicates are define checking
   // capabilities for iterator concepts.
+    
+    
     
   // Iterator categories
   //
@@ -229,6 +241,7 @@ namespace origin
     >;
 
 
+
   // Returns true if Iter has all of the associated iterator types.
   template<typename Iter>
     constexpr bool Has_iterator_types()
@@ -248,13 +261,16 @@ namespace origin
       return Has_iterator_types<T>();
     }
   
-      
+
+
   // An alias for the associated reference type of the iterator. This supports 
   // writing  backwards compatible iterators where the reference type is 
   // actually named even though it should be deduced as decltype(*i).
   template<typename Iter>
     using Iterator_reference = typename std::iterator_traits<Iter>::reference;
-    
+
+
+
   // An alias for the associated pointer type of the iterator. This supports 
   // writing  backwards compatible iterators where the reference type is 
   // actually named even though it is never used in any STL algorithms. Note
@@ -272,7 +288,6 @@ namespace origin
 
   // Weak input iterator
   // A weak input iterator is weakly incrementable and readable.
-    
   template<typename Iter>
     struct Weak_input_iterator_concept
     {
@@ -291,7 +306,9 @@ namespace origin
     }
     
     
+    
   // Input iterators
+  // An input
   template<typename Iter, bool Prereqs>
     struct Input_iterator_requirements
     {
@@ -413,7 +430,10 @@ namespace origin
       }
     };
     
-  // A bidirectional iterators...
+    
+  
+  
+  // A bidirectional iterator is a forward iterator that supports 
   template<typename Iter>
     struct Bidirectional_iterator_concept
     {
@@ -517,7 +537,7 @@ namespace origin
     
     
     
-  // Mutable Iterators
+  // Permutable and mutable iterators
   // There are two kinds of mutable iterators: Permutable iterators allow
   // values to be exchanged (moved). Mutable iterators allow values to be
   // replaced (copied). Note that mutable iterators are also permutable.
@@ -565,9 +585,11 @@ namespace origin
     }
     
     
+    
   // Mutable Iterators
   // A mutable iterator allows its referenced values to be re-assigned to new
-  // values (through copies). Note that mutable iterators are also permutable.
+  // values (through copies). Note that mutable iterators are inherently 
+  // permutable.
     
   // A helper function for checking requirements.
   template<typename Iter, bool Prereqs>
@@ -619,6 +641,12 @@ namespace origin
 
 
   // Rearrangements
+  //
+  // FIXME: These aren't iterator concepts. These are algorithmic concepts.
+  // They are specific to a families of algorithms. These concepts really
+  // belong in their corresponding algorithm header.
+  
+  
   
   // Mergeable
   // The mergeable concept describes common requirements on the family of
@@ -832,6 +860,9 @@ namespace origin
   // before delegating to the usual algorithm. This library does not dispatch
   // based on iterator type.
     
+
+
+  // Advance interator
   // Advance i by n positions.
   template<typename Iter>
     inline void std_advance(Iter& i, Distance_type<Iter> n = 1)
@@ -842,6 +873,9 @@ namespace origin
       std::advance(i, n);
     }
     
+
+
+  // Next iterator
   // Return the nth iterator past i.
   template<typename Iter>
     inline Iter std_next(Iter i, Distance_type<Iter> n = 1)
@@ -852,18 +886,25 @@ namespace origin
       return std::next(i, n);
     }
     
+    
+  // Previous iterator
   // Return the nth iterator before i.
   template<typename Iter>
     inline Iter std_prev(Iter i, Distance_type<Iter> n = 1)
     {
-      // FIXME: How do you write the precondition here?
       static_assert(Bidirectional_iterator<Iter>(), "");
-      // assert(( weak_range(prev(i, n), n) )) ???
+      assume(( bounded_range(prev(i, n), i) ));
 
       return std::prev(i, n);
     }
   
+  
+  
+  // Iterator distance
   // Return the distance between i and j.
+  //
+  // FIXME: Because [first, last) is a boundd range, the result of this
+  // operation must be non-negative.
   template<typename Iter>
     inline Distance_type<Iter> std_distance(Iter first, Iter last)
     {
@@ -873,6 +914,68 @@ namespace origin
       return std::distance(first, last);
     }
     
+  
+  // Iterator distance (action)
+  // Return the distance between a and b using action to advance over the
+  // range.
+  //
+  // FIXME: If we generalize over the increment, do we need a precondition that
+  // [first, last) forms a bounded range over adv? Probably. This idea seems
+  // to be missing from EoP.
+  template<typename Iter, typename Act>
+    inline Distance_type<Iter> distance(Iter first, Iter last, Act adv)
+    {
+      assume(( is_reachable(first, last, adv) )); // FIXME: Not quite right.
+      
+      Distance_type<Iter> n = 0;
+      while(first != last) {
+        ++n;
+        adv(first);
+      }
+      return n;
+    }
+ 
+ 
+   
+  // Iterator actions
+  // An action function is a void function that modifies one or more of its
+  // arguments.
+  
+  // The increment action increments an object of type T.
+  template<typename T>
+    struct increment_action
+    {
+      void operator()(T& x) const
+      {
+        ++x;
+      }
+    };
+  
+  // The decrement action decrements an object of type T.
+  template<typename T>
+    struct decrement_action
+    {
+      void operator()(T& x) const
+      {
+        --x;
+      }
+    };
+  
+  // The advance action advances an Iter object n times.
+  template<typename Iter>
+    struct advance_action
+    {
+      void operator()(Iter& i, Distance_type<Iter> n)
+      {
+        std_advance(i, n);
+      }
+    };
+
+                   
 } // namespace origin
+
+// Include default models
+#include <origin/iterator/counter.hpp>
+
 
 #endif

@@ -17,39 +17,12 @@ int main()
   // Check counter types.
   {
     auto f = make_counter(0u), l = make_counter(10u);
-    typedef decltype(f) Counter;
-    static_assert(is_same<Counter::value_type, unsigned int>::value, "");
-    static_assert(is_same<Counter::difference_type, int>::value, "");
-    static_assert(f.step() == 1, "");
+    using C = decltype(f);
+    static_assert(Same<C::value_type, unsigned int>(), "");
+    static_assert(Same<C::difference_type, int>(), "");
     assert(( distance(f, l) == 10 ));
   }
 
-  {
-    auto f = make_counter<-1>(10u), l = make_counter<-1>(0u);
-    typedef decltype(f) Counter;
-    static_assert(is_same<Counter::value_type, unsigned int>::value, "");
-    static_assert(is_same<Counter::difference_type, int>::value, "");
-    static_assert(f.step() == -1, "");
-    assert(( distance(f, l) == 10 ));
-  }
 
-  // Check distances for non-unit counters
-  {
-    auto f = make_counter<2>(0), l = make_counter<2>(10);
-    assert(( distance(f, l) == 5 ));
-  }
-  {
-    auto f = make_counter<-2>(10), l = make_counter<-2>(0);
-    assert(( distance(f, l) == 5 ));
-  }
-
-  // Test step counters also
-  {
-    auto f = make_step_counter(0), l = make_step_counter(10);
-    assert(( distance(f, l) == 10 ));
-  }
-  {
-    auto f = make_step_counter(0), l = make_step_counter(10);
-    assert(( distance(f, l) == 10 ));
-  }
+  // FIXME: Actually test this class.
 }

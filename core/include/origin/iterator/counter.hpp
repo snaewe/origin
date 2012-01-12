@@ -5,201 +5,116 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_ITERATOR_COUNTING_ITERATOR_HPP
-#define ORIGIN_ITERATOR_COUNTING_ITERATOR_HPP
+#ifndef ORIGIN_ITERATOR_COUNTER_HPP
+#define ORIGIN_ITERATOR_COUNTER_HPP
 
-#include <iterator>
+// NOTE: This file is included by <origin/iterator.hpp>
+#include <origin/iterator.hpp>
 
 namespace origin
 {
-  // FIXME: Is int really the best type for the count? It's certainly the
-  // easiest. I can actually write it so that the type of the ICE parameter
-  // is derived from count (as make_signed<Count>::type, that actually works),
-  // but I can't easily do the same for the accessor function, which is really
-  // too bad. I'm not so sure that it's really worth the effort.
 
-  // A counter is an integral value masquerading as a random access iterator.
-  // When dereferenced, counters simply return the current value.
+  // An alias for the difference type of a counter argument. For Integral types,
+  // this is the signed value of that type. For Iterator types, it is the 
+  // distance type.
   //
-  // The counter is parameterized over its underlying count type and a
-  // statically defined step value, which defaults to 1. If the step is
-  // negative, then the counter will decrement.
+  // FIXME: This is not really correct for integral types. It should be the
+  // next larger signed representation.
+  template<typename I>
+    using Incrementable_difference = 
+      If<Integral<I>(), Make_signed<I>, Distance_type<I>>;
+  
+
+  // An alias for the iterator category of a counter. If I is an integral type,
+  // the category is "random access". Otherwise, it is the iterator's category.
+  template<typename I>
+    using Incrementable_category = 
+      If<Integral<I>(), std::random_access_iterator_tag, Iterator_category<I>>;
+
+
+
+  // A counter is an iterator that traverses a counted sequence of 
+  // incrementable objects, usually integers. It can also be used to count over 
+  // other iterator types.
   //
-  // Note that if the step is not 1 or -1, care must be taken with comparisons
-  // against iterators. Use < or > for comparisons in those cases.
-  template<typename Count, int Step = 1>
+  // The counter is parameterized over its underlying "counter" type and an
+  // action that increments counter. The default action is to simply increment
+  // the counter.
+  template<typename Inc, typename Act = increment_action<Inc>>
     class counter 
     {
-      static_assert(Integral<Count>(), "");
-      static_assert(Step != 0, "");
+      static_assert(Weakly_incrementable<Inc>(), "");
+      static_assert(Function<Act, Inc&>(), "");
     public:
-      using value_type = Count;
-      using reference = const Count&;
-      using pointer = const Count*;
-      using Make_signed
+      using value_type        = Inc;
+      using reference         = const Inc&;
+      using pointer           = const Inc*;
+      using difference_type   = Incrementable_difference<Inc>;
+      using iterator_category = Incrementable_category<Inc>;
+      
+      using advance_action = Act;
 
-      counter(value_type n = 0)
-        : count_{n}
+      // Default constructor
+      counter(Inc i = {}, Act adv = {})
+        : i{i}
       { }
+      
+      // Returns the underlying incrementable object. 
+      reference base() const { return i; }
+      
+      // Returns the advance action.
+      advance_action advance_act() const { return adv; }
 
-      // Return the step increment step.
-      static constexpr difference_type step()
-      { return Step; }
+      // Readable
+      reference operator*() const { return i; }
+      pointer operator->() const { return &i; }
+  
+      // Equality_comparable
+      bool operator==(const counter& x) const { return i == x.i; }
+      bool operator!=(const counter& x) const { return i != x.i; }
 
-      reference dereference() const
-      { return count_; }
+      bool operator<(const counter& x) const  { return i < x.i; }
+      bool operator>(const counter& x) const  { return i > x.i; }
+      bool operator<=(const counter& x) const { return i <= x.i; }
+      bool operator>=(const counter& x) const { return i >= x.i; }
 
-      bool equal(counter const& x) const
-      { return count_ == x.count_; }
+      // Increment
+      counter& operator++() { ++i; return *this; }
+      counter operator++(int) { counter tmp{*this}; ++tmp; return tmp; }
+      
+      // Decrement
+      counter& operator--() { --i; return *this; }
+      counter operator--(int) { counter tmp{*this}; --tmp; return tmp; }
 
-      bool less(counter const& x) const
-      { return count_ < x.count_; }
+      // Advance
+      counter& operator+=(difference_type n) { i += n; return *this; }
+      counter& operator-=(difference_type n) { i -= n; return *this; }
+      
+      // requires Random_access_iterator<Iter> || Integral<Iter>
+      friend counter operator+(counter c, difference_type n) { c += n; return c; }
+      friend counter operator+(difference_type n, counter c) { c += n; return c; }
+      friend counter operator-(counter c, difference_type n) { c -= n; return c; }
 
-      void increment()
-      { count_ += Step; }
-
-      void decrement()
-      { count_ -= Step; }
-
-      void advance(difference_type n)
-      { count_ += n * Step; }
-
-      difference_type distance(counter const& x)
+      // Difference
+      friend difference_type distance(const counter& a, const counter& b)
       {
-        return distance(count_, x.count_, bool_constant<(Step > 0)>{});
+        assume(( a.adv == b.adv ));
+        return distance(a.i, b.i, a.adv);
       }
 
     private:
-      static difference_type distance(value_type x, value_type y, std::true_type)
-      { return (x - y) / Step; }
-
-      static difference_type distance(value_type x, value_type y, std::false_type)
-      { return (y - x) / -Step; }
-
-    private:
-      value_type count_;
+      Inc i;    // The incremented object
+      Act adv;  // The advance action
     };
 
-  /**
-   * Create a counter that starts from the given value n.
-   *
-   * A constant step can be specified by explicitly instantiating the template
-   * over an integral value. For example `make_counter<-1>(10)` produces a
-   * counter that counts backwards starting at 10.
-   *
-   * @tparam Count    The underlying counted value. An Integral type
-   * @tparam Step     The step for counter
-   *
-   * @param n         The starting value of the counter
-   */
-  template<int Step = 1, typename Count>
-  inline counter<Count, Step> make_counter(Count n)
-  { return counter<Count, Step>{n}; }
-
-
-  // FIXME: We should be able to optimize the call to difference by making
-  // the step type either pos<T> or neg<T>. Then we can just specialize the
-  // algorithm to avoid the branch. Or, we could just tell users to write
-  // pos/neg to guarantee the optimal performance. Of course, this requires
-  // that we actually write the pos/neg qualifier classes.
-
-  // NOTE: The step doesn't _really_ need to be signed, only if it's negative.
-  // In other words, its possible to write a count with an unsigned step and
-  // then give it a negative value.
-
-  /**
-   * @ingroup iter
-   *
-   * A step counter is a counter with a dynamically specified step. A negative
-   * step value results in a counter that counts downwards.
-   *
-   * @see counter
-   *
-   * @tparam Count  An integral type
-   * @tparam Step   A signed integral type
-   */
-  template<typename Count,
-           typename Step = typename std::make_signed<Count>::type>
-  class step_counter
-    : public random_access_iterator_facade<
-        step_counter<Count, Step>,
-        Count,          // value type
-        Count const&,   // reference
-        Count const*,   // pointer
-        Step            // difference
-      >
-  {
-    // FIXME: Is it an invariant that Step is the signed version of Count or
-    // simply that Count's difference type can be converted to Count? I don't
-    // know...
-
-    typedef random_access_iterator_facade<
-      step_counter<Count, Step>, Count, Count const&, Count const*, Step
-    > base_type;
-  public:
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::reference reference;
-    typedef typename base_type::difference_type difference_type;
-
-    step_counter(value_type n, difference_type s = 1)
-      : count_(n), step_(s)
-    { }
-
-    // Return the step increment step.
-    difference_type step() const
-    { return step_; }
-
-    reference dereference() const
-    { return count_; }
-
-    bool equal(step_counter const& x) const
-    { return count_ == x.count_; }
-
-    bool less(step_counter const& x) const
-    { return count_ < x.count_; }
-
-    void increment()
-    { count_ += step_; }
-
-    void decrement()
-    { count_ -= step_; }
-
-    void advance(difference_type n)
-    { count_ += n * step_; }
-
-    difference_type distance(step_counter const& x)
+  // Return a counter over the incrementable type. An increment action may be
+  // optionally specified.
+  template<typename Inc, typename Act = increment_action<Inc>>
+    counter<Inc, Act> make_counter(const Inc& inc, Act act = {})
     {
-      if(step_ > 0) {
-        return (count_ - x.count_) / step_;
-      } else {
-        return (x.count_ - count_) / -step_;
-      }
+      return {inc, act};
     }
 
-  private:
-    value_type count_;
-    difference_type step_;
-  };
-
-  /**
-   * @fn make_step_counter(n)
-   * @fn make_step_counter(n, s)
-   *
-   * Return a step counter starting at the value n. A step may optionally be
-   * specified.
-   *
-   * @tparam Count    The underlying counted type. An Integral type.
-   * @tparam Step     The step increment type., A signed Integral type.
-   */
-  //@{
-  template<typename Count>
-  inline step_counter<Count> make_step_counter(Count n)
-  { return {n}; }
-
-  template<typename Count, typename Step>
-  inline step_counter<Count, Step> make_step_counter(Count n, Step s)
-  { return {n, s}; }
-  //@}
 
 } // namespace origin
 

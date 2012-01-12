@@ -112,7 +112,7 @@ namespace origin
       static_assert(Input_range<Rng>(), "");
       static_assert(Predicate<Pred, Value_type<Rng>>(), "");
       
-      return std::any_not_of(std::begin(r), std::end(r), pred);
+      return any_not_of(std::begin(r), std::end(r), pred);
     }
 
 
@@ -135,7 +135,7 @@ namespace origin
   // None of (range)
   // Returns true if empty(r) or !pred(x) for all elements x in r.
   template<typename Rng, typename Pred>
-    inline bool none_of(const Rng& range, Pred pred)
+    inline bool none_of(const Rng& r, Pred pred)
     {
       static_assert(Input_range<Rng>(), "");
       static_assert(Predicate<Pred, Value_type<Rng>>(), "");
@@ -173,7 +173,7 @@ namespace origin
       static_assert(Input_range<Rng>(), "");
       static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
 
-      return std::all_equal(std::begin(r), std::end(r), value);
+      return all_equal(std::begin(r), std::end(r), value);
     }
     
     
@@ -200,12 +200,12 @@ namespace origin
   // Any equal (range)
   // Returns true if !empty(r) and x == value for some element x in r.
   template<typename Rng, typename T>
-    inline bool any_equal(const R& r, const T& value)
+    inline bool any_equal(const Rng& r, const T& value)
     {
       static_assert(Input_range<Rng>(), "");
       static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
 
-      return std::any_equal(std::begin(r), std::end(r), value);
+      return any_equal(std::begin(r), std::end(r), value);
     }
     
     
@@ -377,13 +377,13 @@ namespace origin
 
   // Find_if (const range)
   // Returns the first iterator i in r such that pred(*i) is true.
-  template<typename R, typename Pred>
-    inline Iterator_type<R const> find_if(R const& range, Pred pred)
+  template<typename Rng, typename Pred>
+    inline Iterator_type<const Rng> find_if(const Rng& r, Pred pred)
     {
-      static_assert(Input_range<R const>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
+      static_assert(Input_range<const Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
       
-      return std_find_if(std::begin(range), std::end(range), pred);
+      return std_find_if(std::begin(r), std::end(r), pred);
     }
 
 
@@ -394,8 +394,8 @@ namespace origin
   // first_if and next_if algorithms can be used to iterate over subranges of
   // elements that satisfy a given predicate. These are useful for filtering
   // the elements of a range.
-  
-  
+
+
 
   // First equal
   // Returns the first iterator i in [first, last) such that *i == value or
@@ -412,10 +412,11 @@ namespace origin
       return std::find(first, last, value);
     }
 
+
+
+  // Next equal
   // Return the next element in [first + 1, last) that is equal to value, or
   // last if no such element exists.
-  //
-  // precondition: readable_range(first, last)
   template<typename Iter, typename T>
     inline Iter next_equal(Iter first, Iter last, T const& value)
     {
@@ -430,13 +431,9 @@ namespace origin
     }
 
     
+  // First if
   // Return the first element in [first, last) that satisfies the predicate
   // pred, or last if no such element exists.
-  //
-  // This function, along with next_if, can be used to iterate over the
-  // subsequence of values satisfying some predicate.
-  //
-  // precondition: readable_range(first, last)
   template<typename Iter, typename Pred>
     inline Iter first_if(Iter first, Iter last, Pred pred)
     {
@@ -447,10 +444,11 @@ namespace origin
       return std::find_if(first, last, pred);
     }
     
+    
+    
+  // Next if
   // Return the next element in [first, last) that satisfies pred, or last if
   // no such element exists.
-  //
-  // precondition: readable_range(first, last)
   template<typename Iter, typename Pred>
     inline Iter next_if(Iter first, Iter last, Pred pred)
     {
@@ -466,30 +464,27 @@ namespace origin
     
     
 
-  // Return an iterator to the nth element in [first, last) that is equal to
-  // value, or last if no such element exists.
-  //
-  // precondition: readable_range(first, last)
-  // precondition: n >= 0
+  // Find nth
+  // Return the nth iterator i in [first, last) where *i == value or last if
+  // there are fewer than n elements equal to value.
   template<typename Iter, typename T>
-    Iter find_nth(Iter first, Iter last, Distance_type<Iter> n, T const& value)
+    inline Iter find_nth(Iter first, Iter last, Distance_type<Iter> n, const T& value)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
       assert(( is_readable_range(first, last) ));
-      
-      if(n == 0)
-        return last;
-      
-      first = first_equal(first, last, value);
-      --n;
-      while(n != 0 && first != last) {
-        first = next_equal(first, last, value);
-        --n;
+
+      while(first != last && n != 0) {
+        if(*first == value)
+          --n;
+        ++first;
       }
       return first;
     }
-    
+
+
+
+  // Find nth (range)
   // Return an iterator to the nth element in r that is equal to value.
   template<typename R, typename T>
     inline Iterator_type<R> find_nth(R& range, Distance_type<R> n, T const& value)
@@ -500,6 +495,10 @@ namespace origin
       return find_nth(std::begin(range), std::end(range), n, value);
     }
     
+    
+  
+  // Find nth (const range)
+  // Return an iterator to the nth element in r that is equal to value.
   template<typename R, typename T>
     inline Iterator_type<R const> find_nth(R const& range, Distance_type<R> n, T const& value)
     {
@@ -511,11 +510,9 @@ namespace origin
 
 
 
-  // Return an iterator to the nth element in [first, last) that satisfies
-  // pred, or last if no such element exists.
-  //
-  // precondition: readable_range(first, last)
-  // precondition: n >= 0
+  // Find nth if
+  // Return the nth iterator i in [first, last) where pred(*i) is true or last 
+  // if there are fewer than n elements equal to value.
   template<typename Iter, typename Pred>
     Iter find_nth_if(Iter first, Iter last, Distance_type<Iter> n, Pred pred)
     {
@@ -523,18 +520,17 @@ namespace origin
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
       assert(( is_readable_range(first, last) ));
       
-      if(n == 0)
-        return last;
-      
-      first = first_if(first, last, pred);
-      --n;
-      while(n != 0 && first != last) {
-        first = next_if(first, last, pred);
-        --n;
+      while(first != last && n != 0) {
+        if(pred(*first))
+          --n;
+        ++first;
       }
       return first;
     }
     
+    
+  
+  // Find nth if (range)
   // Return an iterator to the nth element in r that satisfies pred, or return
   // last if there is no such element.
   template<typename R, typename Pred>
@@ -546,6 +542,9 @@ namespace origin
       return find_nth_if(std::begin(range), std::end(range), n, pred);
     }
     
+  
+  
+  // Find nth if (const range)
   template<typename R, typename Pred>
     inline Iterator_type<R const> find_nth_if(R const& range, Distance_type<R> n, Pred pred)
     {
@@ -558,11 +557,8 @@ namespace origin
 
   
   // Find first of
-  // Note that there are two overloads of the range-based find_first_of that
-  // are differentiated by the const-ness of the first range. The second range
-  // is always passed as a const range because we dont' return an iterator
-  // for it.
-  
+  // Returns an iterator i in [first1, last1) that is equal to any of the 
+  // elements in [first2, last2).
   template<typename Iter1, typename Iter2>
     inline Iter1 std_find_first_of(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
     {
@@ -574,74 +570,90 @@ namespace origin
       
       return std::find_first_of(first1, last1, first2, last2);
     }
-  
-  // The range-based find_first_of takes two ranges.
-  template<typename R1, typename R2>
-    inline Iterator_type<R1> find_first_of(R1& range1, R2 const& range2)
+
+
+
+  // Find first of (range)
+  // Returns the first iterator i in r1 that is equal to any of the elements in 
+  // r2.
+  template<typename Rng1, typename Rng2>
+    inline Iterator_type<Rng1> find_first_of(Rng1& r1, const Rng2& r2)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
-      static_assert(Equality_comparable<Value_type<R1>, Value_type<R2>>(), "");
+      static_assert(Input_range<Rng1>(), "");
+      static_assert(Input_range<Rng2>(), "");
+      static_assert(Equality_comparable<Value_type<Rng1>, Value_type<Rng2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2));
+      return std_find_first_of(std::begin(r1), std::end(r1),
+                               std::begin(r2), std::end(r2));
     }
   
-  // Const version of the function above.
-  template<typename R1, typename R2>
-    inline Iterator_type<R1 const> find_first_of(R1 const& range1, R2 const& range2)
+  
+  
+  // Find first of (const range)
+  // Returns an iterator i in r1 that is equal to any of the elements in r2.
+  template<typename Rng1, typename Rng2>
+    inline Iterator_type<const Rng1> find_first_of(const Rng1& r1, const Rng2& r2)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
-      static_assert(Equality_comparable<Value_type<R1>, Value_type<R2>>(), "");
+      static_assert(Input_range<Rng1>(), "");
+      static_assert(Input_range<Rng2>(), "");
+      static_assert(Equality_comparable<Value_type<Rng1>, Value_type<Rng2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2));
+      return std_find_first_of(std::begin(r1), std::end(r1),
+                               std::begin(r2), std::end(r2));
     }
     
     
-    
-  // Generalized find first of
-  template<typename Iter1, typename Iter2, typename Rel>
-    inline Iter1 std_find_first_of(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Rel r)
+  
+  // Find first of (relation)
+  // Returns the first iterator i in [first1, last1) such that comp(*i, *j) is 
+  // true where j is any iterator in [first2, last2).
+  template<typename Iter1, typename Iter2, typename R>
+    inline Iter1 std_find_first_of(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, R comp)
     {
       static_assert(Input_iterator<Iter1>(), "");
       static_assert(Forward_iterator<Iter2>(), "");
-      static_assert(Relation<Rel, Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Relation<R, Value_type<Iter1>, Value_type<Iter2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
       
-      return std::find_first_of(first1, last1, first2, last2, r);
+      return std::find_first_of(first1, last1, first2, last2, comp);
     }
     
-  // Range-based generalized find_first_of.
-  template<typename R1, typename R2, typename Rel>
-    inline Iterator_type<R1> find_first_of(R1& range1, R2 const& range2, Rel r)
+    
+  
+  // Find first of (relation, range)
+  // Returns the first iterator i in r1 such that comp(*i, *j) is true where j 
+  // is any iterator in r2.
+  template<typename Rng1, typename Rng2, typename R>
+    inline Iterator_type<Rng1> find_first_of(Rng1& r1, const Rng2& r2, R comp)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
-      static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
+      static_assert(Input_range<Rng1>(), "");
+      static_assert(Input_range<Rng2>(), "");
+      static_assert(Relation<R, Value_type<Rng1>, Value_type<Rng2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2), r);
+      return std_find_first_of(std::begin(r1), std::end(r1),
+                               std::begin(r2), std::end(r2), comp);
     }
     
-  // Const version of the function above.
-  template<typename R1, typename R2, typename Rel>
-    inline Iterator_type<R1 const> find_first_of(R1 const& range1, R2 const& range2, Rel r)
+    
+  
+  // Find first of (relation, const range)
+  // Returns the first iterator i in r1 such that comp(*i, *j) is true where j 
+  // is any iterator in r2.
+  template<typename Rng1, typename Rng2, typename R>
+    inline Iterator_type<const Rng1> find_first_of(const Rng1& r1, const Rng2& r2, R comp)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
-      static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
+      static_assert(Input_range<Rng1>(), "");
+      static_assert(Input_range<Rng2>(), "");
+      static_assert(Relation<R, Value_type<Rng1>, Value_type<Rng2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2), r);
+      return std_find_first_of(std::begin(r1), std::end(r1),
+                               std::begin(r2), std::end(r2), comp);
     }
   
   
   
   // Adjacent find
-  
   template<typename Iter>
     inline Iter std_adjacent_find(Iter first, Iter last)
     {
@@ -662,7 +674,7 @@ namespace origin
     }
   
   template<typename R>
-    inline Iterator_type<R const> adjacent_find(R const& range)
+    inline Iterator_type<const R> adjacent_find(const R& range)
     {
       static_assert(Input_range<R>(), "");
       static_assert(Equality_comparable<Value_type<R>>(), "");
@@ -1634,7 +1646,7 @@ namespace origin
   template<typename Iter, typename T>
     Iter std_lower_bound(Iter first, Iter last, const T& value)
     {
-      retrn std::lower_bound(first, last, value);
+      return std::lower_bound(first, last, value);
     }
     
   

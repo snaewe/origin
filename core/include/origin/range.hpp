@@ -9,7 +9,6 @@
 #define ORIGIN_RANGE_HPP
 
 #include <origin/iterator.hpp>
-#include <origin/iterator/range.hpp>
 
 namespace origin
 {
@@ -27,8 +26,10 @@ namespace origin
   // iterators for the range. This is particularly helpful for containers.
   
 
+
   // Begin iterator
-  // Ranges and containers have begin and end operations that return iterators.
+  // Ranges provide an operation, begin(r), that returns an iterator to the
+  // first element in the range.
 
   // Safely get the type returned by std::begin(x).
   template<typename T>
@@ -53,7 +54,11 @@ namespace origin
       return Subst_succeeded<Begin_result<T>>();
     }
     
+    
+    
   // End iterator
+  // Ranges provide an operation, end(r), that returns an iterator past the
+  // last element in the range.
 
   // Safely get the type returned by std::end(x).
   template<typename T>
@@ -77,6 +82,8 @@ namespace origin
     {
       return Subst_succeeded<End_result<T>>();
     }
+    
+    
     
   // Iterator type
   // Any type that exposes begin()/end() members has an associated iterator
@@ -137,6 +144,8 @@ namespace origin
       return Range<R>() && Readable<Iterator_type<R>>();
     }
 
+
+
   // Returns true if R is an output range. An output range is a range of 
   // writable iterators and is writable everywhere except its limit.
   template<typename R, typename T>
@@ -144,6 +153,8 @@ namespace origin
     {
       return Range<R>() && Writable<Iterator_type<R>, T>();
     }
+
+
   
   // Returns true if R is a move range. A move range is a range of movable
   // iterators and is movable everywhere except its limit.
@@ -154,6 +165,8 @@ namespace origin
     {
       return Range<R>() && Move_writable<Iterator_type<R>, T>();
     }
+
+
     
   // Returns true if R is a permutable range. A permutable range is permutable
   // everywhere except its limit.
@@ -162,13 +175,17 @@ namespace origin
     {
       return Range<R>() && Permutable_iterator<Iterator_type<R>>();
     }
-    
+
+
+
   // Returns true if R is a mutable range.
   template<typename R>
     constexpr bool Mutable_range()
     {
       return Range<R>() && Mutable_iterator<Iterator_type<R>>();
     }
+
+
     
   // Returns true if R is a forward range. A forward range is a range whose 
   // iterator type is a forward iterator.
@@ -177,6 +194,8 @@ namespace origin
     {
       return Range<R>() && Forward_iterator<Iterator_type<R>>();
     }
+
+
   
   // Returns true if R is a bidirectional range.
   template<typename R>
@@ -184,6 +203,8 @@ namespace origin
     {
       return Range<R>() && Bidirectional_iterator<Iterator_type<R>>();
     }
+
+
     
   // Returns true if R is a random access range.
   template<typename R>
@@ -194,10 +215,11 @@ namespace origin
   
   
   
+  // Sortable range
   // A sortable range is a permutable range whose values are either totally
   // ordered or weakly ordered by some relation. 
   
-  // Weakly ordered by R.
+  // Requirements for a sortable range.
   template<typename Rng, typename R>
     struct Sortable_range_concept
     {
@@ -232,6 +254,8 @@ namespace origin
     
   // Range adaptors
   
+  
+  
   // Array Range
   // Wraps a C array with static bounds and guarantees that it will behave like
   // an array.
@@ -265,11 +289,38 @@ namespace origin
     }
 
 
+  // Weak range
+  // The weak range class adapts an iterator, distance pair into a bounded
+  // range.
+  //
+  // FIXME: Finish writing this class.
+  template<typename Iter>
+    class weak_range
+    {    
+    public:
+      weak_range(Iter first, Distance_type<Iter> n)
+        : first{first}, n{n}
+      { }
+
+      // Returns the underlying iterator
+      Iter base() const { return first; }
+      
+      // Returns the number of times the iterator can be incremeted.
+      Distance_type<Iter> count() const { return n; }
+    
+    private:
+      Iter first;
+      Distance_type<Iter> n;
+    };
+
+
   
-  // Bounded_range
-  // A bounded range wraps a pair of iterators. This is essentially the same
-  // as the Boost iterator_range, or pair<Iter, Iter> with appropriate
-  // overloads.
+  // Bounded range
+  // A bounded range encapsulates a pair of iterator and has the 
+  // is_bounded_range precondition as an invariant.
+  //
+  // wraps a pair of iterators. This is essentially the same as the Boost 
+  // iterator_range, or pair<Iter, Iter> with appropriate overloads.
   //
   // requires: Weakly_incrementable<Iter> && Equality_comparable<Iter>
   // invariant: bounded_range(this->first, this->last);
@@ -304,24 +355,27 @@ namespace origin
 
 
 
-  // Wrapped Bounded Range
-  // The adapted range class defines a (right) half-open range over some
-  // incrementable type, Iter. Each element in the range is an an object in that
-  // underlying sequence.
-  //
-  // requires: Weakly_incrementable<Iter>
-  template<typename Iter>
-    class wrapped_bounded_range
+  // Iterator range
+  // An iterator range defines a bounded range over a set of iterators. This is
+  // to say that the elements of an iterator range are iterators. The range is
+  // parameterized over the underlying iterator type and an action that 
+  // describes how the range is iterated (increment by default).
+  template<typename Iter, typename Act = increment_action<Iter>>
+    class iterator_range
     {
       static_assert(Weakly_incrementable<Iter>(), "");
       static_assert(Equality_comparable<Iter>(), "");
+      static_assert(Function<Act, Iter&>(), "");
+
     public:
-      using iterator = range_iterator<Iter>;
+      using iterator = counter<Iter, Act>;
       using value_type = Value_type<iterator>;
 
-      wrapped_bounded_range(Iter first, Iter last)
+      iterator_range(Iter first, Iter last)
         : first(first), last(last)
-      { }
+      {
+        assert(( is_bounded_range(first, last) ));
+      }
     
       iterator begin() const { return first; }
       iterator end()   const { return last; }
@@ -330,6 +384,8 @@ namespace origin
       Iter first;
       Iter last;
     };
+
+
 
   // Return a (right) half-open range [first, last) over the elements in that
   // range. For example:
@@ -347,20 +403,23 @@ namespace origin
   // requires: Incrementable<Iter>
   // precondition: bounded_range(first, last);
   template<typename Iter>
-    wrapped_bounded_range<Iter> range(Iter first, Iter last)
+    iterator_range<Iter> range(Iter first, Iter last)
     {
+      assert(( is_bounded_range(first, last) ));
       return {first, last};
     }
-    
+
+
+
   // Return a closed range [first, last] over the incrementable values first
   // and last.
   //
   // requires: Incrementable<Iter>
-  // precondition: bounded_range(first, last + 1);
   template<typename Iter>
-    wrapped_bounded_range<Iter> closed_range(Iter first, Iter last)
+    iterator_range<Iter> closed_range(Iter first, Iter last)
     {
-      return {first, std::next(last)};
+      assume(( is_bounded_range(first, std_next(last)) ));
+      return {first, ++last};
     }
     
 } // namespace origin

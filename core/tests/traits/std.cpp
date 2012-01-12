@@ -16,4 +16,16 @@ using namespace origin;
 int main()
 {
   // FIXME: Write tests.
+  struct S {
+    int x;
+  };
+
+  S s;
+  const S cs{};
+
+  cout << typestr<decltype(s.x)>() << "\n";
+  cout << typestr<decltype((s.x))>() << "\n";
+
+  cout << typestr<decltype(cs.x)>() << "\n";
+  cout << typestr<decltype((cs.x))>() << "\n";
 }
