@@ -16,7 +16,10 @@
 namespace origin
 {
 
-  // A filter range...
+  // A filter range is a bounded range adaptor that describes a subset of
+  // elements satisfying a given predicate. In other words, iterating over a
+  // filter range visits all elements x in r such that r.predicate()(x) is
+  // true.
   //
   // Note that R may be const. 
   template<typename R, typename Pred>
@@ -31,7 +34,6 @@ namespace origin
       filter_range(R& r, Pred pred = Pred{})
         : range(r), pred(pred)
       { }
-
 
       // Returns the underlying range.
       R const& base() const { return range; }

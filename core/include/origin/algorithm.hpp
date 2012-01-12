@@ -20,99 +20,235 @@ namespace origin
   // NOTE: The std_* algorithms simply add Origin-style concept checking to
   // std algorithms. They are primiarly used for testing
 
+  
+  
+  // Returns true if the input iterator I can be searched using the predicate P.
+  template<typename I, typename P>
+    constexpr bool Searchable()
+    {
+      return Input_iterator<I> && Predicate<P, Value_type<I>>();
+    }
+    
+    
+
+  // Returns true if the input range R can be searched using the predicate P.
+  template<typename R, typename Pred>
+    constexpr bool Searchable_range()
+    {
+      return Input_range<R> && Predicate<P, Value_type<I>>();
+    }
+  
+  
+  // Find algorithms
+  // These algorithms search a range of elements for an element that satisfies
+  // some property.
+  //
+  // The _if family of algorithms search for the first iterator that satisfies
+  // some unary predicate.
+  
+  
+
+  // Find if
+  // Returns the first iterator i in [first, last) such that pred(*i) is true.
+  template<typename I, typename P>
+    inline I std_find_if(I first, I last, P pred)
+    {
+      static_assert(Searchable<I, P>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      while(first != last) {
+        if(pred(*first))
+          return first;
+        ++first;
+      }
+      return last;
+    }
+
+
+
+  // Find if (range)
+  // Returns the first iterator i in r such that pred(*i) is true.
+  template<typename R, typename P>
+    inline Iterator_type<R> find_if(R& range, P pred) 
+    {
+      static_assert(Searchable_range<I, P>(), "");
+      
+      return std_find_if(std::begin(range), std::end(range), pred);
+    }
+    
+    
+
+  // Find if (const range)
+  // Returns the first iterator i in r such that pred(*i) is true.
+  template<typename Rng, typename Pred>
+    inline Iterator_type<const Rng> find_if(const Rng& r, Pred pred)
+    {
+      static_assert(Searchable_range<I, P>(), "");
+      
+      return std_find_if(std::begin(r), std::end(r), pred);
+    }
+  
+
+  
+  // Find if not
+  // Returns the first iterator i in [first, last) such that !pred(*i) is true.
+  template<typename I, typename P>
+    inline I std_find_if_not(I first, I last, P pred)
+    {
+      static_assert(Searchable<I, P>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      while(first != last) {
+        if(!pred(*first))
+          return first;
+        ++first;
+      }
+      return last;
+    }
+
+
+    
+  // Find if not (range)
+  // Returns the first iterator i in r such that !pred(*i).
+  template<typename R, typename P>
+    inline Iterator_type<R> find_if_not(R& r, P pred)
+    {
+      static_assert(Searchable_range<R, P>(), "");
+      
+      return std_find_if_not(std::begin(r), std::end(r), pred);
+    }
+    
+  
+  
+  // Find if not (const range)
+  // Returns the first iterator i in r such that !pred(*i).
+  template<typename R, typename P>
+    inline Iterator_type<R> find_if_not(const R& r, P pred)
+    {
+      static_assert(Searchable_range<R, P>(), "");
+      
+      return std_find_if_not(std::begin(r), std::end(r), pred);
+    }
+  
 
 
   // Quantifiers
+  // There are four quantifiers: all, none, some, nall, and one. Note that
+  // some is called "any" in the C++ standard library and nall is a nonce
+  // word combining "not" and "all".
   //
   // Note that:
-  //   !all_of == any_not_of
-  //   !none_of == any_of
-
-
+  //   !all == nall
+  //   !some == none
+  //
+  // There are two families of quantifiers. The *_of family evaluates the
+  // quantifier for a given unary predicate. The *_equal family evalutates
+  // the quantifier with respect to equality to the given value.
+  //
+  //
+  // An interesting discourse on the term "nall" can be found in the 
+  // "Operators in the Lexicon: On the Negative Logic of Natural Language" by
+  // Dany Jaspers (Chapter 1). The complete text can be found here:
+  // http://www.lotpublications.nl/publish/articles/001541/bookpart.pdf
+  //
+  // NOTE: These quantifiers are easily defined in terms of find/find_if.
+  // The table of equivalences is:
+  //    all_of  <=> find_if_not == last
+  //    nall_of <=> find_if_not != last
+  //    some_of <=> find_if != last
+  //    none_of <=> find_if == last
+  // However, implementing the algorithms in terms of find/find_if incurs one
+  // extra iterator comparison, so they are implemented "in the raw".
 
   // All of
   // Returns true if first == last or pred(x) is true for all elements x in 
   // [first, last).
-  template<typename Iter, typename Pred>
-    inline bool std_all_of(Iter first, Iter last, Pred pred)
+  template<typename I, typename P>
+    inline bool std_all_of(I first, I last, P pred)
     {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      static_assert(Searchable<I, P>(), "");
       assert(( is_readable_range(first, last) ));
-      
-      return std::all_of(first, last, pred);
+
+      while(first != last) {
+        if(!pred(*first))
+          return false;
+        ++first;
+      }
+      return true;
     }
 
 
 
   // All of (range)
-  // Return true empty(r) or pred(x) is true for all elements x in r.
-  template<typename Rng, typename Pred>
-    inline bool all_of(const Rng& r, Pred pred)
+  // Returns true if empty(r) or pred(x) is true for all elements x in r.
+  template<typename R, typename P>
+    inline bool all_of(const R& range, P pred)
     {
-      static_assert(Input_range<Rng>(), "");
-      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
+      static_assert(Searchable_range<R, P>(), "");
 
-      return std_all_of(std::begin(r), std::end(r), pred);
+      return std_all_of(std::begin(range), std::end(range), pred);
     }
+
     
     
-  
-  // Any of
+  // Nall of
   // Returns true if first != last and pred(x) is true for some element x in 
   // [first, last).
-  template<typename Iter, typename Pred>
-    inline bool std_any_of(Iter first, Iter last, Pred pred)
+  template<typename I, typename P>
+    inline bool nall_of(I first, I last, P pred)
     {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::any_of(first, last, pred);
-    }
-
-
-
-  // Any of (range)
-  // Returns true if !empty(r) and pred(x) is true for some element x in r.
-  template<typename Rng, typename Pred>
-    inline bool any_of(const Rng& r, Pred pred)
-    {
-      static_assert(Input_range<Rng>(), "");
-      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
-
-      return std_any_of(std::begin(r), std::end(r), pred);
-    }
-
-
-
-  // Any not of
-  // Returns true first != last and !pred(x) is true for some element x in r.
-  template<typename Iter, typename Pred>
-    bool any_not_of(Iter first, Iter last, Pred pred)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      static_assert(Searchable<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
         if(!pred(*first))
           return true;
+        ++first;
       }
       return false;
     }
   
   
   
-  // Any not of (range)
-  // Returns true !empty(r) and !pred(x) for some element x in r.
-  template<typename Rng, typename Pred>
-    inline bool any_not_of(const Rng& r, Pred pred)
+  // Nall of (range)
+  // Returns true if !empty(r) and pred(x) is true for soem element x in r.
+  template<typename R, typename P>
+    inline bool nall_of(const R& r, P pred)
     {
-      static_assert(Input_range<Rng>(), "");
-      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
-      
-      return any_not_of(std::begin(r), std::end(r), pred);
+      static_assert(Searchable_range<R, P>(), "");
+
+      return nall_of(std::begin(r), std::end(r), pred);
+    }
+    
+  
+  
+  // Some of
+  // Returns true if first != last and pred(x) is true for some element x in 
+  // [first, last).
+  template<typename I, typename P>
+    inline bool some_of(I first, I last, P pred)
+    {
+      static_assert(Searchable<I, P>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      while(first != last) {
+        if(pred(*first))
+          return true;
+        ++first;
+      }
+      return false;
+    }
+
+
+
+  // Any of (range)
+  // Returns true if !empty(r) and pred(x) is true for some element x in r.
+  template<typename R, typename P>
+    inline bool some_of(const Rng& r, Pred pred)
+    {
+      static_assert(Searchable_range<R, P>(), "");
+
+      return some_of(std::begin(r), std::end(r), pred);
     }
 
 
@@ -120,25 +256,28 @@ namespace origin
   // None of
   // Returns true if first == last or !pred(x) is true for all elements x in 
   // [first, last).
-  template<typename Iter, typename Pred>
-    inline bool std_none_of(Iter first, Iter last, Pred pred)
+  template<typename I, typename P>
+    inline bool std_none_of(I first, I last, P pred)
     {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      static_assert(Searchable<I, P>(), "");
       assert(( is_readable_range(first, last) ));
-      
-      return std::none_of(first, last, pred);
+
+      while(first != last) {
+        if(pred(*first))
+          return false;
+        ++first;
+      }
+      return true;
     }
 
 
 
   // None of (range)
   // Returns true if empty(r) or !pred(x) for all elements x in r.
-  template<typename Rng, typename Pred>
-    inline bool none_of(const Rng& r, Pred pred)
+  template<typename R, typename P>
+    inline bool none_of(const R& r, P pred)
     {
-      static_assert(Input_range<Rng>(), "");
-      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
+      static_assert(Searchable_range<I, P>(), "");
       
       return std_none_of(std::begin(r), std::end(r), pred);
     }
@@ -146,7 +285,8 @@ namespace origin
  
 
   // One of
-  // Returns true if pred(x) is true for exactly one element in [first, last).
+  // Returns true if pred(x) is true for one and only one element x in 
+  // [first, last).
   template<typename Iter, typename Pred>
     inline bool one_of(Iter first, Iter last, Pred pred)
     {
@@ -161,7 +301,7 @@ namespace origin
   
   
   // One of (range)
-  // Returns true if pred(x) is true for exactly one element in r.
+  // Returns true if pred(x) is true for one and only one element x in r.
   template<typename Rng, typename Pred>
     inline bool one_of(const Rng& r, Pred pred)
     {
@@ -402,43 +542,6 @@ namespace origin
     
     
     
-  // Find_if
-  // Returns the first iterator i in [first, last) such that pred(*i) is true.
-  template<typename Iter, typename Pred>
-    inline Iter std_find_if(Iter first, Iter last, Pred pred)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::find_if(first, last, pred);
-    }
-
-
-
-  // Find_if (range)
-  // Returns the first iterator i in r such that pred(*i) is true.
-  template<typename R, typename Pred>
-    inline Iterator_type<R> find_if(R& range, Pred pred) 
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
-      
-      return std_find_if(std::begin(range), std::end(range), pred);
-    }
-    
-    
-
-  // Find_if (const range)
-  // Returns the first iterator i in r such that pred(*i) is true.
-  template<typename Rng, typename Pred>
-    inline Iterator_type<const Rng> find_if(const Rng& r, Pred pred)
-    {
-      static_assert(Input_range<const Rng>(), "");
-      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
-      
-      return std_find_if(std::begin(r), std::end(r), pred);
-    }
 
 
     
