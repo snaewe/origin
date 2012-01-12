@@ -40,7 +40,7 @@ namespace origin
       //
       // postcondition: this->base() == last.
       filter_iterator(Iter last, Pred pred = {})
-        : first(last), last(last), pred(pred)
+        : first{last}, last{last}, pred{pred}
       { }
     
       // Initialize the iterator. Note that this->base() may not be equal to
@@ -49,7 +49,7 @@ namespace origin
       // postcondition: this->pred() == pred
       // postcondition: this->pred(**this) == true
       filter_iterator(Iter first, Iter last, Pred pred)
-        : first(first_if(first, last, pred)), last(last), pred(pred)
+        : first{std_find_if(first, last, pred)}, last{last}, pred{pred}
       { }
       
       // TODO: Do we need conversion constructors for const-interoperability?
@@ -67,7 +67,7 @@ namespace origin
       // Incrementable
       filter_iterator& operator++() 
       { 
-        first = next_if(first, last, pred); 
+        first = find_next_if(first, last, pred); 
         return *this;
       }
       

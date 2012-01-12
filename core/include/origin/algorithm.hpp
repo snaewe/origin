@@ -144,6 +144,34 @@ namespace origin
     }
  
  
+
+  // One of
+  // Returns true if pred(x) is true for exactly one element in [first, last).
+  template<typename Iter, typename Pred>
+    inline bool one_of(Iter first, Iter last, Pred pred)
+    {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
+      assert(( is_readable_range(first, last) ));
+      
+      Iter i = std::find_if(first, last, pred);
+      return !any_of(std_next(i), last, pred);
+    }
+    
+  
+  
+  // One of (range)
+  // Returns true if pred(x) is true for exactly one element in r.
+  template<typename Rng, typename Pred>
+    inline bool one_of(const Rng& r, Pred pred)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Predicate<Pred, Value_type<Rng>>(), "");
+      
+      return one_of(std::begin(r), std::end(r), pred);
+    }
+ 
+
  
   // All equal
   // Returns true first == last or x == value for all elements x in 
@@ -273,6 +301,32 @@ namespace origin
       return none_equal(std::begin(r), std::end(r), value);
     }
 
+    
+    
+  // One equal
+  // Returns true if x == value for exactly one element x in [first, last).
+  template<typename Iter, typename T>
+    inline bool one_equal(Iter first, Iter last, const T& value)
+    {
+      static_assert(Input_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      Iter i = std::find(first, last, value);
+      return !any_equal(std_next(i), last, value);
+    }
+    
+   
+   
+  // One equal (range)
+  template<typename Rng, typename T>
+    inline bool one_equal(const Rng& r, const T& value)
+    {
+      static_assert(Input_range<Rng>(), "");
+      static_assert(Equality_comparable<Value_type<Rng>, T>(), "");
+
+      return one_equal(std::begin(r), std::end(r), value);
+    }
 
 
   // Find algorithms
@@ -387,77 +441,39 @@ namespace origin
     }
 
 
-
-  // Find first and next
-  // The first_equal and next_equal algorithms can be used to iterate over
-  // subranges of elements that are equal to a given value. Similarly, the
-  // first_if and next_if algorithms can be used to iterate over subranges of
-  // elements that satisfy a given predicate. These are useful for filtering
-  // the elements of a range.
-
-
-
-  // First equal
-  // Returns the first iterator i in [first, last) such that *i == value or
-  // last if no such iterator exists. 
+    
+  // Find next
+  // Returns the next next iterator i in [first, last) past first where 
+  // *i == value.
   //
-  // This is equivalent to find(first, last, value).
+  // Note that there is no corresponding range version of this function. The
+  // operation is only intended to be applied to iterators.
   template<typename Iter, typename T>
-    inline Iter first_equal(Iter first, Iter last, const T& value)
+    inline Iter find_next(Iter first, Iter last, const T& value)
     {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::find(first, last, value);
-    }
-
-
-
-  // Next equal
-  // Return the next element in [first + 1, last) that is equal to value, or
-  // last if no such element exists.
-  template<typename Iter, typename T>
-    inline Iter next_equal(Iter first, Iter last, T const& value)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
-
       if(first != last)
-        return std::find(std::next(first), last, value);
+        return std::find(std_next(first), last, value);
       else
         return last;
     }
 
-    
-  // First if
-  // Return the first element in [first, last) that satisfies the predicate
-  // pred, or last if no such element exists.
-  template<typename Iter, typename Pred>
-    inline Iter first_if(Iter first, Iter last, Pred pred)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
 
-      return std::find_if(first, last, pred);
-    }
-    
-    
-    
-  // Next if
+
+  // Find next if
   // Return the next element in [first, last) that satisfies pred, or last if
   // no such element exists.
+  //
+  // Note that there is no corresponding range version of this function. The
+  // operation is only intended to be applied to iterators.
   template<typename Iter, typename Pred>
-    inline Iter next_if(Iter first, Iter last, Pred pred)
+    inline Iter find_next_if(Iter first, Iter last, Pred pred)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
       assert(( is_readable_range(first, last) ));
 
       if(first != last)
-        return std::find_if(std::next(first), last, pred);
+        return std::find_if(std_next(first), last, pred);
       else
         return last;
     }
@@ -618,9 +634,9 @@ namespace origin
       
       return std::find_first_of(first1, last1, first2, last2, comp);
     }
-    
-    
-  
+
+
+
   // Find first of (relation, range)
   // Returns the first iterator i in r1 such that comp(*i, *j) is true where j 
   // is any iterator in r2.
@@ -652,6 +668,8 @@ namespace origin
     }
   
   
+  
+  // FIXME: Document adjacent find, etc.
   
   // Adjacent find
   template<typename Iter>
@@ -685,7 +703,7 @@ namespace origin
     
     
   // Count
-  
+  // Returns the number of elements x in [first, last) where x == value.
   template<typename Iter, typename T>
     inline Distance_type<Iter> std_count(Iter first, Iter last, T const& value)
     {
@@ -696,7 +714,10 @@ namespace origin
       return std::count(first, last, value);
     }
     
-  // Return the number of elements in r that are equal to value.
+    
+
+  // Count (range)
+  // Returns the number of elements x in r where x == value.
   template<typename R, typename T>
     inline Distance_type<R> count(R const& range, T const& value)
     {
@@ -709,7 +730,7 @@ namespace origin
    
    
   // Count if
-  
+  // Returns the number of elements x in [first, last) where pred(x) is true.
   template<typename Iter, typename Pred>
     inline Distance_type<Iter> std_count_if(Iter first, Iter last, Pred pred)
     {
@@ -720,7 +741,10 @@ namespace origin
       return std::count_if(first, last, pred);
     }
    
-  // Return the number of elements in r that satisfy pred.
+   
+   
+  // Count if (range)
+  // Returns the number of elements x in r where pred(x) is true.
   template<typename R, typename Pred>
     inline Distance_type<R> count_if(R const& range, Pred pred)
     {
@@ -732,13 +756,7 @@ namespace origin
     
     
   // Count not equal
-  
-  // Return the number of elements in [first, last) that are not equal to
-  // value.
-  //
-  // requires: InputIterator<Iter>
-  // requires: EqualityComparable<ValueType<Iter>, T>
-  // precondition: readable_range(first, last)
+  // Returns the number of elements x in [first, last) where x != value.
   template<typename Iter, typename T>
     inline Distance_type<Iter> count_not_equal(Iter first, Iter last, T const& value)
     {
@@ -755,7 +773,10 @@ namespace origin
       return n;
     }
 
-  // Return the number of elements in r that are not equal to value.
+    
+    
+  // Count not equal (range)
+  // Returns the number of elements x in r where x != value.
   template<typename R, typename T>
     inline Distance_type<R> count_not_equal(R const& range, T const& value)
     {
@@ -768,11 +789,7 @@ namespace origin
     
   
   // Count if not
-  
-  // Return the number of elements in [first, last) that do not satisfy pred.
-  //
-  // requires: InputIterator<Iter>
-  // precondition: readable_range(first, last)
+  // Returns the number of elements x in [first, last) where !pred(x)
   template<typename Iter, typename Pred>
     inline Distance_type<Iter> count_if_not(Iter first, Iter last, Pred pred)
     {
@@ -789,7 +806,10 @@ namespace origin
       return n;
     }
 
-  // Return the number of elements in r that do not satisfy pred.
+  
+  
+  // Count if not (range)
+  // Returns the number of elements x in r where !pred(x).
   template<typename R, typename Pred>
     inline Distance_type<R> count_if_not(R const& range, Pred pred)
     {
@@ -804,7 +824,6 @@ namespace origin
   // Equal
   // Returns true if, for two ranges a and b, the elements of a are equal to
   // the elements of b. Note that b must have size greater than or equal to a.
-  
   template<typename Iter1, typename Iter2>
     inline bool std_equal(Iter1 first1, Iter1 last1, Iter2 first2)
     {

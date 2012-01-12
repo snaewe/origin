@@ -10,68 +10,21 @@
 
 #include <origin/algorithm.hpp>
 #include <origin/iterator.hpp>
+#include <origin/iterator/filter.hpp>
 #include <origin/range/traits.hpp>
 
 namespace origin
 {
-  // A helper iterator for the filter_range.
-  // This is a forward iterator.
-  template<typename R, typename Iter>
-    class filter_range_iterator
-    {
-    public:
-      using value_type = Value_type<Iter>;
-      using reference = Iterator_reference<Iter>;
-      using pointer = Iterator_pointer<Iter>;
-      using difference_type = Distance_type<Iter>;
-      using iterator_category = Clamp_iterator_category<Iter, std::forward_iterator_tag>;
-    
-      filter_range_iterator(R const& r, Iter i)
-        : range(const_cast<R&>(r)), iter(i)
-      { }
-      
-      // Equality_comparable
-      bool operator==(filter_range_iterator const& x) const { return iter == x.iter; }
-      bool operator!=(filter_range_iterator const& x) const { return iter != x.iter; }
-      
-      // Readable
-      reference operator*()  const { return *iter; }
-      pointer   operator->() const { return &*iter; }
-      
-      // Incrementable
-      filter_range_iterator& operator++()
-      {
-        iter = next_if(iter, std::end(range.range), range.pred);
-        return *this;
-      }
-      
-      filter_range_iterator operator++(int)
-      {
-        filter_range_iterator tmp(*this);
-        operator++();
-        return tmp;
-      }
-      
-      private:
-        R& range;
-        Iter iter;
-    };
 
   // A filter range...
   //
   // Note that R may be const. 
-  //
-  // NOTE: We assume R caches its begin and end iterators. If the cost of
-  // calling end on R is expensive, this will be inefficient. Even if end
-  // computed, this could also be expensive.
   template<typename R, typename Pred>
     class filter_range
     {
-      using this_type = filter_range<R, Pred>;
-      using base_iterator = Iterator_type<R>;
     public:
       using value_type = Value_type<R>;
-      using iterator = filter_range_iterator<this_type, base_iterator>;
+      using iterator = filter_iterator<Iterator_type<R>, Pred>;
       
       // Construct a filter range over the underlying range. The predicate
       // may be omitted if Pred is Default_constructible.
@@ -79,24 +32,20 @@ namespace origin
         : range(r), pred(pred)
       { }
 
-      iterator begin() const
-      {
-        return iterator(*this, first_if(std::begin(range), std::end(range), pred));
-      }
 
-      iterator end() const
-      {
-        return {*this, std::end(range)};
-      }
-      
-      // Range properties
+      // Returns the underlying range.
       R const& base() const { return range; }
+      
+      // Returns the predicate function.
       Pred predicate() const { return pred; }
+      
+      // Begin and end.
+      iterator begin() const { return {std::begin(range), std::end(range), pred}; }
+      iterator end() const   { return {std::end(range), pred}; }
       
     private:
       R& range;
       Pred pred;
-      friend iterator;
     };
     
   // Return an adapted filter over the given range.

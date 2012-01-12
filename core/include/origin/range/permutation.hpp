@@ -132,7 +132,7 @@ namespace origin
       typedef permutation_range<R, Perm, Comp> this_type;
     public:
       using value_type = Value_type<R>;
-      using base_range = R
+      using base_range = R;
       using base_iterator = Iterator_type<R>;
       using value_compare = Comp;
       using range_permute = Perm;
