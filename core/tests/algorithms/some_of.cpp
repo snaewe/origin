@@ -23,6 +23,9 @@ int main()
 {
   vector<int> v = {1, 0, 2, 0, 3, 0};
   
-  assert(( any_of(v.begin(), v.end(), zero) ));
-  assert(( any_of(v, zero) ));
+  assert(( some_of(v.begin(), v.end(), zero) ));
+  assert(( some_of(v, zero) ));
+  
+  assert(( some_of({1, 2, 0, 3, 4}, zero) ));
+  // assert(( some_equal({false, false, true}, true) ));
 }
