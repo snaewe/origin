@@ -58,7 +58,7 @@ namespace origin
 
       return std::find(first, last, value);
     }
-    
+
   
   
   // Find (range)
@@ -66,7 +66,7 @@ namespace origin
   // such iterator exists.
   template<typename R, typename T>
     auto find(R& range, const T& value)
-      -> Requires<Input_range<R>() && !Associative_container<R>(), Iterator_type<R>>
+      -> Requires<Input_range<R>() && !Has_member_find<R, T>(), Iterator_type<R>>
     {
       static_assert(Value_searchable_range<R, T>(), "");
       
@@ -80,19 +80,12 @@ namespace origin
   // such iterator exists.
   template<typename R, typename T>
     auto find(const R& range, const T& value)
-      -> Requires<Input_range<R>() && !Associative_container<R>(), Iterator_type<const R>>
+      -> Requires<Input_range<R>() && !Has_member_find<R>(), Iterator_type<const R>>
     {
       static_assert(Value_searchable_range<R, T>(), "");
 
       return std_find(std::begin(range), std::end(range), value);
     }
-    
-
-
-  // NOTE: The find() overloads for associative containers should be in the
-  // container module, not algorithms. Unforunately, we can't cleanly break the 
-  // algorithm dependency on containers because the non-container range
-  // overloads use the Associative_container concept.
   
   
 
@@ -101,10 +94,8 @@ namespace origin
   // such iterator exists. The result is comptued in O(log(size(c))).
   template<typename C, typename T>
     auto find(C& c, const T& x) 
-      -> Requires<Associative_container<C>(), Iterator_type<C>>
+      -> Requires<Has_member_find<C, T>(), Iterator_type<C>>
     {
-      static_assert(Value_searchable_range<C, T>(), "");
-
       return c.find(x);
     }
 
@@ -115,10 +106,8 @@ namespace origin
   // such iterator exists. The result is comptued in O(log(size(c))).
   template<typename C, typename T>
     auto find(const C& c, T const& x) 
-      -> Requires<Associative_container<C>(), Iterator_type<const C>>
+      -> Requires<Has_member_find<C, T>(), Iterator_type<const C>>
     {
-      static_assert(Value_searchable_range<C, T>(), "");
-
       return c.find(x);
     }
 

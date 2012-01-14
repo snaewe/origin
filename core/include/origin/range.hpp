@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -9,6 +9,8 @@
 #define ORIGIN_RANGE_HPP
 
 #include <origin/iterator.hpp>
+#include <origin/iterator/counted_iterator.hpp>
+#include <origin/iterator/counter.hpp>
 
 namespace origin
 {
@@ -251,14 +253,156 @@ namespace origin
     }
     
     
+
+  // The following type traits and type predicates establish the notion of
+  // sized type, some type for which size(x) is valid query. Size is defined
+  // in 3 ways:
+  //    - For user-defined containers, it is x.size().
+  //    - For ranges, it is distance(begin(x), end(x))
+  //    - For statically sized arrays of type T[N], it is N.
+
+
+  
+  // Size (member)
+  // Return the size of x. The meaning of size is dependent on the type of
+  // T, and the operation generally returns an unsigned integral type.
+  //
+  // NOTE: Some containers may have constexpr size (e.g., array).
+  template<typename T>
+    constexpr auto size(T const& x) -> decltype(x.size())
+    {
+      return x.size();
+    }
+
+
+
+  // Size (array)
+  // Specialize size for statically sized arrays.
+  template<typename T, std::size_t N>
+    constexpr std::size_t size(T(&)[N])
+    {
+      return N;
+    }
     
+    
+  
+  // Size (range)
+  // Specialize for size for Ranges that are not containers.
+  //
+  // FIXME: This should be available in the range module.
+  template<typename R>
+    inline auto size(R const& r)
+      -> Requires<Range<R>() && !Has_member_size<R>(), Make_unsigned<Distance_type<R>>>
+    {
+      return std::distance(std::begin(r), std::end(r));
+    }
+  
+  
+  
+  // Safely get the result type of the expression size(r).
+  template<typename T>
+    struct size_result
+    {
+    private:
+      template<typename X>
+        static auto check(X const& x) -> decltype(size(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+  
+  // An alias for the result of the size(t) expression. Every type for which
+  // size(t) is valid has an associated size type. This includes ranges,
+  // containers, matrices, and graphs.
+  template<typename T>
+    using Size_type = typename size_result<T>::type;
+
+  // Returns true if size(t) is a valid expression.
+  template<typename T>
+    constexpr bool Has_size()
+    {
+      return Subst_succeeded<Size_type<T>>();
+    }
+
+
+    
+  // Empty
+  // A type may support empty queries as in empty(x). Like size(), empty is
+  // defined in 3 ways:
+  //    - For containers, it is x.empty().
+  //    - For ranges, it is begin(x) == end(x)
+  //    - For statically sized arrays of type T[N], it is N == 0.
+  
+
+  
+  // Empty (member)
+  // Return true if x is empty. The meaning of empty is dependent on the type
+  // of T.
+  //
+  // NOTE: Some containers may have constexpr empty (e.g., arrays).
+  template<typename T>
+    constexpr auto empty(T const& x) -> decltype(x.empty())
+    {
+      return x.empty();
+    }
+
+
+
+  // Empty (array)
+  // Specialization for statically sized arrays.
+  template<typename T, std::size_t N>
+    constexpr bool empty(T(&a)[N])
+    {
+      return N == 0;
+    }
+
+
+
+  // Empty (range)
+  // Specialization for ranges, which don't have a member empty.
+  template<typename R>
+    inline Requires<!Has_member_empty<R>(), bool> empty(R const& r)
+    {
+      return std::begin(r) == std::end(r);
+    }
+
+
+
+  // Safely get the result type of the expression empty(r).
+  template<typename T>
+    struct empty_result
+    {
+    private:
+      template<typename X>
+        static auto check(X const& x) -> decltype(empty(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+  
+  // An alias for the result of the empty(t) expression.
+  template<typename T>
+    using Empty_result = typename empty_result<T>::type;
+
+  // Returns true if empty(t) is a valid expression.
+  template<typename T>
+    constexpr bool Has_empty()
+    {
+      return Subst_succeeded<Empty_result<T>>();
+    }
+
+
+
   // Range adaptors
+  // A range adaptor is a model of a range. These typically wrap other data
+  // structures or data elements in such a way that they can be iterated over.
   
   
   
   // Array Range
-  // Wraps a C array with static bounds and guarantees that it will behave like
-  // an array.
+  // Wraps an array reference with static bounds and guarantees that it will 
+  // behave like an array. This is useful to prevent array types from decaying
+  // into pointers. 
   template<typename T, std::size_t N>
     struct array_range
     {
@@ -289,28 +433,39 @@ namespace origin
     }
 
 
-  // Weak range
-  // The weak range class adapts an iterator, distance pair into a bounded
-  // range.
+
+  // Counted range
+  // A counted range adapts an iterator, distance pair into a bounded range.
+  //
+  // Note that the semantics of counted ranges differ from the EoP notion. In
+  // Origin, a counted range has the same semantics as a weak range in EoP. The
+  // acyclic property of EoP counted is considered separately in Origin.
   //
   // FIXME: Finish writing this class.
-  template<typename Iter>
-    class weak_range
+  template<typename I>
+    class counted_range
     {    
     public:
-      weak_range(Iter first, Distance_type<Iter> n)
-        : first{first}, n{n}
+      using value_type = Value_type<I>;
+      using iterator = counted_iterator<I>;
+      
+      counted_range(I first, Distance_type<I> n)
+        : first{first}, count{n}
       { }
 
       // Returns the underlying iterator
-      Iter base() const { return first; }
+      I base() const { return first; }
       
       // Returns the number of times the iterator can be incremeted.
-      Distance_type<Iter> count() const { return n; }
+      Distance_type<I> distance() const { return count; }
+      
+      // Range
+      iterator begin() const { return {first, count}; }
+      iterator end() const { return {first, 0}; }
     
     private:
-      Iter first;
-      Distance_type<Iter> n;
+      I first;
+      Distance_type<I> count;
     };
 
 
@@ -322,8 +477,8 @@ namespace origin
   // wraps a pair of iterators. This is essentially the same as the Boost 
   // iterator_range, or pair<Iter, Iter> with appropriate overloads.
   //
-  // requires: Weakly_incrementable<Iter> && Equality_comparable<Iter>
-  // invariant: bounded_range(this->first, this->last);
+  // Invariants: 
+  //    bounded_range(this->begin(), this->end());
   template<typename Iter>
     class bounded_range
     {
@@ -337,14 +492,14 @@ namespace origin
       // range is initially empty.
       bounded_range() : first(), last(first) { }
     
-      // Initialize the bounded range.
-      //
-      // precondition: bounded_range(first, last)
-      // postcondition: this->begin() == first && this->end() == last
+      // Initialize the bounded range over [first, last).
       bounded_range(iterator first, iterator last)
         : first(first), last(last)
-      { }
+      { 
+        assert(( is_bounded_range(first, last) ));
+      }
       
+      // Range
       iterator begin() const { return first; }
       iterator end() const { return last; }
       
@@ -387,36 +542,109 @@ namespace origin
 
 
 
-  // Return a (right) half-open range [first, last) over the elements in that
-  // range. For example:
+  // Range over
+  // Returns a bounded range over the iterators in the range [first, last).
+  // For example:
   //
-  //    for(auto i : range(0, 5)) count << *i << ' ';
+  //    vector<int> v = {1, 2, 3};
+  //    for(auto i : range_over(v)) cout << *i << ' ';
   //
-  // prints "0 1 2 3 4". Similarly:
-  //
-  //    vector<int> v = {1, 2, 3}
-  //    for(auto i : range(v.begin(), v.end())) cout << **i << ' ';
-  //
-  // prints "1 2 3". Because the arguments to range are iterators, each value
-  // of i is also an iterator (hence the need to write **i).
-  //
-  // requires: Incrementable<Iter>
-  // precondition: bounded_range(first, last);
-  template<typename Iter>
-    iterator_range<Iter> range(Iter first, Iter last)
+  // prints "1 2 3". Each element in the range over v is vector iterator and
+  // not an element in v.
+  
+  
+  
+  // Range over
+  // Returns an iterator range over the iterators in [first, last).
+  template<typename I>
+    inline iterator_range<I> range_over(I first, I last)
     {
       assert(( is_bounded_range(first, last) ));
+
       return {first, last};
     }
 
 
 
-  // Return a closed range [first, last] over the incrementable values first
-  // and last.
+  // Range over (range)
+  template<typename R>
+    inline iterator_range<Iterator_type<R>> range_over(R& range)
+    {
+      return {std::begin(range), std::end(range)};
+    }
+
+
+
+  // Range over (const range)
+  template<typename R>
+    inline iterator_range<Iterator_type<const R>> range_over(const R& range)
+    {
+      return {std::begin(range), std::end(range)};
+    }
+
+
+
+  // Range
+  // Returns a (right) half-open range [first, last) over the elements in that
+  // range. For example:
   //
-  // requires: Incrementable<Iter>
-  template<typename Iter>
-    iterator_range<Iter> closed_range(Iter first, Iter last)
+  //    for(auto i : range(0, 5)) count << i << ' ';
+  //
+  // prints "0 1 2 3 4". Similarly:
+  //
+  //    vector<int> v = {1, 2, 3}
+  //    for(auto i : range(v.begin(), v.end())) cout << i << ' ';
+  //
+  // prints "1 2 3".
+  //
+  // This function tries to be clever about its uses. If the type of the first
+  // and last arguments are integer types, then the result will range over the
+  // integer values in that set. If the type is an iterator, then the result 
+  // ranges over the elements in the underlying range.
+  
+  
+  
+  // Range (integral)
+  template<typename I>
+    inline Requires<Integral<I>(), iterator_range<I>> range(I first, I last)
+    {
+      assert(( is_bounded_range(first, last) ));
+
+      return {first, last};
+    }
+
+  
+  // Range (iterator)
+  template<typename I>
+    inline Requires<Iterator<I>(), bounded_range<I>> range(I first, I last)
+    {
+      assert(( is_bounded_range(first, last) ));
+      
+      return {first, last};
+    }
+
+
+
+  // Closed range
+  // Return a closed range over the elements of [first, last]. The behavor
+  // of this constructor is analogous to that of the range function. It tries
+  // to select an appropriate range based on the argument types provided.
+  
+  
+  
+  // Closed range (integral)
+  template<typename I>
+    inline Requires<Integral<I>(), iterator_range<I>> closed_range(I first, I last)
+    {
+      assume(( is_bounded_range(first, std_next(last)) ));
+      return {first, ++last};
+    }
+
+
+
+  // Closed range (iterator)
+  template<typename I>
+    inline Requires<Iterator<I>(), bounded_range<I>> closed_range(I first, I last)
     {
       assume(( is_bounded_range(first, std_next(last)) ));
       return {first, ++last};
@@ -425,7 +653,7 @@ namespace origin
 } // namespace origin
 
 // Include range constructors
-// #include <origin/range/filter.hpp>
+#include <origin/range/filter_range.hpp>
 // #include <origin/range/permutation.hpp>
 
 #endif

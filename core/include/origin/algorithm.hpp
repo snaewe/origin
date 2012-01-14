@@ -12,8 +12,6 @@
 
 #include <origin/iterator.hpp>
 #include <origin/range.hpp>
-#include <origin/container.hpp>
-
 
 namespace origin
 {
@@ -1335,7 +1333,13 @@ namespace origin {
   // TODO: Implement multiset permutations.
   
   
-
 } // namespace origin
+
+
+// Include definitions of container concepts needed for some algorithm
+// specializations (e.g., find).
+#include <origin/container.hpp>
+
+
 
 #endif

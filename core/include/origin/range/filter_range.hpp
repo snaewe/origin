@@ -5,12 +5,10 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_RANGE_FILTER_HPP
-#define ORIGIN_RANGE_FILTER_HPP
+#ifndef ORIGIN_RANGE_FILTER_RANGE_HPP
+#define ORIGIN_RANGE_FILTER_RANGE_HPP
 
-#include <origin/algorithm.hpp>
-#include <origin/iterator.hpp>
-#include <origin/iterator/filter.hpp>
+#include <origin/iterator/filter_iterator.hpp>
 #include <origin/range/traits.hpp>
 
 namespace origin

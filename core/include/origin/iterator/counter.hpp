@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -40,22 +40,22 @@ namespace origin
   // The counter is parameterized over its underlying "counter" type and an
   // action that increments counter. The default action is to simply increment
   // the counter.
-  template<typename Inc, typename Act = increment_action<Inc>>
+  template<typename I, typename Act = increment_action<I>>
     class counter 
     {
-      static_assert(Weakly_incrementable<Inc>(), "");
-      static_assert(Function<Act, Inc&>(), "");
+      static_assert(Weakly_incrementable<I>(), "");
+      static_assert(Function<Act, I&>(), "");
     public:
-      using value_type        = Inc;
-      using reference         = const Inc&;
-      using pointer           = const Inc*;
-      using difference_type   = Incrementable_difference<Inc>;
-      using iterator_category = Incrementable_category<Inc>;
+      using value_type        = I;
+      using reference         = const I&;
+      using pointer           = const I*;
+      using difference_type   = Incrementable_difference<I>;
+      using iterator_category = Incrementable_category<I>;
       
       using advance_action = Act;
 
       // Default constructor
-      counter(Inc i = {}, Act adv = {})
+      counter(I i = {}, Act adv = {})
         : i{i}
       { }
       
@@ -80,11 +80,11 @@ namespace origin
 
       // Increment
       counter& operator++() { ++i; return *this; }
-      counter operator++(int) { counter tmp{*this}; ++tmp; return tmp; }
+      counter operator++(int) { counter tmp{*this}; operator++(); return tmp; }
       
       // Decrement
       counter& operator--() { --i; return *this; }
-      counter operator--(int) { counter tmp{*this}; --tmp; return tmp; }
+      counter operator--(int) { counter tmp{*this}; operator--(); return tmp; }
 
       // Advance
       counter& operator+=(difference_type n) { i += n; return *this; }
@@ -103,14 +103,14 @@ namespace origin
       }
 
     private:
-      Inc i;    // The incremented object
+      I i;    // The incremented object
       Act adv;  // The advance action
     };
 
   // Return a counter over the incrementable type. An increment action may be
   // optionally specified.
-  template<typename Inc, typename Act = increment_action<Inc>>
-    counter<Inc, Act> make_counter(const Inc& inc, Act act = {})
+  template<typename I, typename Act = increment_action<I>>
+    counter<I, Act> make_counter(const I& inc, Act act = {})
     {
       return {inc, act};
     }

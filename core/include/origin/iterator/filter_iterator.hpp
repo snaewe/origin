@@ -5,8 +5,8 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_ITERATOR_FILTER_HPP
-#define ORIGIN_ITERATOR_FILTER_HPP
+#ifndef ORIGIN_ITERATOR_FILTER_ITERATOR_HPP
+#define ORIGIN_ITERATOR_FILTER_ITERATOR_HPP
 
 #include <origin/tuple.hpp>
 #include <origin/algorithm.hpp>

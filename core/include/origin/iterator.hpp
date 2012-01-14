@@ -974,8 +974,4 @@ namespace origin
                    
 } // namespace origin
 
-// Include default models
-#include <origin/iterator/counter.hpp>
-
-
 #endif

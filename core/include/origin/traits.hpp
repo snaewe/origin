@@ -1543,6 +1543,7 @@ namespace origin
     }        
 
     
+    
   // Safely deduce the result type of the expression t <<= u.
   template<typename T, typename U>
     struct left_shift_assign_result
@@ -1568,6 +1569,7 @@ namespace origin
     }        
 
     
+    
   // Safely deduce the result type of the expression t >>= u.
   template<typename T, typename U>
     struct right_shift_assign_result
@@ -1591,6 +1593,105 @@ namespace origin
     {
       return Subst_succeeded<Right_shift_assign_result<T, U>>();
     }        
+
+
+
+  // Common member traits
+  // There are number of common operations foundin the STL and beyond. Members
+  // like x.size(), x.empty(), x.find(), and x.swap() typically optimize
+  // algorithms or properties.
+
+
+
+  // Member size
+  // These traits determine if x.size() is a valid expression. Classes 
+  // implementing this member typically cache their size rather than compute
+  // it (e.g., Containers).
+
+  // Safely get the type returned by the member function x.size().
+  template<typename T>
+    struct member_size_result
+    {
+    private:
+      template<typename X>
+        static auto check(X const& x) -> decltype(x.size());
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+    
+  // An alias to the result of the expression empty(x).
+  template<typename T>
+    using Member_size_result = typename member_size_result<T>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename T>
+    bool constexpr Has_member_size()
+    {
+      return Subst_succeeded<Member_size_result<T>>();
+    }
+
+
+
+  // Member empty
+  // These traits determine if x.empty() is a valid expression. Usually if
+  // x.size() is a valid expression, x.empty() will also be a valid expression.
+  // This is not always the case (e.g., counted_range).
+
+  // Safely get the type returned by the member function x.empty().
+  template<typename T>
+    struct member_empty_result
+    {
+    private:
+      template<typename X>
+        static auto check(X const& x) -> decltype(x.empty());
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<T>()));
+    };
+
+  // An alias to the result of the expression empty(x).
+  template<typename T>
+    using Member_empty_result = typename member_empty_result<T>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename T>
+    bool constexpr Has_member_empty()
+    {
+      return Subst_succeeded<Member_empty_result<T>>();
+    }
+  
+
+
+  // Member find
+  // These traits determine if the type supports finding a value based on a
+  // key. Typically, containers implementing a member find() will implement
+  // more efficient search techniques than the usual linear search.
+  
+  // Safely get the type associated with the result of t.find(x).
+  template<typename C, typename K>
+    struct member_find_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(x.find(y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<C>(), std::declval<K>()));
+    };
+    
+  // An alias to the result of the expression empty(x).
+  template<typename C, typename K>
+    using Member_find_result = typename member_find_result<C, K>::type;
+    
+  // Return true if empty(t) is a valid expression.
+  template<typename C, typename K>
+    bool constexpr Has_member_find()
+    {
+      return Subst_succeeded<Member_find_result <C, K>>();
+    }
+
+
 
 } // namespace origin
 

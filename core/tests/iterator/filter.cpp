@@ -9,7 +9,7 @@
 #include <vector>
 #include <iostream>
 
-#include <origin/iterator/filter.hpp>
+#include <origin/iterator/filter_iterator.hpp>
 
 using namespace std;
 using namespace origin;
