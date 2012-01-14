@@ -326,12 +326,12 @@ namespace origin
   
   // All equal (list)
   // Returns true if x == value for all elementx x in list.
-  template<typename T, typename P>
-    inline bool all_equal(std::initializer_list<T> list, P pred)
+  template<typename T, typename U>
+    inline bool all_equal(std::initializer_list<T> list, const U& value)
     {
-      static_assert(Predicate<P, T>(), "");
+      static_assert(Equality_comparable<T, U>(), "");
 
-      return all_equal(list.begin(), list.end(), pred);
+      return all_equal(list.begin(), list.end(), value);
     }
      
  
@@ -368,12 +368,12 @@ namespace origin
   
   // Not all equal (list)
   // Returns true x != value for some element x in list.
-  template<typename T, typename P>
-    inline bool not_all_equal(std::initializer_list<T> list, P pred)
+  template<typename T, typename U>
+    inline bool not_all_equal(std::initializer_list<T> list, const U& value)
     {
-      static_assert(Predicate<P, T>(), "");
+      static_assert(Equality_comparable<T, U>(), "");
 
-      return not_all_equal(list.begin(), list.end(), pred);
+      return not_all_equal(list.begin(), list.end(), value);
     }
 
      
@@ -409,12 +409,12 @@ namespace origin
 
   // Some equal (list)
   // Returns true if x == value for some element x in list.
-  template<typename T, typename P>
-    inline bool some_equal(std::initializer_list<T> list, P pred)
+  template<typename T, typename U>
+    inline bool some_equal(std::initializer_list<T> list, const U& value)
     {
-      static_assert(Predicate<P, T>(), "");
+      static_assert(Equality_comparable<T, U>(), "");
 
-      return some_equal(list.begin(), list.end(), pred);
+      return some_equal(list.begin(), list.end(), value);
     }
     
   
@@ -450,12 +450,12 @@ namespace origin
 
   // None equal (list)
   // Returns true if x != value for all elements x in list.
-  template<typename T, typename P>
-    inline bool none_equal(std::initializer_list<T> list, P pred)
+  template<typename T, typename U>
+    inline bool none_equal(std::initializer_list<T> list, const U& value)
     {
-      static_assert(Predicate<P, T>(), "");
+      static_assert(Equality_comparable<T, U>(), "");
 
-      return none_equal(list.begin(), list.end(), pred);
+      return none_equal(list.begin(), list.end(), value);
     }
     
     
@@ -491,12 +491,12 @@ namespace origin
 
   // One equal (list)
   // Returns true if x == value for one and only one elements x in list.
-  template<typename T, typename P>
-    inline bool one_equal(std::initializer_list<T> list, P pred)
+  template<typename T, typename U>
+    inline bool one_equal(std::initializer_list<T> list, const U& value)
     {
-      static_assert(Predicate<P, T>(), "");
+      static_assert(Equality_comparable<T, U>(), "");
 
-      return one_equal(list.begin(), list.end(), pred);
+      return one_equal(list.begin(), list.end(), value);
     }
 
 } // namespace origin

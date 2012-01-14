@@ -27,5 +27,5 @@ int main()
   assert(( some_of(v, zero) ));
   
   assert(( some_of({1, 2, 0, 3, 4}, zero) ));
-  // assert(( some_equal({false, false, true}, true) ));
+  assert(( some_equal({false, false, true}, true) ));
 }
