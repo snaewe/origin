@@ -40,7 +40,7 @@ namespace origin
     {
       return Input_range<R>() && Predicate<P, Value_type<R>>();
     }
-    
+             
   // Returns true if the input iterator can be searched for a value of type T.
   template<typename I, typename T>
     constexpr bool Value_searchable()
@@ -49,176 +49,23 @@ namespace origin
     }
   
   // Returns true if the input iterator can be searched for a value of type T.
-  template<typename I, typename T>
+  template<typename R, typename T>
     constexpr bool Value_searchable_range()
     {
-      return Input_iterator<I>() && Equality_comparable<Value_type<I>, T>();
+      return Input_range<R>() && Equality_comparable<Value_type<R>, T>();
     }
 }
 
 
 #include <origin/algorithm/quantifier.hpp>
 #include <origin/algorithm/find.hpp>
-
+#include <origin/algorithm/count.hpp>
 
 #include <origin/algorithm/combination.hpp>
 
 
 namespace origin {
   
-  
-  // FIXME: Document adjacent find, etc.
-  
-  // Adjacent find
-  template<typename Iter>
-    inline Iter std_adjacent_find(Iter first, Iter last)
-    {
-      static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::adjacent_find(first, last);
-    }
-    
-  template<typename R>
-    inline Iterator_type<R> adjacent_find(R& range)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>>(), "");
-
-      return std_adjacent_find(std::begin(range), std::end(range));
-    }
-  
-  template<typename R>
-    inline Iterator_type<const R> adjacent_find(const R& range)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>>(), "");
-
-      return std_adjacent_find(std::begin(range), std::end(range));
-    }
-
-    
-    
-  // Count
-  // Returns the number of elements x in [first, last) where x == value.
-  template<typename Iter, typename T>
-    inline Distance_type<Iter> std_count(Iter first, Iter last, T const& value)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::count(first, last, value);
-    }
-    
-    
-
-  // Count (range)
-  // Returns the number of elements x in r where x == value.
-  template<typename R, typename T>
-    inline Distance_type<R> count(R const& range, T const& value)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
-
-      return std_count(std::begin(range), std::end(range), value);
-    }
-   
-   
-   
-  // Count if
-  // Returns the number of elements x in [first, last) where pred(x) is true.
-  template<typename Iter, typename Pred>
-    inline Distance_type<Iter> std_count_if(Iter first, Iter last, Pred pred)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      return std::count_if(first, last, pred);
-    }
-   
-   
-   
-  // Count if (range)
-  // Returns the number of elements x in r where pred(x) is true.
-  template<typename R, typename Pred>
-    inline Distance_type<R> count_if(R const& range, Pred pred)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
-      return std_count_if(std::begin(range), std::end(range), pred);
-    }
-
-    
-    
-  // Count not equal
-  // Returns the number of elements x in [first, last) where x != value.
-  template<typename Iter, typename T>
-    inline Distance_type<Iter> count_not_equal(Iter first, Iter last, T const& value)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
-      
-      Distance_type<Iter> n = 0;
-      while(first != last) {
-        if(*first != value)
-          ++n;
-        ++first;
-      }
-      return n;
-    }
-
-    
-    
-  // Count not equal (range)
-  // Returns the number of elements x in r where x != value.
-  template<typename R, typename T>
-    inline Distance_type<R> count_not_equal(R const& range, T const& value)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Equality_comparable<Value_type<R>, T>(), "");
-      
-      return count_not_equal(std::begin(range), std::end(range), value);
-    }
-    
-    
-  
-  // Count if not
-  // Returns the number of elements x in [first, last) where !pred(x)
-  template<typename Iter, typename Pred>
-    inline Distance_type<Iter> count_if_not(Iter first, Iter last, Pred pred)
-    {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-      
-      Distance_type<Iter> n = 0;
-      while(first != last) {
-        if(!pred(*first))
-          ++n;
-        ++first;
-      }
-      return n;
-    }
-
-  
-  
-  // Count if not (range)
-  // Returns the number of elements x in r where !pred(x).
-  template<typename R, typename Pred>
-    inline Distance_type<R> count_if_not(R const& range, Pred pred)
-    {
-      static_assert(Input_range<R>(), "");
-      static_assert(Predicate<Pred, Value_type<R>>(), "");
-      
-      return count_if_not(std::begin(range), std::end(range), pred);
-    }
-    
-    
-    
   // Equal
   // Returns true if, for two ranges a and b, the elements of a are equal to
   // the elements of b. Note that b must have size greater than or equal to a.

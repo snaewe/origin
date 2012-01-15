@@ -35,7 +35,24 @@ namespace origin
   //    find_next_if(first, last, value)
   //    find_nth_if(first, last, pred)
   //    find_nth_if(range, pred)
-
+  //
+  // Algorithms for finding the first match in range of possible values. This
+  // is the same as find_first_of in the standard library.
+  //
+  //    find_in(first1, last1, first2, last2)
+  //    find_in(range1, range2)
+  //    find_in(first1, last1, first2, last2, comp)
+  //    find_in(range1, range2, comp)
+  //
+  // TODO: Write find_next_in and find_nth_in
+  //
+  // And adjacent find. This is the same as adjacent_find in the standard 
+  // library.
+  //
+  //    find_adjacent(first, last)
+  //    find_adjacent(range)
+  //
+  // TODO: Write find_next_adjacent and find_nth_adjacent
 
   
   // Find algorithms
@@ -371,11 +388,11 @@ namespace origin
 
 
 
-  // Find first of
+  // Find in
   // Returns an iterator i in [first1, last1) where any_equal(first2, last, *i)
   // is true.
   template<typename I1, typename I2>
-    inline I1 std_find_first_of(I1 first1, I1 last1, I2 first2, I2 last2)
+    inline I1 find_in(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Value_searchable<I1, Value_type<I2>>(), "");
       static_assert(Forward_iterator<I2>(), "");
@@ -392,39 +409,39 @@ namespace origin
 
 
 
-  // Find first of (range)
+  // Find in (range)
   // Returns the first iterator i in r1 where any_equal(r2, *i) is true.
   template<typename R1, typename R2>
-    inline Iterator_type<R1> find_first_of(R1& range1, const R2& range2)
+    inline Iterator_type<R1> find_in(R1& range1, const R2& range2)
     {
       static_assert(Value_searchable_range<R1, Value_type<R2>>(), "");
       static_assert(Forward_range<R2>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2));
+      return find_in(std::begin(range1), std::end(range1),
+                     std::begin(range2), std::end(range2));
     }
   
   
   
-  // Find first of (const range)
+  // Find in (const range)
   // Returns an iterator i in r1 that is equal to any of the elements in r2.
   template<typename R1, typename R2>
-    inline Iterator_type<const R1> find_first_of(const R1& range1, const R2& range2)
+    inline Iterator_type<const R1> find_in(const R1& range1, const R2& range2)
     {
       static_assert(Value_searchable_range<R1, Value_type<R2>>(), "");
       static_assert(Forward_range<R2>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2));
+      return find_in(std::begin(range1), std::end(range1),
+                     std::begin(range2), std::end(range2));
     }
     
     
   
-  // Find first of (relation)
+  // Find in (relation)
   // Returns the first iterator i in [first1, last1) such that comp(*i, *j) is 
   // true where j is any iterator in [first2, last2).
   template<typename I1, typename I2, typename R>
-    inline I1 std_find_first_of(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    inline I1 find_in(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
       // FIXME: Is there a more succint concept describing the search
       // principle?
@@ -446,35 +463,75 @@ namespace origin
 
 
 
-  // Find first of (relation, range)
+  // Find in (relation, range)
   // Returns the first iterator i in r1 such that comp(*i, *j) is true where j 
   // is any iterator in r2.
   template<typename R1, typename R2, typename Rel>
-    inline Iterator_type<R1> find_first_of(R1& range1, const R2& range2, Rel comp)
+    inline Iterator_type<R1> find_in(R1& range1, const R2& range2, Rel comp)
     {
       static_assert(Input_range<R1>(), "");
       static_assert(Forward_range<R2>(), "");
       static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2), comp);
+      return find_in(std::begin(range1), std::end(range1),
+                     std::begin(range2), std::end(range2), comp);
     }
     
     
   
-  // Find first of (relation, const range)
+  // Find in (relation, const range)
   // Returns the first iterator i in r1 such that comp(*i, *j) is true where j 
   // is any iterator in r2.
   template<typename R1, typename R2, typename Rel>
-    inline Iterator_type<const R1> find_first_of(const R1& range1, const R2& range2, Rel comp)
+    inline Iterator_type<const R1> find_in(const R1& range1, const R2& range2, Rel comp)
     {
       static_assert(Input_range<R1>(), "");
       static_assert(Input_range<R2>(), "");
       static_assert(Relation<Rel, Value_type<R1>, Value_type<R2>>(), "");
       
-      return std_find_first_of(std::begin(range1), std::end(range1),
-                               std::begin(range2), std::end(range2), comp);
+      return find_in(std::begin(range1), std::end(range1), 
+                     std::begin(range2), std::end(range2), comp);
     }  
+
+
+
+  // Adjacent find
+  // Return the first iterator i in [first, last) where *i == *(i + 1).
+  template<typename Iter>
+    inline Iter find_adjacent(Iter first, Iter last)
+    {
+      static_assert(Forward_iterator<Iter>(), "");
+      static_assert(Equality_comparable<Value_type<Iter>>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      return std::adjacent_find(first, last);
+    }
+    
+    
+  
+  // Adjacent find (range)
+  // Return the first iterator i in range wheren *i == *(i + 1).
+  template<typename R>
+    inline Iterator_type<R> find_adjacent(R& range)
+    {
+      static_assert(Input_range<R>(), "");
+      static_assert(Equality_comparable<Value_type<R>>(), "");
+
+      return find_adjacent(std::begin(range), std::end(range));
+    }
+  
+  
+  
+  // Adjacent find (const range)
+  // Return the first iterator i in range wheren *i == *(i + 1).
+  template<typename R>
+    inline Iterator_type<const R> find_adjacent(const R& range)
+    {
+      static_assert(Input_range<R>(), "");
+      static_assert(Equality_comparable<Value_type<R>>(), "");
+
+      return find_adjacent(std::begin(range), std::end(range));
+    }
 
 } // namespace origin
 
