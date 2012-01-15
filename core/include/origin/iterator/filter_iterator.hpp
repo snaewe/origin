@@ -9,11 +9,16 @@
 #define ORIGIN_ITERATOR_FILTER_ITERATOR_HPP
 
 #include <origin/tuple.hpp>
-#include <origin/algorithm.hpp>
 #include <origin/iterator.hpp>
 
 namespace origin
 {
+  // NOTE: We can't include <origin/algorithm.hpp> without inducing a cyclic 
+  // dependency on <origin/iterator.hpp> (through range).
+  template<typename I, typename P> I std_find_if(I, I, P);
+  template<typename I, typename P> I find_next_if(I, I, P);
+
+
   // A filter iterator is an iterator adaptor that, when incremented, will
   // move to the next element satisfying the given predicate. Filter iterators 
   // are Forward_iterators.
@@ -120,5 +125,7 @@ namespace origin
     }
 
 } // namespace origin
+
+#include <origin/algorithm.hpp>
 
 #endif

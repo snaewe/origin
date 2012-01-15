@@ -8,100 +8,121 @@
 #ifndef ORIGIN_ITERATOR_TRNSFORM_ITERATOR_HPP
 #define ORIGIN_ITERATOR_TRNSFORM_ITERATOR_HPP
 
-#include <origin/iterator/facades.hpp>
+#include <origin/iterator.hpp>
 
 namespace origin
 {
-  /** @internal */
-  namespace transform_iterator_
-  {
-    template<typename F, typename Iter>
-    struct reference
-    {
-      typedef typename std::result_of<
-        F(typename std::iterator_traits<Iter>::reference)
-      >::type type;
-    };
-
-    template<typename F, typename Iter>
-    struct value_type
-    {
-      typedef typename std::remove_reference<
-        typename reference<F, Iter>::type
-      >::type type;
-    };
-
-    template<typename F, typename Iter>
-    struct pointer
-    {
-      typedef typename std::add_pointer<
-        typename value_type<F, Iter>::type
-      >::type type;
-    };
-  };
-
-
-  /**
-   * A trasnform iterator applies a transform function to the result type of
-   * its underlying iterator when derefenced
-   *
-   * @tparam Iter The underlying Iterator
-   * @tparam Transform A transform function.
-   *
-   * @todo Move this into the iterator library.
-   */
-  template<typename Iter, typename Transform>
+  // A transform iterator applies a unary transform (function) to the
+  // referenced elements of an underlying iterator.  Note that transformed 
+  // references are assumed to be temporaries. As a result, pointer syntax is 
+  // not supported for transform iterators.
+  //
+  // Transform iterators have the same traversal properties as their underlying
+  // iterators. 
+  template<typename I, typename F>
   class transform_iterator
-    : public random_access_iterator_facade<
-        transform_iterator<Iter, Transform>,
-        typename transform_iterator_::value_type<Transform, Iter>::type,
-        typename transform_iterator_::reference<Transform, Iter>::type,
-        typename transform_iterator_::pointer<Transform, Iter>::type,
-        typename std::iterator_traits<Iter>::difference_type
-      >
   {
-    typedef Iter base_iterator;
-    typedef typename std::result_of<
-          Transform(typename std::iterator_traits<Iter>::reference)
-        >::type result_type;
+    static_assert(Input_iterator<I>(), "");
+    static_assert(Function<F, Value_type<I>>() ,"");
+
+    using result_type = decltype(std::declval<F>()(*std::declval<I>()));
+
   public:
-    typedef typename std::remove_const<
-      typename std::remove_reference<result_type>
-    >::type value_type;
-    typedef result_type reference;
-    typedef typename std::add_pointer<value_type>::type pointer;
-    typedef typename std::iterator_traits<Iter>::difference_type difference_type;
+    using value_type = Decay<result_type>;
+    using reference = result_type;
+    using pointer = void;
+    using difference_type = Distance_type<I>;
+    using iterator_category = Iterator_category<I>;
 
-    // FIXME: GCC seems to have a problem accepting brace initializers on
-    // the range_member. Update this when GCC is fixed.
-    transform_iterator(base_iterator i, Transform f)
-      : iter_{i}, func_{f}
+    transform_iterator(I i, F f)
+      : data{i, f}
     { }
+    
+    // Return the underlying iterator.
+    I base() const { return iter(); }
+    
+    // Return the tranform function.
+    F transform() const { return func(); }
 
-    reference dereference() const
-    { return func_(*iter_); }
+    // Readable (no pointer syntax)
+    reference operator*() const { return func()(*iter()); }
 
-    bool equal(transform_iterator const& x) const
-    { return iter_ == x.iter_; }
+    // Equality_comparable
+    bool operator==(const transform_iterator& x) const { return iter() == x.iter(); }
+    bool operator!=(const transform_iterator& x) const { return iter() != x.iter(); }
+    
+    // Totally_ordered (if supported)
+    bool operator<(const transform_iterator& x) const  { return iter() < x.iter(); }
+    bool operator>(const transform_iterator& x) const  { return iter() > x.iter(); }
+    bool operator<=(const transform_iterator& x) const { return iter() <= x.iter(); }
+    bool operator>=(const transform_iterator& x) const { return iter() >= x.iter(); }
 
-    void increment()
-    { ++iter_; }
+    // Increment
+    transform_iterator& operator++() { ++iter(); return *this; }
+    
+    transform_iterator operator++(int) 
+    { 
+      transform_iterator tmp{*this}; 
+      operator++(); 
+      return *this; 
+    }
+    
+    // Decrement
+    transform_iterator& operator--() { --iter(); return *this; }
+    
+    transform_iterator operator--(int) 
+    { 
+      transform_iterator tmp{*this}; 
+      operator--(); 
+      return *this; 
+    }
 
-    void decrement()
-    { --iter_; }
+    // Advance
+    transform_iterator& operator+=(difference_type n) { iter() += n; return *this; }
+    transform_iterator& operator-=(difference_type n) { iter() -= n; return *this; }
+    
+    friend transform_iterator operator+(transform_iterator x, difference_type n)
+    {
+      x += n;
+      return x;
+    }
 
-    void advance(difference_type n)
-    { iter_ += n; }
+    friend transform_iterator operator+(difference_type n, transform_iterator x)
+    {
+      x += n;
+      return x;
+    }
 
-    difference_type distance(transform_iterator const& x)
-    { return x.iter_ - iter_; }
+    friend transform_iterator operator-(transform_iterator x, difference_type n)
+    {
+      x -= n;
+      return x;
+    }
+
+    // Difference
+    friend difference_type operator-(transform_iterator a, transform_iterator b)
+    {
+      return a.iter() - b.iter();
+    }
 
   private:
-    // FIXME: Use the empty base optimization to reduce the memory requirements
-    // of the iterator type.
-    base_iterator iter_;
-    Transform func_;
+    I&       iter()       { return std::get<0>(data); }
+    const I& iter() const { return std::get<0>(data); }
+    
+    const F& func() const { return std::get<1>(data); }
+  
+  private:
+    std::tuple<I, F> data;
   };
+  
+  
+  
+  // Return a transform iterator.
+  template<typename I, typename F>
+    inline Requires<Input_iterator<I>(), transform_iterator<I, F>> xform(I i, F f)
+    {
+      return {i, f};
+    }
 
 } // namespace origin
 

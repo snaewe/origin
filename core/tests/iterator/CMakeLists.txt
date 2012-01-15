@@ -8,7 +8,8 @@
 
 origin_run_test(iter_concepts concepts.cpp)
 origin_run_test(counter counter.cpp)
-origin_run_test(iter_filter filter.cpp)
+origin_run_test(iter_filter filter_iterator.cpp)
+origin_run_test(iter_transform transform_iterator.cpp)
 
 # origin_run_test(enumerator enumerator.cpp)
 # origin_run_test(stride_iterator stride_iterator.cpp)
