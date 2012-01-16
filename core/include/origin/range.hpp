@@ -111,9 +111,8 @@ namespace origin
       static constexpr bool check()
       {
         return Has_begin<R>() 
-            && Input_iterator<Begin_result<R>>()
+            && Iterator<Begin_result<R>>()
             && Has_end<R>()
-            && Input_iterator<End_result<R>>()
             && Same<Begin_result<R>, End_result<R>>();
       }
 

@@ -1,3 +1,4 @@
+
 // Copyright (c) 2008-2010 Kent State University
 // Copyright (c) 2011 Texas A&M University
 //
@@ -294,7 +295,6 @@ namespace origin {
 
   // Copy
   // Copy the elements in a range a into another range b.
-  
   template<typename Iter, typename Out>
     inline Out std_copy(Iter first, Iter last, Out result)
     {
@@ -303,24 +303,29 @@ namespace origin {
       assert(( is_readable_range(first, last) ));
       assume(( is_writable_range(result, distance(first, last), *first) ));
       // FIXME: Overlapping requirements
-      
+
       return std::copy(first, last, result);
     }
   
-  template<typename In, typename Out>
-    inline Iterator_type<Out> copy(const In& i, Out& o)
+  
+  
+  // Copy (range)
+  // Copy the elements from range into result where size(range) <= size(result).
+  template<typename I, typename O>
+    inline Iterator_type<O> copy(const I& range, O& result)
     {
-      static_assert(Input_range<In>(), "");
-      static_assert(Output_range<Out, Value_type<In>>(), "");
-      assume(( size(i) <= size(o) ));
+      static_assert(Input_range<I>(), "");
+      static_assert(Output_range<O, Value_type<I>>(), "");
+      assume(( size(range) <= size(out) ));
       // FIXME: Overlapping requirements
       
-      return std_copy(std::begin(i), std::end(i), std::begin(o));
+      return std_copy(std::begin(range), std::end(range), std::begin(result));
     }
     
     
     
-  // Copy
+
+  // Copy n
   template<typename Iter, typename Out>
     inline Out std_copy_n(Iter first, Distance_type<Iter> n, Out result)
     {

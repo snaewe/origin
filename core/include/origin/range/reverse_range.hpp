@@ -23,8 +23,6 @@ namespace origin
       using difference_type = Distance_type<I>;
       using iterator = std::reverse_iterator<I>;
       
-      // Construct a filter range over the underlying range. The predicate
-      // may be omitted if Pred is Default_constructible.
       reverse_range(I first, I last)
         : first{first}, last{last}
       { }

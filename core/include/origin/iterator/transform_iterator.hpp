@@ -118,7 +118,7 @@ namespace origin
   
   // Return a transform iterator.
   template<typename I, typename F>
-    inline Requires<Input_iterator<I>(), transform_iterator<I, F>> xform(I i, F f)
+    inline transform_iterator<I, F> transform_iter(I i, F f)
     {
       return {i, f};
     }

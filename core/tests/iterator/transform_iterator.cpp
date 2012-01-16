@@ -22,8 +22,8 @@ struct twice
 int main()
 {
   vector<int> v = {1, 2, 3};
-  auto i = xform(v.begin(), twice{});
-  auto j = xform(v.end(), twice{});
+  auto i = transform_iter(v.begin(), twice{});
+  auto j = transform_iter(v.end(), twice{});
   
   while(i != j) {
     cout << *i << ' ';
