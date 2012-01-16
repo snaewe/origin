@@ -43,8 +43,8 @@ int main()
   }
   
   {
-    auto i = filtered(v.begin(), v.end(), non_zero_function{});
-    auto j = filtered(v.end(), non_zero_function{});
+    auto i = filter_iter(v.begin(), v.end(), non_zero_function{});
+    auto j = filter_iter(v.end(), non_zero_function{});
     copy(i, j, ostream_iterator<int>(cout, " "));
     cout << "\n";
     

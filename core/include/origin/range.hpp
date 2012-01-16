@@ -99,7 +99,10 @@ namespace origin
   template<typename R>
     using Iterator_type = Begin_result<R>;
     
-  // Range concept
+
+    
+  // Range (concept)
+  // A range is indicated by a pair of iterators called begin(r) and end(r).
     
   // The specification of the Range concept.
   template<typename R>
@@ -128,7 +131,9 @@ namespace origin
       return Range_concept<R>::check();
     }
     
+
     
+  // Range concepts
     
   // NOTE: The meaning of saying "is fooable everywhere except its limit" is
   // analogous to asserting the corresponding property for all ranges r of 
@@ -396,6 +401,12 @@ namespace origin
   // Range adaptors
   // A range adaptor is a model of a range. These typically wrap other data
   // structures or data elements in such a way that they can be iterated over.
+  //
+  // Note that a range adaptor must declare its value type and difference type.
+  // The latter is required so that Distance_type<R> is a valid expression for
+  // ranges (as is Size_type<R>). It is not strictly required that a Range
+  // declare a nested iterator name; that is uniquely deduced from the begin()
+  // and end() operations.
   
   
   
@@ -407,6 +418,7 @@ namespace origin
     struct array_range
     {
       using value_type = Remove_cv<T>;
+      using difference_type = std::ptrdiff_t;
       
       array_range(T(&a)[N]) : array(a) { }
       
@@ -447,6 +459,7 @@ namespace origin
     {    
     public:
       using value_type = Value_type<I>;
+      using difference_type = Distance_type<I>;
       using iterator = counted_iterator<I>;
       
       counted_range(I first, Distance_type<I> n)
@@ -475,37 +488,37 @@ namespace origin
   // is_bounded_range precondition as an invariant.
   //
   // wraps a pair of iterators. This is essentially the same as the Boost 
-  // iterator_range, or pair<Iter, Iter> with appropriate overloads.
+  // iterator_range, or pair<I, I> with appropriate overloads.
   //
   // Invariants: 
   //    bounded_range(this->begin(), this->end());
-  template<typename Iter>
+  template<typename I>
     class bounded_range
     {
-      static_assert(Weakly_incrementable<Iter>(), "");
-      static_assert(Equality_comparable<Iter>(), "");
+      static_assert(Weakly_incrementable<I>(), "");
+      static_assert(Equality_comparable<I>(), "");
     public:
-      using value_type = Value_type<Iter>;
-      using iterator = Iter;
+      using value_type = Value_type<I>;
+      using difference_type = Distance_type<I>;
 
       // Initialize the bounded range so that both values are the same. The
       // range is initially empty.
       bounded_range() : first(), last(first) { }
     
       // Initialize the bounded range over [first, last).
-      bounded_range(iterator first, iterator last)
+      bounded_range(I first, I last)
         : first(first), last(last)
       { 
         assert(( is_bounded_range(first, last) ));
       }
       
       // Range
-      iterator begin() const { return first; }
-      iterator end() const { return last; }
+      I begin() const { return first; }
+      I end() const { return last; }
       
     private:
-      iterator first;
-      iterator last;
+      I first;
+      I last;
     };
 
 
@@ -515,19 +528,20 @@ namespace origin
   // to say that the elements of an iterator range are iterators. The range is
   // parameterized over the underlying iterator type and an action that 
   // describes how the range is iterated (increment by default).
-  template<typename Iter, typename Act = increment_action<Iter>>
+  template<typename I, typename Act = increment_action<I>>
     class iterator_range
     {
-      static_assert(Weakly_incrementable<Iter>(), "");
-      static_assert(Equality_comparable<Iter>(), "");
-      static_assert(Function<Act, Iter&>(), "");
+      static_assert(Weakly_incrementable<I>(), "");
+      static_assert(Equality_comparable<I>(), "");
+      static_assert(Function<Act, I&>(), "");
 
     public:
-      using iterator = counter<Iter, Act>;
+      using iterator = counter<I, Act>;
       using value_type = Value_type<iterator>;
+      using difference_type = Distance_type<iterator>;
 
-      iterator_range(Iter first, Iter last)
-        : first(first), last(last)
+      iterator_range(I first, I last)
+        : first{first}, last{last}
       {
         assert(( is_bounded_range(first, last) ));
       }
@@ -536,13 +550,13 @@ namespace origin
       iterator end()   const { return last; }
 
     private:
-      Iter first;
-      Iter last;
+      I first;
+      I last;
     };
 
 
 
-  // Range over
+  // Iter range
   // Returns a bounded range over the iterators in the range [first, last).
   // For example:
   //
@@ -554,10 +568,10 @@ namespace origin
   
   
   
-  // Range over
+  // Iter range
   // Returns an iterator range over the iterators in [first, last).
   template<typename I>
-    inline iterator_range<I> range_over(I first, I last)
+    inline iterator_range<I> iter_range(I first, I last)
     {
       assert(( is_bounded_range(first, last) ));
 
@@ -566,18 +580,18 @@ namespace origin
 
 
 
-  // Range over (range)
+  // Iter range (range)
   template<typename R>
-    inline iterator_range<Iterator_type<R>> range_over(R& range)
+    inline iterator_range<Iterator_type<R>> iter_range(R& range)
     {
       return {std::begin(range), std::end(range)};
     }
 
 
 
-  // Range over (const range)
+  // Iter range (const range)
   template<typename R>
-    inline iterator_range<Iterator_type<const R>> range_over(const R& range)
+    inline iterator_range<Iterator_type<const R>> iter_range(const R& range)
     {
       return {std::begin(range), std::end(range)};
     }
@@ -651,9 +665,5 @@ namespace origin
     }
     
 } // namespace origin
-
-// Include range constructors
-#include <origin/range/filter_range.hpp>
-// #include <origin/range/permutation.hpp>
 
 #endif

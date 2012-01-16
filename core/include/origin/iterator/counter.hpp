@@ -8,29 +8,10 @@
 #ifndef ORIGIN_ITERATOR_COUNTER_HPP
 #define ORIGIN_ITERATOR_COUNTER_HPP
 
-// NOTE: This file is included by <origin/iterator.hpp>
 #include <origin/iterator.hpp>
 
 namespace origin
 {
-
-  // An alias for the difference type of a counter argument. For Integral types,
-  // this is the signed value of that type. For Iterator types, it is the 
-  // distance type.
-  //
-  // FIXME: This is not really correct for integral types. It should be the
-  // next larger signed representation.
-  template<typename I>
-    using Incrementable_difference = 
-      If<Integral<I>(), Make_signed<I>, Distance_type<I>>;
-  
-
-  // An alias for the iterator category of a counter. If I is an integral type,
-  // the category is "random access". Otherwise, it is the iterator's category.
-  template<typename I>
-    using Incrementable_category = 
-      If<Integral<I>(), std::random_access_iterator_tag, Iterator_category<I>>;
-
 
 
   // A counter is an iterator that traverses a counted sequence of 
@@ -39,7 +20,9 @@ namespace origin
   //
   // The counter is parameterized over its underlying "counter" type and an
   // action that increments counter. The default action is to simply increment
-  // the counter.
+  // the counter. Note that counter increments are unchecked. If the action
+  // is to advance by some number > 1, then it is possible to overrun the
+  // limit of the range.
   template<typename I, typename Act = increment_action<I>>
     class counter 
     {
@@ -49,62 +32,67 @@ namespace origin
       using value_type        = I;
       using reference         = const I&;
       using pointer           = const I*;
-      using difference_type   = Incrementable_difference<I>;
+      using difference_type   = Incrementable_distance<I>;
       using iterator_category = Incrementable_category<I>;
-      
-      using advance_action = Act;
 
       // Default constructor
       counter(I i = {}, Act adv = {})
-        : i{i}
+        : data{i, adv}
       { }
       
       // Returns the underlying incrementable object. 
-      reference base() const { return i; }
+      reference base() const { return iter(); }
       
       // Returns the advance action.
-      advance_action advance_act() const { return adv; }
+      Act advance_act() const { return adv(); }
 
       // Readable
-      reference operator*() const { return i; }
-      pointer operator->() const { return &i; }
+      reference operator*() const { return iter(); }
+      pointer operator->() const { return &iter(); }
   
       // Equality_comparable
-      bool operator==(const counter& x) const { return i == x.i; }
-      bool operator!=(const counter& x) const { return i != x.i; }
+      bool operator==(const counter& x) const { return iter() == x.iter(); }
+      bool operator!=(const counter& x) const { return iter() != x.iter(); }
 
-      bool operator<(const counter& x) const  { return i < x.i; }
-      bool operator>(const counter& x) const  { return i > x.i; }
-      bool operator<=(const counter& x) const { return i <= x.i; }
-      bool operator>=(const counter& x) const { return i >= x.i; }
+      bool operator<(const counter& x) const  { return iter() < x.iter(); }
+      bool operator>(const counter& x) const  { return iter() > x.iter(); }
+      bool operator<=(const counter& x) const { return iter() <= x.iter(); }
+      bool operator>=(const counter& x) const { return iter() >= x.iter(); }
 
       // Increment
-      counter& operator++() { ++i; return *this; }
+      counter& operator++() { ++iter(); return *this; }
       counter operator++(int) { counter tmp{*this}; operator++(); return tmp; }
       
       // Decrement
-      counter& operator--() { --i; return *this; }
+      counter& operator--() { --iter(); return *this; }
       counter operator--(int) { counter tmp{*this}; operator--(); return tmp; }
 
-      // Advance
-      counter& operator+=(difference_type n) { i += n; return *this; }
-      counter& operator-=(difference_type n) { i -= n; return *this; }
-      
+      // Random Access operations
       // requires Random_access_iterator<Iter> || Integral<Iter>
-      friend counter operator+(counter c, difference_type n) { c += n; return c; }
-      friend counter operator+(difference_type n, counter c) { c += n; return c; }
-      friend counter operator-(counter c, difference_type n) { c -= n; return c; }
+      
+      // Advance
+      counter& operator+=(difference_type n) { iter() += n; return *this; }
+      counter& operator-=(difference_type n) { iter() -= n; return *this; }
+      
+      friend counter operator+(counter c, difference_type n) { return c += n; }
+      friend counter operator+(difference_type n, counter c) { return c += n; }
+      friend counter operator-(counter c, difference_type n) { return c -= n; }
 
       // Difference
-      friend difference_type distance(const counter& a, const counter& b)
+      friend difference_type operator-(const counter& i, const counter& j)
       {
-        assume(( a.adv == b.adv ));
-        return distance(a.i, b.i, a.adv);
+        assume(( i.adv() == j.adv() ));
+        return (i.iter() - j.iter()) / get_increment(i.adv());
       }
 
     private:
-      I i;    // The incremented object
-      Act adv;  // The advance action
+      I&       iter()       { return std::get<0>(data); }
+      const I& iter() const { return std::get<0>(data); }
+      
+      const Act& adv() const { return std::get<1>(data); }
+    
+    private:
+      std::tuple<I, Act> data;
     };
 
   // Return a counter over the incrementable type. An increment action may be

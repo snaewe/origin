@@ -131,7 +131,6 @@ namespace origin
   // Weak_input_iterator.
   
   
-  
   // A weakly incrementable type is a semiregular type that can be pre- and
   // post-incremented. Neither operation is requireed to be equality
   // preserving, and the result of post-increment is unspecified.
@@ -731,6 +730,34 @@ namespace origin
     {
       return Sortable_concept<Iter, R>::check();
     }
+
+
+
+  // Incrementable properties  
+  // These traits help unify some aspects of incrementable types and iterators.
+  // If an abstraction can be adapted to incrementable but not necessarily
+  // readable types, then these traits can be used instead of the usual 
+  // iterator traits.
+  
+  
+  
+  // An alias for the difference type of a counter argument. For Integral types,
+  // this is the signed value of that type. For Iterator types, it is the 
+  // distance type.
+  //
+  // FIXME: This is not really correct for integral types. It should be the
+  // next larger signed representation.
+  template<typename I>
+    using Incrementable_distance = 
+      If<Integral<I>(), Make_signed<I>, Distance_type<I>>;
+
+  // An alias for the iterator category of a counter. If I is an integral type,
+  // the category is "random access". Otherwise, it is the iterator's category.
+  template<typename I>
+    using Incrementable_category = 
+      If<Integral<I>(), std::random_access_iterator_tag, Iterator_category<I>>;
+
+  
   
   
   
@@ -925,7 +952,7 @@ namespace origin
   template<typename Iter, typename Act>
     inline Distance_type<Iter> distance(Iter first, Iter last, Act adv)
     {
-      assume(( is_reachable(first, last, adv) )); // FIXME: Not quite right.
+      assume(( is_reachable(first, last, adv) ));
       
       Distance_type<Iter> n = 0;
       while(first != last) {
@@ -934,44 +961,96 @@ namespace origin
       }
       return n;
     }
- 
- 
-   
-  // Iterator actions
+
+
+
+  // Advance actions
   // An action function is a void function that modifies one or more of its
-  // arguments.
+  // arguments. These actions increment, decrement, and advance an iterator
+  // some number of times.
   
-  // The increment action increments an object of type T.
-  template<typename T>
+  // The increment action increments an object of type I.
+  template<typename I>
     struct increment_action
     {
-      void operator()(T& x) const
-      {
-        ++x;
-      }
-    };
-  
-  // The decrement action decrements an object of type T.
-  template<typename T>
-    struct decrement_action
-    {
-      void operator()(T& x) const
-      {
-        --x;
-      }
-    };
-  
-  // The advance action advances an Iter object n times.
-  template<typename Iter>
-    struct advance_action
-    {
-      void operator()(Iter& i, Distance_type<Iter> n)
-      {
-        std_advance(i, n);
-      }
+      void operator()(I& x) const { ++x; }
+      
+      static constexpr Incrementable_distance<I> increment = 1;
     };
 
-                   
+  // The decrement action decrements an object of type I.
+  template<typename I>
+    struct decrement_action
+    {
+      void operator()(I& x) const { --x; }
+
+      static constexpr Incrementable_distance<I> increment = -1;
+    };
+    
+  // The advance action advances an iterator a fixed number of times.
+  template<typename I>
+    struct advance_action
+    {
+      advance_action(Distance_type<I> n) : increment{n} { }
+
+      void operator()(I& i) const { std_advance(i, increment); }
+      
+      Distance_type<I> increment;
+    };
+    
+  // The static advance action advance an iterator a statically determined 
+  // number of times.
+  template<typename I, Incrementable_distance<I> N>
+    struct static_advance_action
+    {
+      void operator()(I& i) const { std_advance(i, N); }
+      
+      static constexpr Incrementable_distance<I> increment = N;
+    };
+
+    
+
+  // Get increment
+  // Return the increment value for an increment action. This is used to
+  // determine the stride of counters and stride iterators. Note that the
+  // result is a constant expression iff the associated member is a constant
+  // expression.
+  template<typename Act>
+    constexpr auto get_increment(const Act& adv) -> decltype(adv.increment)
+    {
+      return adv.increment;
+    }
+  
+  
+  
+  // Advance action (concept)
+  // An advance action is a function that advances an incrementable object
+  // some number of times. It has an associated increment, which can be
+  // accessed via the get_increment operation.
+  
+  // Safely deduce the result of get_increment(f).
+  template<typename T>
+    struct get_increment_result
+    {
+    private:
+      template<typename X>
+        static auto check(const X& x) -> decltype(get_increment(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<const T&>()));
+    };
+    
+  // An alias for the result of get_increment(f)
+  template<typename T>
+    using Get_increment_result = typename get_increment_result<T>::type;
+    
+  // Returns true if F is an increment action.
+  template<typename F, typename I>
+    constexpr bool Advance_action()
+    {
+      return Function<F, I>() && Subst_succeeded<Get_increment_result<F>>();
+    }
+    
 } // namespace origin
 
 #endif

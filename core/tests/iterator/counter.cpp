@@ -6,6 +6,7 @@
 // and conditions.
 
 #include <cassert>
+#include <iostream>
 
 #include <origin/iterator/counter.hpp>
 
@@ -20,6 +21,7 @@ int main()
     using C = decltype(f);
     static_assert(Same<C::value_type, unsigned int>(), "");
     static_assert(Same<C::difference_type, int>(), "");
+    
     assert(( distance(f, l) == 10 ));
   }
 

@@ -19,6 +19,17 @@
 // complex dependencies, etc.
 #define assume(X)
 
+// The assert_if macro is used to conditionally assert an expression. If the
+// expression cond is true, then the expression expr is evaluated. 
+
+// Note that if NDEBUG is defined, the assertion expands into an empty 
+// statement.
+#ifdef NDEBUG
+#  define assert_if(cond, expr)
+#else
+#  define assert_if(Cond, Expr) if(Cond) assert(Expr)
+#endif
+
 namespace origin
 {
   // Utility types:

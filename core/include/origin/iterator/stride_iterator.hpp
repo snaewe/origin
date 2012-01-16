@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -8,108 +8,142 @@
 #ifndef ORIGIN_ITERATOR_STRIDE_ITERATOR_HPP
 #define ORIGIN_ITERATOR_STRIDE_ITERATOR_HPP
 
-#include <iterator>
-
-#include <origin/iterator/facades.hpp>
+#include <origin/iterator.hpp>
 
 namespace origin
 {
-  // FIXME: Is int really the best type for the count? It's certainly the
-  // easiest. I can actually write it so that the type of the ICE parameter
-  // is derived from count (as make_signed<Count>::type, that actually works),
-  // but I can't easily do the same for the accessor function, which is really
-  // too bad. I'm not so sure that it's really worth the effort.
+  // The stride iterator adaptor advances and element some number of times
+  // during a single increment. Note that the actual advance operation is
+  // parameterized by the Adv action.
+  //
+  // The stride iterator has the same traversal and read/write properties as
+  // its underlying iterator.
+  //
+  // The Act parameter is a unary action Function that advances the underlying
+  // iterator. Note that stride iterator increments are unchecked. If the action 
+  // is to advance by some number > 1, then it is possible to overrun the limit 
+  // of the range.
+  template<typename I, typename Act = advance_action<I>>
+    class stride_iterator
+    {
+      static_assert(Iterator<I>(), "");
+      static_assert(Advance_action<Act, I&>(), "");
+    public:
+      using value_type = Value_type<I>;
+      using reference = Iterator_reference<I>;
+      using pointer = Iterator_pointer<I>;
+      using difference_type = Distance_type<I>;
+      using iterator_category = Iterator_category<I>;
 
-  /**
-   * @ingroup iter
-   *
-   * A stride iterator is a an adaptor that advances an underlying iterator
-   * several steps in a single increment.
-   *
-   * @tparam Iter   The underlying Iterator type
-   */
-  template<typename Iter>
-  class stride_iterator
-    : public random_access_iterator_facade<
-        stride_iterator<Iter>,
-        typename std::iterator_traits<Iter>::value_type,
-        typename std::iterator_traits<Iter>::reference,
-        typename std::iterator_traits<Iter>::pointer,
-        typename std::iterator_traits<Iter>::difference_type
-      >
-  {
-    typedef random_access_iterator_facade<
-        stride_iterator<Iter>,
-        typename std::iterator_traits<Iter>::value_type,
-        typename std::iterator_traits<Iter>::reference,
-        typename std::iterator_traits<Iter>::pointer,
-        typename std::iterator_traits<Iter>::difference_type
-      > base_type;
-  public:
-    typedef typename base_type::reference reference;
-    typedef typename base_type::difference_type difference_type;
+      stride_iterator(I i, Act adv)
+        : data{i, adv}
+      { }
+      
+      // Returns the underlying iterator
+      I base() const { return iter(); }
+      
+      // Returns the advance action.
+      Act advance_act() const { return adv(); }
+      
+      // Returns the stride of the iterator.
+      constexpr difference_type stride() const { return get_increment(adv()); }
+      
+      // Readable
+      reference operator*() const { return *iter(); }
+      pointer operator->() const { return &*iter(); }
 
-    stride_iterator()
-      : iter_{}, stride_{}
-    { }
+      // Equality_comparable
+      // Two stride iterators are equal if they point to the same element.
+      bool operator==(const stride_iterator& x) const { return iter() == x.iter(); }
+      bool operator!=(const stride_iterator& x) const { return iter() != x.iter(); }
+      
+      // Totally_ordered
+      bool operator<(const stride_iterator& x) const { return iter() < x.iter(); }
+      bool operator>(const stride_iterator& x) const { return iter() > x.iter(); }
+      bool operator<=(const stride_iterator& x) const { return iter() <= x.iter(); }
+      bool operator>=(const stride_iterator& x) const { return iter() >= x.iter(); }
 
-    // FIXME: Is stride allowed to be negative -1?
-    stride_iterator(Iter i, difference_type n = 1)
-      : iter_{i}, stride_{n}
-    { }
+      // Incrementable
+      stride_iterator& operator++() { std_advance(iter(), stride()); return *this; }
+      
+      stride_iterator operator++(int) 
+      {
+        stride_iterator tmp{*this};
+        operator++();
+        return tmp;
+      }
 
-    reference dereference() const
-    { return *iter_; }
+      // Decrement
+      stride_iterator& operator--() { advance(iter(), -stride()); return *this; }
+      
+      stride_iterator operator--(int) 
+      {
+        stride_iterator tmp{*this};
+        operator--();
+        return tmp;
+      }
+     
+     // Advance
+     stride_iterator& operator+=(difference_type n) { iter() += stride() * n; return *this; }
+     stride_iterator& operator-=(difference_type n) { iter() -= stride() * n; return *this; }
+     
+     friend stride_iterator operator+(stride_iterator i, difference_type n)
+     {
+       return i += n;
+     }
+     
+     friend stride_iterator operator+(difference_type n, stride_iterator i)
+     {
+       return i += n;
+     }
+     
+     friend stride_iterator operator-(stride_iterator i, difference_type n)
+     {
+       return i -= n;
+     }
 
-    bool equal(stride_iterator const& x) const
-    { return iter_ == x.iter_; }
+    // Difference
+    friend difference_type operator-(stride_iterator i, stride_iterator j)
+    {
+      assert(( i.stride() == j.stride() ));
+      return (i.iter() - j.iter()) / stride;
+    }
 
-    bool less(stride_iterator const& x) const
-    { return iter_ < x.iter_; }
+    private:
+      I&       iter()       { return std::get<0>(data); }
+      const I& iter() const { return std::get<0>(data); }
+      
+      const Act& adv() const { return std::get<1>(data); }
+      
+    private:
+      std::tuple<I, Act> data;
+    };
 
-    void increment()
-    { iter_ += stride_; }
 
-    void decrement()
-    { iter_ -=  stride_; }
+    
+  // Stride iter
+  // Construct a stride iterator with some predetermined stride or step.
+  //
+  // FIXME: These should be called stride(). There are sufficient requirements
+  // to disambiguate these overloads from the range overloads, but GCC is
+  // failing with an ICE when trying to reject stride<N>(i) for ranges.
+    
+  // Returns a stride iterator over i with a step of n.
+  template<typename I>
+    inline auto stride_iter(I i, Distance_type<I> n)
+      -> Requires<Iterator<I>(), stride_iterator<I, advance_action<I>>>
+    {
+      return {i, advance_action<I>{n}};
+    }
 
-    void advance(difference_type n)
-    { stride_ += n * stride_; }
-
-    // FIXME: What if this and x don't have the same stride?
-    difference_type distance(stride_iterator const& x)
-    { return iter_ - x.iter_ / stride_; }
-
-  private:
-    Iter iter_;
-    difference_type stride_;
-  };
-
-  /**
-   * @fn make_stride_iterator(i, n)
-   * @fn make_stride_iterator(i)
-   *
-   * Create a stride iterator over the underlying iteator with the given
-   * stride. The stride is generally omitted when constructing a PTE iterator.
-   *
-   * @tparam Iter     The underlying Iterator type
-   *
-   * @param i         The underlying iterator
-   * @param n         The stride
-   */
-  //@{
-  template<typename Iter, typename Distance>
-  inline stride_iterator<Iter> make_stride_iterator(Iter i, Distance n)
-  {
-    // FIXME: requires Convertible<Distance, Iter::difference_type>
-    return stride_iterator<Iter>{i, n};
-  }
-
-  template<typename Iter>
-  inline stride_iterator<Iter> make_stride_iterator(Iter i)
-  { return stride_iterator<Iter>{i}; }
-  //@}
-
+  // Returns a stride iterator over i with a step of N (with N an explicit 
+  // template argument).
+  template<std::ptrdiff_t N, typename I>
+    inline auto stride_iter(I i) 
+      -> Requires<Iterator<I>(), stride_iterator<I, static_advance_action<I, N>>>
+    {
+      return {i, static_advance_action<I, N>{}};
+    }
 
 } // namespace origin
 

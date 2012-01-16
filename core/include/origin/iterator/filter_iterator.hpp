@@ -104,7 +104,7 @@ namespace origin
   // Return an adapted filter iterator over [first, last) that includes all
   // iterators i where pred(*i) is true.
   template<typename Iter, typename Pred>
-    inline filter_iterator<Iter, Pred> filtered(Iter first, Iter last, Pred pred)
+    inline filter_iterator<Iter, Pred> filter_iter(Iter first, Iter last, Pred pred)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");
@@ -116,7 +116,7 @@ namespace origin
   // Return an adapted filter iterator over the empty range [last, last). The
   // predicate is a required argument, but not used.
   template<typename Iter, typename Pred>
-    inline filter_iterator<Iter, Pred> filtered(Iter last, Pred pred)
+    inline filter_iterator<Iter, Pred> filter_iter(Iter last, Pred pred)
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Predicate<Pred, Value_type<Iter>>(), "");

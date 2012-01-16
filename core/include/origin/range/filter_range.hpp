@@ -9,62 +9,79 @@
 #define ORIGIN_RANGE_FILTER_RANGE_HPP
 
 #include <origin/iterator/filter_iterator.hpp>
-#include <origin/range/traits.hpp>
 
 namespace origin
 {
-
   // A filter range is a bounded range adaptor that describes a subset of
   // elements satisfying a given predicate. In other words, iterating over a
   // filter range visits all elements x in r such that r.predicate()(x) is
   // true.
-  //
-  // Note that R may be const. 
-  template<typename R, typename Pred>
+  template<typename I, typename P>
     class filter_range
     {
+      static_assert(Searchable<I, P>(), "");
     public:
-      using value_type = Value_type<R>;
-      using iterator = filter_iterator<Iterator_type<R>, Pred>;
+      using value_type = Value_type<I>;
+      using difference_type = Distance_type<I>;
+      using iterator = filter_iterator<I, P>;
       
       // Construct a filter range over the underlying range. The predicate
       // may be omitted if Pred is Default_constructible.
-      filter_range(R& r, Pred pred = Pred{})
-        : data{r, pred}
+      filter_range(I first, I last, P pred = {})
+        : data{first, last, pred}
       { }
 
-      // Returns the underlying range.
-      R const& base() const { return range(); }
-      
       // Returns the predicate function.
-      Pred predicate() const { return pred(); }
+      P predicate() const { return pred(); }
       
       // Begin and end.
-      iterator begin() const { return {std::begin(range()), std::end(range()), pred()}; }
-      iterator end() const   { return {std::end(range()), pred()}; }
+      iterator begin() const { return {first(), last(), pred()}; }
+      iterator end() const   { return {last(), pred()}; }
       
     private:
-      R&       range()       { return std::get<0>(data); }
-      const R& range() const { return std::get<0>(data); }
-      
-      const Pred& pred() const { return std::get<1>(data); }
+      const I& first() const { return std::get<0>(data); }
+      const I& last() const  { return std::get<1>(data); }
+      const P& pred() const  { return std::get<2>(data); }
     
     private:
-      std::tuple<R&, Pred> data;
+      std::tuple<I, I, P> data;
     };
     
-  // Return an adapted filter over the given range.
-  template<typename R, typename Pred>
-    inline filter_range<R, Pred> filter(R& range, Pred pred)
+    
+  // Filtered
+  // The filtered function constructs a bounded range from its range arguments
+  // and a unary prediate such that, pred(x) is true for all x in the 
+  // constructed range.  
+   
+  // Filtered (iterator range)
+  // Returns a bounded range [first', last') where pred(x) is true for all 
+  // elements in that range.
+  template<typename I, typename P>
+    inline filter_range<I, P> filtered(I first, I last, P pred)
     {
-      return {range, pred};
+      return {first, last, pred};
+    }
+    
+    
+  
+  // Filter (range)
+  // Returns a bounded range r' where pred(x) is true for all elements in that
+  // range.
+  template<typename R, typename P>
+    inline filter_range<Iterator_type<R>, P> filtered(R& range, P pred)
+    {
+      return {std::begin(range), std::end(range), pred};
     }
 
-  // A constant version of the function above.
-  template<typename R, typename Pred>
-    inline filter_range<R const, Pred> filter(R const& range, Pred pred)
+    
+    
+  // Filter (const range)
+  // Return a bounded range r' where pred(x) is true for all elemnts in that
+  // range.
+  template<typename R, typename P>
+    inline filter_range<Iterator_type<const R>, P> filtered(const R& range, P pred)
     {
-      return {range, pred};
+      return {std::begin(range), std::end(range), pred};
     }
 
 } // namespace origin

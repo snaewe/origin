@@ -9,6 +9,7 @@
 #define ORIGIN_CONCEPTS_HPP
 
 #include <functional>
+#include <initializer_list>
 
 #include <origin/traits.hpp>
 
@@ -722,8 +723,7 @@ namespace origin
   // called the difference_type (i.e., T::difference_type must be a valid
   // type name). The distance type is implicitly defined for integral types
   // pointers, and statically sized arrays.
-  //
-  // FIXME: What about a nested distance_type?
+
 
   // Safely deduce the distance type.
   template<typename T>
@@ -731,15 +731,18 @@ namespace origin
     {
     private:
       template<typename X> 
-        static auto check(X&&, Requires<!(Integral<X>() || Pointer<X>())>* = {})
+        static auto check(const X&, Requires<!(Integral<X>() || Pointer<X>())>* = {})
           -> typename X::difference_type;
       
       template<typename X> 
-        static auto check(X&&, Requires<Integral<X>() || Pointer<X>()>* = {})
+        static auto check(const X&, Requires<Integral<X>() || Pointer<X>()>* = {})
           -> std::ptrdiff_t;
           
       template<typename X, std::size_t N>
-        static std::ptrdiff_t check(X(&&)[N]);
+        static std::ptrdiff_t check(const X(&)[N]);
+        
+      template<typename X>
+        static std::ptrdiff_t check(std::initializer_list<X>);
 
       static subst_failure check(...);
     public:

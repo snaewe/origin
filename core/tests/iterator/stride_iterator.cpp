@@ -16,13 +16,22 @@ using namespace origin;
 
 int main()
 {
-  // FIXME: Write a real test for this.
   vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  auto f = make_stride_iterator(v.begin(), 2),
-       l = make_stride_iterator(v.end());
-
-
-  for( ; f < l; ++f) {
-    cout << *f << " ";
+  
+  {
+    auto f = stride_iter(v.begin(), 2), l = stride_iter(v.end(), 2);
+    for( ; f < l; ++f) {
+      cout << *f << ' ';
+    }
+    cout << '\n';
   }
+
+  {
+    auto f = stride_iter<2>(v.begin()), l = stride_iter<2>(v.end());
+    for( ; f < l; ++f) {
+      cout << *f << ' ';
+    }
+    cout << '\n';
+  }
+       
 }

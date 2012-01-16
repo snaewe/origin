@@ -7,7 +7,9 @@
 
 origin_run_test(range_concepts concepts.cpp)
 origin_run_test(range_bounded bounded.cpp)
-origin_run_test(range_filter filter.cpp)
+origin_run_test(range_reverse reverse_range.cpp)
+origin_run_test(range_filter filter_range.cpp)
+origin_run_test(range_stride stride_range.cpp)
 origin_run_test(range_permutation permutation.cpp)
 origin_run_test(range_combination combination.cpp)
 

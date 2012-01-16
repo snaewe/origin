@@ -26,7 +26,7 @@ struct non_zero_f
 template<typename R>
   void print(R const& r)
   {
-    for(auto x : filter(r, non_zero))
+    for(auto x : filtered(r, non_zero))
       cout << x << ' ';
     cout << '\n';
   }
@@ -34,16 +34,11 @@ template<typename R>
 int main()
 {
   vector<int> v = {0, 1, 2, 0, 3, 4, 0, 5, 6, 0};
-  int a[5] = {1, 0, 3, 0, 5};
   
   // Check EBO implementations.
-  auto r1 = filter(v, non_zero);
-  auto r2 = filter(v, non_zero_f{});
+  auto r1 = filtered(v, non_zero);
+  auto r2 = filtered(v, non_zero_f{});
   cout << sizeof(r1) << ' ' << sizeof(r2) << '\n';
   
   print(v);
-  
-  // Explicitly treat the array as a range.
-  // FIXME: This should not be in this test.
-  print(arr(a));  
 }
