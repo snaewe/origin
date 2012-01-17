@@ -14,6 +14,25 @@
 
 namespace origin
 {
+  // Variadic static assert
+  // The All function can be used to evaluate properties of template parameter
+  // packs in variadic templates. It is true if an only if all arguments are
+  // true. The syntax is:
+  //
+  //    static_assert(All(C<Args>()...), "")
+  //
+  // where C is a unary concept.
+  constexpr bool All() { return true; }
+    
+  // Note that all Args are expected to have type bool.
+  template<typename... Args>
+    constexpr bool All(bool b, Args... args)
+    {
+      return b && All(args...);
+    }
+
+
+
   // SFINAE support
     
   // The substitution failure type represents the result of failed name lookup

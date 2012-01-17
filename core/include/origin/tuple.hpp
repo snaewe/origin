@@ -30,7 +30,7 @@ namespace origin
       template<typename T>
         static void apply(F f, T& x)
         {
-          static_assert(Function<F, Tuple_element<T, I>>(), "");
+          static_assert(Function<F, Tuple_element<T, I>&>(), "");
           f(std::get<I>(x));
           do_tuple_for_each<I + 1, N, F>::apply(f, x);
         }
