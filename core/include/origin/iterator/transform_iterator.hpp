@@ -9,6 +9,7 @@
 #define ORIGIN_ITERATOR_TRNSFORM_ITERATOR_HPP
 
 #include <origin/iterator.hpp>
+#include <origin/algorithm.hpp>
 
 namespace origin
 {
@@ -122,7 +123,7 @@ namespace origin
     {
       return {i, f};
     }
-
+    
 } // namespace origin
 
 #endif

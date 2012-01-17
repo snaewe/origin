@@ -14,31 +14,32 @@
 using namespace std;
 using namespace origin;
 
-// Return true if n != 0.
-bool non_zero(int n) { return n != 0; }
+// copy(filtered(in, pred), out) <=> copy_if(in, out, pred)
+template<typename R, typename P>
+  bool check_filter_range(const R& range, P pred)
+  {
+    using V = vector<Value_type<R>>;
+    
+    auto n = count_if(range, pred);
+    
+    V a(n);
+    copy_if(range, a, pred);
+    
+    V b(n);
+    copy(filtered(a, pred), b);
+    
+    return equal(a, b);
+  }
+
 
 // Returns true if n != 0.
-struct non_zero_f
+struct non_zero
 {
   bool operator()(int n) const { return n != 0; }
 };
 
-template<typename R>
-  void print(R const& r)
-  {
-    for(auto x : filtered(r, non_zero))
-      cout << x << ' ';
-    cout << '\n';
-  }
-
 int main()
 {
   vector<int> v = {0, 1, 2, 0, 3, 4, 0, 5, 6, 0};
-  
-  // Check EBO implementations.
-  auto r1 = filtered(v, non_zero);
-  auto r2 = filtered(v, non_zero_f{});
-  cout << sizeof(r1) << ' ' << sizeof(r2) << '\n';
-  
-  print(v);
+  check_filter_range(v, non_zero{});
 }

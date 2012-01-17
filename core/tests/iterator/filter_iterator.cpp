@@ -14,42 +14,38 @@
 using namespace std;
 using namespace origin;
 
-// Return true if n is not 0.
-bool non_zero(int n) { return n != 0; }
+// copy(filtered(first), filtered(last), result, pred) 
+//   <=> copy_if(first, last, result, pred)
+template<typename I, typename P>
+  bool check_filter_iterator(I first, I last, P pred)
+  {
+    using V = vector<Value_type<I>>;
+    
+    auto n = std_count_if(first, last, pred);
+    
+    V a(n);
+    std_copy_if(first, last, a.begin(), pred);
+    
+    V b(n);
+    auto first2 = filter_iter(first, last, pred);
+    auto last2 = filter_iter(last, pred);
+    std_copy(first2, last2, b.begin());
+    
+    return equal(a, b);
+  }
+
+  
 
 // Returns true if n is non-zero.
-struct non_zero_function
+struct non_zero
 {
-  bool operator()(int n) const
-  {
-    return n != 0;
-  }
+  bool operator()(int n) const { return n != 0; }
 };
+
+
 
 int main()
 {
-  using Vec = vector<int>;
-  Vec v = {0, 1, 2, 0, 3, 4, 0, 5, 6, 0};
- 
-  { 
-    typedef filter_iterator<Vec::iterator, bool(*)(int)> Filter;
-    Filter i(v.begin(), v.end(), non_zero);
-    Filter j(v.end());
-    copy(i, j, ostream_iterator<int>(cout, " "));
-    cout << "\n";
-    
-    // This should be the size of two vector iterators plus a function pointer.
-    cout << sizeof(Filter) << "\n";
-  }
-  
-  {
-    auto i = filter_iter(v.begin(), v.end(), non_zero_function{});
-    auto j = filter_iter(v.end(), non_zero_function{});
-    copy(i, j, ostream_iterator<int>(cout, " "));
-    cout << "\n";
-    
-    // Check EBO. This should be the size of two vector iterators. The 
-    // predicate should have no size.
-    cout << sizeof(decltype(i)) << "\n";
-  }
+  vector<int> v = {0, 1, 2, 0, 3, 4, 0, 5, 6, 0};
+  assert(check_filter_iterator(v.begin(), v.end(), non_zero{}));
 }

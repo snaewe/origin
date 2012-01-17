@@ -15,25 +15,36 @@
 using namespace std;
 using namespace origin;
 
+// Check transform range
+// Copying a transformed range is equivalent to using calling the transform
+// algorithm.
+//
+// transform(in, out) <~> copy(transformed(in), out)
+template<typename R, typename F>
+  bool check_transform_range(const R& range, F f)
+  {
+    using V = vector<Value_type<R>>;
+
+    V a(size(range));
+    transform(range, a, f);
+    
+    V b(size(range));
+    copy(transformed(range, f), b);
+    
+    return equal(a, b);
+  }
+
+  
+// Return 2 * x.
 struct twice
 {
-  int operator()(int n) const { return 2 * n; }
+  int operator()(int x) const { return 2 * x; }
 };
+
+
 
 int main()
 {
   vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  vector<int> a(v.size());
-  vector<int> b(v.size());
-
-  transform(v.begin(), v.end(), a.begin(), twice{});
-//   copy(transformed(v, twice{}), b);
-  
-  auto r = transformed(v, twice{});
-  using R = decltype(r);
-  cout << Input_range<R>() << "\n";
-  
-  for(auto x : transformed(v, twice{}))
-    cout << x << ' ';
-  cout << '\n';
+  assert(check_transform_range(v, twice{}));
 }

@@ -281,122 +281,69 @@ namespace origin
       
   // Input and output iterators
   //
-  // Note that this design does not require the expression *i++ for input
-  // iterators. The semantics of that operation limit the generality of the
+  // Abstractly, an input iterator like a tape. Elements can be read as the
+  // tape advances, but those elements are inaccessible after the increment.
+  //
+  // An output iterator is similar to an input iterator in that it is an 
+  // abstract model of a tape except that elements are written to the tape
+  // instead of reading from it. Note that once an element is written, the
+  // (conceptually) tape advances.
+  //
+  // NOTE: We don't need to check the Iterator_category of input or output
+  // iterators since they can be statically differentiated. In fact, the only
+  // place we need to check the Iterator_category is the Forward_iterator
   // concept.
 
-  // Weak input iterator
-  // A weak input iterator is weakly incrementable and readable.
-  template<typename Iter>
-    struct Weak_input_iterator_concept
-    {
-      static constexpr bool check()
-      {
-        return Weakly_incrementable<Iter>()
-            && Readable<Iter>();
-      }
-    };
 
-  // Returns true if Iter is a weak input iterator.
+  // Weak input iterator (concept)
+  // A weak input iterator is weakly incrementable and readable.
   template<typename Iter>
     constexpr bool Weak_input_iterator()
     {
-      return Weak_input_iterator_concept<Iter>::check();
+      return Weakly_incrementable<Iter>() && Readable<Iter>();
     }
     
-    
-    
-  // Input iterators
-  // An input
-  template<typename Iter, bool Prereqs>
-    struct Input_iterator_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
-  template<typename Iter>
-    struct Input_iterator_requirements<Iter, true>
-    {
-      static constexpr bool check()
-      {
-        return Derived<Iterator_category<Iter>, std::input_iterator_tag>()
-            && Equality_comparable<Iter>()
-            && Weakly_incrementable<Iter>();
-      }
-    };
-    
-  // An input iterator...
-  template<typename Iter>
-    struct Input_iterator_concept
-    {
-      static constexpr bool check()
-      {
-        return Input_iterator_requirements<
-          Iter, Regular<Iter>() && Readable<Iter>() && Has_iterator_types<Iter>()
-        >::check();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return true;
-      }
-    };
-    
-  template<typename Iter>
+  // Input iterator (concept)
+  // A input iterator is a weak input iterator that is equality comparable.
+  template<typename I>
     constexpr bool Input_iterator()
     {
-      return Input_iterator_concept<Iter>::check();
+      return Weak_input_iterator<I>() && Equality_comparable<I>();
     }
     
+  // Weak output iterator (concept)
+  // A weak output iterator is weakly incrementable and writable.
+  template<typename I, typename T>
+    constexpr bool Weak_output_iterator()
+    {
+      return Weakly_incrementable<I>() && Writable<I, T>();
+    }
+    
+  // Output iterator (concept)
+  // An output iterator is a weak output iterator that is equality comparable.
+  template<typename I, typename T>
+    constexpr bool Output_iterator()
+    {
+      return Weak_output_iterator<I>() && Equality_comparable<I>();
+    }
+ 
+ 
+ 
+  // FIXME: Do I need a Move_iterator?
+  
  
   
-  // Forward Iterators
+  // Forward Iterator (concept)
   // A forward iterator is an input iterator with a regular post-increment
   // operation. This guarantees that multiple passes of a range may be made
   // and that multiple iterators into the range may be used.
-  
-  // A helper class for checking syntactic requirements.
-  template<typename Iter, bool Prereqs>
-    struct Forward_iterator_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
-  template<typename Iter>
-    struct Forward_iterator_requirements<Iter, true>
-    {
-      static constexpr bool check()
-      {
-        return Derived<Iterator_category<Iter>, std::forward_iterator_tag>()
-            && Incrementable<Iter>()
-            && Readable<Iter>();
-      }
-    };
-
-  // The specification of forward iterators.
-  template<typename Iter>
-    struct Forward_iterator_concept
-    {
-      static constexpr bool check()
-      {
-        return Forward_iterator_requirements<
-          Iter, Input_iterator<Iter>()
-        >::check();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return true;
-      }
-    };
-    
-  // Return true if Iter is a forward iterator.
-  template<typename Iter>
+  template<typename I>
     constexpr bool Forward_iterator()
     {
-      return Forward_iterator_concept<Iter>::check();
+      return Input_iterator<I>()
+          && Incrementable<I>()
+          && Readable<I>()
+          && Derived<Iterator_category<I>, std::forward_iterator_tag>();
     }
     
 
@@ -428,7 +375,6 @@ namespace origin
             && Same<Post_decrement_result<Iter>, Iter>();
       }
     };
-    
     
   
   

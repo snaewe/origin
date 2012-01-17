@@ -147,7 +147,7 @@ namespace origin
   template<typename R>
     constexpr bool Input_range()
     {
-      return Range<R>() && Readable<Iterator_type<R>>();
+      return Range<R>() && Input_iterator<Iterator_type<R>>();
     }
 
 

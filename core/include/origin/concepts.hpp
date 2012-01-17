@@ -440,17 +440,22 @@ namespace origin
     }
     
     
-    
-  // A semiregular type approximates regular data types. It is copyable, 
-  // movable, default constructible, and doesn't have any weird overloads
-  // (e.g., comma, new, etc.).
+  
+  // Semiregular (concept)
+  // A semiregular type approximates regular data types in that they can
+  // construct objects, be copied and moved, and destroyed.
+  //
+  // Semiregular types are not required to be default constructible. That
+  // requirement invalidates a number of useful adaptor types (e.g., iterator 
+  // and range adaptors).
+  
+  // Specification of the semiregular concept.
   template<typename T>
     struct Semiregular_concept
     {
       static constexpr bool check()
       {
-        return Destructible<T>() // FIXME: Nothrow?
-            && Default_constructible<T>()
+        return Destructible<T>()  // FIXME: Nothrow_destructible
             && Move_constructible<T>()
             && Move_assignable<T>()
             && Copy_constructible<T>()
@@ -498,12 +503,14 @@ namespace origin
     }
     
     
+    
   // Function concepts
   // The following concept classes, predicates, and aliases implement 
   // facilities for checking function types.
   
     
-  // Functions
+    
+  // Function (concept)
   // A function type is one that can be called with a sequence of arguments,
   // and producing some (possibly void) result. In general, functions are
   // not required to be equality preserving.
@@ -530,7 +537,7 @@ namespace origin
     
 
 
-  // Regular Functions
+  // Regular Function (concept)
   // A regular function is a Function that is also equality preserving. This 
   // is a purely semantic refinement of Function, so the two are statically 
   // synonymous.

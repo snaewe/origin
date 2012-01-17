@@ -89,7 +89,7 @@ namespace origin
       Pred predicate() const { return pred(); }
 
     private:
-      Iter&       first() { return std::get<0>(data); }
+      Iter&       first()       { return std::get<0>(data); }
       const Iter& first() const { return std::get<0>(data); }
       
       const Iter& last() const { return std::get<1>(data); }

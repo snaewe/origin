@@ -14,20 +14,49 @@
 using namespace std;
 using namespace origin;
 
+// Check transform iterator
+// Copying a transformed iterator range is equavalent to the transform
+// algorithm. That is:
+//
+//  transform(first, last, result) <=> 
+//    copy(transformed(first, f), transformed(last, f), result)
+template<typename I, typename F>
+  bool check_transform_iterator(I first, I last, F func)
+  {
+    static_assert(Forward_iterator<I>(), "");
+    static_assert(Regular_function<F, Value_type<I>>(), "");
+    
+    using V = std::vector<Value_type<I>>;
+    
+    V a(std_distance(first, last));
+    std_transform(first, last, a.begin(), func);
+    
+    V b(std_distance(first, last));
+    auto first2 = transform_iter(first, func);
+    auto last2 = transform_iter(last, func);
+    std_copy(first2, last2, b.begin());
+    
+    return equal(a, b);
+  }
+
+
+
+// Returns 2 * x.
 struct twice
 {
   int operator()(int x) const { return 2 * x; }
 };
 
+
+
 int main()
 {
-  vector<int> v = {1, 2, 3};
-  auto i = transform_iter(v.begin(), twice{});
-  auto j = transform_iter(v.end(), twice{});
-  
-  while(i != j) {
-    cout << *i << ' ';
-    ++i;
-  }
-  cout << '\n';
+  using V = vector<int>;
+  V v = {1, 2, 3, 5};
+
+  using I = transform_iterator<vector<int>::iterator, twice>;
+  static_assert(Input_iterator<I>(), "");
+
+  // Check properties.
+  assert(check_transform_iterator(v.begin(), v.end(), twice{}));
 }

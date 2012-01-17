@@ -48,10 +48,14 @@ namespace origin
     };
     
     
+    
   // Filtered
   // The filtered function constructs a bounded range from its range arguments
   // and a unary prediate such that, pred(x) is true for all x in the 
-  // constructed range.  
+  // constructed range. The constructor supports the following syntax:
+  //
+  //    filtered(first, last, func)
+  //    filtered(range, func)
    
   // Filtered (iterator range)
   // Returns a bounded range [first', last') where pred(x) is true for all 
