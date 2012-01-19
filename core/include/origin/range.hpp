@@ -100,34 +100,18 @@ namespace origin
     using Iterator_type = Begin_result<R>;
     
 
-    
+ 
   // Range (concept)
-  // A range is indicated by a pair of iterators called begin(r) and end(r).
-    
-  // The specification of the Range concept.
-  template<typename R>
-    struct Range_concept
-    {
-      static constexpr bool check()
-      {
-        return Has_begin<R>() 
-            && Iterator<Begin_result<R>>()
-            && Has_end<R>()
-            && Same<Begin_result<R>, End_result<R>>();
-      }
-
-      static bool test(const R& r)
-      {
-        // A range encapsulates a (possibly empty) bounded range.
-        return is_bounded_range(r.begin(), r.end());
-      }
-    };
-  
-  // Returns true if R is a range.
+  // A range provides a pair of iterators called begin and end. Ranges are not 
+  // required to be copyable or even movable. Examples of more degenerate 
+  // implementations include non-copyable Containers and C-arrays.
   template<typename R>
     constexpr bool Range()
     {
-      return Range_concept<R>::check();
+      return Has_begin<R>() 
+          && Iterator<Begin_result<R>>()
+          && Has_end<R>()
+          && Same<Begin_result<R>, End_result<R>>();
     }
     
 

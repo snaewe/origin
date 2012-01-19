@@ -371,10 +371,49 @@ namespace origin
     
     
 
-  // Remove all qualifiers and reference types.
+  // Remove all qualifiers and reference types and decay arrays and functions
+  // to pointers and function pointers.
   template<typename T>
     using Decay = typename std::decay<T>::type;
 
+
+
+  // Return an unqualified a type name by removing any references and 
+  // CV-qualifiers. This is helpful when concept checking template arguments 
+  // of types that are known to be non-value (i.e., qualified) types, 
+  // especially overloads that rely on rvalue references for forwarding.
+  template<typename T>
+    using Unqualified = Remove_cv<Remove_reference<T>>;
+    
+
+  // Layout and initialization
+
+  // Returns true if T is a standard layout type.
+  template<typename T>
+    constexpr bool Standard_layout() { return std::is_standard_layout<T>::value; }
+    
+  // Returns true if T is a trivially copyable type.
+//   template<typename T>
+//     constexpr bool Trivially_copyable() { return std::is_trivially_copyable<T>::value; }
+    
+    
+  // Returns true if T is a trivial type.
+  template<typename T>
+    constexpr bool Trivial() { return std::is_trivial<T>::value; }
+    
+  // Returns true if T is a plain old data type.
+  template<typename T>
+    constexpr bool Pod() { return std::is_pod<T>::value; }
+    
+  // Returns true if an array of T eleemnts can be compared using the memcmp
+  // algorithm. This is the case when T has a standard layout and is not
+  // aligned to a larger address boundary.
+  template<typename T>
+    constexpr bool Memory_comparable()
+    {
+      return Standard_layout<T>() && sizeof(T) == alignof(T);
+    }
+    
     
     
   // Classes and unions

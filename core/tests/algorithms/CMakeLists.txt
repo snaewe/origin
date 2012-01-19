@@ -11,6 +11,7 @@ origin_run_test(algo_some_of some_of.cpp)
 origin_run_test(algo_none_of none_of.cpp)
 origin_run_test(algo_one_of one_of.cpp)
 
+origin_run_test(algo_find find.cpp)
 origin_run_test(algo_find_nth_if find_nth_if.cpp)
 
 origin_run_test(algo_count_not_equal count_not_equal.cpp)

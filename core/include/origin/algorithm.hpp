@@ -41,19 +41,156 @@ namespace origin
     {
       return Input_range<R>() && Predicate<P, Value_type<R>>();
     }
-             
-  // Returns true if the input iterator can be searched for a value of type T.
+     
+     
+
+  // Value searchable (concept)
+  // An iterator is value-searchable if it can be searched for a value of a
+  // some type. There are two forms of the concepts:
+  //
+  //    Value_searchable<I>     Can be searched for a Value_type<I> value
+  //    Value_searchable<I, T>  Can be searched for a T value
+     
+  // Value searchable for a type T
   template<typename I, typename T>
+    struct Value_searchable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<I>() && Equality_comparable<Value_type<I>, T>();
+      }
+    };
+
+  // Value searchable with its own value type.
+  template<typename I>
+    struct Value_searchable_concept<I, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<I>() && Equality_comparable<Value_type<I>>();
+      }
+    };
+     
+  // Returns true if the input iterator can be searched for a value of its own
+  // value type or a value of another type T.
+  template<typename I, typename T = default_t>
     constexpr bool Value_searchable()
     {
-      return Input_iterator<I>() && Equality_comparable<Value_type<I>, T>();
+      return Value_searchable_concept<I, T>::check();
     }
   
-  // Returns true if the input iterator can be searched for a value of type T.
+  
+  
+  // Value searchable range (concept)
+  // A range is value searchable if it can be searched for a value of some
+  // type. There are two forms of this concept:
+  //
+  //    Value_searchable_range<R>     Can be searched for a Value_type<R> value
+  //    Value_searchabel_range<R, T>  Can be searched for a T value
+  
+  // Value searchable for a type T
   template<typename R, typename T>
+    struct Value_searchable_range_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_range<R>() && Equality_comparable<Value_type<R>, T>();
+      }
+    };
+
+  // Value searchable with its own value type.
+  template<typename R>
+    struct Value_searchable_range_concept<R, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_range<R>() && Equality_comparable<Value_type<R>>();
+      }
+    };
+  
+  // Returns true if the input iterator can be searched for a value of type T.
+  template<typename R, typename T = default_t>
     constexpr bool Value_searchable_range()
     {
-      return Input_range<R>() && Equality_comparable<Value_type<R>, T>();
+      return Value_searchable_range_concept<R, T>::check();
+    }
+
+  
+  
+  // Comparable iterators (concept)
+  // Two iterator are comparable if their values can be compared for equality 
+  // or with respect to some relation. Both iterators must be input iterators.
+  // Note that the second iterator (I2) is only required to be weak input
+  // iterator. Any algorithm requiring this conept may need to strengthen the
+  // requirements on the 2nd argument (see find_adjacent and find_first_in).
+  
+  // Comparable with respect to a relation.
+  template<typename I1, typename I2, typename R>
+    struct Comparable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<I1>()
+            && Weak_input_iterator<I2>()
+            && Relation<R, Value_type<I1>, Value_type<I2>>();
+      }
+    };
+  
+  // Comparable for equality. Note that this is equivalent to Input_iterator<I2> 
+  // and Value_searchable<I1, Value_type<I2>>.
+  template<typename I1, typename I2>
+    struct Comparable_concept<I1, I2, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<I1>()
+            && Weak_input_iterator<I2>()
+            && Equality_comparable<Value_type<I1>, Value_type<I2>>();
+      }
+    };
+  
+  // Returns true if the iterators values of the two iterators can be
+  // compared.
+  template<typename I1, typename I2, typename R = default_t>
+    constexpr bool Comparable()
+    {
+      return Comparable_concept<I1, I2, R>::check();
+    }
+    
+    
+
+  // Comparable ranges (concept)
+  // Two ranges are comparable if they are both input ranges and their values
+  // can be compared for equality or using some relation. 
+  
+  // Comparable using a relation.
+  template<typename R1, typename R2, typename R>
+    struct Comparable_ranges_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_range<R1>() 
+            && Input_range<R2>()
+            && Relation<R, Value_type<R1>, Value_type<R2>>();
+      }
+    };
+
+  // Comparable for equality.
+  template<typename R1, typename R2>
+    struct Comparable_ranges_concept<R1, R2, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_range<R1>() 
+            && Input_range<R2>()
+            && Equality_comparable<Value_type<R1>, Value_type<R2>>();
+      }
+    };
+  
+  template<typename R1, typename R2, typename R = default_t>
+    constexpr bool Comparable_ranges()
+    {
+      return Comparable_ranges_concept<R1, R2, R>::check();
     }
 }
 
@@ -64,53 +201,102 @@ namespace origin
 
 #include <origin/algorithm/combination.hpp>
 
-namespace origin {
+namespace origin 
+{
+  // Two iterators can be memcmp-ared when they are pointers to the same
+  // standard layout type, but only if the size and alignment of those types
+  // are equal.
+  //
+  // FIXME: The Pointer requirements are somewhat arbitrary. We need to
+  // generalize the trait for any contiguous iterator (e.g., GCC's normal
+  // iterators). That's going to get a little hacky.
+  //
+  // FIXME: This belongs in <origin/iterator.hpp>.
+  template<typename I1, typename I2>
+    constexpr bool Can_memcmp()
+    {
+      return Pointer<I1>() 
+          && Pointer<I2>()
+          && Same<Value_type<I1>, Value_type<I2>>()
+          && Memory_comparable<Value_type<I1>>();
+    }
+  
+  
   
   // Equal
-  // Returns true if, for two ranges a and b, the elements of a are equal to
-  // the elements of b. Note that b must have size greater than or equal to a.
-  template<typename Iter1, typename Iter2>
-    inline bool std_equal(Iter1 first1, Iter1 last1, Iter2 first2)
+  // Returns true if *i == *j for each iterator i and j in [first1, last1) and
+  // [first2, first2 + (last1 - first1)), pairwise.
+  template<typename I1, typename I2>
+    inline auto std_equal(I1 first1, I1 last1, I2 first2)
+      -> Requires<!Can_memcmp<I1, I2>(), bool>
     {
-      static_assert(Input_iterator<Iter1>(), "");
-      static_assert(Weak_input_iterator<Iter2>(), "");
+      static_assert(Comparable<I1, I2>(), "");
       assert(( is_readable_range(first1, last1) ));
       assume(( is_readable_range(first2, distance(first1, last1)) ));
-      
-      return std::equal(first1, last1, first2);
+
+      while(first1 != last1) {
+        if(*first1 != *first2)
+          return false;
+        ++first1;
+        ++first2;
+      }
+      return true;
     }
 
+    
+    
+  // Equal (optimized)
+  // Use memcmp to compare the iterator ranges, but only in the conditions
+  // determined by the Can_memcmp trait.
+  template<typename I1, typename I2>
+    inline auto std_equal(I1 first1, I1 last1, I2 first2)
+      -> Requires<Can_memcmp<I1, I2>(), bool>
+    {
+      return __builtin_memcmp(first1, first2, 
+                              sizeof(Value_type<I1>) * (last1 - first1));
+    }
+    
+    
+
+  // Equal (range)
+  // Returns true if size(a) <= size(b) and x == y for each x and y in the
+  // ranges a and b, pairwise.
   template<typename R1, typename R2>
     inline bool equal(R1 const& a, R2 const& b)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Comparable_ranges<R1, R2>(), "");
     
       return size(a) <= size(b) 
           && std_equal(std::begin(a), std::end(a), std::begin(b));
     }
-
-  // Generalized version
-  template<typename Iter1, typename Iter2, typename Pred>
-    inline bool std_equal(Iter1 first1, Iter1 last1, Iter2 first2, Pred pred)
+  
+  
+  
+  // Equal (relation)
+  // Returns true if comp(*i, *j), for each iterator i and j in [first1, last1) 
+  // and [first2, first2 + (last1 - first1)) pairwise.
+  template<typename I1, typename I2, typename R>
+    inline bool std_equal(I1 first1, I1 last1, I2 first2, R comp)
     {
-      static_assert(Input_iterator<Iter1>(), "");
-      static_assert(Weak_input_iterator<Iter2>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Comparable<I1, I2>(), "");
       assert(( is_readable_range(first1, last1) ));
       assume(( is_readable_range(first2, distance(first1, last1)) ));
-      
-      return std::equal(first1, last1, first2, pred);
+
+      return std::equal(first1, last1, first2, comp);
     }
     
-  template<typename R1, typename R2, typename Pred>
-    inline bool equal(const R1& a, const R2& b, Pred pred)
+    
+    
+  // Equal (range)
+  // Returns true if size(a) <= size(b) and comp(x, y) is true for each x and y 
+  // in the ranges a and b, pairwise.
+  template<typename R1, typename R2, typename R>
+    inline bool equal(const R1& a, const R2& b, R comp)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Comparable_ranges<R1>(), "");
 
-      return size(a) <= size(b) 
-          && std_equal(std::begin(a), std::end(a), std::begin(b), pred);
+      return size(a) <= size(b)
+          && std_equal(std::begin(a), std::end(a), std::begin(b), comp);
     }
 
 
@@ -121,13 +307,11 @@ namespace origin {
   //
   // FIXME: I think I need overloads range overloads for const and non-const
   // overloads. Maybe I can use forwarding.
-
-  template<typename Iter1, typename Iter2>
-    inline std::pair<Iter1, Iter2> 
-    std_mismatch(Iter1 first1, Iter1 last1, Iter2 first2)
+  template<typename I1, typename I2>
+    inline std::pair<I1, I2> 
+    std_mismatch(I1 first1, I1 last1, I2 first2)
     {
-      static_assert(Input_iterator<Iter1>(), "");
-      static_assert(Weak_input_iterator<Iter2>(), "");
+      static_assert(Comparable<I1, I2>(), "");
       assert(( is_readable_range(first1, last1) ));
       assume(( is_readable_range(first2, distance(first1, last1)) ));
       
@@ -145,13 +329,13 @@ namespace origin {
     }
 
   // Generalized version
-  template<typename Iter1, typename Iter2, typename Pred>
-    inline std::pair<Iter1, Iter2> 
-    std_mismatch(Iter1 first1, Iter1 last1, Iter2 first2, Pred pred)
+  template<typename I1, typename I2, typename Pred>
+    inline std::pair<I1, I2> 
+    std_mismatch(I1 first1, I1 last1, I2 first2, Pred pred)
     {
-      static_assert(Input_iterator<Iter1>(), "");
-      static_assert(Weak_input_iterator<Iter2>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Input_iterator<I1>(), "");
+      static_assert(Weak_input_iterator<I2>(), "");
+      static_assert(Predicate<Pred, Value_type<I1>, Value_type<I2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assume(( is_readable_range(first2, distance(first1, last1)) ));
       
@@ -173,8 +357,8 @@ namespace origin {
   // Permutation testing
   // Returns true if, for a range a and b, a is a permutation of b.
   
-  template<typename Iter1, typename Iter2>
-    inline bool std_is_permutation(Iter1 first1, Iter1 last1, Iter2 first2)
+  template<typename I1, typename I2>
+    inline bool std_is_permutation(I1 first1, I1 last1, I2 first2)
     {
       return std::is_permutation(first1, last1, first2);
     }
@@ -189,8 +373,8 @@ namespace origin {
     }
 
   // Generalized version
-  template<typename Iter1, typename Iter2, typename Pred>
-    inline bool std_is_permutation(Iter1 first1, Iter1 last1, Iter2 first2, Pred pred)
+  template<typename I1, typename I2, typename Pred>
+    inline bool std_is_permutation(I1 first1, I1 last1, I2 first2, Pred pred)
     {
       return std::is_permutation(first1, last1, first2, pred);
     }
@@ -210,24 +394,24 @@ namespace origin {
   //
   // FIXME: Write range variants.
 
-  template<typename Iter1, typename Iter2>
-    inline Iter1 std_search(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+  template<typename I1, typename I2>
+    inline I1 std_search(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Forward_iterator<Iter1>(), "");
-      static_assert(Forward_iterator<Iter2>(), "");
-      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Forward_iterator<I1>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
       
       return std::search(first1, last1, first2, last2);
     }
     
-  template<typename Iter1, typename Iter2, typename Pred>
-    inline Iter1 std_search(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Pred pred)
+  template<typename I1, typename I2, typename Pred>
+    inline I1 std_search(I1 first1, I1 last1, I2 first2, I2 last2, Pred pred)
     {
-      static_assert(Forward_iterator<Iter1>(), "");
-      static_assert(Forward_iterator<Iter2>(), "");
-      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Forward_iterator<I1>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
 
@@ -241,24 +425,24 @@ namespace origin {
   //
   // FIXME: Write range variants.
 
-  template<typename Iter1, typename Iter2>
-    inline Iter1 search_end(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+  template<typename I1, typename I2>
+    inline I1 search_end(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Forward_iterator<Iter1>(), "");
-      static_assert(Forward_iterator<Iter2>(), "");
-      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Forward_iterator<I1>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
       
       return std::find_end(first1, last1, first2, last2);
     }
     
-  template<typename Iter1, typename Iter2, typename Pred>
-    inline Iter1 search_end(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2, Pred pred)
+  template<typename I1, typename I2, typename Pred>
+    inline I1 search_end(I1 first1, I1 last1, I2 first2, I2 last2, Pred pred)
     {
-      static_assert(Forward_iterator<Iter1>(), "");
-      static_assert(Forward_iterator<Iter2>(), "");
-      static_assert(Equality_comparable<Value_type<Iter1>, Value_type<Iter2>>(), "");
+      static_assert(Forward_iterator<I1>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
 
@@ -800,9 +984,9 @@ namespace origin
     
 
   // Partial sort copy
-  template<typename Iter1, typename Iter2>
-    void std_partial_sort_copy(Iter1 first, Iter1 last, 
-                               Iter2 result_first, Iter2 result_last)
+  template<typename I1, typename I2>
+    void std_partial_sort_copy(I1 first, I1 last, 
+                               I2 result_first, I2 result_last)
     {
       return std::partial_sort_copy(first, last, result_first, result_last);
     }
@@ -810,9 +994,9 @@ namespace origin
     
     
   // Partial sort copy (relation)
-  template<typename Iter1, typename Iter2, typename Ord>
-    void std_partial_sort_copy(Iter1 first, Iter1 last, 
-                               Iter2 result_first, Iter2 result_last, Ord comp)
+  template<typename I1, typename I2, typename Ord>
+    void std_partial_sort_copy(I1 first, I1 last, 
+                               I2 result_first, I2 result_last, Ord comp)
     {
       return std::partial_sort_copy(first, last, result_first, result_last, comp);
     }

@@ -15,6 +15,12 @@
 using namespace std;
 using namespace origin;
 
+struct a 
+{
+  int m;
+  char n;
+};
+
 int main()
 {
   vector<int> v = {1, 2, 3, 4};
@@ -23,4 +29,8 @@ int main()
   
   assert(( equal(v, l) ));
   assert(( !equal(v, x) ));
+  
+  
+  int a[] = {1, 2, 3, 4, 5};
+  std_equal(a, a + 5, a);
 }

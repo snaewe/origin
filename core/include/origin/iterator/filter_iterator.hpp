@@ -77,7 +77,7 @@ namespace origin
         return *this;
       }
       
-      filter_iterator  operator++(int) 
+      filter_iterator operator++(int) 
       { 
         filter_iterator tmp{*this}; 
         operator++(); 
