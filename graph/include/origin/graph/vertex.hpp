@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -8,120 +8,75 @@
 #ifndef ORIGIN_GRAPH_VERTEX_HPP
 #define ORIGIN_GRAPH_VERTEX_HPP
 
-#include <iterator>
-#include <functional>
+#include <origin/iterator.hpp>
+#include <origin/functional.hpp>
+#include <origin/graph/handle.hpp>
 
 namespace origin 
 {
-  // The vertex_t type represents an ordinal reference to a vertex in a Graph.
-  // The integral value -1u corresponds to a null vertex.
-  class vertex_t
-  {
-  public:
-    typedef std::size_t value_type;
-    
-    vertex_t()
-      : value(-1ul)
-    { }
-
-    explicit vertex_t(value_type n)
-      : value(n)
-    { }
-
-    // Equality_comparable
-    bool operator==(vertex_t x) const { return value == x.value; }
-    bool operator!=(vertex_t x) const { return value != x.value; }
-
-    bool operator<(vertex_t x) const { return value < x.value; }
-    bool operator>(vertex_t x) const { return value > x.value; }
-    bool operator<=(vertex_t x) const { return value <= x.value; }
-    bool operator>=(vertex_t x) const { return value <= x.value; }
-
-    // Boolean
-    explicit operator bool() const { return value != -1ul; }
-    
-    // Ordinal
-    std::size_t ord() const { return value; }
-
-    value_type value;
-  };
-
-  
-  // The vertex iterator implements a random access iterator over a vertex 
-  // index. Dereferencing a vertex iterator yields a vertex_t object.
-  class vertex_iterator
-  {
-  public:
-    using value_type = vertex_t;
-    using reference = vertex_t const&;
-    using pointer = vertex_t const*;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::random_access_iterator_tag;
-
-    vertex_iterator()
-      : vert()
-    { }
-    
-    vertex_iterator(vertex_t e)
-      : vert(e)
-    { }
-
-    vertex_t const& operator*() const { return vert; }
-    vertex_t const* operator->() const { return &vert; }
-
-    // Equatable
-    bool operator==(vertex_iterator x) const { return vert == x.vert; }
-    bool operator!=(vertex_iterator x) const { return vert != x.vert; }
-
-    // TotallyOrdered
-    bool operator<(vertex_iterator x) const { return vert < x.vert; }
-    bool operator>(vertex_iterator x) const { return vert > x.vert; }
-    bool operator<=(vertex_iterator x) const { return vert <= x.vert; }
-    bool operator>=(vertex_iterator x) const { return vert >= x.vert; }
-
-    // Increment
-    vertex_iterator& operator++() { ++vert.value; return *this; }
-    vertex_iterator operator++(int) { vertex_iterator tmp{*this}; ++*this; return tmp; }
-
-    // Decrement
-    vertex_iterator& operator--() { --vert.value; return *this; }
-    vertex_iterator operator--(int) { vertex_iterator tmp{*this}; --*this; return tmp; }
-
-    // Advance
-    vertex_iterator& operator+=(difference_type n) { vert.value += n; return *this; }
-    vertex_iterator& operator-=(difference_type n) { vert.value -= n; return *this; }
-
-    // Next/Prev
-    friend vertex_iterator operator+(vertex_iterator i, difference_type n) { i += n; return i; }
-    friend vertex_iterator operator+(difference_type n, vertex_iterator i) { i += n; return i; }
-    friend vertex_iterator operator-(vertex_iterator i, difference_type n) { i -= n; return i; }
-    
-    // Distance
-    friend difference_type operator-(vertex_iterator i, vertex_iterator j)
+  // Vertex handle
+  // The vertex handle is an opaque reference to a vertex object in a graph. 
+  //
+  // Note that we explicitly subclass the handle<T> so that we don't confuse
+  // vertex and edge handles. They are incompatible types, even if they
+  // represent the same set of values.
+  template<typename T>
+    class vertex_handle
     {
-      return i->value - j->value; 
-    }
+    public:
+      using value_type = Value_type<handle<T>>;
+      
+      vertex_handle() : impl{} { }
+      vertex_handle(value_type n) : impl{n} { }
 
-  private:
-    vertex_t vert;
-  };
+      // Equality_comparable
+      bool operator==(vertex_handle v) const { return impl == v.impl; }
+      bool operator!=(vertex_handle v) const { return impl != v.impl; }
+      
+      // Totally_ordered
+      bool operator<(vertex_handle v) const  { return impl < v.impl; }
+      bool operator>(vertex_handle v) const  { return impl > v.impl; }
+      bool operator<=(vertex_handle v) const { return impl <= v.impl; }
+      bool operator>=(vertex_handle v) const { return impl >= v.impl; }
+
+      // Boolean
+      explicit operator bool() const { return (bool)impl; }
+      
+      // Ordinal
+      // Only if Ordinal<T>
+      std::size_t ord() const { return impl.ord(); }
+      
+      // Hashable
+      std::size_t hash() const { return impl.hash(); }
+      
+      // Returns the underlying value.
+      value_type  value() const { return impl.value; }
+
+      // The handle implementation.
+      handle<T> impl;
+    };
+    
+  
+    
+  // Vertex iterator
+  // The vertex iterator provides an iterator over successive vertices.
+  template<typename T>
+    using vertex_iterator = handle_iterator<vertex_handle<T>>;
 
 } // namespace origin
 
-// FIXME: Is there anything we can do about this short of rewriting our own
-// hash table. Probably not. This is pretty bad, though. Support std::hash<> 
-// interoperability.
-namespace std 
+namespace std
 {
-  template<>
-    struct hash<origin::vertex_t>
+  // Make vertex handles hashable by the standard library.
+  template<typename T>
+    struct hash<origin::vertex_handle<T>>
     {
-      std::size_t operator()(origin::vertex_t const& v) const
-      {
-        return std::hash<std::size_t>()(v.value); 
+      std::size_t operator()(const origin::vertex_handle<T>& v) const
+      { 
+        return v.hash();
       }
     };
+   
 } // namespace std
-
 
 #endif

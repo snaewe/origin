@@ -12,6 +12,8 @@
 
 namespace origin
 {
+
+#if 0
   // FIXME: What are the different kinds of graph mutability:
   // Static Vertex Graph - The graph is initialized over a set of vertices
   // Static Graph - The graph is initialized over a set of vertices and edges
@@ -147,105 +149,35 @@ namespace origin
     : std::is_base_of<undirected_graph_tag, typename G::graph_category>::type
   { };
   //@}
+#endif
 
-  
-  // Graph interface
-  // There are 3 primary features of every graph type:
-  //    - The vertex set
-  //    - The edge set
-  //    - User-defined vertex and edge properties
-
-  
-  
   // Vertex set
   // All graphs provide access to a vertex set, which is represented by a
-  // range of vertices. A graph associates the following types and operations
-  // with the vertex set:
-  //    - Vertex_range<G> -- the range type representing the vertex set
-  //    - Vertex<G> -- a vertex handle type
-  //    - Vertex_value_type<G> -- User-defined vertex data
-  //    - order(g) -- the size of the vertex set
-  //    - null(g) -- true when order(g) == 0
-  //    - g[v] -- User-defined data associated with v.
-  
-  // Return the vertex set of a graph
-  template<typename G>
-    inline auto vertices(G& g) -> decltype(g.vertices())
-    {
-      return g.vertices();
-    }
-  
-  // Const version of the function above.
+  // range of vertices. All graphs provide the following operations related
+  // to their vertex sets and vertices.
+  //
+  //    vertices(g) Returns a range over the vertices in g.
+  //    order(g)    Returns the size of vertices(g)
+  //    null(g)     Returns true when order(g) == 0
+  //    g[v]        Returns user-defined data associated with v.
+  //
+  // The following types are associated with these operations:
+  //
+  //    Vertex_type<G>        The type of a vertex handle for G.
+  //    Vertex_range<G>       The range type representing the vertex set
+  //    Vertex_value_type<G>  The user-defined vertex data type
+    
+
+
+  // Vertices
+  // Return a range over the verticess of g.
   template<typename G>
     inline auto vertices(G const& g) -> decltype(g.vertices())
     {
       return g.vertices();
     }
-
-  // Safely get the result of the expression vertices(g).
-  template<typename G>
-    struct vertices_result
-    {
-    private:
-      template<typename X>
-        static auto check(X&& x) -> decltype(vertices(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>()));
-    };
     
-  // An alias for the vertex range associated with the graph G. Note that
-  // different ranges may be associated with G and const G.
-  template<typename G>
-    using Vertex_range = typename vertices_result<G>::type;
-    
-  template<typename G>
-    constexpr bool Has_vertices()
-    {
-      return Subst_succeeded<Vertex_range<G>>();
-    }
-    
-  // An alias for the vertex handle associated with G. Note that different
-  // handle types may be associated with G and const G.
-  template<typename G>
-    using Vertex = Value_type<Vertex_range<G>>;
-    
-    
-  // Returns true if the graph has no vertices.
-  template<typename G>
-    inline auto null(G const& g) -> decltype(g.null())
-    {
-      return g.null();
-    }
-    
-  // FIXME: Where can I put general definitions of null(x) and order(x). It's
-  // probably that null(x) will be sufficiently graph-specific, but order(x)
-  // has meaning for matrices (and probably other mathematical concepts) too.
-
-    // Safely get the result of the expression null(g)
-  template<typename G>
-    struct null_result
-    {
-    private:
-      template<typename X>
-        static auto check(X const& x) -> decltype(null(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>()));
-    };
-    
-  // An alias for the result of the expression null(g).
-  template<typename G>
-    using Null_result = typename null_result<G>::type;
-    
-  template<typename G>
-    constexpr bool Has_null()
-    {
-      return Subst_succeeded<Null_result<G>>();
-    }
-    
-    
-    
+  // Graph order
   // Return the number of vertices in a graph.
   template<typename G>
     inline auto order(G const& g) -> decltype(g.order())
@@ -253,67 +185,607 @@ namespace origin
       return g.order();
     }
 
-  // Safely get the result of the expression order(g)
+  // Null graph
+  // Returns true if the graph has no vertices.
+  template<typename G>
+    inline auto null(G const& g) -> decltype(g.null())
+    {
+      return g.null();
+    }
+
+    
+
+  // Safely deduce the result of the expression vertices(g).
+  template<typename G>
+    struct vertices_result
+    {
+    private:
+      template<typename X>
+        static auto check(const X x) -> decltype(vertices(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>()));
+    };
+
+  // Safely deduce the result of the expression order(g)
   template<typename G>
     struct order_result
     {
     private:
       template<typename X>
-        static auto check(X const& x) -> decltype(order(x));
+        static auto check(const X& x) -> decltype(order(x));
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<G>()));
     };
     
+  // Safely deduce the result of the expression null(g).
+  template<typename G>
+    struct null_result
+    {
+    private:
+      template<typename X>
+        static auto check(const X& x) -> decltype(null(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>()));
+    };
+    
+  // Safely deduce the result of the expression g[v].
+  template<typename G, typename V>
+    struct vertex_data
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y y) -> decltype(x[y]);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+    
+    
+    
+  // Vertex range
+  // An alias for the vertex range associated with the graph G. Note that
+  // different ranges may be associated with G and const G.
+  template<typename G>
+    using Vertex_range = typename vertices_result<G>::type;
+    
+  // Vertex type
+  // An alias for the vertex handle associated with G.
+  template<typename G>
+    using Vertex_type = Value_type<Vertex_range<G>>;
+    
+  // Vertex value type.
+  // An alias for the vertex value type of the graph. 
+  template<typename G>
+    using Vertex_value_type = Decay<typename vertex_data<G, Vertex_type<G>>::type>;
+    
   // An alias for the result of the expression order(g).
   template<typename G>
     using Order_result = typename order_result<G>::type;
     
+  // An alias for the result of the expression null(g).
+  template<typename G>
+    using Null_result = typename null_result<G>::type;
+
+    
+    
+  // Returns true if vertices(g) is a valid expression.
+  template<typename G>
+    constexpr bool Has_vertices()
+    {
+      return Subst_succeeded<Vertex_range<G>>();
+    }
+
+  // Returns true if order(g) is a valid expression.
   template<typename G>
     constexpr bool Has_order()
     {
       return Subst_succeeded<Order_result<G>>();
     }
 
-    
-    
-  // Vertex data
-  // Vertex data is the user-defined data type associated with each vertex. 
-  // User-defined vertex data is accessed by the expression g[v] where v is a 
-  // vertex in g.
-  
-  // Safely get the vertex data type
-  template<typename G, typename V>
-    struct vertex_data
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(x[y]);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>()));
-    };
-
-  // An alias for the vertex data type of the graph. Note that the vertex data
-  // is a value type: non-reference and unqualified. It does not depend on
-  // the const-ness of G.
+    // Returns true if null(g) is a valid expression.
   template<typename G>
-    using Vertex_data = Decay<typename vertex_data<G, Vertex<G>>::type>;
+    constexpr bool Has_null()
+    {
+      return Subst_succeeded<Null_result<G>>();
+    }
     
   // Returns true if G has an associated vertex data type.
   template<typename G>
     static constexpr bool Has_vertex_data()
     {
-      return Subst_succeeded<Vertex_data<G>>();
+      return Subst_succeeded<Vertex_value_type<G>>();
     }
     
-  // Return true if G has an empty vertex data.
+  // Return true if G has an empty vertex data. If a graph has an empty value
+  // type, we can sometimes optimize space overhead by eliminating the need
+  // to store or refer to individual vertices.
+  // optimizing 
   template<typename G>
     static constexpr bool Has_empty_vertex_data()
     {
-      return Convertible<Vertex_data<G>, empty_t>();
+      return Has_vertex_data<G> && Empty<Vertex_value_type<G>>();
     }
 
+    
+    
+  // Edge set
+  // In addition to a vertex set, all graphs provide access to an edge set. The 
+  // following operations are defined on that edge set:
+  //
+  //    edges(g)     Returns a range over the edges of g.
+  //    size(g)      Returns the size of edges(g).
+  //    empty(g)     Returns true if size(g) == 0.
+  //    source(g, e) Returns the source vertex of e
+  //    target(g, e) Returns the target vertex of e
+  //    g[e]         Returns user-defined data associated with e
+  //
+  // The following types are associated with those operations.
+  //
+  //    - Edge_range<G> -- the range type describing the edge set
+  //    - Edge<G> -- an edge handle type
+  //    - Edge_value_type<G> -- a user-defined edge data type
+  
+  
+  
+  // Edges
+  // Returns the edge set of a graph.
+  template<typename G>
+    inline auto edges(const G& g) -> decltype(g.edges())
+    {
+      return g.edges();
+    }
+    
+  // NOTE: The size(g) and empty(g) operations are commonplace. They are 
+  // defined in <origin/traits.hpp> along with the Size_type alias.
+    
+   // Safely deduce the result of the expression edges(g).
+  template<typename G>
+    struct get_edges_result
+    {
+    private:
+      template<typename X>
+        static auto check(const X& x) -> decltype(edges(x));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>()));
+    };
+    
+  // Safely deduce the result of the expression g[e].
+  template<typename G, typename V>
+    struct get_edge_data
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y y) -> decltype(x[y]);
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    }; 
+  
+
+    
+  // Edge range
+  // An alias for the vertex range associated with the graph G. Note that
+  // different ranges may be associated with G and const G.
+  template<typename G>
+    using Edge_range = typename get_edges_result<G>::type;
+    
+  // Edge type
+  // An alias for the vertex handle associated with G. Note that different
+  // handle types may be associated with G and const G.
+  template<typename G>
+    using Edge_type = Value_type<Edge_range<G>>;
+    
+  // Edge value type
+  // An alias for the edge data type of the graph.
+  template<typename G>
+    using Edge_value_type = Decay<typename get_edge_data<G, Edge_type<G>>::type>;
+    
+    
+
+    // Returns true if edges(g) is a valid expression.
+  template<typename G>
+    constexpr bool Has_edges()
+    {
+      return Subst_succeeded<Edge_range<G>>();
+    }
+    
+  // Returns true if g[e] is a valid expression.
+  template<typename G>
+    static constexpr bool Has_edge_data()
+    {
+      return Subst_succeeded<Edge_value_type<G>>();
+    }
+    
+  // Returns true if G has empty edge data.
+  template<typename G>
+    static constexpr bool Has_empty_edge_data()
+    {
+      return Has_edge_data<G>() && Empty<Edge_value_type<G>>();
+    }
+
+    
+    
+  // Source vertex
+  // Return the source vertex of the given edge.
+  template<typename G>
+    inline auto source(const G& g, Edge_type<G> e) -> decltype(g.source(e))
+    {
+      assert(e);
+      return g.source(e);
+    }
+
+  // Target vertex
+  // Return the target vertex of the given edge.
+  template<typename G>
+    inline auto target(const G& g, Edge_type<G> e) -> decltype(g.target(e))
+    {
+      assert(e);
+      return g.target(e);
+    }
+    
+    
+    
+  // Safely deduce the result of the expression source(g, e).
+  template<typename G , typename E>
+    struct get_source_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(const X& x, Y y) -> decltype(source(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<E>()));
+    };    
+
+  // Safely deduce the result of the expression target(g, e).
+  template<typename G , typename E>
+    struct get_target_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(const X& x, Y y) -> decltype(target(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<E>()));
+    };    
+
+    
+
+  // An alias for the result of source(g, e).
+  template<typename G>
+    using Source_result = typename get_source_result<G, Edge_type<G>>::type;
+    
+  // An alias for the result of target(g, e).
+  template<typename G>
+    using Target_result = typename get_target_result<G, Edge_type<G>>::type;
+
+    
+
+  // Returns true if source(g, e) is a valid expression.
+  template<typename G>
+    constexpr bool Has_source()
+    {
+      return Subst_succeeded<Source_result<G>>();
+    }
+
+  // Returns true if target(g, e) is a valid expression.
+  template<typename G>
+    constexpr bool Has_target()
+    {
+      return Subst_succeeded<Target_result<G>>();
+    }
+    
+    
+
+  // Graph (concept)
+  // A graph is mathematically defined as a pair of sets G = (V, E) where
+  // V indicates a set of vertices, and E a set of pairs (u, v) with u and v
+  // representing vertices in V.
+  //
+  // In origin a Graph provides access to the vertex set and edge sets and
+  // some common operations. In particular, it requires the operations given
+  // above for vertex and edge sets.
+  //
+  // FIXME: Should the order and size types be the same?
+  template<typename G>
+    constexpr bool Graph()
+    {
+        return Has_null<G>() &&     Boolean<Null_result<G>>()
+            && Has_empty<G>() &&    Boolean<Empty_result<G>>()
+            
+            && Has_order<G>() &&    Unsigned<Order_result<G>>()
+            && Has_size<G>() &&     Unsigned<Size_type<G>>()
+            && Has_vertices<G>() && Input_range<Vertex_range<G>>()
+            && Has_edges<G>() &&    Input_range<Edge_range<G>>();
+    }
+
+    
+    
+  // Graph structure
+  // The following operations query the graph's structure: incident edges and
+  // adjacent vertices within the graph. The graph structure differentiates
+  // directed and undirected graphs. 
+  
+  // A directed graph provides access to its successor and predecessor vertices
+  // and the incident edges that lead to them. The operations are:
+  //
+  //    out_edges(g, v)
+  //    in_edges(g, v)
+  //
+  // The adjacent vertices of those incident edges are accessible through the
+  // following operations:
+  //
+  //    successors(g, v)
+  //    predecessors(g, v)
+  //
+  // The size of the successor and predecessor sets is measured by these
+  // operations:
+  //
+  //    out_degree(g, v)  Return the size of the successor set
+  //    in_degree(g, v)   Return the size of the predecessor set
+  //    degree(g, v)      Return the number of edges incident to g.
+  //
+  // The following associated types can be used with directed graphs:
+  //
+  //    Out_edge_range<G>
+  //    In_edge_range<G>
+
+
+  // Out edges
+  // Return the out edges incident to the vertex v in the directed graph g.
+  template<typename G>
+    inline auto out_edges(const G& g, Vertex_type<G> v) -> decltype(g.out_edges(v))
+    {
+      return g.out_edges(v); 
+    }
+    
+  // In edges
+  // Return the in edges incident to the vertex v in the directed graph g.
+  template<typename G>
+    inline auto in_edges(const G& g, Vertex_type<G> v) -> decltype(g.in_edges(v))
+    {
+      return g.in_edges(v);
+    }
+    
+  // Out degree
+  // Return the number of out edges that are incident to the vertex v in the 
+  // directed graph g.
+  template<typename G>
+    inline auto out_degree(const G& g, Vertex_type<G> v) -> decltype(g.out_degree(v))
+    {
+      return g.out_degree(v);
+    }    
+    
+  // In degree
+  // Return the number of in edges that are incident to the vertex v in the 
+  // directed graph g.
+  template<typename G>
+    inline auto in_degree(const G& g, Vertex_type<G> v) -> decltype(g.in_degree(v))
+    {
+      return g.in_degree(v);
+    }
+    
+  // Return the number of edges in g that are incident to the vertex v.
+  template<typename G, typename V>
+    inline auto degree(G const& g, V v) -> decltype(g.degree(v))
+    {
+      return g.degree(v);
+    }
+
+
+    
+  // Safely get the result of the expression out_edges(g, v).
+  template<typename G, typename V>
+    struct out_edges_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(out_edges(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+    
+  // Safely deduce the result of the expression in_edges(g, v).
+  template<typename G, typename V>
+    struct in_edges_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(in_edges(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+    
+  // Safely deduce the result of the expression out_degree(g, v).
+  template<typename G, typename V>
+    struct out_degree_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(out_degree(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+
+  // Safely deduce the result of the expression in_degree(g, v).
+  template<typename G, typename V>
+    struct in_degree_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(in_degree(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+    
+  // Safely deduce the result of the expression degree(g, v).
+  //
+  // FIXME; This is going to overlap with other structrures that might have
+  // a degree property. I can immediately think of Polynomial function types.
+  template<typename G, typename V>
+    struct degree_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(X&& x, Y&& y) -> decltype(degree(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+  
+    
+    
+  // Out edge range
+  // An alias for the result of the expression out_edges(g, v).
+  template<typename G>
+    using Out_edge_range = typename out_edges_result<G, Vertex_type<G>>::type;
+    
+  // In edge range
+  // An alias for the result of the expression in_edges(g, v).
+  template<typename G>
+    using In_edge_range = typename in_edges_result<G, Vertex_type<G>>::type;
+    
+  // An alias for the result of the expression out_degree(g, v).
+  template<typename G>
+    using Out_degree_result = typename out_degree_result<G, Vertex_type<G>>::type;
+
+  // An alias for the result of the expression in_degree(g, v).
+  template<typename G>
+    using In_degree_result = typename in_degree_result<G, Vertex_type<G>>::type;
+
+  // An alias for the result of the expression degree(g, v).
+  template<typename G>
+    using Degree_result = typename degree_result<G, Vertex_type<G>>::type;
+
+
+    
+  // Returns true if out_edges(g, v) is a valid expression.
+  template<typename G>
+    constexpr bool Has_out_edges() { return Subst_succeeded<Out_edge_range<G>>(); }
+
+  // Returns true if in_edges(g, v) is a valid expression.
+  template<typename G>
+    constexpr bool Has_in_edges() { return Subst_succeeded<In_edge_range<G>>(); }
+
+  // Returns true if out_degree(g, v) is a valid expression.
+  template<typename G>
+    constexpr bool Has_out_degree() { return Subst_succeeded<Out_degree_result<G>>(); }
+  
+  // Returns true if in_degree(g, v) is a valid expression.
+  template<typename G>
+    constexpr bool Has_in_degree() { return Subst_succeeded<In_degree_result<G>>(); }
+
+  template<typename G>
+    constexpr bool Has_degree() { return Subst_succeeded<Degree_result<G>>(); }
+    
+    
+  // Semidirected graph (concept)
+  // A semidirected graph is one that only provides access to its out edges
+  // and successor vertices. This is a common requirement for algorithms that
+  // do not require access to the in edges or predecessors of the graph.
+  //
+  // NOTE: We don't need to check successors(g, v) because its implementation
+  // is trivially derived from out_edges(g, v).
+  template<typename G>
+    constexpr bool Semidirected_graph()
+    {
+      return Graph<G>()
+          && Has_out_edges<G>() &&  Input_range<Out_edge_range<G>>()
+          && Has_out_degree<G>() && Unsigned<Out_degree_result<G>>();
+    }
+    
+  // Directed Graph (concept)
+  // A directed graph is a Semidirected graph that provides access to the in
+  // edges and predecessor vertices of a vertex.
+  //
+  // NOTE: We don't need to check predecessors(g, v) because its implementation
+  // is trivially derived from out_edges(g, v).
+  //
+  // FIXME: Should the types of in and out degrees be the same?
+  template<typename G>
+    constexpr bool Directed_graph()
+    {
+      return Semidirected_graph<G>()
+          && Has_in_edges<G>() &&   Input_range<In_edge_range<G>>()
+          && Has_in_degree<G>() &&  Unsigned<In_degree_result<G>>()
+          && Has_degree<G>() &&     Unsigned<Degree_result<G>>();
+    };
+    
+
+    
+  // An undirected graph provides the following operations on its structure:
+  //
+  //    edges(g, v)     Returns the incident edges of v
+  //    neighbors(g, v) Returns the neighboring (adjacent) vertices of v
+  //    degree(g, v)    Returns size(edges(g, v)).
+  //
+  // The following alias are provided for use with these operations:
+  //
+  //    Incident_edge_range<G>
+
+    
+    
+  // Incident edges
+  // Return the incident edges of the vertex v in g.
+  template<typename G>
+    inline auto edges(const G& g, Vertex_type<G> v) -> decltype(g.edges(v))
+    {
+      return g.edges(v);
+    }
+
+  // NOTE: The degree(g, v) function is defiend above.
+
+  
+
+  // Safely get the result of the expression edges(g, v). 
+  template<typename G, typename V>
+    struct incident_edges_result
+    {
+    private:
+      template<typename X, typename Y>
+        static auto check(const X& x, Y y) -> decltype(edges(x, y));
+      static subst_failure check(...);
+    public:
+      using type = decltype(check(std::declval<G>(), std::declval<V>()));
+    };
+
+    
+
+  // An alias for the result of the expression undirected_edges(g, v).
+  template<typename G>
+    using Incident_edge_range = typename incident_edges_result<G, Vertex_type<G>>::type;
+    
+    
+    
+  // Returns true if undirected_edges(g, v) is a valid expression.
+  template<typename G>
+    constexpr bool Has_incident_edges()
+    {
+      return Subst_succeeded<Incident_edge_range<G>>();
+    }
+
+
+  
+  // Undircted_graph (concept)
+  // Returns true if G is a undirected graph.
+  template<typename G>
+    constexpr bool Undirected_graph()
+    {
+      return Graph<G>()
+          && Has_incident_edges<G>() && Input_range<Incident_edge_range<G>>()
+          && Has_degree<G>() &&         Unsigned<Degree_result<G>>();
+    };
+    
+    
+#if 0
   // Mutable graph operations
   // Mutable graphs support the ability to add and remove vertices.
 
@@ -351,143 +823,7 @@ namespace origin
       return g.remove_vertices();
     }
     
-    
-
-  // Edge set
-  // All graphs provide access to an edge set, which is represented by a
-  // range of edges. The edge set has the following associated types and
-  // operations:
-  //    - Edge_range<G> -- the range type describing the edge set
-  //    - Edge<G> -- an edge handle type
-  //    - Edge_value_type<G> -- a user-defined edge data type
-  //    - size(g) -- the number of edges in g
-  //    - empty(g) -- true if size(g) == 0
-  //    - get_edge(g, u, v) -- return the edge connecting u and v
-  //    - source(g, e) -- return the source vertex of e
-  //    - target(g, e) -- return the target vertex of e
-  //    - g[e] -- access user-defined data associated with e
-    
-  // Return the edge set of a graph.
-  template<typename G>
-    inline auto edges(G& g) -> decltype(g.edges())
-    {
-      return g.edges();
-    }
-
-  // A const version of the function above.
-  template<typename G>
-    inline auto edges(G const& g) -> decltype(g.edges())
-    {
-      return g.edges();
-    }
-    
-  // Safely get the result of the expression edges(g).
-  template<typename G>
-    struct edges_result
-    {
-    private:
-      template<typename X>
-        static auto check(X&& x) -> decltype(edges(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>()));
-    };
-    
-  // An alias for the vertex range associated with the graph G. Note that
-  // different ranges may be associated with G and const G.
-  template<typename G>
-    using Edge_range = typename edges_result<G>::type;
-    
-  template<typename G>
-    constexpr bool Has_edges()
-    {
-      return Subst_succeeded<Edge_range<G>>();
-    }
-    
-  // An alias for the vertex handle associated with G. Note that different
-  // handle types may be associated with G and const G.
-  template<typename G>
-    using Edge = Value_type<Edge_range<G>>;
-    
-    
-    
-  // NOTE: The empty() and size() operations are defined for the 
-  // Container concept. In a sense, a Graph is a Container of edges.
-
-    
-  // Return an edge descriptor connecting the vertices u and v, if one exists.
-  // If not, return a null edge descriptor.
-  template<typename G>
-    inline auto get_edge(G& g, Vertex<G> u, Vertex<G> v) 
-      -> decltype(g.get_edge(u, v))
-    {
-      return g.get_edge(u, v);
-    }
-
-  // Const version of the previous function.
-  template<typename G>
-    inline auto get_edge(G const& g, Vertex<G const> u, Vertex<G const> v) 
-      -> decltype(g.get_edge(u, v))
-    {
-      return g.get_edge(u, v);
-    }
-    
-  // FIXME: Source and target could easily be defined in the context of other
-  // concepts.
-    
-  // Return the source vertex of the given edge.
-  template<typename G>
-    inline auto source(G const& g, Edge<G const> e) -> decltype(g.source(e))
-    {
-      return g.source(e);
-    }
-
-  // Return the target vertex of the given edge.
-  template<typename G>
-    inline auto target(G const& g, Edge<G const> e) -> decltype(g.target(e))
-    {
-      return g.target(e);
-    }
-    
-    
-    
-  // Edge data
-  // Edge data is a user-defined data type associated with each edge. User-
-  // defined edge data is accessed by the expression g[e] where e is an
-  // edge in g.
-
-  // Safely get the edge data type
-  template<typename G, typename V>
-    struct edge_data
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(x[y]);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>()));
-    };
-
-  // An alias for the edge data type of the graph. Note that edge data is
-  // neither a reference, nor qualified. It does not depend on the const-ness
-  // of G.
-  template<typename G>
-    using Edge_data = Decay<typename edge_data<G, Edge<G>>::type>;
-    
-  // Returns true if G has an associated edge data type. 
-  template<typename G>
-    static constexpr bool Has_edge_data()
-    {
-      return Subst_succeeded<Edge_data<G>>();
-    }
-    
-  // Returns true if G has empty edge data.
-  template<typename G>
-    static constexpr bool Has_empty_edge_data()
-    {
-      return Convertible<Edge_data<G>, empty_t>();
-    }
-  
+ 
   
   // Mutable edge set operations
   // The following operations might be used to modify an edge set.
@@ -539,166 +875,6 @@ namespace origin
     
 
     
-  // Graph concept
-  
-  // A helper class for cheking syntactic requirements
-  template<bool Prereqs, typename G>
-    struct Graph_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
-  template<typename G>
-    struct Graph_requirements<true, G>
-    {
-      static constexpr bool check()
-      {
-        return Has_null<G>() &&    Boolean<Null_result<G>>()
-            && Has_empty<G>() &&   Boolean<Empty_result<G>>()
-            && Has_order<G>() &&   Unsigned<Order_result<G>>()
-            && Has_size<G>() &&    Unsigned<Size_type<G>>();
-      }
-    };
-    
-  // The graph concept specification.
-  template<typename G>
-    struct Graph_concept
-    {
-      static constexpr bool check()
-      {
-        return Graph_requirements<Has_graph_category<G>(), G>::check();
-      }
-    };    
-    
-  template<typename G>
-    constexpr bool Graph()
-    {
-      return Graph_concept<G>::check();
-    }
-    
-    
-  // Graph structure
-  // The following operations query the graph's structure: incident edges and
-  // adjacent vertices within the graph. The graph structure differentiates
-  // directed and undirected graphs. 
-  
-  // For directed graphs, we have:
-  //    - Out_edge_range<G>
-  //    - out_edges(g, v)
-  //    - out_degree(g, v)
-  //    - In_edge_range<G>
-  //    - in_edges(g, v)
-  //    - in_degree(g, v)
-  //    - successors(g, v)
-  //    - predecessors(g, v)
-  
-
-  // Out edges
-
-  // Return the out edges of the vertex v in g.
-  template<typename G>
-    inline auto out_edges(G& g, Vertex<G> v) -> decltype(g.out_edges(v))
-    {
-      return g.out_edges(v); 
-    }
-    
-  // A const version of the function above.
-  template<typename G>
-    inline auto out_edges(G const& g, Vertex<G const> v) -> decltype(g.out_edges(v))
-    {
-      return g.out_edges(v); 
-    }
-    
-  // Return the out degree of the vertex v in the directed graph g.
-  template<typename G>
-    inline auto out_degree(G const& g, Vertex<G const> v) -> decltype(g.out_degree(v))
-    {
-      return g.out_degree(v);
-    }    
-    
-  // Safely get the result of the expression out_edges(g, v).
-  template<typename G, typename V>
-    struct out_edges_result
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(out_edges(x, y));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>()));
-    };
-    
-  // An alias for the result of the expression out_edges(g, v).
-  template<typename G>
-    using Out_edge_range = typename out_edges_result<G, Vertex<G>>::type;
-    
-  // Returns true if out_edges(g, v) is a valid expression.
-  template<typename G>
-    constexpr bool Has_out_edges()
-    {
-      return Subst_succeeded<Out_edge_range<G>>();
-    }
-
-    
-    
-  // In edges
-
-  // Return the in edges of the vertex v in g.
-  template<typename G>
-    inline auto in_edges(G& g, Vertex<G> v) -> decltype(g.in_edges(v))
-    {
-      return g.in_edges(v);
-    }
-  
-  // A const version of the function above.
-  template<typename G>
-    inline auto in_edges(G const& g, Vertex<G const> v) -> decltype(g.in_edges(v))
-    {
-      return g.in_edges(v);
-    }
-
-  // Return the in degree of the vertex v in the directed graph g.
-  template<typename G>
-    inline auto in_degree(G const& g, Vertex<G const> v) -> decltype(g.in_degree(v))
-    {
-      return g.in_degree(v);
-    }
-    
-  // Safely get the result of the expression in_edges(g, v).
-  template<typename G, typename V>
-    struct in_edges_result
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(in_edges(x, y));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>()));
-    };
-    
-  // An alias for the result of the expression in_edges(g, v).
-  template<typename G>
-    using In_edge_range = typename in_edges_result<G, Vertex<G>>::type;
-    
-  // Returns true if in_edges(g, v) is a valid expression.
-  template<typename G>
-    constexpr bool Has_in_edges()
-    {
-      return Subst_succeeded<In_edge_range<G>>();
-    }
-  
-  
-  
-  // Return the degree of the vertex v. This is the total number of edges
-  // incident to the vertex. This is defined for both directed and undirected
-  // graphs.
-  template<typename G, typename V>
-    inline auto degree(G const& g, V v) -> decltype(g.degree(v))
-    {
-      return g.degree(v);
-    }
-    
-    
     
   // FIXME: Define this class!
   template<typename R> struct adjacency_range;
@@ -717,6 +893,16 @@ namespace origin
     successors(G const& g, Vertex<G const> v)
     {
       return out_edges(g, v);
+    }
+    
+  // Neighbors
+  // Return the neighbors of v in g, the set of vertices reachable from v's
+  // incident edges.
+  template<typename G>
+    inline auto neighbors(const G& g, Vertex_type<G> v)
+      -> adjacency_range<Incident_edge_range<G>>
+    {
+      return edges(g, v);
     }
     
     
@@ -738,140 +924,13 @@ namespace origin
     
     
 
-  // Directed Graphs
-  
-  // A helper class for checking syntactic requirements.
-  //
-  // FIXME: This is incomplete. I need to write checks for a lot of other 
-  // required features.
-  template<bool Prereqs, typename G>
-    struct Directed_graph_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
-  template<typename G>
-    struct Directed_graph_requirements<true, G>
-    {
-      static constexpr bool check()
-      {
-        return Has_out_edges<G>() && Range<Out_edge_range<G>>()
-            && Has_in_edges<G>() && Range<In_edge_range<G>>();
-      }
-    };
-  
-  // The directed graph concept specification.
-  template<typename G>
-    struct Directed_graph_concept
-    {
-      static constexpr bool check()
-      {
-        return Directed_graph_requirements<Graph<G>(), G>::check();
-      }
-    };
-    
-  // Returns true if G is a directed graph.
-  template<typename G>
-    constexpr bool Directed_graph()
-    {
-      return Directed_graph_concept<G>::check();
-    };
 
     
-  // For undirected graphs we have:
-  //    - Incident_edge_range<G>
-  //    - edges(g, v)
-  //    - degree(g, v)
-  //    - neighbors(g, v)
 
-  // Incident edges
-    
-  // Return the incident edges of the vertex v in g.
-  template<typename G>
-    inline auto edges(G& g, Vertex<G> v) -> decltype(g.edges(v))
-    {
-      return g.edges(v);
-    }
-    
-  // A const version of the function above.
-  template<typename G>
-    inline auto incident_edges(G const& g, Vertex<G const> v) -> decltype(g.edges(v))
-    {
-      return g.edges(v);
-    }
-
-  // Safely get the result of the expression undirected_edges(g, v). 
-  template<typename G, typename V>
-    struct undirected_edges_result
-    {
-    private:
-      template<typename X, typename Y>
-        static auto check(X&& x, Y&& y) -> decltype(edges(x, y));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<G>(), std::declval<V>()));
-    };
-    
-  // An alias for the result of the expression undirected_edges(g, v).
-  template<typename G>
-    using Undirected_edge_range = typename undirected_edges_result<G, Vertex<G>>::type;
-    
-  // Returns true if undirected_edges(g, v) is a valid expression.
-  template<typename G>
-    constexpr bool Has_undirected_edges()
-    {
-      return Subst_succeeded<Undirected_edge_range<G>>();
-    }
-
-  // Return the neighbors of v in g, the set of vertices reachable from v's
-  // incident edges.
-  template<typename G>
-    inline auto neighbors(G const& g, Vertex<G const> v)
-      -> adjacency_range<Undirected_edge_range<G>>
-    {
-      return edges(g, v);
-    }
 
     
-  
-  // Undirected Graphs
-  
-  // A helper class for checking syntactic requirements.
-  //
-  // FIXME: This is incomplete. I need to write checks for a lot of other 
-  // required features.
-  template<bool Prereqs, typename G>
-    struct Undirected_graph_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
     
-  template<typename G>
-    struct Undirected_graph_requirements<true, G>
-    {
-      static constexpr bool check()
-      {
-        return Has_undirected_edges<G>() && Range<Undirected_edge_range<G>>();
-      }
-    };
-  
-  // The undirected graph concept specification.
-  template<typename G>
-    struct Undirected_graph_concept
-    {
-      static constexpr bool check()
-      {
-        return Undirected_graph_requirements<Graph<G>(), G>::check();
-      }
-    };
     
-  // Returns true if G is a undirected graph.
-  template<typename G>
-    constexpr bool Undirected_graph()
-    {
-      return Undirected_graph_concept<G>::check();
-    };
-
   // The two concepts are unified by overloads that select a "dominant 
   // traversal" strategy based on the modeled concept. For directed graphs, 
   // out edges are most commonly used for traversal. For undirected graphs
@@ -891,14 +950,14 @@ namespace origin
   // Specialization for directed graphs. The set of incident edges is the
   // same as the out edges of v.
   template<typename G>
-    inline auto incident_edgse(G& g, Vertex<G> v) -> decltype(out_edges(g, v))
+    inline auto incident_edges(G& g, Vertex<G> v) -> decltype(out_edges(g, v))
     {
       return out_edges(g);
     }
     
   // A const version of the function above.
   template<typename G>
-    inline auto incident_edgse(G const& g, Vertex<G const> v) -> decltype(out_edges(g, v))
+    inline auto incident_edges(G const& g, Vertex<G const> v) -> decltype(out_edges(g, v))
     {
       return out_edges(g);
     }
@@ -906,14 +965,14 @@ namespace origin
   // Specialization for undirected graphs. The set of incident edges is just
   // the edges of v.
   template<typename G>
-    inline auto incident_edgse(G& g, Vertex<G> v) -> decltype(edges(g, v))
+    inline auto incident_edges(G& g, Vertex<G> v) -> decltype(edges(g, v))
     {
       return edges(g, v);
     }
     
   // A const version of the function above.
   template<typename G>
-    inline auto incident_edgse(G const& g, Vertex<G const> v) -> decltype(edges(g, v))
+    inline auto incident_edges(G const& g, Vertex<G const> v) -> decltype(edges(g, v))
     {
       return edges(g, v);
     }
@@ -994,7 +1053,7 @@ namespace origin
       return Edge_function<F, G> 
           && Convertible<Edge_function_result<F, G>, Edge_data<G>>();
     }
-    
+#endif
 } // namesapce origin
 
 #endif
