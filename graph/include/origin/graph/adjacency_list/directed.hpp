@@ -79,9 +79,9 @@ namespace origin
       const value_type& value() const { return std::get<2>(data); }
       
       // Get the degree, out degree or in degree of the vertex.
-      std::size_t degree() const      { return out.size() + in.size(); }
-      std::size_t out_degree() const  { return out.size(); }
-      std::size_t in_degree() const   { return in.size(); }
+      std::size_t degree() const      { return out().size() + in().size(); }
+      std::size_t out_degree() const  { return out().size(); }
+      std::size_t in_degree() const   { return in().size(); }
 
       // Add an out edge.
       void add_out(edge e) { out().push_back(e); }
@@ -287,12 +287,12 @@ namespace origin
       
     private:
       // Return the vertex object associated with the given handle.
-      vertex_type&       get(vertex v)       { return vlist[v.value]; }
-      const vertex_type& get(vertex v) const { return vlist[v.value]; }
+      vertex_type&       get(vertex v)       { return vlist[v.value()]; }
+      const vertex_type& get(vertex v) const { return vlist[v.value()]; }
       
       // Return the edge object associated with the given handle.
-      edge_type&       get(edge e)       { return elist[e.value]; }
-      const edge_type& get(edge e) const { return elist[e.value]; }
+      edge_type&       get(edge e)       { return elist[e.value()]; }
+      const edge_type& get(edge e) const { return elist[e.value()]; }
       
       // Return an iterator to the first vertex.
       vertex_iterator begin_vertices() const { return 0; }

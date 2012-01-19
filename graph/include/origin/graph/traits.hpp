@@ -785,11 +785,28 @@ namespace origin
     };
     
     
-#if 0
-  // Mutable graph operations
-  // Mutable graphs support the ability to add and remove vertices.
+  // Mutable graphs
+  // Mutable graphs support the ability to add and remove vertices and edges.
+  // There are several operations:
+  //
+  //    add_vertex(g)             Add a vertex to g
+  //    add_vertex(g, value)      Add a vertex with value x to g
+  //
+  //    remove_vertex(g, v)       Remove the vertex v from g
+  //    remove_vertices(g)        Remove all vertices from g
+  //
+  //    add_edge(g, u, v)         Add an edge connecting u to v
+  //    add_edge(g, u, v, value)  Add an edge with value x connecting u to v
+  //
+  //    remove_edge(g, e)         Remove the edge e from g
+  //    remove_edges(g, u, v)     Remove all edges connecting u to v
+  //    remove_edges(g, v)        Remove all edges incident to v
+  //    remove_edges(g)           Remove all edges from v.
+  //
+  // FIXME: Build traits for these operations.
 
-  // FIXME: Clean up the add_vertex operations.
+    
+  // Add vertex
   // Add a vertex to the graph
   template<typename G>
     inline auto add_vertex(G& g) -> decltype(g.add_vertex())
@@ -799,53 +816,46 @@ namespace origin
 
   // Add a vertex to the graph the specified value.
   template<typename G>
-    inline auto add_vertex(G& g, Vertex_data<G> value) 
+    inline auto add_vertex(G& g, const Vertex_value_type<G>& value) 
       -> decltype(g.add_vertex(value))
     {
       return g.add_vertex(value);
     }
-    
+
   // Remove the given vertex from the graph. Removing a vertex will also
   // remove its incdient edges.
   //
-  // The result type is usually expected to be void.
+  // The result type is expected to be void.
   template<typename G>
-    inline auto remove_vertex(G& g, Vertex<G> v)
+    inline auto remove_vertex(G& g, Vertex_type<G> v)
       -> decltype(g.remove_vertex(v))
     {
       return g.remove_vertex(v);
     }
-    
-  // Remove all vertices (and also all edges), from the graph.
+
+  // Remove all vertices (and also all edges), from the graph. 
+  //
+  // The result is expected to be void.
   template<typename G>
     inline auto remove_vertices(G& g) -> decltype(g.remove_vertices(g))
     {
       return g.remove_vertices();
     }
     
- 
-  
-  // Mutable edge set operations
-  // The following operations might be used to modify an edge set.
-  //    - add_edge(g, u, v)
-  //    - add_edge(g, u, v, x)
-  //    - remove_edge(g, e)
-  //    - remove_edge(g, u, v)
-  //    - remove_edges(g)
-  
-  // Add an edge to the graph.
-  //
-  // FIXME: Should these be Vertex<G const>?
+  // Add an edge connecting the vertices u and v.
   template<typename G>
-    inline auto add_edge(G& g, Vertex<G> u, Vertex<G> v)
+    inline auto add_edge(G& g, Vertex_type<G> u, Vertex_type<G> v)
       -> decltype(g.add_edge(u, v))
     {
       return g.add_edge(u, v);
     }
 
-  // Add an edge to the graph with the specified property.
+  // Add an edge connecting the vertices u and v, having the specified value.
   template<typename G>
-    inline auto add_edge(G& g, Vertex<G> u, Vertex<G> v, Edge_data<G> const& value)
+    inline auto add_edge(G& g, 
+                         Vertex_type<G> u, 
+                         Vertex_type<G> v, 
+                         const Edge_value_type<G>& value)
       -> decltype(g.add_edge(u, v, value))
     {
       return g.add_edge(u, v, value);
@@ -853,15 +863,15 @@ namespace origin
 
   // Remove the edge e in g.
   template<typename G>
-    inline auto remove_edge(G& g, Edge<G> e) -> decltype(g.remove_edge(e))
+    inline auto remove_edge(G& g, Edge_type<G> e) -> decltype(g.remove_edge(e))
     {
       return g.remove_edge(e);
     }
     
   // Remove all edges connecting vertices u and v in the graph g.
   template<typename G>
-    inline auto remove_edge(G& g, Vertex<G> u, Vertex<G> v)
-      -> decltype(g.remove_edge(u, v))
+    inline auto remove_edges(G& g, Vertex_type<G> u, Vertex_type<G> v)
+      -> decltype(g.remove_edges(u, v))
     {
       return g.remove_edge(u, v);
     }
@@ -875,7 +885,8 @@ namespace origin
     
 
     
-    
+ #if 0
+   
   // FIXME: Define this class!
   template<typename R> struct adjacency_range;
   
@@ -923,10 +934,6 @@ namespace origin
     }
     
     
-
-
-    
-
 
     
     

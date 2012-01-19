@@ -149,7 +149,7 @@ namespace origin
     struct generate_edge
     {
       static_assert(Graph<G>(), "");
-      static_assert(Edge_value_type_generator<Gen, G>(), "");
+      // static_assert(Edge_generator<Gen, G>(), "");
       
       generate_edge(Gen g)
         : gen(g)
@@ -245,7 +245,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Edge_function<F, G&>(), "");
+      // static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
       Vertex_type<G> u = *first++;
@@ -301,7 +301,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Input_iterator<Iter>(), "");
-      static_assert(Edge_value_type_generator<Gen, G>(), "");
+      // static_assert(Edge_value_type_generator<Gen, G>(), "");
       
       for_path(g, first, last, generate_edge<G, Gen>(gen));
     }
@@ -438,7 +438,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Edge_function<F, G&>(), "");
+      // static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
       Vertex_type<G> u = *first++;
@@ -492,7 +492,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
       static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Edge_value_type_generator<Gen, G>(), "");
+      // static_assert(Edge_value_type_generator<Gen, G>(), "");
       
       for_cycle(g, first, last, generate_edge<G, Gen>(gen));
     }
