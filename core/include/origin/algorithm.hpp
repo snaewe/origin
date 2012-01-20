@@ -47,14 +47,25 @@ namespace origin
 
   // Value searchable (concept)
   // An iterator is value-searchable if it can be searched for a value of a
-  // some type. There are two forms of the concepts:
+  // some type. There are three forms of the concepts:
   //
-  //    Value_searchable<I>     Can be searched for a Value_type<I> value
-  //    Value_searchable<I, T>  Can be searched for a T value
+  //    Value_searchable<I>       Can be searched for a Value_type<I> value
+  //    Value_searchable<I, T>    Can be searched for a T value
+  //    Value_searchable<I, T, R> Can be searched for a T value using a relation R
      
-  // Value searchable for a type T
-  template<typename I, typename T>
+  // Value searchable for a type T.
+  template<typename I, typename T, typename R>
     struct Value_searchable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<I>() && Relation<R, Value_type<I>, T>();
+      }
+    };
+    
+  // Value searchable for a type T,
+  template<typename I, typename T>
+    struct Value_searchable_concept<I, T, default_t>
     {
       static constexpr bool check()
       {
@@ -64,7 +75,7 @@ namespace origin
 
   // Value searchable with its own value type.
   template<typename I>
-    struct Value_searchable_concept<I, default_t>
+    struct Value_searchable_concept<I, default_t, default_t>
     {
       static constexpr bool check()
       {
@@ -74,24 +85,35 @@ namespace origin
      
   // Returns true if the input iterator can be searched for a value of its own
   // value type or a value of another type T.
-  template<typename I, typename T = default_t>
+  template<typename I, typename T = default_t, typename R = default_t>
     constexpr bool Value_searchable()
     {
-      return Value_searchable_concept<I, T>::check();
+      return Value_searchable_concept<I, T, R>::check();
     }
   
   
   
   // Value searchable range (concept)
   // A range is value searchable if it can be searched for a value of some
-  // type. There are two forms of this concept:
+  // type. There are three forms of this concept:
   //
-  //    Value_searchable_range<R>     Can be searched for a Value_type<R> value
-  //    Value_searchabel_range<R, T>  Can be searched for a T value
+  //    Value_searchable_range<R>        Can be searched for a Value_type<R> value
+  //    Value_searchabel_range<R, T>     Can be searched for a T value
+  //    Value_searchabel_range<R, T, Rel> Can be searched for a T value using a relation R
   
-  // Value searchable for a type T
-  template<typename R, typename T>
+  // Value searchable for a type T using a relation Rel.
+  template<typename R, typename T, typename Rel>
     struct Range_value_searchable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_range<R>() && Relation<Rel, Value_type<R>, T>();
+      }
+    };
+
+  // Value searchable for a type T.
+  template<typename R, typename T>
+    struct Range_value_searchable_concept<R, T, default_t>
     {
       static constexpr bool check()
       {
@@ -101,7 +123,7 @@ namespace origin
 
   // Value searchable with its own value type.
   template<typename R>
-    struct Range_value_searchable_concept<R, default_t>
+    struct Range_value_searchable_concept<R, default_t, default_t>
     {
       static constexpr bool check()
       {
@@ -110,10 +132,10 @@ namespace origin
     };
   
   // Returns true if the input iterator can be searched for a value of type T.
-  template<typename R, typename T = default_t>
+  template<typename R, typename T = default_t, typename Rel = default_t>
     constexpr bool Range_value_searchable()
     {
-      return Range_value_searchable_concept<R, T>::check();
+      return Range_value_searchable_concept<R, T, Rel>::check();
     }
 
   
@@ -327,8 +349,8 @@ namespace origin
   // Returns the first iterator i in [first1, last1) where *i != *j and *j is
   // the corresponding iterator in j.
   template<typename I1, typename I2>
-    inline std::pair<I1, I2> 
-    std_mismatch(I1 first1, I1 last1, I2 first2)
+    inline auto std_mismatch(I1 first1, I1 last1, I2 first2)
+      -> std::pair<I1, I2>
     {
       static_assert(Comparable<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
@@ -349,8 +371,8 @@ namespace origin
   // Returns the first iterator i in a where *i != *j and *j is the 
   // corresponding iterator in b.
   template<typename R1, typename R2>
-    inline std::pair<Iterator_type<R1>, Iterator_type<R2>> 
-    mismatch(const R1& a, const R2& b)
+    inline auto mismatch(const R1& a, const R2& b)
+      -> std::pair<Iterator_type<R1>, Iterator_type<R2>> 
     {
       static_assert(Range_comparable<R1>(), "");
 
@@ -361,8 +383,8 @@ namespace origin
     
   // Mismatch (relation)
   template<typename I1, typename I2, typename R>
-    inline std::pair<I1, I2> 
-    std_mismatch(I1 first1, I1 last1, I2 first2, R comp)
+    inline auto std_mismatch(I1 first1, I1 last1, I2 first2, R comp)
+      -> std::pair<I1, I2> 
     {
       static_assert(Comparable<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
@@ -381,8 +403,8 @@ namespace origin
     
   // Mismatch (range, relation)
   template<typename R1, typename R2, typename R>
-    inline std::pair<Iterator_type<R1>, Iterator_type<R2>> 
-    mismatch(const R1& a, const R2& b, R comp)
+    inline auto mismatch(const R1& a, const R2& b, R comp)
+      -> std::pair<Iterator_type<R1>, Iterator_type<R2>>
     {
       static_assert(Range_comparable<R1>(), "");
 
@@ -392,12 +414,11 @@ namespace origin
 
     
   // Is permutation (impl, counting, all)
-  // Returns true if [first1, last1) is a permutation of 
-  // [first2, first2 + (last1 - first1)).
+  // Returns true if [first1, last1) is a permutation of  [first2, last2).
   //
   // This algorithm works by ensuring that each unique value in [first1, last1)
-  // has the same number of occurrences in [first2, first2 + (last1 - first1)).
-  // The performance of this algorithm is O(n^2). 
+  // has the same number of occurrences in [first2, last2). The performance of 
+  // this algorithm is O(n^2). 
   //
   // This is the main implementation of is_permutation_count. It should not be
   // used since it does not optimize the case where the two ranges have equal
@@ -427,8 +448,43 @@ namespace origin
       return true;
     }
     
-    
+  // Is permutation (impl, counting, all)
+  // Returns true if [first1, last1) is a permutation of  [first2, last2).
+  //
+  // This algorithm works by ensuring that each unique value in [first1, last1)
+  // has the same number of occurrences in [first2, last2). The performance of 
+  // this algorithm is O(n^2). 
+  //
+  // This is the main implementation of is_permutation_count. It should not be
+  // used since it does not optimize the case where the two ranges have equal
+  // subranges.
+  template<typename I1, typename I2, typename R>
+    bool is_permutation_counting_all(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    {
+      static_assert(Comparable<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
 
+      for(I1 i = first1; i != last1; ++i) {
+        // Don't recount the number of times *i appears
+        if(some_equal(first1, i, *i, comp))
+          continue;
+
+        // Count the number of times *i appears in [first2, first2 + n). It
+        // needs to be the same count as [first1, last1). If not, then the
+        // ranges are not permutations.
+        auto c = count_equal(first2, last2, *i, comp);
+        if(c == 0)
+          return false;
+        else if(count_equal(next(i), last1, *i, comp) + 1 != c)
+          // Start at the next i since we already know that *i == *i.
+          return false;
+      }
+      return true;
+    }    
+
+    
+    
   // Is permutation (impl, counting)
   // Returns true if [first1, last1) is a permutation of [first2, last2).
   //
@@ -455,7 +511,7 @@ namespace origin
   
   // Forward declarations
   template<typename I> void std_sort(I, I);
-    
+
   
   
   // Is permutation (impl, sorting)

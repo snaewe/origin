@@ -41,23 +41,42 @@ namespace origin
   //    one_of(range, pred)
   //    one_of(list, pred)
   //
-  // These algorithms evaluate the equality of elements to some value.
+  // These algorithms evaluate the equality of elements to some value. 
   //
-  //    all_equal(first, last, pred)
-  //    all_equal(range, pred)
-  //    all_equal(list, pred)
-  //    not_all_equal(first, last, pred)
-  //    not_all_equal(range, pred)
-  //    not_all_equal(list, pred)
-  //    some_equal(first, last, pred)
-  //    some_equal(range, pred)
-  //    some_equal(list, pred)
-  //    none_equal(first, last, pred)
-  //    none_equal(range, pred)
-  //    none_equal(list, pred)
-  //    one_equal(first, last, pred)
-  //    one_equal(range, pred)
-  //    one_equal(list, pred)
+  //    all_equal(first, last, value)
+  //    all_equal(range, value)
+  //    all_equal(list, value)
+  //    not_all_equal(first, last, value)
+  //    not_all_equal(range, value)
+  //    not_all_equal(list, value)
+  //    some_equal(first, last, value)
+  //    some_equal(range, value)
+  //    some_equal(list, value)
+  //    none_equal(first, last, value)
+  //    none_equal(range, value)
+  //    none_equal(list, value)
+  //    one_equal(first, last, value)
+  //    one_equal(range, value)
+  //    one_equal(list, value)
+  //
+  // And all of those are generalized over the relation used to compare the
+  // the values.
+  //
+  //    all_equal(first, last, value, comp)
+  //    all_equal(range, value, comp)
+  //    all_equal(list, value, comp)
+  //    not_all_equal(first, last, value, comp)
+  //    not_all_equal(range, value, comp)
+  //    not_all_equal(list, value, comp)
+  //    some_equal(first, last, value, comp)
+  //    some_equal(range, value, comp)
+  //    some_equal(list, value, comp)
+  //    none_equal(first, last, value, comp)
+  //    none_equal(range, value, comp)
+  //    none_equal(list, value, comp)
+  //    one_equal(first, last, value, comp)
+  //    one_equal(range, value, comp)
+  //    one_equal(list, value, comp)
   //
   // Note that these algorithms are easily defined in terms of find/find_if.
   // The table of equivalences is:
@@ -294,8 +313,7 @@ namespace origin
  
  
   // All equal
-  // Returns true first == last or x == value for all elements x in 
-  // [first, last).
+  // Returns true if x == value for all elements x in [first, last).
   template<typename I, typename T>
     bool all_equal(I first, I last, const T& value)
     {
@@ -309,11 +327,25 @@ namespace origin
       }
       return true;
     }
-   
+
+    
+
+  // All equal (relation)
+  // Returns true if comp(x, value) for all elements x in [first, last).
+  template<typename I, typename T, typename R>
+    bool all_equal(I first, I last, const T& value, R comp)
+    {
+      while(first != last) {
+        if(comp(*first, value))
+          return false;
+        ++first;
+      }
+      return true;
+    }
    
    
   // All equal (range)
-  // Returns true if empty(r) or x == value for all elements x in r.
+  // Returns true if x == value for all elements x in range.
   template<typename R, typename T>
     inline bool all_equal(const R& range, const T& value)
     {
@@ -323,7 +355,16 @@ namespace origin
     }
     
     
-  
+  // All equal (range, relation)
+  // Returns true if comp(x, value) for all elements x in range.
+  template<typename R, typename T, typename Rn>
+    inline bool all_equal(const R& range, const T& value, Rn comp)
+    {
+      return all_equal(std::begin(range), std::end(range), value, comp);
+    }
+    
+    
+    
   // All equal (list)
   // Returns true if x == value for all elementx x in list.
   template<typename T, typename U>
@@ -335,9 +376,18 @@ namespace origin
     }
      
  
+  // All equal (list, relation)
+  // Returns true if comp(x, value) for all elements x in list.
+  template<typename T, typename U, typename R>
+    inline bool all_equal(std::initializer_list<T> list, const U& value, R comp)
+    {
+      return all_equal(list.begin(), list.end(), value, comp);
+    }
 
+    
+    
   // Not all equal
-  // Returns true x != value for some element x in [first, last).
+  // Returns true if x != value for some element x in [first, last).
   template<typename I, typename T>
     bool not_all_equal(I first, I last, const T& value)
     {
@@ -353,9 +403,23 @@ namespace origin
     }
    
    
-   
+  // Not all equal (relation)
+  // Returns true if !comp(x, value) for some element x in [first, last).
+  template<typename I, typename T, typename R>
+    bool not_all_equal(I first, I last, const T& value, R comp)
+    {
+      while(first != last) {
+        if(comp(*first, value))
+          return true;
+        ++first;
+      }
+      return false;
+    }
+
+    
+    
   // Not all equal (range)
-  // Returns true x != value for some element x in range.
+  // Returns true if x != value for some element x in range.
   template<typename R, typename T>
     inline bool not_all_equal(const R& range, const T& value)
     {
@@ -366,6 +430,16 @@ namespace origin
     
     
   
+  // Not all equal (range, relation)
+  // Returns true if !comp(x, value) for some element x in range.
+  template<typename R, typename T, typename Rn>
+    inline bool not_all_equal(const R& range, const T& value, Rn comp)
+    {
+      return not_all_equal(std::begin(range), std::end(range), value, comp);
+    }
+
+    
+    
   // Not all equal (list)
   // Returns true x != value for some element x in list.
   template<typename T, typename U>
@@ -378,6 +452,16 @@ namespace origin
 
      
         
+  // Not all equal (list, relation)
+  // Returns true if !comp(x, value) for some element x in list.
+  template<typename T, typename U, typename R>
+    inline bool not_all_equal(std::initializer_list<T> list, const U& value, R comp)
+    {
+      return not_all_equal(list.begin(), list.end(), value, comp);
+    }
+
+    
+    
   // Some equal
   // Returns true if x == value for some element x in [first, last).
   template<typename I, typename T>
@@ -395,6 +479,20 @@ namespace origin
 
 
 
+  // Some equal (relation)
+  // Returns true if x == value for some element x in [first, last).
+  template<typename I, typename T, typename R>
+    bool some_equal(I first, I last, const T& value, R comp)
+    {
+      while(first != last) {
+        if(comp(*first, value))
+          return true;
+      }
+      return false;
+    }
+
+    
+    
   // Some equal (range)
   // Returns true if x == value for some element x in range.
   template<typename R, typename T>
@@ -407,6 +505,16 @@ namespace origin
 
 
 
+  // Some equal (range, relation)
+  // Returns true if comp(x, value) for some element x in range.
+  template<typename R, typename T, typename Rn>
+    inline bool some_equal(const R& range, const T& value, Rn comp)
+    {
+      return some_equal(std::begin(range), std::end(range), value, comp);
+    }
+
+    
+    
   // Some equal (list)
   // Returns true if x == value for some element x in list.
   template<typename T, typename U>
@@ -418,6 +526,16 @@ namespace origin
     }
     
   
+    
+  // Some equal (list, relation)
+  // Returns true if comp(x, value) for some element x in list.
+  template<typename T, typename U, typename R>
+    inline bool some_equal(std::initializer_list<T> list, const U& value, R comp)
+    {
+      return some_equal(list.begin(), list.end(), value, comp);
+    }
+
+    
     
   // None equal
   // Returns true if x != value for all elements x in [first, last).
@@ -436,6 +554,20 @@ namespace origin
     
     
   
+  // None equal
+  // Returns true if !comp(x, value) for all elements x in [first, last).
+  template<typename I, typename T, typename R>
+    bool none_equal(I first, I last, T const& value, R comp)
+    {
+      while(first != last) {
+        if(comp(*first, value))
+          return false;
+      }
+      return true;
+    }
+
+    
+    
   // None equal (range)
   // Returns true if x != value for all elements x in range.
   template<typename R, typename T>
@@ -448,6 +580,16 @@ namespace origin
 
 
 
+  // None equal (range)
+  // Returns true if !comp(x, value) for all elements x in range.
+  template<typename R, typename T, typename Rn>
+    inline bool none_equal(const R& range, const T& value, Rn comp)
+    {
+      return none_equal(std::begin(range), std::end(range), value, comp);
+    }
+
+    
+    
   // None equal (list)
   // Returns true if x != value for all elements x in list.
   template<typename T, typename U>
@@ -458,6 +600,16 @@ namespace origin
       return none_equal(list.begin(), list.end(), value);
     }
     
+    
+    
+  // None equal (list)
+  // Returns true if !comp(x, value) for all elements x in list.
+  template<typename T, typename U, typename R>
+    inline bool none_equal(std::initializer_list<T> list, const U& value, R comp)
+    {
+      return none_equal(list.begin(), list.end(), value, comp);
+    }
+
     
     
   // One equal
@@ -477,6 +629,20 @@ namespace origin
     
    
    
+  // One equal
+  // Returns true if comp(x, value) for exactly one element x in [first, last).
+  template<typename I, typename T, typename R>
+    inline bool one_equal(I first, I last, const T& value, R comp)
+    {
+      first = find(first, last, value, comp);
+      if(first != last)
+        return none_equal(++first, last, value, comp);
+      else
+        return false;
+    }
+
+    
+    
   // One equal (range)
   // Returns true if x == value for one and only one element x in range.
   template<typename R, typename T>
@@ -489,6 +655,18 @@ namespace origin
 
 
 
+  // One equal (range)
+  // Returns true if comp(x, value) for one and only one element x in range.
+  template<typename R, typename T, typename Rn>
+    inline bool one_equal(const R& range, const T& value, Rn comp)
+    {
+      static_assert(Range_value_searchable<R, T>(), "");
+
+      return one_equal(std::begin(range), std::end(range), value, comp);
+    }
+
+    
+    
   // One equal (list)
   // Returns true if x == value for one and only one elements x in list.
   template<typename T, typename U>
@@ -499,6 +677,17 @@ namespace origin
       return one_equal(list.begin(), list.end(), value);
     }
 
+    
+    
+  // One equal (list)
+  // Returns true if comp(x, value) for one and only one elements x in list.
+  template<typename T, typename U, typename R>
+    inline bool one_equal(std::initializer_list<T> list, const U& value, R comp)
+    {
+      return one_equal(list.begin(), list.end(), value, comp);
+    }
+
+  
 } // namespace origin
 
 #endif

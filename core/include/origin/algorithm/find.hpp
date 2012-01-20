@@ -18,12 +18,19 @@ namespace origin
   // The following algorithms search for an equal value in a range of elements.
   //
   //    find(first, last, value)
+  //    find(first, last, value, comp)
   //    find(range, value)
+  //    find(range, vaule, comp)
   //    find_not_equal(first, last, value)
+  //    find_not_equal(first, last, value, comp)
   //    find_not_equal(range, value)
+  //    find_not_equal(range, value, comp)
   //    find_next(first, last, value)
+  //    find_next(first, last, value, comp)
   //    find_nth(first, last, value)
+  //    find_nth(first, last, value, comp)
   //    find_nth(range, value)
+  //    find_nth(range, value, comp)
   //
   // These algorithms search for an element in a range of elements that 
   // satisfies a unary predicate.
@@ -65,18 +72,42 @@ namespace origin
 
 
   // Find
-  // Return the first iterator i in [first, last) such that *i == value or
-  // last if no such iterator exists.
+  // Return the first iterator i in [first, last) where *i == value or last if 
+  // no such iterator exists.
   template<typename I, typename T>
     I std_find(I first, I last, const T& value)
     {
       static_assert(Value_searchable<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
-      return std::find(first, last, value);
+      while(first != last) {
+        if(*first == value)
+          return first;
+        ++first;
+      }
+      return last;
     }
 
 
+    
+  // Find (relation)
+  // Return the first iterator i in [first, last) where comp(*i, value) is true
+  // or last if no such iterator exists.
+  template<typename I, typename T, typename R>
+    I std_find(I first, I last, const T& value, R comp)
+    {
+      static_assert(Value_searchable<I, T, R>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      while(first != last) {
+        if(comp(*first, value))
+          return first;
+        ++first;
+      }
+      return last;
+    }
+
+    
     
   // Find (range)
   // Returns the first iterator i in r such that *i == value or end(r) if no
@@ -90,8 +121,8 @@ namespace origin
       return std_find(std::begin(range), std::end(range), value);
     }
 
-    
-    
+
+
   // Find (associative container)
   // Returns the first iterator i in c such that *i == value or end(c) if no
   // such iterator exists. The result is comptued in O(log(size(c))).
@@ -101,6 +132,19 @@ namespace origin
       return cont.find(value);
     }
 
+
+
+  // Find (range, relation)
+  // Returns the first iterator i in r such that comp(*i, value) is true or 
+  // end(r) if no such iterator exists.
+  template<typename R, typename T, typename Rel>
+    inline auto find(R&& range, const T& value, Rel comp) -> decltype(std::begin(range))
+    {
+      static_assert(Range_value_searchable<Unqualified<R>, T, Rel>(), "");
+      
+      return std_find(std::begin(range), std::end(range), value);
+    }
+    
 
 
   // Find not equal
@@ -121,6 +165,24 @@ namespace origin
   
   
   
+  // Find not equal
+  // Returns the first iterator i in [first, last) where *i != value or last
+  // if no such iterator exists.
+  template<typename I, typename T, typename R>
+    inline I find_not_equal(I first, I last, const T& value, R comp)
+    {
+      static_assert(Value_searchable<I, T, R>(), "");
+
+      while(first != last) {
+        if(!comp(*first, value))
+          return first;
+        ++first;
+      }
+      return last;
+    }
+
+    
+    
   // Find not equal (range)
   // Returns the first iterator i in r where *i != value or end(r) if no such
   // iterator exists.
@@ -129,11 +191,26 @@ namespace origin
     -> decltype(std::begin(range))
     {
       static_assert(Range_searchable<Unqualified<R>, T>(), "");
+
       return find_not_equal(std::begin(range), std::end(range), value);
     }
     
     
   
+  // Find not equal (range)
+  // Returns the first iterator i in r where *i != value or end(r) if no such
+  // iterator exists.
+  template<typename R, typename T, typename Rel>
+    inline auto find_not_equal(R&& range, const T& value, Rel comp) 
+    -> decltype(std::begin(range))
+    {
+      static_assert(Range_searchable<Unqualified<R>, T, Rel>(), "");
+  
+      return find_not_equal(std::begin(range), std::end(range), value, comp);
+    }
+
+    
+    
   // Find if
   // Returns the first iterator i in [first, last) where pred(*i) is true or
   // last if no such iterator exists.
