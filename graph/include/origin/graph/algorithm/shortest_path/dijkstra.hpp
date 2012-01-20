@@ -17,6 +17,7 @@
 #include <origin/functional.hpp>
 #include <origin/graph/edge.hpp>
 #include <origin/graph/label.hpp>
+#include <origin/graph/traits.hpp>
 
 namespace origin {
 
@@ -40,6 +41,7 @@ namespace origin {
    *
    * TODO Implement path recovery
    */
+  
   template<typename Graph,
            typename Vertex_Label,
            typename Edge_Label,
@@ -50,8 +52,7 @@ namespace origin {
     {
     public:
       // Graph types
-      typedef typename graph_traits<Graph>::vertex vertex;
-
+      typedef Vertex_type<Graph> vertex;
       // Associated labels
       typedef Edge_Label edge_label;
       typedef Vertex_Label vertex_label;
@@ -184,11 +185,11 @@ namespace origin {
     typename Accumulate_Op,
     typename Compare_Op,
     typename Visitor>
-  class dijkstra_shortest_paths__noclamp_impl
+  class dijkstra_shortest_paths_noclamp_impl
   {
   public:
     // Graph types
-    typedef typename graph_traits<Graph>::vertex vertex;
+    typedef Vertex_type<Graph> vertex;
     
     // Associated labels
     typedef Edge_Label edge_label;
@@ -224,7 +225,7 @@ namespace origin {
     
   public:
     // Constructor
-    dijkstra_shortest_paths_impl(Graph const& g,
+    dijkstra_shortest_paths_noclamp_impl(Graph const& g,
                                  vertex_label d,
                                  edge_label w,
                                  accumulate_op accum,
@@ -299,11 +300,11 @@ namespace origin {
            return;
       }
     }*/
-    template <
+    /*template <
       typename Vertex,
       typename Vertex_label,
       typename Edge_label,
-      typename Accumulate_op
+      typename Accumulate_op,
       typename Compare_op
     >
     bool relax(
@@ -311,7 +312,7 @@ namespace origin {
                Vertex_label d, Edge_label w, Vertex u, Vertex v, R comp = R())
     {
       auto d = accum_(du, w_(g_, e)); 
-    }
+    }*/
     
   private:
     Graph const& g_;
@@ -332,11 +333,11 @@ namespace origin {
            typename Vertex_Label,
            typename Visitor = default_dijkstra_visitor>
     void dijkstra_shortest_paths(Graph const& g,
-                                 typename graph_traits<Graph>::vertex start,
+                                 Vertex_type<Graph> start,
                                  Vertex_Label d,
                                  Visitor visitor = Visitor())
     {
-      typedef typename graph_traits<Graph>::vertex vertex;
+      typedef Vertex_type<Graph> vertex;
       typedef typename label_traits<
         Vertex_Label, vertex
       >::value_type weight_type;
@@ -369,7 +370,7 @@ namespace origin {
            typename Compare_Op,
            typename Visitor>
     void dijkstra_shortest_path(Graph const& g,
-                                typename graph_traits<Graph>::vertex start,
+                                Vertex_type<Graph> start,
                                 Vertex_Label d,
                                 Accumulate_Op accum,
                                 Compare_Op cmp,
