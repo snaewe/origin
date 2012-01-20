@@ -10,6 +10,7 @@
 
 #include <unordered_map>
 
+
 #include <origin/ordinal_map.hpp>
 #include <origin/graph/traits.hpp>
 
@@ -51,7 +52,7 @@ namespace origin
   template<typename Key, typename Value, typename Alloc>
     struct choose_graph_map
       : std::conditional<
-          is_ordinal<Key>::value,
+          Ordinal<Key>(),
           ordinal_map<Key, Value>,
           std::unordered_map<Key, Value>
         >

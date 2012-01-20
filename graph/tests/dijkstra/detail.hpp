@@ -15,7 +15,7 @@
 
 namespace origin {
 
-  // Makes ordinal_map a labeling
+  /*// Makes ordinal_map a labeling
   template<typename Ordinal, typename Value>
   struct ordinal_label : ordinal_map<Ordinal, Value>
   {
@@ -62,7 +62,7 @@ namespace origin {
     }
 
     parent_label_type& parents;
-  };
+  };*/
 
 } // namespace origin
 

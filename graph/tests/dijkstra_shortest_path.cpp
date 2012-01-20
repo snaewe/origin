@@ -9,19 +9,15 @@
 #include <limits>
 #include <cstddef>
 
-#include <origin/graph/algorithm/shortest_path/dijkstra.hpp>
-#include <origin/graph/adjacency_matrix.hpp>
-#include <origin/ordinal_map.hpp>
-#include <origin/graph/label.hpp>
-
 #include "dijkstra/detail.hpp"
+#include <origin/graph/algorithm/shortest_path/dijkstra.hpp>
 
 using namespace origin;
 
 int main() {
 
   // Type definitions
-  typedef distance_matrix<char> Dist_Graph;
+  /*typedef distance_matrix<char> Dist_Graph;
   typedef typename Dist_Graph::vertex Vertex;
   typedef typename Dist_Graph::edge Edge;
   typedef ordinal_map<Vertex, float> Distance_Map;
@@ -36,7 +32,7 @@ int main() {
   g[v[0]] = 'a';
   g[v[1]] = 'b';
   g[v[2]] = 'c';
-  g[v[3]] = 'd';
+  g[v[3]] = 'd';*/
 
   /**   0
    *   / \
@@ -45,7 +41,7 @@ int main() {
    *    3
    */
 
-  g.add_edge(v[0], v[1], 1.0f);
+  /*g.add_edge(v[0], v[1], 1.0f);
   g.add_edge(v[0], v[2], 2.0f);
   g.add_edge(v[1], v[2], 0.2f);
   g.add_edge(v[2], v[1], 0.1f);
@@ -54,7 +50,7 @@ int main() {
 
   shortest_path_parent_map parents;
   Distance_Map dm(4u);
-  dijkstra_shortest_paths(g, v[0], Distance_Label(dm), Visitor(parents));
+  dijkstra_shortest_paths(g, v[0], Distance_Label(dm), Visitor(parents));*/
 
 
   /*auto path = dsp.visitor_.get_path_to(v[3]);

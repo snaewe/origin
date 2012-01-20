@@ -11,6 +11,8 @@
 #include <iterator>
 #include <functional>
 
+#include <origin/graph/handle.hpp>
+#include <origin/graph/vertex.hpp>
 #include <origin/range.hpp>
 #include <origin/graph/traits.hpp>
 
