@@ -29,9 +29,14 @@ namespace origin
   //    count_if_not(first, last, pred)
   //    count_if_not(range, pred)
   //
+  // And for counted ranges:
+  //
+  //    count_n(first, n, value)
+  //    count_n_if(first, n, pred)
+  //
   // TODO: Write count_in, which should return the number of elements in
   // [first1, last1) that match any value or have some property with those
-  // in [first2, last2).
+  // in [first2, last2). This would be analogous to find_first_in.
 
 
   // Count
@@ -40,7 +45,7 @@ namespace origin
     inline Distance_type<I> std_count(I first, I last, const T& value)
     {
       static_assert(Value_searchable<I, T>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
       while(first != last) {
@@ -58,7 +63,7 @@ namespace origin
   template<typename R, typename T>
     inline Distance_type<R> count(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R>(), "");
+      static_assert(Range_value_searchable<R>(), "");
 
       return std_count(std::begin(range), std::end(range), value);
     }
@@ -71,7 +76,7 @@ namespace origin
     inline Distance_type<I> count_not_equal(I first, I last, const T& value)
     {
       static_assert(Value_searchable<I, T>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
       while(first != last) {
@@ -89,7 +94,7 @@ namespace origin
   template<typename R, typename T>
     inline Distance_type<R> count_not_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
       
       return count_not_equal(std::begin(range), std::end(range), value);
     }
@@ -102,7 +107,7 @@ namespace origin
     inline Distance_type<I> std_count_if(I first, I last, P pred)
     {
       static_assert(Searchable<I, P>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
       while(first != last) {
@@ -120,7 +125,7 @@ namespace origin
   template<typename R, typename P>
     inline Distance_type<R> count_if(R const& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
 
       return std_count_if(std::begin(range), std::end(range), pred);
     }
@@ -133,7 +138,7 @@ namespace origin
     inline Distance_type<I> count_if_not(I first, I last, P pred)
     {
       static_assert(Searchable<I, P>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
       while(first != last) {
@@ -151,12 +156,51 @@ namespace origin
   template<typename R, typename P>
     inline Distance_type<R> count_if_not(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
       
       return count_if_not(std::begin(range), std::end(range), pred);
     }
     
 
+  
+  // Count n
+  // Returns the number of elements x in [first, first + n) where x == value.
+  template<typename I, typename T>
+    inline Distance_type<I> count_n(I first, Distance_type<I> n, const T& value)
+    {
+      static_assert(Value_searchable<I, T>(), "");
+      assert(is_readable_range(first, n));
+
+      Distance_type<I> c = 0;
+      while(n != 0) {
+        if(*first == value)
+          ++c;
+        ++first;
+        --n;
+      }
+      return c;
+    }
+
+    
+  
+  // Count n if
+  // Returns the number of elements x in [first, first + n) where pred(x) is
+  // true.
+  template<typename I, typename P>
+    inline Distance_type<I> count_n_if(I first, Distance_type<I> n, P pred)
+    {
+      static_assert(Searchable<I, P>(), "");
+      assert(is_readable_range(first, n));
+
+      Distance_type<I> c = 0;
+      while(n != 0) {
+        if(pred(*first))
+          ++c;
+        ++first;
+        --n;
+      }
+    }
+    
 } // namespace origin
 
 #endif

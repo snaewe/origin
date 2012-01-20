@@ -11,6 +11,7 @@
 
 #include <algorithm>
 
+#include <origin/memory.hpp>
 #include <origin/iterator.hpp>
 #include <origin/range.hpp>
 
@@ -25,7 +26,7 @@ namespace origin
   //
   //    Searchable
   //    Value_searchable
-  //    Searchable_range
+  //    Range_searchable
   //    Value_searchable_range
 
   // Returns true if the input iterator I can be searched using the predicate P.
@@ -37,11 +38,11 @@ namespace origin
 
   // Returns true if the input range R can be searched using the predicate P.
   template<typename R, typename P>
-    constexpr bool Searchable_range()
+    constexpr bool Range_searchable()
     {
       return Input_range<R>() && Predicate<P, Value_type<R>>();
     }
-     
+
      
 
   // Value searchable (concept)
@@ -90,7 +91,7 @@ namespace origin
   
   // Value searchable for a type T
   template<typename R, typename T>
-    struct Value_searchable_range_concept
+    struct Range_value_searchable_concept
     {
       static constexpr bool check()
       {
@@ -100,7 +101,7 @@ namespace origin
 
   // Value searchable with its own value type.
   template<typename R>
-    struct Value_searchable_range_concept<R, default_t>
+    struct Range_value_searchable_concept<R, default_t>
     {
       static constexpr bool check()
       {
@@ -110,9 +111,9 @@ namespace origin
   
   // Returns true if the input iterator can be searched for a value of type T.
   template<typename R, typename T = default_t>
-    constexpr bool Value_searchable_range()
+    constexpr bool Range_value_searchable()
     {
-      return Value_searchable_range_concept<R, T>::check();
+      return Range_value_searchable_concept<R, T>::check();
     }
 
   
@@ -165,7 +166,7 @@ namespace origin
   
   // Comparable using a relation.
   template<typename R1, typename R2, typename R>
-    struct Comparable_ranges_concept
+    struct Range_comparable_concept
     {
       static constexpr bool check()
       {
@@ -177,7 +178,7 @@ namespace origin
 
   // Comparable for equality.
   template<typename R1, typename R2>
-    struct Comparable_ranges_concept<R1, R2, default_t>
+    struct Range_comparable_concept<R1, R2, default_t>
     {
       static constexpr bool check()
       {
@@ -187,10 +188,12 @@ namespace origin
       }
     };
   
+  // Returns true if R1 and R2 are ranges that can be compared using value
+  // equality or a relation R.
   template<typename R1, typename R2, typename R = default_t>
-    constexpr bool Comparable_ranges()
+    constexpr bool Range_comparable()
     {
-      return Comparable_ranges_concept<R1, R2, R>::check();
+      return Range_comparable_concept<R1, R2, R>::check();
     }
 }
 
@@ -203,26 +206,6 @@ namespace origin
 
 namespace origin 
 {
-  // Two iterators can be memcmp-ared when they are pointers to the same
-  // standard layout type, but only if the size and alignment of those types
-  // are equal.
-  //
-  // FIXME: The Pointer requirements are somewhat arbitrary. We need to
-  // generalize the trait for any contiguous iterator (e.g., GCC's normal
-  // iterators). That's going to get a little hacky.
-  //
-  // FIXME: This belongs in <origin/iterator.hpp>.
-  template<typename I1, typename I2>
-    constexpr bool Can_memcmp()
-    {
-      return Pointer<I1>() 
-          && Pointer<I2>()
-          && Same<Value_type<I1>, Value_type<I2>>()
-          && Memory_comparable<Value_type<I1>>();
-    }
-  
-  
-  
   // Equal
   // Returns true if *i == *j for each iterator i and j in [first1, last1) and
   // [first2, first2 + (last1 - first1)), pairwise.
@@ -231,8 +214,8 @@ namespace origin
       -> Requires<!Can_memcmp<I1, I2>(), bool>
     {
       static_assert(Comparable<I1, I2>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assume(( is_readable_range(first2, distance(first1, last1)) ));
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
 
       while(first1 != last1) {
         if(*first1 != *first2)
@@ -244,56 +227,95 @@ namespace origin
     }
 
     
-    
-  // Equal (optimized)
+  // Equal (memcmp)
   // Use memcmp to compare the iterator ranges, but only in the conditions
   // determined by the Can_memcmp trait.
   template<typename I1, typename I2>
     inline auto std_equal(I1 first1, I1 last1, I2 first2)
       -> Requires<Can_memcmp<I1, I2>(), bool>
     {
-      return __builtin_memcmp(first1, first2, 
-                              sizeof(Value_type<I1>) * (last1 - first1));
+      return !__builtin_memcmp(unwrap_iterator(first1), 
+                               unwrap_iterator(first2), 
+                               sizeof(Value_type<I1>) * (last1 - first1));
     }
     
     
 
   // Equal (range)
-  // Returns true if size(a) <= size(b) and x == y for each x and y in the
-  // ranges a and b, pairwise.
+  // Returns true if x == y for each x and y in the ranges a and b, pairwise.
   template<typename R1, typename R2>
-    inline bool equal(R1 const& a, R2 const& b)
+    inline auto equal(R1 const& a, R2 const& b)
+      -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
     {
-      static_assert(Comparable_ranges<R1, R2>(), "");
+      static_assert(Range_comparable<R1, R2>(), "");
+    
+      return std_equal(std::begin(a), std::end(a), std::begin(b));
+    }
+
+
+    
+  // Equal (random access ranges)
+  // This optimization for random access ranges returns true if 
+  // size(a) <= size(b) and x == y for each x and y in the ranges a and b, 
+  // pairwise.
+  template<typename R1, typename R2>
+    inline auto equal(R1 const& a, R2 const& b)
+      -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
+    {
+      static_assert(Range_comparable<R1, R2>(), "");
     
       return size(a) <= size(b) 
           && std_equal(std::begin(a), std::end(a), std::begin(b));
     }
   
   
-  
+    
   // Equal (relation)
   // Returns true if comp(*i, *j), for each iterator i and j in [first1, last1) 
   // and [first2, first2 + (last1 - first1)) pairwise.
+  //
+  // Note that this algorithm cannot be optimized by memcmp.
   template<typename I1, typename I2, typename R>
     inline bool std_equal(I1 first1, I1 last1, I2 first2, R comp)
     {
       static_assert(Comparable<I1, I2>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assume(( is_readable_range(first2, distance(first1, last1)) ));
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
 
-      return std::equal(first1, last1, first2, comp);
+      while(first1 != last1) {
+        if(!comp(*first1, *first2))
+          return false;
+        ++first1;
+        ++first2;
+      }
+      return true;
     }
     
     
     
   // Equal (range)
-  // Returns true if size(a) <= size(b) and comp(x, y) is true for each x and y 
-  // in the ranges a and b, pairwise.
+  // Returns true if comp(x, y) is true for each x and y in the ranges a and b, 
+  // pairwise.
   template<typename R1, typename R2, typename R>
-    inline bool equal(const R1& a, const R2& b, R comp)
+    inline auto equal(const R1& a, const R2& b, R comp)
+      -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
     {
-      static_assert(Comparable_ranges<R1>(), "");
+      static_assert(Range_comparable<R1>(), "");
+
+      return std_equal(std::begin(a), std::end(a), std::begin(b), comp);
+    }
+
+    
+    
+  // Equal (random access ranges)
+  // This specialization for random access ranges returns true if 
+  // size(a) <= size(b) and comp(x, y) is true for each x and y in the ranges a 
+  // and b, pairwise.
+  template<typename R1, typename R2, typename R>
+    inline auto equal(const R1& a, const R2& b, R comp)
+      -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
+    {
+      static_assert(Range_comparable<R1>(), "");
 
       return size(a) <= size(b)
           && std_equal(std::begin(a), std::end(a), std::begin(b), comp);
@@ -302,74 +324,222 @@ namespace origin
 
 
   // Mismatch
-  // For two ranges a and b, return the first element in a where a is not
-  // equal the corresponding element in b (i.e., where they do not match).
-  //
-  // FIXME: I think I need overloads range overloads for const and non-const
-  // overloads. Maybe I can use forwarding.
+  // Returns the first iterator i in [first1, last1) where *i != *j and *j is
+  // the corresponding iterator in j.
   template<typename I1, typename I2>
     inline std::pair<I1, I2> 
     std_mismatch(I1 first1, I1 last1, I2 first2)
     {
       static_assert(Comparable<I1, I2>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assume(( is_readable_range(first2, distance(first1, last1)) ));
-      
-      return std::mismatch(first1, last1, first2);
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+
+      while(first1 != last1) {
+        if(*first1 != *first2)
+          return {first1, first2};
+        ++first1;
+        ++first2;
+      }
+      return {last1, first2};
     }
 
+    
+    
+  // Mismatch (range)
+  // Returns the first iterator i in a where *i != *j and *j is the 
+  // corresponding iterator in b.
   template<typename R1, typename R2>
     inline std::pair<Iterator_type<R1>, Iterator_type<R2>> 
     mismatch(const R1& a, const R2& b)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Range_comparable<R1>(), "");
 
       return std_mismatch(std::begin(a), std::end(a), std::begin(b));
     }
 
-  // Generalized version
-  template<typename I1, typename I2, typename Pred>
+    
+    
+  // Mismatch (relation)
+  template<typename I1, typename I2, typename R>
     inline std::pair<I1, I2> 
-    std_mismatch(I1 first1, I1 last1, I2 first2, Pred pred)
+    std_mismatch(I1 first1, I1 last1, I2 first2, R comp)
     {
-      static_assert(Input_iterator<I1>(), "");
-      static_assert(Weak_input_iterator<I2>(), "");
-      static_assert(Predicate<Pred, Value_type<I1>, Value_type<I2>>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assume(( is_readable_range(first2, distance(first1, last1)) ));
-      
-      return std::mismatch(first1, last1, first2, pred);
+      static_assert(Comparable<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+
+      while(first1 != last1) {
+        if(!comp(*first1, *first2))
+          return {first1, first2};
+        ++first1;
+        ++first2;
+      }
+      return {first1, first2};
     }
     
-  template<typename R1, typename R2, typename Pred>
+    
+    
+  // Mismatch (range, relation)
+  template<typename R1, typename R2, typename R>
     inline std::pair<Iterator_type<R1>, Iterator_type<R2>> 
-    mismatch(const R1& a, const R2& b, Pred pred)
+    mismatch(const R1& a, const R2& b, R comp)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Range_comparable<R1>(), "");
 
-      return std_mismatch(std::begin(a), std::end(a), std::begin(b), pred);
+      return std_mismatch(std::begin(a), std::end(a), std::begin(b), comp);
     }
 
 
-
-  // Permutation testing
-  // Returns true if, for a range a and b, a is a permutation of b.
-  
+    
+  // Is permutation (impl, counting, all)
+  // Returns true if [first1, last1) is a permutation of 
+  // [first2, first2 + (last1 - first1)).
+  //
+  // This algorithm works by ensuring that each unique value in [first1, last1)
+  // has the same number of occurrences in [first2, first2 + (last1 - first1)).
+  // The performance of this algorithm is O(n^2). 
+  //
+  // This is the main implementation of is_permutation_count. It should not be
+  // used since it does not optimize the case where the two ranges have equal
+  // subranges.
   template<typename I1, typename I2>
-    inline bool std_is_permutation(I1 first1, I1 last1, I2 first2)
+    bool is_permutation_counting_all(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      return std::is_permutation(first1, last1, first2);
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+
+      for(I1 i = first1; i != last1; ++i) {
+        // Don't recount the number of times *i appears
+        if(some_equal(first1, i, *i))
+          continue;
+
+        // Count the number of times *i appears in [first2, first2 + n). It
+        // needs to be the same count as [first1, last1). If not, then the
+        // ranges are not permutations.
+        auto c = count(first2, last2, *i);
+        if(c == 0)
+          return false;
+        else if(std_count(next(i), last1, *i) + 1 != c)
+          // Start at the next i since we already know that *i == *i.
+          return false;
+      }
+      return true;
     }
+    
+    
+
+  // Is permutation (impl, counting)
+  // Returns true if [first1, last1) is a permutation of [first2, last2).
+  //
+  // This algorithm works by ensuring that each unique value in [first1, last1)
+  // has the same number of occurrences in [first2, first2 + (last1 - first1)).
+  // The performance of this algorithm is O(n^2).
+  template<typename I1, typename I2>
+    bool is_permutation_counting(I1 first1, I1 last1, I2 first2, I2 last2)
+    {
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
+
+      // Find where [first1, last1) and [first2, ...) differ. Then, count the 
+      // number of times each element occurs in the remainder of the two 
+      // ranges. Otherwise the two ranges are equal, and we're done.
+      std::tie(first1, first2) = std_mismatch(first1, last1, first2);
+      if(first1 != last1)
+        return is_permutation_counting_all(first1, last1, first2, last2);
+      return true;
+    }
+    
+  
+  
+  // Forward declarations
+  template<typename I> void std_sort(I, I);
+    
+  
+  
+  // Is permutation (impl, sorting)
+  // Returns true if the range [first1, last1) is a permutation of the range
+  // [first2, last2). The algorithm copies both input ranges into temporary 
+  // buffers and sorts them. The runtime of this implementation is O(n log n), 
+  // although there are 2n copies and 2 executions of the sort.
+  template<typename I1, typename I2>
+    bool is_permutation_sorting(I1 first1, I1 last1, I2 first2, I2 last2)
+    {
+      static_assert(Sortable<I1>(), "");
+      static_assert(Sortable<I2>(), "");
+      static_assert(Comparable<I1, I2>(), "");
+      
+      std_sort(first1, last1);
+      std_sort(first2, last2);
+      return std_equal(first1, last1, first2);
+    }
+    
+  
+    
+  // Is permutation (sorted)
+  // Returns true if [first1, last1) is a permutation of 
+  // [first2, first2 + (last1 - first1)). 
+  //
+  // This specialization is valid for Copyable value types. If there is
+  // sufficient memory, the algorithm will copy and sort both ranges in 
+  // O(log n) time. If not, the property is checked by counted the number of
+  // occurrences of each value in O(n^2) time.
+  template<typename I1, typename I2>
+    auto std_is_permutation(I1 first1, I1 last1, I2 first2)
+      -> Requires<Copyable<Value_type<I1>>() &&
+                  Copyable<Value_type<I2>>() &&
+                  Totally_ordered<Value_type<I1>>() &&
+                  Totally_ordered<Value_type<I2>>(),
+                  bool>
+    {
+      static_assert(Forward_iterator<I1>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Comparable<I1, I2>(), "");
+
+      auto n = std_distance(first1, last1);
+      temporary_buffer<Value_type<I1>> b1(first1, n);
+      temporary_buffer<Value_type<I2>> b2(first2, n);
+      
+      // If allocated enough space, use the efficient implementation. 
+      // Otherwise, use the less efficient implementation.
+      if(b1 && b2) {
+        return is_permutation_sorting(b1.begin(), b1.end(), b2.begin(), b2.end());
+      } else {
+        I2 last2 = std_next(first2, n);
+        return is_permutation_counting(first1, last1, first2, last2);
+      }
+    }
+
+    
+    
+  // Is permutation (counted)
+  // Returns true if, for a range a and b, a is a permutation of b.
+  //
+  // This specialization is valid when the value types cannot be copied. It
+  // counts the number of occurrences of each value in O(n^2) time.
+  template<typename I1, typename I2>
+    inline auto std_is_permutation(I1 first1, I1 last1, I2 first2)
+      -> Requires<!(Copyable<Value_type<I1>>() &&
+                    Copyable<Value_type<I2>>() &&
+                    Totally_ordered<Value_type<I1>>() &&
+                    Totally_ordered<Value_type<I2>>()),
+                  bool>
+    {
+      I2 last2 = std_next(first2, distance(first1, last1));
+      return is_permutation_counting(first1, last1, first2, last2);
+    }
+    
+    
     
   template<typename R1, typename R2>
     inline bool is_permutation(const R1& a, const R2& b)
     {
       static_assert(Input_range<R1>(), "");
       static_assert(Input_range<R2>(), "");
+      assert(size(a) == size(b));
 
-      return std_is_permutation(a, b);
+      return std_is_permutation(std::begin(a), std::end(a), std::begin(b));
     }
 
   // Generalized version
@@ -930,8 +1100,8 @@ namespace origin
 
 
   // Sort
-  template<typename Iter>
-    void std_sort(Iter first, Iter last)
+  template<typename I>
+    void std_sort(I first, I last)
     {
       return std::sort(first, last);
     }
@@ -939,8 +1109,8 @@ namespace origin
     
     
   // Sort (relation)
-  template<typename Iter, typename Ord>
-    void std_sort(Iter first, Iter last, Ord comp)
+  template<typename I, typename R>
+    void std_sort(I first, I last, R comp)
     {
       return std::sort(first, last, comp);
     }

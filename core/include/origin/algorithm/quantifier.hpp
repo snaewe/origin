@@ -101,7 +101,7 @@ namespace origin
   template<typename R, typename P>
     inline bool all_of(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
 
       return std_all_of(std::begin(range), std::end(range), pred);
     }
@@ -144,7 +144,7 @@ namespace origin
   template<typename R, typename P>
     inline bool not_all_of(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
 
       return nall_of(std::begin(range), std::end(range), pred);
     }
@@ -189,7 +189,7 @@ namespace origin
   template<typename R, typename P>
     inline bool some_of(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
 
       return some_of(std::begin(range), std::end(range), pred);
     }
@@ -231,7 +231,7 @@ namespace origin
   template<typename R, typename P>
     inline bool none_of(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
       
       return std_none_of(std::begin(range), std::end(range), pred);
     }
@@ -273,7 +273,7 @@ namespace origin
   template<typename R, typename P>
     inline bool one_of(const R& range, P pred)
     {
-      static_assert(Searchable_range<R, P>(), "");
+      static_assert(Range_searchable<R, P>(), "");
       
       return one_of(std::begin(range), std::end(range), pred);
     }
@@ -317,7 +317,7 @@ namespace origin
   template<typename R, typename T>
     inline bool all_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
 
       return all_equal(std::begin(range), std::end(range), value);
     }
@@ -359,7 +359,7 @@ namespace origin
   template<typename R, typename T>
     inline bool not_all_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
 
       return not_all_equal(std::begin(range), std::end(range), value);
     }
@@ -400,7 +400,7 @@ namespace origin
   template<typename R, typename T>
     inline bool some_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
 
       return some_equal(std::begin(range), std::end(range), value);
     }
@@ -441,7 +441,7 @@ namespace origin
   template<typename R, typename T>
     inline bool none_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
 
       return none_equal(std::begin(range), std::end(range), value);
     }
@@ -482,7 +482,7 @@ namespace origin
   template<typename R, typename T>
     inline bool one_equal(const R& range, const T& value)
     {
-      static_assert(Value_searchable_range<R, T>(), "");
+      static_assert(Range_value_searchable<R, T>(), "");
 
       return one_equal(std::begin(range), std::end(range), value);
     }

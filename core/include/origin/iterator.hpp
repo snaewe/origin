@@ -643,14 +643,16 @@ namespace origin
 
 
   // Sortable
-  // The Sortable concept describes the requiremnts of algorithms that permute
+  // The Sortable concept describes the requirements of algorithms that permute
   // ranges sequences in some sorted order. There are two:
-  // - Sortable<Iter>
-  // - Sortable<Iter, R>
+  //
+  //    Sortable<I>
+  //    Sortable<I, R>
+  //
   // The first describes requirements for sorting the < operator. The second
   // is generalized over a Relation R.
   
-  // Requrements for the generalized overload.
+  // Requirements for the generalized overload.
   template<typename Iter, typename R>
     struct Sortable_concept
     {
@@ -996,7 +998,73 @@ namespace origin
     {
       return Function<F, I>() && Subst_succeeded<Get_increment_result<F>>();
     }
+
     
+    
+  // Unwrap iterator
+  // This facility provides an extension point for unwrapping iterators from
+  // some adaptors, allowing us to determine the actual properties of the
+  // underlying iterator abstraction. This is particularly important when
+  // specializing algorithms for low-level memory operations (e.g., memcopy,
+  // memmove, memcmp, etc.).
+  //
+  // The goal of unwrapping iterators is to determine if they ultimately refer
+  // to a pointer.
+  
+  // Returns i if the I is not an wrapper.
+  template<typename I>
+    inline I unwrap_iterator(I i) { return i; }
+
+  // Move iterators can be recursively unwrapped.
+  template<typename T>
+    inline auto unwrap_iterator(std::move_iterator<T*> i) 
+      -> decltype(unwrap_iterator(i.base()))
+    { 
+      return i; 
+    }
+
+#if defined(__GNUC__)
+  // Unwrap GCC normal iterators. These are never used as adaptors of other
+  // iterators.
+  template<typename I, typename C>
+    inline I unwrap_iterator(__gnu_cxx::__normal_iterator<I, C> i) 
+    { 
+      return i.base(); 
+    }
+#endif
+    
+  // An alias to the iterator base of I, or I if it is not an unwrappable
+  // iterator adaptor. Note that for all iterators I:
+  //
+  //    Value_type<I> == Value_type<Iterator_base<I>>.
+  //
+  // This guarantee allows use to reason about the kinds of objects referred to
+  // indirectly.
+  template<typename I>
+    using Iterator_base = decltype(unwrap_iterator(std::declval<I>()));
+    
+
+    
+  // Concepts for memory optimization
+
+  // Two iterators can be memcmp-ared when they are pointers to the same
+  // standard layout type, but only if the size and alignment of those types
+  // are equal.
+  //
+  // NOTE: This is generalized for comparisons on objects of different types,
+  // but only if the size of their value types is the same. Semantically, this
+  // would require the value types of I1 and I2 to share a common type.
+  template<typename I1, typename I2>
+    constexpr bool Can_memcmp()
+    {
+      using B1 = Iterator_base<I1>;
+      using B2 = Iterator_base<I2>;
+      return Pointer<B1>() && Memory_comparable<Value_type<B1>>()
+          && Pointer<B2>() && Memory_comparable<Value_type<B2>>()
+          && sizeof(Value_type<B1>) == sizeof(Value_type<B2>);
+    }
+      
 } // namespace origin
+
 
 #endif

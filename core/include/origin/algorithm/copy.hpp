@@ -44,8 +44,8 @@ namespace origin
     {
       static_assert(Input_iterator<I>(), "");
       static_assert(Writable<O, Value_type<I>>(), "");
-      assert(( is_readable_range(first, last) ));
-      assume(( is_writable_range(result, distance(first, last), *first) ));
+      assert(is_readable_range(first, last));
+      assume(is_writable_range(result, distance(first, last), *first));
 
       return std::copy(first, last, result);
     }
@@ -59,7 +59,7 @@ namespace origin
     {
       static_assert(Input_range<I>(), "");
       static_assert(Output_range<O, Value_type<I>>(), "");
-      assume(( size(range) <= size(out) ));
+      assume(size(range) <= size(out));
       // FIXME: Overlapping requirements
       
       std_copy(std::begin(range), std::end(range), std::begin(result));
@@ -127,8 +127,8 @@ namespace origin
     {
       static_assert(Input_iterator<Iter>(), "");
       static_assert(Move_writable<Out, Value_type<Iter>>(), "");
-      assert(( is_readable_range(first, last) ));
-      assume(( is_movable_range(result, distance(first, last), *first) ));
+      assert(is_readable_range(first, last));
+      assume(is_movable_range(result, distance(first, last), *first));
       
       return std::copy(first, last, result);
     }
@@ -138,7 +138,7 @@ namespace origin
     {
       static_assert(Input_range<In>(), "");
       static_assert(Move_range<Out, Value_type<In>>(), "");
-      assume(( size(i) <= size(o) ));
+      assume(size(i) <= size(o));
       
       return std_copy(std::begin(i), std::end(i), std::begin(o));
     }

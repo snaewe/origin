@@ -476,33 +476,22 @@ namespace origin
       return Semiregular_concept<T>::check();
     }
     
-    
-    
-  // A Regular type is a Semiregular type that is also equality comparable.
-  template<typename T>
-    struct Regular_concept
-    {
-      static constexpr bool check()
-      {
-        return Semiregular<T>() && Equality_comparable<T>();
-      }
-      
-      static bool test(T a, T b, T c)
-      {
-        return Semiregular_concept<T>::test(a)
-            && Equality_comparable_concept<T>::test(a, b, c);
-      }
-    };
 
-    
-  // Returns true if T is a Regular type.
+
+  // Regular (concept)
+  // Returns true if T is a Regular type. A Regular type is a Semiregular type 
+  // that is also equality comparable.
+  //
+  // FIXME: Isn't this also Default_constructible? I thinks so.
   template<typename T>
     constexpr bool Regular()
     {
-      return Regular_concept<T>::check();
+      return Semiregular<T>() && Equality_comparable<T>();
     }
     
     
+    
+
     
   // Function concepts
   // The following concept classes, predicates, and aliases implement 
