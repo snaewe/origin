@@ -21,6 +21,7 @@ namespace origin
   // std algorithms. They are primiarly used for testing
 
 
+
   // There are a number of algorithm concepts describing common requirements
   // in algorithms.
   //
@@ -219,7 +220,6 @@ namespace origin
     }
 }
 
-
 #include <origin/algorithm/quantifier.hpp>
 #include <origin/algorithm/find.hpp>
 #include <origin/algorithm/count.hpp>
@@ -276,7 +276,7 @@ namespace origin
 
 
     
-  // Equal (random access ranges)
+  // Equal (random access range)
   // This optimization for random access ranges returns true if 
   // size(a) <= size(b) and x == y for each x and y in the ranges a and b, 
   // pairwise.
@@ -318,26 +318,26 @@ namespace origin
   // Equal (range)
   // Returns true if comp(x, y) is true for each x and y in the ranges a and b, 
   // pairwise.
-  template<typename R1, typename R2, typename R>
-    inline auto equal(const R1& a, const R2& b, R comp)
+  template<typename R1, typename R2, typename Rel>
+    inline auto equal(const R1& a, const R2& b, Rel comp)
       -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
     {
-      static_assert(Range_comparable<R1>(), "");
+      static_assert(Range_comparable<R1, R2, Rel>(), "");
 
       return std_equal(std::begin(a), std::end(a), std::begin(b), comp);
     }
 
     
     
-  // Equal (random access ranges)
+  // Equal (random access range)
   // This specialization for random access ranges returns true if 
   // size(a) <= size(b) and comp(x, y) is true for each x and y in the ranges a 
   // and b, pairwise.
-  template<typename R1, typename R2, typename R>
-    inline auto equal(const R1& a, const R2& b, R comp)
+  template<typename R1, typename R2, typename Rel>
+    inline auto equal(const R1& a, const R2& b, Rel comp)
       -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
     {
-      static_assert(Range_comparable<R1>(), "");
+      static_assert(Range_comparable<R1, R2, Rel>(), "");
 
       return size(a) <= size(b)
           && std_equal(std::begin(a), std::end(a), std::begin(b), comp);
@@ -402,29 +402,23 @@ namespace origin
     
     
   // Mismatch (range, relation)
-  template<typename R1, typename R2, typename R>
-    inline auto mismatch(const R1& a, const R2& b, R comp)
+  template<typename R1, typename R2, typename Rel>
+    inline auto mismatch(const R1& a, const R2& b, Rel comp)
       -> std::pair<Iterator_type<R1>, Iterator_type<R2>>
     {
-      static_assert(Range_comparable<R1>(), "");
+      static_assert(Range_comparable<R1, R2, Rel>(), "");
 
       return std_mismatch(std::begin(a), std::end(a), std::begin(b), comp);
     }
 
-
+  
     
-  // Is permutation (impl, counting, all)
-  // Returns true if [first1, last1) is a permutation of  [first2, last2).
-  //
-  // This algorithm works by ensuring that each unique value in [first1, last1)
-  // has the same number of occurrences in [first2, last2). The performance of 
-  // this algorithm is O(n^2). 
-  //
-  // This is the main implementation of is_permutation_count. It should not be
-  // used since it does not optimize the case where the two ranges have equal
-  // subranges.
+  // FIXME: The name equal_rearrangement isn't 
+    
+  // Equal elements (impl)
+  // Returns true if [first1, last1) is a rearrangement of [first2, last2).
   template<typename I1, typename I2>
-    bool is_permutation_counting_all(I1 first1, I1 last1, I2 first2, I2 last2)
+    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Comparable<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
@@ -447,19 +441,37 @@ namespace origin
       }
       return true;
     }
+
     
-  // Is permutation (impl, counting, all)
-  // Returns true if [first1, last1) is a permutation of  [first2, last2).
+
+  // Equal elements
+  // Returns true if [first1, last1) is a rearrangemnt of [first2, last2).
   //
-  // This algorithm works by ensuring that each unique value in [first1, last1)
-  // has the same number of occurrences in [first2, last2). The performance of 
-  // this algorithm is O(n^2). 
-  //
-  // This is the main implementation of is_permutation_count. It should not be
-  // used since it does not optimize the case where the two ranges have equal
-  // subranges.
+  // This is the same as std::is_permutation, but renamed to reflect the
+  // implementaiton strategy. The is_permutation algorithm is a sorting
+  // algorithm.
+  template<typename I1, typename I2>
+    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2)
+    {
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
+
+      // Find where [first1, last1) and [first2, ...) differ. Then, count the 
+      // number of times each element occurs in the remainder of the two 
+      // ranges. Otherwise the two ranges are equal, and we're done.
+      std::tie(first1, first2) = std_mismatch(first1, last1, first2);
+      if(first1 != last1)
+        return equal_elements(first1, last1, first2, last2);
+      return true;
+    }
+    
+
+
+  // Equal elements (relation, impl)
+  // Returns true if [first1, last1) is a rearrangement of [first2, last2).
   template<typename I1, typename I2, typename R>
-    bool is_permutation_counting_all(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
       static_assert(Comparable<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
@@ -485,30 +497,27 @@ namespace origin
 
     
     
-  // Is permutation (impl, counting)
-  // Returns true if [first1, last1) is a permutation of [first2, last2).
+  // Equal elements (relation)
+  // Returns true if [first1, last1) is a rearrangemnt of [first2, last2).
   //
-  // This algorithm works by ensuring that each unique value in [first1, last1)
-  // has the same number of occurrences in [first2, first2 + (last1 - first1)).
-  // The performance of this algorithm is O(n^2).
-  template<typename I1, typename I2>
-    bool is_permutation_counting(I1 first1, I1 last1, I2 first2, I2 last2)
+  // This is the same as std::is_permutation, but renamed to reflect the
+  // implementaiton strategy. The is_permutation algorithm is a sorting
+  // algorithm.
+  template<typename I1, typename I2, typename R>
+    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparable<I1, I, R2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
 
-      // Find where [first1, last1) and [first2, ...) differ. Then, count the 
-      // number of times each element occurs in the remainder of the two 
-      // ranges. Otherwise the two ranges are equal, and we're done.
-      std::tie(first1, first2) = std_mismatch(first1, last1, first2);
+      std::tie(first1, first2) = std_mismatch(first1, last1, first2, comp);
       if(first1 != last1)
-        return is_permutation_counting_all(first1, last1, first2, last2);
+        return equal_elements(first1, last1, first2, last2, comp);
       return true;
     }
-    
-  
-  
+
+
+
   // Forward declarations
   template<typename I> void std_sort(I, I);
 
@@ -533,7 +542,32 @@ namespace origin
     
   
     
-  // Is permutation (sorted)
+  // Is permutation (impl, sorting, relation)
+  // Returns true if the range [first1, last1) is a permutation of the range
+  // [first2, last2). The algorithm copies both input ranges into temporary 
+  // buffers and sorts them. The runtime of this implementation is O(n log n), 
+  // although there are 2n copies and 2 executions of the sort.
+  //
+  // The comp relation is required to be a strict weak ordering. Equality is 
+  // checked using the symmetric complement of comp. Note that the Comparable
+  // requirement below covers the case where equal is used with its symmetric
+  // complement.
+  template<typename I1, typename I2, typename R>
+    bool is_permutation_sorting(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    {
+      static_assert(Sortable<I1, R>(), "");
+      static_assert(Sortable<I2, R>(), "");
+      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(strict_weak_ordering(comp));
+      
+      std_sort(first1, last1);
+      std_sort(first2, last2);
+      return std_equal(first1, last1, first2, symmetric_complement<R>{comp});
+    }
+
+
+
+  // Is permutation
   // Returns true if [first1, last1) is a permutation of 
   // [first2, first2 + (last1 - first1)). 
   //
@@ -549,8 +583,8 @@ namespace origin
                   Totally_ordered<Value_type<I2>>(),
                   bool>
     {
-      static_assert(Forward_iterator<I1>(), "");
-      static_assert(Forward_iterator<I2>(), "");
+      static_assert(Sortable<I1>(), "");
+      static_assert(Sortable<I2>(), "");
       static_assert(Comparable<I1, I2>(), "");
 
       auto n = std_distance(first1, last1);
@@ -569,7 +603,43 @@ namespace origin
 
     
     
-  // Is permutation (counted)
+  // Is permutation (relation)
+  // Returns true if [first1, last1) is a permutation of 
+  // [first2, first2 + (last1 - first1)). 
+  //
+  // This specialization is valid for Copyable value types. If there is
+  // sufficient memory, the algorithm will copy and sort both ranges in 
+  // O(log n) time. If not, the property is checked by counted the number of
+  // occurrences of each value in O(n^2) time.
+  template<typename I1, typename I2, typename R>
+    auto std_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
+      -> Requires<Copyable<Value_type<I1>>() &&
+                  Copyable<Value_type<I2>>() &&
+                  Totally_ordered<Value_type<I1>>() &&
+                  Totally_ordered<Value_type<I2>>(),
+                  bool>
+    {
+      static_assert(Sortable<I1, R>(), "");
+      static_assert(Sortable<I2, R>(), "");
+      static_assert(Comparable<I1, I2, R>(), "");
+
+      auto n = std_distance(first1, last1);
+      temporary_buffer<Value_type<I1>> b1(first1, n);
+      temporary_buffer<Value_type<I2>> b2(first2, n);
+      
+      // If allocated enough space, use the efficient implementation. 
+      // Otherwise, use the less efficient implementation.
+      if(b1 && b2) {
+        return is_permutation_sorting(b1.begin(), b1.end(), b2.begin(), b2.end(), comp);
+      } else {
+        I2 last2 = std_next(first2, n);
+        return is_permutation_counting(first1, last1, first2, last2, comp);
+      }
+    }
+
+
+
+  // Is permutation (fallback)
   // Returns true if, for a range a and b, a is a permutation of b.
   //
   // This specialization is valid when the value types cannot be copied. It
@@ -582,34 +652,66 @@ namespace origin
                     Totally_ordered<Value_type<I2>>()),
                   bool>
     {
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1));
+      assert(strict_weak_ordering(comp));
+
       I2 last2 = std_next(first2, distance(first1, last1));
       return is_permutation_counting(first1, last1, first2, last2);
     }
     
     
     
+  // Is permutation (fallback, range)
+  // Returns true if, for a range a and b, a is a permutation of b.
+  //
+  // This specialization is valid when the value types cannot be copied. It
+  // counts the number of occurrences of each value in O(n^2) time.
+  //
+  // The comp relation must be a strict weak ordering. Equality is counted 
+  // using the symmetric complement of comp.
+  template<typename I1, typename I2, typename R>
+    inline auto std_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
+      -> Requires<!(Copyable<Value_type<I1>>() &&
+                    Copyable<Value_type<I2>>() &&
+                    Totally_ordered<Value_type<I1>>() &&
+                    Totally_ordered<Value_type<I2>>()),
+                  bool>
+    {
+      static_assert(Comparable<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1));
+      assert(strict_weak_ordering(comp));
+
+      I2 last2 = std_next(first2, distance(first1, last1));
+      return is_permutation_counting(first1, last1, first2, last2, 
+                                     symmetric_complement<R>{comp});
+    }
+
+
+
+  // Is permutation (range)
+  // Returns true if a is a permutation of b.
+  //
+  // Note that the minimum requirement for is_permutation is Comparable,
+  // but the the optiized version requires Sortable, with the weaker 
+  // requirements acting as a fallback.
   template<typename R1, typename R2>
     inline bool is_permutation(const R1& a, const R2& b)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Range_comparable<R1, R2>(), "");
       assert(size(a) == size(b));
 
       return std_is_permutation(std::begin(a), std::end(a), std::begin(b));
     }
 
-  // Generalized version
-  template<typename I1, typename I2, typename Pred>
-    inline bool std_is_permutation(I1 first1, I1 last1, I2 first2, Pred pred)
-    {
-      return std::is_permutation(first1, last1, first2, pred);
-    }
+  
 
-  template<typename R1, typename R2, typename Pred>
-    inline bool is_permutation(const R1& a, const R2& b, Pred pred)
+  template<typename R1, typename R2, typename Rel>
+    inline bool is_permutation(const R1& a, const R2& b, Rel comp)
     {
-      static_assert(Input_range<R1>(), "");
-      static_assert(Input_range<R2>(), "");
+      static_assert(Range_comparable<R1, R2, Rel>(), "");
 
       return std_is_permutation(a, b, pred);
     }

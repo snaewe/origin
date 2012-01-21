@@ -211,6 +211,75 @@ namespace origin
 
     
     
+  // Find next
+  // Returns the first iterator i in [first + 1, last) where *i == value or
+  // last if no such iterator exists or first == last.
+  //
+  // Note that there is no corresponding range version of this function. The
+  // operation is only intended to be applied to iterators.
+  template<typename I, typename T>
+    inline I find_next(I first, I last, const T& value)
+    {
+      static_assert(Value_searchable<I, T>(), "");
+      assert(( is_readable_range(first, last) ));
+      
+      if(first != last)
+        return std_find(std_next(first), last, value);
+      else
+        return last;
+    }
+
+
+
+  // Find next
+  // Returns the first iterator i in [first + 1, last) where comp(*i, value) is
+  // or true last if no such iterator exists or first == last.
+  template<typename I, typename T, typename R>
+    inline I find_next(I first, I last, const T& value, R comp)
+    {
+      static_assert(Value_searchable<I, T, R>(), "");
+      assert(( is_readable_range(first, last) ));
+      
+      if(first != last)
+        return std_find(std_next(first), last, value, comp);
+      else
+        return last;
+    }
+    
+      
+  
+  // Find nth
+  // Return the nth iterator i in [first, last) where *i == value or last if
+  // there are fewer than n elements equal to value.
+  template<typename I, typename T, typename R>
+    inline I find_nth(I first, I last, Distance_type<I> n, const T& value, R comp)
+    {
+      static_assert(Value_searchable<I, T, R>(), "");
+      assert(( is_readable_range(first, last) ));
+
+      while(first != last && n != 0) {
+        if(comp(*first, value))
+          --n;
+        ++first;
+      }
+      return first;
+    }
+
+
+
+  // Find nth (range)
+  // Return an iterator to the nth element in r that is equal to value.
+  template<typename R, typename T, typename Rel>
+    inline auto find_nth(R&& range, Distance_type<R> n, T const& value, Rel comp)
+      -> decltype(std::begin(range))
+    {
+      static_assert(Range_value_searchable<Unqualified<R>, T, Rel>(), "");
+      
+      return find_nth(std::begin(range), std::end(range), n, value, comp);
+    }
+    
+      
+        
   // Find if
   // Returns the first iterator i in [first, last) where pred(*i) is true or
   // last if no such iterator exists.
@@ -286,28 +355,8 @@ namespace origin
       return std_find_if_not(std::begin(range), std::end(range), pred);
     }
   
-
-
-  // Find next
-  // Returns the first iterator i in [first + 1, last) where *i == value or
-  // last if no such iterator exists or first == last.
-  //
-  // Note that there is no corresponding range version of this function. The
-  // operation is only intended to be applied to iterators.
-  template<typename I, typename T>
-    inline I find_next(I first, I last, const T& value)
-    {
-      static_assert(Value_searchable<I, T>(), "");
-      assert(( is_readable_range(first, last) ));
-      
-      if(first != last)
-        return std_find(std_next(first), last, value);
-      else
-        return last;
-    }
-
-
-
+     
+        
   // Find next if
   // Returns the first element in [first + 1, last) where pred(*i) is true or
   // last if no iterator exists or first == last.
@@ -327,38 +376,6 @@ namespace origin
     }
 
 
-
-  // Find nth
-  // Return the nth iterator i in [first, last) where *i == value or last if
-  // there are fewer than n elements equal to value.
-  template<typename I, typename T>
-    inline I find_nth(I first, I last, Distance_type<I> n, const T& value)
-    {
-      static_assert(Value_searchable<I>(), "");
-      assert(( is_readable_range(first, last) ));
-
-      while(first != last && n != 0) {
-        if(*first == value)
-          --n;
-        ++first;
-      }
-      return first;
-    }
-
-
-
-  // Find nth (range)
-  // Return an iterator to the nth element in r that is equal to value.
-  template<typename R, typename T>
-    inline auto find_nth(R&& range, Distance_type<R> n, T const& value)
-      -> decltype(std::begin(range))
-    {
-      static_assert(Range_value_searchable<Unqualified<R>, T>(), "");
-      
-      return find_nth(std::begin(range), std::end(range), n, value);
-    }
-    
-    
   
   // Find nth if
   // Return the nth iterator i in [first, last) where pred(*i) is true or last 
@@ -393,6 +410,10 @@ namespace origin
     
 
     
+  // TODO: The following are Comparable algorithms. Maybe they belong with
+  // equal and mismatch -- even though they're find algorithms.
+  
+  
     
   // Find first in
   // Returns an iterator i in [first1, last1) where any_equal(first2, last, *i)
