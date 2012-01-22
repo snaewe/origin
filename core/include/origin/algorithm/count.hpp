@@ -44,12 +44,13 @@ namespace origin
   // in [first2, last2). This would be analogous to find_first_in.
 
 
+
   // Count
   // Returns the number of elements x in [first, last) where x == value.
   template<typename I, typename T>
     inline Distance_type<I> std_count(I first, I last, const T& value)
     {
-      static_assert(Value_searchable<I, T>(), "");
+      static_assert(Searchable<I, T>(), "");
       assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
@@ -68,7 +69,7 @@ namespace origin
   template<typename I, typename T, typename R>
     inline Distance_type<I> std_count(I first, I last, const T& value, R comp)
     {
-      static_assert(Value_searchable<I, T, R>(), "");
+      static_assert(Searchable<I, T, R>(), "");
       assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
@@ -87,7 +88,7 @@ namespace origin
   template<typename R, typename T>
     inline Distance_type<R> count(const R& range, const T& value)
     {
-      static_assert(Range_value_searchable<R>(), "");
+      static_assert(Range_searchable<R>(), "");
 
       return std_count(std::begin(range), std::end(range), value);
     }
@@ -99,7 +100,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline Distance_type<R> count(const R& range, const T& value, Rel comp)
     {
-      static_assert(Range_value_searchable<R, T, Rel>(), "");
+      static_assert(Range_searchable<R, T, Rel>(), "");
 
       return std_count(std::begin(range), std::end(range), value, comp);
     }
@@ -111,7 +112,7 @@ namespace origin
   template<typename I, typename T>
     inline Distance_type<I> count_not_equal(I first, I last, const T& value)
     {
-      static_assert(Value_searchable<I, T>(), "");
+      static_assert(Searchable<I, T>(), "");
       assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
@@ -130,7 +131,7 @@ namespace origin
   template<typename I, typename T, typename R>
     inline Distance_type<I> count_not_equal(I first, I last, const T& value, R comp)
     {
-      static_assert(Value_searchable<I, T, R>(), "");
+      static_assert(Searchable<I, T, R>(), "");
       assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
@@ -149,7 +150,7 @@ namespace origin
   template<typename R, typename T>
     inline Distance_type<R> count_not_equal(const R& range, const T& value)
     {
-      static_assert(Range_value_searchable<R, T>(), "");
+      static_assert(Range_searchable<R, T>(), "");
       
       return count_not_equal(std::begin(range), std::end(range), value);
     }
@@ -161,7 +162,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline Distance_type<R> count_not_equal(const R& range, const T& value, Rel comp)
     {
-      static_assert(Range_value_searchable<R, T, Rel>(), "");
+      static_assert(Range_searchable<R, T, Rel>(), "");
       
       return count_not_equal(std::begin(range), std::end(range), value, comp);
     }
@@ -173,7 +174,7 @@ namespace origin
   template<typename I, typename P>
     inline Distance_type<I> std_count_if(I first, I last, P pred)
     {
-      static_assert(Searchable<I, P>(), "");
+      static_assert(Queryable<I, P>(), "");
       assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
@@ -192,7 +193,7 @@ namespace origin
   template<typename R, typename P>
     inline Distance_type<R> count_if(R const& range, P pred)
     {
-      static_assert(Range_searchable<R, P>(), "");
+      static_assert(Range_queryable<R, P>(), "");
 
       return std_count_if(std::begin(range), std::end(range), pred);
     }
@@ -204,7 +205,7 @@ namespace origin
   template<typename I, typename P>
     inline Distance_type<I> count_if_not(I first, I last, P pred)
     {
-      static_assert(Searchable<I, P>(), "");
+      static_assert(Queryable<I, P>(), "");
       assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
@@ -223,7 +224,7 @@ namespace origin
   template<typename R, typename P>
     inline Distance_type<R> count_if_not(const R& range, P pred)
     {
-      static_assert(Range_searchable<R, P>(), "");
+      static_assert(Range_queryable<R, P>(), "");
       
       return count_if_not(std::begin(range), std::end(range), pred);
     }
@@ -235,7 +236,7 @@ namespace origin
   template<typename I, typename T>
     inline Distance_type<I> count_n(I first, Distance_type<I> n, const T& value)
     {
-      static_assert(Value_searchable<I, T>(), "");
+      static_assert(Searchable<I, T>(), "");
       assert(is_readable_range(first, n));
 
       Distance_type<I> c = 0;
@@ -256,7 +257,7 @@ namespace origin
   template<typename I, typename P>
     inline Distance_type<I> count_n_if(I first, Distance_type<I> n, P pred)
     {
-      static_assert(Searchable<I, P>(), "");
+      static_assert(Queryable<I, P>(), "");
       assert(is_readable_range(first, n));
 
       Distance_type<I> c = 0;

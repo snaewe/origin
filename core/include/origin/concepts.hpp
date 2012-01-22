@@ -391,52 +391,32 @@ namespace origin
     
     
     
-  // The Movable concept...
-  template<typename T>
-    struct Movable_concept
-    {
-      static constexpr bool check()
-      {
-        return Move_constructible<T>() && Move_assignable<T>();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return true;
-      }
-    };
-    
-  // Return true if T is movable.
+  // Movable (concept)
+  // Return true if T is movable. A movable type is both destructible,
+  // move constructible and mvoe assignable. Note that movable types may not be
+  // copyable.
   template<typename T>
     constexpr bool Movable()
     {
-      return Movable_concept<T>::check();
+      return Destructible<T>() && Move_constructible<T>() && Move_assignable<T>();
     };
     
   
+  
+  // FIXME: The Copyable, Semiregular, and Regular concepts need to be
+  // Re-aligned. Copyable should be the new Semiregular. Semiregular should
+  // be the new Regular (copyable and equality comparable). Regular should be
+  // semiregular and totally ordered.
+  
+  
     
-  // The Copyable concept
-  template<typename T>
-    struct Copyable_concept
-    {
-      static constexpr bool check()
-      {
-        return Copy_constructible<T>() && Copy_assignable<T>();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return false;
-      }
-    };
-    
-  // Return true if T is copyabe.
+  // Movable (concept).
+  // Return true if T is copyable. A copyable type is both copy constructible
+  // and assignable. Note that copyable types are also inherently Movable.
   template<typename T>
     constexpr bool Copyable()
     {
-      return Copyable_concept<T>::check();
+      return Movable<T>() && Copy_constructible<T>() && Copy_assignable<T>();
     }
     
     
@@ -448,32 +428,10 @@ namespace origin
   // Semiregular types are not required to be default constructible. That
   // requirement invalidates a number of useful adaptor types (e.g., iterator 
   // and range adaptors).
-  
-  // Specification of the semiregular concept.
-  template<typename T>
-    struct Semiregular_concept
-    {
-      static constexpr bool check()
-      {
-        return Destructible<T>()  // FIXME: Nothrow_destructible
-            && Move_constructible<T>()
-            && Move_assignable<T>()
-            && Copy_constructible<T>()
-            && Copy_assignable<T>();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return true;
-      }
-    };
-
-  // Returns true if T is a Semiregular type.
   template<typename T>
     constexpr bool Semiregular()
     {
-      return Semiregular_concept<T>::check();
+      return Copyable<T>();
     }
     
 

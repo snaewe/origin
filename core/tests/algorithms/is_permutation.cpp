@@ -17,15 +17,7 @@ using namespace origin;
 
 int main()
 {
-  {
-    vector<int> a = {1, 2, 3};
-    vector<int> b = {3, 2, 1};
-    
-    assert(is_permutation(a, b));   // Uses sorting version
-  }
-  
-  {
-    vector<complex<double>> a = { {0, 0}, {1, 1} };
-    assert(is_permutation(a, a));
-  }
+  vector<int> a = {1, 2, 3};
+  vector<int> b = {3, 2, 1};
+  assert(is_permutation(a, b));
 }

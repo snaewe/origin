@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include <origin/memory.hpp>
+#include <origin/functional.hpp>
 #include <origin/iterator.hpp>
 #include <origin/range.hpp>
 
@@ -21,42 +22,40 @@ namespace origin
   // std algorithms. They are primiarly used for testing
 
 
-
-  // There are a number of algorithm concepts describing common requirements
-  // in algorithms.
-  //
-  //    Searchable
-  //    Value_searchable
-  //    Range_searchable
-  //    Value_searchable_range
-
-  // Returns true if the input iterator I can be searched using the predicate P.
+  // Queryable (concept)
+  // A query is an algorithm that iterates over the elements of a range,
+  // searching for one or more that satisfy some property. The property is
+  // given as a unary predicate.
   template<typename I, typename P>
-    constexpr bool Searchable()
+    constexpr bool Queryable()
     {
       return Input_iterator<I>() && Predicate<P, Value_type<I>>();
     }
 
-  // Returns true if the input range R can be searched using the predicate P.
+  // Range queryable (concept)
+  // A range is queryable if its iterator type is queryable.
   template<typename R, typename P>
-    constexpr bool Range_searchable()
+    constexpr bool Range_queryable()
     {
-      return Input_range<R>() && Predicate<P, Value_type<R>>();
+      return Input_range<R>() && Queryable<Iterator_type<R>, P>();
     }
 
      
 
-  // Value searchable (concept)
-  // An iterator is value-searchable if it can be searched for a value of a
-  // some type. There are three forms of the concepts:
+  // Searchable (concept)
+  // A search is an algorithm that iterates over the elements of a range,
+  // searching for one or more that is equal to a value type. The value type
+  // may the same as or different than as the iterator's, and the equality
+  // comparison may be generalized to a relation. There are three overloads of
+  // this concept.
   //
-  //    Value_searchable<I>       Can be searched for a Value_type<I> value
-  //    Value_searchable<I, T>    Can be searched for a T value
-  //    Value_searchable<I, T, R> Can be searched for a T value using a relation R
-     
-  // Value searchable for a type T.
+  //    Searchable<I>       Can be searched for a Value_type<I> value
+  //    Searchable<I, T>    Can be searched for a T value
+  //    Searchable<I, T, R> Can be searched for a T value using a relation R
+
+  // Searchable<I, T, R> implementation.
   template<typename I, typename T, typename R>
-    struct Value_searchable_concept
+    struct Searchable_concept
     {
       static constexpr bool check()
       {
@@ -64,9 +63,9 @@ namespace origin
       }
     };
     
-  // Value searchable for a type T,
+  // Searchable<I, T> implementation.
   template<typename I, typename T>
-    struct Value_searchable_concept<I, T, default_t>
+    struct Searchable_concept<I, T, default_t>
     {
       static constexpr bool check()
       {
@@ -74,9 +73,9 @@ namespace origin
       }
     };
 
-  // Value searchable with its own value type.
+  // Searchable<I> implementation.
   template<typename I>
-    struct Value_searchable_concept<I, default_t, default_t>
+    struct Searchable_concept<I, default_t, default_t>
     {
       static constexpr bool check()
       {
@@ -84,71 +83,41 @@ namespace origin
       }
     };
      
-  // Returns true if the input iterator can be searched for a value of its own
-  // value type or a value of another type T.
+  // Returns true if the iterator can be used for searching.
   template<typename I, typename T = default_t, typename R = default_t>
-    constexpr bool Value_searchable()
+    constexpr bool Searchable()
     {
-      return Value_searchable_concept<I, T, R>::check();
+      return Searchable_concept<I, T, R>::check();
     }
   
   
   
-  // Value searchable range (concept)
-  // A range is value searchable if it can be searched for a value of some
-  // type. There are three forms of this concept:
+  // Range seachable (concept)
+  // A range is searchable if its underlying iterator type is searchable. Like 
+  // the searchable concept, there are three forms of this concept.
   //
-  //    Value_searchable_range<R>        Can be searched for a Value_type<R> value
-  //    Value_searchabel_range<R, T>     Can be searched for a T value
-  //    Value_searchabel_range<R, T, Rel> Can be searched for a T value using a relation R
-  
-  // Value searchable for a type T using a relation Rel.
-  template<typename R, typename T, typename Rel>
-    struct Range_value_searchable_concept
-    {
-      static constexpr bool check()
-      {
-        return Input_range<R>() && Relation<Rel, Value_type<R>, T>();
-      }
-    };
-
-  // Value searchable for a type T.
-  template<typename R, typename T>
-    struct Range_value_searchable_concept<R, T, default_t>
-    {
-      static constexpr bool check()
-      {
-        return Input_range<R>() && Equality_comparable<Value_type<R>, T>();
-      }
-    };
-
-  // Value searchable with its own value type.
-  template<typename R>
-    struct Range_value_searchable_concept<R, default_t, default_t>
-    {
-      static constexpr bool check()
-      {
-        return Input_range<R>() && Equality_comparable<Value_type<R>>();
-      }
-    };
+  //    Range_searchable<R>         Can be searched for a Value_type<R> value
+  //    Range_searchable<R, T>      Can be searched for a T value
+  //    Range_searchable<R, T, Rel> Can be searched for a T value using a relation R
   
   // Returns true if the input iterator can be searched for a value of type T.
   template<typename R, typename T = default_t, typename Rel = default_t>
-    constexpr bool Range_value_searchable()
+    constexpr bool Range_searchable()
     {
-      return Range_value_searchable_concept<R, T, Rel>::check();
+      return Input_range<R>() && Searchable<Iterator_type<R>, T, Rel>();
     }
 
   
   
   // Comparable iterators (concept)
-  // Two iterator are comparable if their values can be compared for equality 
-  // or with respect to some relation. Both iterators must be input iterators.
-  // Note that the second iterator (I2) is only required to be weak input
-  // iterator. Any algorithm requiring this conept may need to strengthen the
-  // requirements on the 2nd argument (see find_adjacent and find_first_in).
+  // A comparison algorithm compares the elements in two different ranges for 
+  // equality. The comparison can also be generalized to a relation. There are
+  // two forms of this concept:
+  //
+  //    Comparable<I1, I2>    Compare the elements of I1 and I2 for equality
+  //    Comparable<I1, I2, R> Compare the elements of I1 and I2 using the relation R
   
-  // Comparable with respect to a relation.
+  // Comparable<I1, I2, R> implementation
   template<typename I1, typename I2, typename R>
     struct Comparable_concept
     {
@@ -160,8 +129,7 @@ namespace origin
       }
     };
   
-  // Comparable for equality. Note that this is equivalent to Input_iterator<I2> 
-  // and Value_searchable<I1, Value_type<I2>>.
+  // Comparable<I1, I2> implementation
   template<typename I1, typename I2>
     struct Comparable_concept<I1, I2, default_t>
     {
@@ -173,8 +141,7 @@ namespace origin
       }
     };
   
-  // Returns true if the iterators values of the two iterators can be
-  // compared.
+  // Returns true I1 and I2 can be compared.
   template<typename I1, typename I2, typename R = default_t>
     constexpr bool Comparable()
     {
@@ -184,47 +151,147 @@ namespace origin
     
 
   // Comparable ranges (concept)
-  // Two ranges are comparable if they are both input ranges and their values
-  // can be compared for equality or using some relation. 
-  
-  // Comparable using a relation.
-  template<typename R1, typename R2, typename R>
-    struct Range_comparable_concept
-    {
-      static constexpr bool check()
-      {
-        return Input_range<R1>() 
-            && Input_range<R2>()
-            && Relation<R, Value_type<R1>, Value_type<R2>>();
-      }
-    };
-
-  // Comparable for equality.
-  template<typename R1, typename R2>
-    struct Range_comparable_concept<R1, R2, default_t>
-    {
-      static constexpr bool check()
-      {
-        return Input_range<R1>() 
-            && Input_range<R2>()
-            && Equality_comparable<Value_type<R1>, Value_type<R2>>();
-      }
-    };
+  // Two ranges are comparable if their iterators can be compared. Like the
+  // Comparable concept, there are two forms of this concept:
+  //
+  //    Range_comparable<R1, R2>      Compare the elements of R1 and R2 for equality
+  //    Range_comparable<R1, R2, Rel> Compare the elements of R1 and R2 using Rel
   
   // Returns true if R1 and R2 are ranges that can be compared using value
   // equality or a relation R.
-  template<typename R1, typename R2, typename R = default_t>
+  template<typename R1, typename R2, typename Rel = default_t>
     constexpr bool Range_comparable()
     {
-      return Range_comparable_concept<R1, R2, R>::check();
+      return Input_range<R1>() 
+          && Input_range<R2>() 
+          && Comparable<Iterator_type<R1>, Iterator_type<R2>, Rel>();
+    }
+
+
+
+  // Mergeable
+  // The mergeable concept describes common requirements on the family of
+  // (non-inplace) merge and set operations. There are two mergeable concepts:
+  // - Mergeable<Iter1, Iter2, Out>
+  // - Mergeable<Iter1, Iter2, Out, R>
+  // The first requires the value types of Iter1 and Iter2 to be totally
+  // ordered. The second is generalized over a relation.
+  
+  // This specialization implements the requirements for the generalized
+  // version.
+  template<typename Iter1, typename Iter2, typename Out, typename R>
+    struct Mergeable_concept
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<Iter1>() && 
+               Input_iterator<Iter2>() &&
+               Weakly_incrementable<Out>() &&
+               Writable<Out, Value_type<Iter1>>() &&
+               Writable<Out, Value_type<Iter2>>() &&
+               Relation<R, Value_type<Iter1>, Value_type<Iter2>>();
+      }
+    };
+
+  // This specialization implements the requirements for algorithms that 
+  // directly use the < operator.
+  template<typename Iter1, typename Iter2, typename Out>
+    struct Mergeable_concept<Iter1, Iter2, Out, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Input_iterator<Iter1>() && 
+               Input_iterator<Iter2>() &&
+               Weakly_incrementable<Out>() &&
+               Writable<Out, Value_type<Iter1>>() &&
+               Writable<Out, Value_type<Iter2>>() &&
+               Totally_ordered<Value_type<Iter1>, Value_type<Iter2>>();
+      }
+    };
+    
+  // Returns true when Iter1 and Iter2 can be merged into Out.
+  template<typename Iter1, typename Iter2, typename Out, typename R = default_t>
+    constexpr bool Mergeable()
+    {
+      return Mergeable_concept<Iter1, Iter2, Out, R>::check();
+    }
+
+
+
+  // Sortable
+  // The Sortable concept describes the requirements of algorithms that permute
+  // ranges sequences in some sorted order. There are two:
+  //
+  //    Sortable<I>
+  //    Sortable<I, R>
+  
+  // Requirements for the generalized overload.
+  template<typename I, typename R>
+    struct Sortable_concept
+    {
+      static constexpr bool check()
+      {
+        return Permutable_iterator<I>() && Relation<R, Value_type<I>>();
+      }
+    };
+    
+  // Requirements using operator <.
+  template<typename I>
+    struct Sortable_concept<I, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Permutable_iterator<I>() && Totally_ordered<Value_type<I>>();
+      }
+    };
+    
+  // Returns true if Iter is sortable.
+  template<typename I, typename R = default_t>
+    constexpr bool Sortable()
+    {
+      return Sortable_concept<I, R>::check();
+    }
+
+
+
+  // Range sortable
+  // The range sortable concept describes common requirements for sorting
+  // iterator ranges. There are two forms of this concept:
+  //
+  //    Range_sortable<R>
+  //    Range_sortable<R, Rel>
+
+  // Requirements for the generalized overload.
+  template<typename R, typename Rel>
+    struct Range_sortable_concept
+    {
+      static constexpr bool check()
+      {
+        return Permutable_range<R>() && Relation<Rel, Value_type<R>>();
+      }
+    };
+    
+  // Requirements using operator <.
+  template<typename R>
+    struct Range_sortable_concept<R, default_t>
+    {
+      static constexpr bool check()
+      {
+        return Permutable_range<R>() && Totally_ordered<Value_type<R>>();
+      }
+    };
+    
+  // Returns true if R is a sortable range.
+  template<typename R, typename Rel = default_t>
+    constexpr bool Range_sortable()
+    {
+      return Range_sortable_concept<R, Rel>::check();
     }
 }
 
 #include <origin/algorithm/quantifier.hpp>
 #include <origin/algorithm/find.hpp>
 #include <origin/algorithm/count.hpp>
-
-#include <origin/algorithm/combination.hpp>
 
 namespace origin 
 {
@@ -413,12 +480,10 @@ namespace origin
 
   
     
-  // FIXME: The name equal_rearrangement isn't 
-    
   // Equal elements (impl)
   // Returns true if [first1, last1) is a rearrangement of [first2, last2).
   template<typename I1, typename I2>
-    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2)
+    bool equal_elements_impl(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Comparable<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
@@ -444,6 +509,36 @@ namespace origin
 
     
 
+  // Equal elements (relation, impl)
+  // Returns true if [first1, last1) is a rearrangement of [first2, last2).
+  template<typename I1, typename I2, typename R>
+    bool equal_elements_impl(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    {
+      static_assert(Comparable<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+      assume(is_equivalence_relation(comp));
+
+      for(I1 i = first1; i != last1; ++i) {
+        // Don't recount the number of times *i appears
+        if(some_equal(first1, i, *i, comp))
+          continue;
+
+        // Count the number of times *i appears in [first2, first2 + n). It
+        // needs to be the same count as [first1, last1). If not, then the
+        // ranges are not permutations.
+        auto c = count_equal(first2, last2, *i, comp);
+        if(c == 0)
+          return false;
+        else if(count_equal(next(i), last1, *i, comp) + 1 != c)
+          // Start at the next i since we already know that *i == *i.
+          return false;
+      }
+      return true;
+    }    
+
+
+
   // Equal elements
   // Returns true if [first1, last1) is a rearrangemnt of [first2, last2).
   //
@@ -466,36 +561,7 @@ namespace origin
       return true;
     }
     
-
-
-  // Equal elements (relation, impl)
-  // Returns true if [first1, last1) is a rearrangement of [first2, last2).
-  template<typename I1, typename I2, typename R>
-    bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
-    {
-      static_assert(Comparable<I1, I2, R>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
-
-      for(I1 i = first1; i != last1; ++i) {
-        // Don't recount the number of times *i appears
-        if(some_equal(first1, i, *i, comp))
-          continue;
-
-        // Count the number of times *i appears in [first2, first2 + n). It
-        // needs to be the same count as [first1, last1). If not, then the
-        // ranges are not permutations.
-        auto c = count_equal(first2, last2, *i, comp);
-        if(c == 0)
-          return false;
-        else if(count_equal(next(i), last1, *i, comp) + 1 != c)
-          // Start at the next i since we already know that *i == *i.
-          return false;
-      }
-      return true;
-    }    
-
-    
+            
     
   // Equal elements (relation)
   // Returns true if [first1, last1) is a rearrangemnt of [first2, last2).
@@ -506,9 +572,10 @@ namespace origin
   template<typename I1, typename I2, typename R>
     bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Comparable<I1, I, R2>(), "");
+      static_assert(Comparable<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
+      assume(is_equivalence_relation(comp));
 
       std::tie(first1, first2) = std_mismatch(first1, last1, first2, comp);
       if(first1 != last1)
@@ -516,291 +583,173 @@ namespace origin
       return true;
     }
 
-
-
-  // Forward declarations
-  template<typename I> void std_sort(I, I);
-
   
-  
-  // Is permutation (impl, sorting)
-  // Returns true if the range [first1, last1) is a permutation of the range
-  // [first2, last2). The algorithm copies both input ranges into temporary 
-  // buffers and sorts them. The runtime of this implementation is O(n log n), 
-  // although there are 2n copies and 2 executions of the sort.
-  template<typename I1, typename I2>
-    bool is_permutation_sorting(I1 first1, I1 last1, I2 first2, I2 last2)
-    {
-      static_assert(Sortable<I1>(), "");
-      static_assert(Sortable<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
-      
-      std_sort(first1, last1);
-      std_sort(first2, last2);
-      return std_equal(first1, last1, first2);
-    }
-    
-  
-    
-  // Is permutation (impl, sorting, relation)
-  // Returns true if the range [first1, last1) is a permutation of the range
-  // [first2, last2). The algorithm copies both input ranges into temporary 
-  // buffers and sorts them. The runtime of this implementation is O(n log n), 
-  // although there are 2n copies and 2 executions of the sort.
-  //
-  // The comp relation is required to be a strict weak ordering. Equality is 
-  // checked using the symmetric complement of comp. Note that the Comparable
-  // requirement below covers the case where equal is used with its symmetric
-  // complement.
-  template<typename I1, typename I2, typename R>
-    bool is_permutation_sorting(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
-    {
-      static_assert(Sortable<I1, R>(), "");
-      static_assert(Sortable<I2, R>(), "");
-      static_assert(Comparable<I1, I2, R>(), "");
-      static_assert(strict_weak_ordering(comp));
-      
-      std_sort(first1, last1);
-      std_sort(first2, last2);
-      return std_equal(first1, last1, first2, symmetric_complement<R>{comp});
-    }
-
-
-
-  // Is permutation
-  // Returns true if [first1, last1) is a permutation of 
-  // [first2, first2 + (last1 - first1)). 
-  //
-  // This specialization is valid for Copyable value types. If there is
-  // sufficient memory, the algorithm will copy and sort both ranges in 
-  // O(log n) time. If not, the property is checked by counted the number of
-  // occurrences of each value in O(n^2) time.
-  template<typename I1, typename I2>
-    auto std_is_permutation(I1 first1, I1 last1, I2 first2)
-      -> Requires<Copyable<Value_type<I1>>() &&
-                  Copyable<Value_type<I2>>() &&
-                  Totally_ordered<Value_type<I1>>() &&
-                  Totally_ordered<Value_type<I2>>(),
-                  bool>
-    {
-      static_assert(Sortable<I1>(), "");
-      static_assert(Sortable<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
-
-      auto n = std_distance(first1, last1);
-      temporary_buffer<Value_type<I1>> b1(first1, n);
-      temporary_buffer<Value_type<I2>> b2(first2, n);
-      
-      // If allocated enough space, use the efficient implementation. 
-      // Otherwise, use the less efficient implementation.
-      if(b1 && b2) {
-        return is_permutation_sorting(b1.begin(), b1.end(), b2.begin(), b2.end());
-      } else {
-        I2 last2 = std_next(first2, n);
-        return is_permutation_counting(first1, last1, first2, last2);
-      }
-    }
-
-    
-    
-  // Is permutation (relation)
-  // Returns true if [first1, last1) is a permutation of 
-  // [first2, first2 + (last1 - first1)). 
-  //
-  // This specialization is valid for Copyable value types. If there is
-  // sufficient memory, the algorithm will copy and sort both ranges in 
-  // O(log n) time. If not, the property is checked by counted the number of
-  // occurrences of each value in O(n^2) time.
-  template<typename I1, typename I2, typename R>
-    auto std_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
-      -> Requires<Copyable<Value_type<I1>>() &&
-                  Copyable<Value_type<I2>>() &&
-                  Totally_ordered<Value_type<I1>>() &&
-                  Totally_ordered<Value_type<I2>>(),
-                  bool>
-    {
-      static_assert(Sortable<I1, R>(), "");
-      static_assert(Sortable<I2, R>(), "");
-      static_assert(Comparable<I1, I2, R>(), "");
-
-      auto n = std_distance(first1, last1);
-      temporary_buffer<Value_type<I1>> b1(first1, n);
-      temporary_buffer<Value_type<I2>> b2(first2, n);
-      
-      // If allocated enough space, use the efficient implementation. 
-      // Otherwise, use the less efficient implementation.
-      if(b1 && b2) {
-        return is_permutation_sorting(b1.begin(), b1.end(), b2.begin(), b2.end(), comp);
-      } else {
-        I2 last2 = std_next(first2, n);
-        return is_permutation_counting(first1, last1, first2, last2, comp);
-      }
-    }
-
-
-
-  // Is permutation (fallback)
-  // Returns true if, for a range a and b, a is a permutation of b.
-  //
-  // This specialization is valid when the value types cannot be copied. It
-  // counts the number of occurrences of each value in O(n^2) time.
-  template<typename I1, typename I2>
-    inline auto std_is_permutation(I1 first1, I1 last1, I2 first2)
-      -> Requires<!(Copyable<Value_type<I1>>() &&
-                    Copyable<Value_type<I2>>() &&
-                    Totally_ordered<Value_type<I1>>() &&
-                    Totally_ordered<Value_type<I2>>()),
-                  bool>
-    {
-      static_assert(Comparable<I1, I2>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1));
-      assert(strict_weak_ordering(comp));
-
-      I2 last2 = std_next(first2, distance(first1, last1));
-      return is_permutation_counting(first1, last1, first2, last2);
-    }
-    
-    
-    
-  // Is permutation (fallback, range)
-  // Returns true if, for a range a and b, a is a permutation of b.
-  //
-  // This specialization is valid when the value types cannot be copied. It
-  // counts the number of occurrences of each value in O(n^2) time.
-  //
-  // The comp relation must be a strict weak ordering. Equality is counted 
-  // using the symmetric complement of comp.
-  template<typename I1, typename I2, typename R>
-    inline auto std_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
-      -> Requires<!(Copyable<Value_type<I1>>() &&
-                    Copyable<Value_type<I2>>() &&
-                    Totally_ordered<Value_type<I1>>() &&
-                    Totally_ordered<Value_type<I2>>()),
-                  bool>
-    {
-      static_assert(Comparable<I1, I2, R>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1));
-      assert(strict_weak_ordering(comp));
-
-      I2 last2 = std_next(first2, distance(first1, last1));
-      return is_permutation_counting(first1, last1, first2, last2, 
-                                     symmetric_complement<R>{comp});
-    }
-
-
-
-  // Is permutation (range)
-  // Returns true if a is a permutation of b.
-  //
-  // Note that the minimum requirement for is_permutation is Comparable,
-  // but the the optiized version requires Sortable, with the weaker 
-  // requirements acting as a fallback.
-  template<typename R1, typename R2>
-    inline bool is_permutation(const R1& a, const R2& b)
-    {
-      static_assert(Range_comparable<R1, R2>(), "");
-      assert(size(a) == size(b));
-
-      return std_is_permutation(std::begin(a), std::end(a), std::begin(b));
-    }
-
-  
-
-  template<typename R1, typename R2, typename Rel>
-    inline bool is_permutation(const R1& a, const R2& b, Rel comp)
-    {
-      static_assert(Range_comparable<R1, R2, Rel>(), "");
-
-      return std_is_permutation(a, b, pred);
-    }
-
-
 
   // Search
-  //
-  // FIXME: Write range variants.
-
   template<typename I1, typename I2>
     inline I1 std_search(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assert(( is_readable_range(first2, last2) ));
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
       
       return std::search(first1, last1, first2, last2);
     }
     
-  template<typename I1, typename I2, typename Pred>
-    inline I1 std_search(I1 first1, I1 last1, I2 first2, I2 last2, Pred pred)
+    
+    
+  // Search (relation)
+  template<typename I1, typename I2, typename R>
+    inline I1 std_search(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assert(( is_readable_range(first2, last2) ));
+      static_assert(Comparable<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
 
-      return std::search(first1, last1, first2, last2);
+      return std::search(first1, last1, first2, last2, comp);
     }
     
     
   
-  // Search end
-  // This is the same as std::find_end, but named more appropriately.
-  //
-  // FIXME: Write range variants.
+  // Search (range)
+  template<typename R1, typename R2>
+    inline auto search(R1&& a, const R2& b) -> decltype(std::begin(a))
+    {
+      static_assert(Forward_range<R1>(), "");
+      static_assert(Forward_range<R2>(), "");
+      static_assert(Comparable<R1, R2>(), "");
+      
+      return std_search(std::begin(a), std::end(a), std::begin(b), std::end(b));
+    }
+    
+    
+  
+  // Search (range, relation)
+  template<typename R1, typename R2, typename Rel>
+    inline auto search(R1&& a, const R2& b, Rel comp) -> decltype(std::begin(a))
+    {
+      static_assert(Forward_range<R1>(), "");
+      static_assert(Forward_range<R2>(), "");
+      static_assert(Comparable<R1, R2, Rel>(), "");
+      
+      return std_search(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
+    }
 
+
+  
+  // Search end
+  //
+  // This is the same as std::find_end, but renamed to reflect its algorithm
+  // family more closely.
   template<typename I1, typename I2>
     inline I1 search_end(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assert(( is_readable_range(first2, last2) ));
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
       
       return std::find_end(first1, last1, first2, last2);
     }
     
-  template<typename I1, typename I2, typename Pred>
-    inline I1 search_end(I1 first1, I1 last1, I2 first2, I2 last2, Pred pred)
+    
+    
+  // Search end (relation)
+  template<typename I1, typename I2, typename R>
+    inline I1 search_end(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Equality_comparable<Value_type<I1>, Value_type<I2>>(), "");
-      assert(( is_readable_range(first1, last1) ));
-      assert(( is_readable_range(first2, last2) ));
+      static_assert(Comparable<I1, I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
 
-      return std::find_end(first1, last1, first2, last2);
+      return std::find_end(first1, last1, first2, last2, comp);
     }
     
   
+
+  // Search end (range)
+  template<typename R1, typename R2>
+    inline auto search_end(R1&& a, const R2& b) -> decltype(std::begin(a))
+    {
+      static_assert(Forward_range<R1>(), "");
+      static_assert(Forward_range<R2>(), "");
+      static_assert(Comparable<R1, R2>(), "");
+      
+      return search_end(std::begin(a), std::end(a), std::begin(b), std::end(b));
+    }
+    
+    
+  
+  // Search end (range, relation)
+  template<typename R1, typename R2, typename Rel>
+    inline auto search_end(R1&& a, const R2& b, Rel comp) -> decltype(std::begin(a))
+    {
+      static_assert(Forward_range<R1>(), "");
+      static_assert(Forward_range<R2>(), "");
+      static_assert(Comparable<R1, R2, Rel>(), "");
+      
+      return search_end(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
+    }
+
+
   
   // Search n
-  //
-  // FIXME: Write range variants.
-  template<typename Iter, typename T>
-    inline Iter std_search_n(Iter first, Iter last, Distance_type<Iter> n, const T& value)
+  template<typename I, typename T>
+    inline I std_search_n(I first, I last, Distance_type<I> n, const T& value)
     {
-      static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
+      static_assert(Forward_iterator<I>(), "");
+      static_assert(Searchable<I, T>(), "");
+      assert(is_readable_range(first, last));
 
       return std::search_n(first, last, n, value);
     }
     
-  template<typename Iter, typename T, typename Pred>
-    inline Iter std_search_n(Iter first, Iter last, Distance_type<Iter> n, const T& value, Pred pred)
+    
+    
+  // Search n (relation)
+  template<typename I, typename T, typename R>
+    inline I std_search_n(I first, I last, Distance_type<I> n, const T& value, R comp)
     {
-      static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>, T>(), "");
-      assert(( is_readable_range(first, last) ));
+      static_assert(Forward_iterator<I>(), "");
+      static_assert(Searchable<I, T, R>(), "");
+      assert(is_readable_range(first, last));
 
-      return std::search_n(first, last, n, value, pred);
+      return std::search_n(first, last, n, value, comp);
     }
+    
+    
+  
+  // Search n (range)
+  template<typename R, typename T>
+    inline auto search_n(R&& range, Distance_type<R> n, const T& value)
+      -> decltype(std::begin(range))
+    {
+      static_assert(Forward_range<R>(), "");
+      static_assert(Range_searchable<R, T>(), "");
+    
+      return std_search_n(std::begin(range), std::end(range), n, value);
+    }
+    
+    
+    
+  // Search n (range, relation)
+  template<typename R, typename T, typename Rel>
+    inline auto search_n(R&& range, Distance_type<R> n, const T& value, Rel comp)
+      -> decltype(std::begin(range))
+    {
+      static_assert(Forward_range<R>(), "");
+      static_assert(Range_searchable<R, T, Rel>(), "");
+    
+      return std_search_n(std::begin(range), std::end(range), n, value, comp);
+    }
+
     
 } // namespace origin
 
@@ -1422,211 +1371,9 @@ namespace origin
       return std::binary_search(first, last, value, comp);
     }
 
-  
-
-  // Permutation Generators
-  // These algorithms iterate through successive permutations of a sequence.
-  
-  // Next permutation
-  template<typename Iter>
-    inline bool std_next_permutation(Iter first, Iter last)
-    {
-      static_assert(Bidirectional_iterator<Iter>(), "");
-      static_assert(Sortable<Iter>(), "");
-      assert(( is_permutable_range(first, last) ));
-
-      return std::next_permutation(first, last);
-    }
-    
-    
-    
-  // Next permutation (relation)
-  template<typename Iter, typename R>
-    inline bool std_next_permutation(Iter first, Iter last, R comp)
-    {
-      static_assert(Bidirectional_iterator<Iter>(), "");
-      static_assert(Relation<Value_type<Iter>>(), "");
-      assert(( is_permutable_range(first, last) ));
-      assert(( strict_weak_ordering(comp) ));
-      
-      return std::next_permutation(first, last);
-
-    }
-
-
-
-  // Next permutation (range)
-  template<typename Rng>
-    inline bool next_permutation(Rng& range)
-    {
-      static_assert(Sortable_range<Rng>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return std::next_permutation(std::begin(range), std::end(range));
-    }
-
-
-
-  // Next permutation (range, relation)
-  template<typename Rng, typename R>
-    inline bool next_permutation(Rng& range, R comp)
-    {
-      static_assert(Sortable_range<Rng, R>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-    
-      return std::next_permutation(std::begin(range), std::end(range), comp);
-    }
-
-
-
-  // Previous permutation
-  template<typename Iter>
-    inline bool std_prev_permutation(Iter first, Iter last)
-    {
-      static_assert(Bidirectional_iterator<Iter>(), "");
-      static_assert(Sortable<Iter>(), "");
-      assert(( is_permutable_range(first, last) ));
-
-      return std::prev_permutation(first, last);
-    }
-    
-    
-    
-  // Previous permutation (relation)
-  template<typename Iter, typename R>
-    inline bool std_prev_permutation(Iter first, Iter last, R comp)
-    {
-      static_assert(Bidirectional_iterator<Iter>(), "");
-      static_assert(Relation<Value_type<Iter>>(), "");
-      assert(( is_permutable_range(first, last) ));
-      assert(( strict_weak_ordering(comp) ));
-      
-      return std::prev_permutation(first, last);
-
-    }
-
-
-
-  // Previous permutation (range)
-  template<typename Rng>
-    inline bool prev_permutation(Rng& range)
-    {
-      static_assert(Sortable_range<Rng>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return std::prev_permutation(std::begin(range), std::end(range));
-    }
-
-
-
-  // Previous permutation (range, relation)
-  template<typename Rng, typename R>
-    inline bool prev_permutation(Rng& range, R comp)
-    {
-      static_assert(Sortable_range<Rng, R>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return std::prev_permutation(std::begin(range), std::end(range), comp);
-    }
-
-
-
-  // NOTE: I'm not wild about the name _partial_*. These are often called
-  // k-permutations (and similarly k-combination). In general, I would have
-  // have preferred next_permutation to increment to k-permutations instead
-  // of entire sequences in order to make it look like the combination
-  // algorithms below.
-  
-  // NOTE: The implementation of the *_partial_permutation and the the
-  // *_combination algorithms is in algorithm/combination.hpp. The algorithms
-  // are separated for licensing issues.
-
-  // Compute the next lexicographical permutation of elements in [first, mid) 
-  // from r where first is begin(r). Return false if there is no next 
-  // permutation.
-  template<typename Rng>
-    inline bool next_partial_permutation(Rng& range, Iterator_type<Rng> mid)
-    {
-      static_assert(Sortable_range<Rng>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return next_partial_permutation(std::begin(range), mid, std::end(range));
-    }
-
-  template<typename Rng, typename R>
-    inline bool next_partial_permutation(Rng& range, Iterator_type<Rng> mid, R comp)
-    {
-      static_assert(Sortable_range<Rng, R>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return next_partial_permutation(std::begin(range), mid, std::end(range), comp);
-    }
-
-
-  // Compute the next lexicographical permutation of elements in [first, mid) 
-  // from r where first is begin(r). Return false if there is no next 
-  // permutation.
-  template<typename Rng>
-    inline bool prev_partial_permutation(Rng& range, Iterator_type<Rng> mid)
-    {
-      static_assert(Sortable_range<Rng>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return prev_partial_permutation(std::begin(range), mid, std::end(range));
-    }
-
-  template<typename Rng, typename R>
-    inline bool prev_partial_permutation(Rng& range, Iterator_type<Rng> mid, R comp)
-    {
-      static_assert(Sortable_range<Rng, R>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return prev_partial_permutation(std::begin(range), mid, std::end(range), comp);
-    }
-
-
-  // Compute the next lexicographical combination of elements in [first, mid)
-  // from the range r where first is equal to begin(r). Return false if there
-  // is no next combination.
-  template<typename Rng>
-    inline bool next_combination(Rng& range, Iterator_type<Rng> mid)
-    {
-      static_assert(Sortable_range<Rng>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return next_combination(std::begin(range), mid, std::end(range));
-    }
-
-  template<typename Rng, typename R>
-    inline bool next_combination(Rng& range, Iterator_type<Rng> mid, R comp)
-    {
-      static_assert(Sortable_range<Rng, R>(), "");
-      static_assert(Bidirectional_range<Rng>(), "");
-
-      return next_combination(std::begin(range), mid, std::end(range), comp);
-    }
-
-
-  // Compute the previous lexicographical combination of elements in 
-  // [first, mid) from the range r where first is equal to begin(r). Return 
-  // false if there is no next combination.
-  template<typename Rng>
-    inline bool prev_combination(Rng& range, Iterator_type<Rng> mid)
-    {
-      return prev_combination(std::begin(range), mid, std::end(range));
-    }
-
-  template<typename Rng, typename R>
-    inline bool prev_combination(Rng& range, Iterator_type<Rng> mid, R comp)
-    {
-      return prev_combination(std::begin(range), mid, std::end(range), comp);
-    }
-
-
-  // TODO: Implement multiset permutations.
-  
-  
 } // namespace origin
+
+#include <origin/algorithm/permutation.hpp>
 
 
 // Include definitions of container concepts needed for some algorithm
