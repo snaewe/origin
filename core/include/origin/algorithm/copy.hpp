@@ -35,6 +35,26 @@ namespace origin
 
   // FIXME: Add overlap requirements for all of these algorithms.
     
+  
+  // Iterator copyable (concept)
+  //
+  // FIXME: Can we find a better name for this?
+  template<typename I, typename O>
+    bool constexpr Iter_copyable()
+    {
+      return Input_iterator<I>() && Weak_output_iterator<O, Value_type<I>>();
+    }
+  
+  
+  
+  // Range copyable (concept)
+  template<typename Ri, typename Ro>
+    bool constexpr Range_copyable()
+    {
+      return Input_range<Ri>() && Output_range<Ro, Value_type<R>>();
+    }
+    
+    
     
 
   // Copy
@@ -42,12 +62,16 @@ namespace origin
   template<typename I, typename O>
     inline O std_copy(I first, I last, O result)
     {
-      static_assert(Input_iterator<I>(), "");
-      static_assert(Writable<O, Value_type<I>>(), "");
+      static_assert(Iter_copyable<I>(), "");
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, distance(first, last), *first));
 
-      return std::copy(first, last, result);
+      while(first != last) {
+        *result = *first;
+        ++result;
+        ++first;
+      }
+      return result;
     }
   
   
@@ -57,8 +81,7 @@ namespace origin
   template<typename I, typename O>
     inline void copy(const I& range, O& result)
     {
-      static_assert(Input_range<I>(), "");
-      static_assert(Output_range<O, Value_type<I>>(), "");
+      static_assert(Range_copyable<I>(), "");
       assume(size(range) <= size(out));
       // FIXME: Overlapping requirements
       
@@ -71,6 +94,7 @@ namespace origin
   template<typename Iter, typename Out>
     inline Out std_copy_n(Iter first, Distance_type<Iter> n, Out result)
     {
+      static_assert(Iter_copyable<I>(), "");
       return std::copy_n(first, n, result);
     }
 
@@ -80,8 +104,8 @@ namespace origin
   template<typename I, typename O, typename P>
     inline O std_copy_if(I first, I last, O result, P pred)
     {
-      static_assert(Input_iterator<I>(), "");
-      static_assert(Weak_output_iterator<O, Value_type<I>>(), "");
+      static_assert(Queryable<I, P>(), "");
+      static_assert(Iter_copyable<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, std_count_if(first, last, pred), *first));
       
@@ -101,19 +125,23 @@ namespace origin
   template<typename Ri, typename Ro, typename P>
     inline void copy_if(const Ri& in, Ro& out, P pred)
     {
-      static_assert(Input_range<Ri>(), "");
-      static_assert(Output_range<Ro, Value_type<Ri>>(), "");
+      static_assert(Queryable_range<Ri, P>(), "");
+      static_assert(Range_copyable<Ri, Ro>(), "");
       assume(size(out) >= count_if(in, pred));
 
       std_copy_if(std::begin(in), std::end(in), std::begin(out), pred);
     }
-    
+
 
     
   // Copy backward
-  template<typename Iter, typename Out>
-    inline Out std_copy_backward(Iter first, Iter last, Out result)
+  template<typename I, typename O>
+    inline O std_copy_backward(I first, I last, O result)
     {
+      static_assert(Bidirectional_iterator<I>(), "");
+      static_assert(Bidirectional_iterator<O>(), "");
+      static_assert(Iter_copyable<I, O>(), "");
+      
       return std::copy_backward(first, last, result);
     }
 
