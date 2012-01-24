@@ -62,65 +62,46 @@ namespace origin
     }
 
     
-  
-  // An iterator is Move_writable if the expression '*i = move(x)' is valid.
-  template<typename Iter, typename T>
-    struct Move_writable_concept
-    {
-      static constexpr bool check()
-      {
-        return Movable<T>()
-            && Has_dereference<Iter>()
-            && Assignable<Dereference_result<Iter>, T&&>();
-      }
-      
-      static bool test(Iter i, T x)
-      {
-        *i = std::move(x);  // NOTE: Not an axiom.
-        return true;
-      }
-    };
-    
-  // Returns true if values of T can be moved through an Iter object.
-  //
-  // FIXME: To better align this with standard terminology, this should be
-  // called Value_movable.
-  template<typename Iter, typename T>
-    constexpr bool Move_writable()
-    {
-      return Move_writable_concept<Iter, T>::check();
-    }
 
+  // Writable (concept)
+  // Returns true if values of T can be written through an iterator of type
+  // I using the syntax: *i = value. 
+  //
+  // Note that if T is an rvalue reference, the concept requires T to support
+  // move semantics. If T is not an rvalue reference, then copy semantics are
+  // required.
+  //
+  // It is strongly recommended to include Movable/Copyable requirements
+  // in addition to those implied by Writable concept. The Permutable and
+  // Mutable concepts do this.
   
-  
-  // An iterator is writable if the expression '*i = x' is valid.
-  template<typename Iter, typename T>
+  // If T is not an rvalue reference, check for copy assigment.
+  template<typename I, typename T>
     struct Writable_concept
     {
       static constexpr bool check()
       {
-        return Copyable<T>()
-            && Move_writable<Iter, T>()
-            && Assignable<Dereference_result<Iter>, T const&>();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics
-        return true;
+        return Assignable<Dereference_result<I>, const T&>();
       }
     };
     
-  // Returns true if values of T can be written through an Iter object.
-  //
-  // FIXME: To better align this with standard terminology, this should be
-  // called Value_writable.
-  template<typename Iter, typename T>
+  // If T is an rvalue reference, check for move assignment.
+  template<typename I, typename T>
+    struct Writable_concept<I, T&&>
+    {
+      static constexpr bool check()
+      {
+        return Assignable<Dereference_result<I>, T&&>();
+      }
+    };
+  
+  // Returns true if the expression *i = value is valid.
+  template<typename I, typename T>
     constexpr bool Writable()
     {
-      return Writable_concept<Iter, T>::check();
+      return Has_dereference<I>() && Writable_concept<I, T>::check();
     }
-    
+
 
 
   // Incrementable types
@@ -295,13 +276,16 @@ namespace origin
   // concept.
 
 
+    
   // Weak input iterator (concept)
   // A weak input iterator is weakly incrementable and readable.
-  template<typename Iter>
+  template<typename I>
     constexpr bool Weak_input_iterator()
     {
-      return Weakly_incrementable<Iter>() && Readable<Iter>();
+      return Weakly_incrementable<I>() && Readable<I>();
     }
+    
+    
     
   // Input iterator (concept)
   // A input iterator is a weak input iterator that is equality comparable.
@@ -310,27 +294,36 @@ namespace origin
     {
       return Weak_input_iterator<I>() && Equality_comparable<I>();
     }
-    
+
+
+
   // Weak output iterator (concept)
-  // A weak output iterator is weakly incrementable and writable.
+  // A weak output iterator is a weakly incrementable type that is writable
+  // over some expression type T.
+  //
+  // Note that if T is an rvalue reference, this concept requires T to
+  // implement move semantics. If T is not an rvalue reference, the type is
+  // required to implement copy semantics.
   template<typename I, typename T>
     constexpr bool Weak_output_iterator()
     {
       return Weakly_incrementable<I>() && Writable<I, T>();
     }
     
+    
+    
   // Output iterator (concept)
   // An output iterator is a weak output iterator that is equality comparable.
+  //
+  // Note that if T is an rvalue reference, this concept requires T to
+  // implement move semantics. If T is not an rvalue reference, the type is
+  // required to implement copy semantics.
   template<typename I, typename T>
     constexpr bool Output_iterator()
     {
-      return Weak_output_iterator<I>() && Equality_comparable<I>();
+      return Weak_output_iterator<I, T>() && Equality_comparable<I>();
     }
  
- 
- 
-  // FIXME: Do I need a Move_iterator?
-  
  
   
   // Forward Iterator (concept)
@@ -489,44 +482,17 @@ namespace origin
   // Permutable and mutable iterators are forward iterators.
 
     
+    
   // Permutable Iterators
   // A permutable iterator allows values to be exchanged (moved) between
   // different iterators without copying. This also includes moving values
   // into temporary values.
-    
-  // A helper function for checking requirements.
-  template<typename Iter, bool Prereqs>
-    struct Permutable_iterator_requirements
-    {
-      static bool constexpr check() { return false; }
-    };
-
-  template<typename Iter>
-    struct Permutable_iterator_requirements<Iter, true>
-    {
-      static bool constexpr check() 
-      {
-        return Move_writable<Iter, Value_type<Iter>>();
-      }
-    };
-
-  // The specification of permutable iterators.
-  template<typename Iter>
-    struct Permutable_iterator_concept
-    {
-      static bool constexpr check()
-      {
-        return Permutable_iterator_requirements<
-          Iter, Forward_iterator<Iter>()
-        >::check();
-      }
-    };
-
-  // Return true if Iter is permutable.
-  template<typename Iter>
+  template<typename I>
     constexpr bool Permutable_iterator()
     {
-      return Permutable_iterator_concept<Iter>::check();
+      return Forward_iterator<I>() 
+          && Movable<Value_type<I>>() 
+          && Writable<I, Value_type<I>&&>();
     }
     
     
@@ -535,53 +501,33 @@ namespace origin
   // A mutable iterator allows its referenced values to be re-assigned to new
   // values (through copies). Note that mutable iterators are inherently 
   // permutable.
-    
-  // A helper function for checking requirements.
-  template<typename Iter, bool Prereqs>
-    struct Mutable_iterator_requirements
-    {
-      static bool constexpr check() { return false; }
-    };
-
-  template<typename Iter>
-    struct Mutable_iterator_requirements<Iter, true>
-    {
-      static bool constexpr check() 
-      {
-        return Writable<Iter, Value_type<Iter>>();
-      }
-    };
-
-  // The specification of mutable iterators.
-  template<typename Iter>
-    struct Mutable_iterator_concept
-    {
-      static bool constexpr check()
-      {
-        return Mutable_iterator_requirements<
-          Iter, Permutable_iterator<Iter>()
-        >::check();
-      }
-    };
-
-  // Return true if Iter is mutable.
-  template<typename Iter>
+  template<typename I>
     constexpr bool Mutable_iterator()
     {
-      return Mutable_iterator_concept<Iter>::check();
+      return Forward_iterator<I>() 
+          && Copyable<Value_type<I>> 
+          && Writable<I, Value_type<I>>();
     }
 
 
     
   // A strict input iterator is at most an input iterator. That is I is not
   // a forward iterator. This is provided for convenience.
-  template<typename Iter>
+  template<typename I>
     constexpr bool Strict_input_iterator()
     {
-      return Weak_input_iterator<Iter>() && !Forward_iterator<Iter>();
+      return Weak_input_iterator<I>() && !Forward_iterator<I>();
     }
     
-  // FIXME: Write Strict_output_iterator.
+    
+    
+  // A strict output iterator is at most an output iterator. That is, I is not
+  // also an readable.
+  template<typename I>
+    constexpr bool Strict_output_iterator()
+    {
+      return Weak_output_iterator<I> && !Readable<I>();
+    }
   
   
 
@@ -686,7 +632,7 @@ namespace origin
   template<typename I, typename T>
     inline bool is_movable_range(I first, Distance_type<I> n, T const& value)
     {
-      static_assert(Move_writable<I, T>(), "");
+      static_assert(Writable<I, T&&>(), "");
       return is_weak_range(first, n);
     }
   
@@ -695,7 +641,7 @@ namespace origin
   template<typename I, typename T>
     inline bool is_movable_range(I first, I last, T const& value) 
     {
-      static_assert(Move_writable<I, T>(), "");
+      static_assert(Writable<I, T&&>(), "");
       return is_bounded_range(first, last); 
     }
     

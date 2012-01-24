@@ -36,33 +36,53 @@ namespace origin
   // FIXME: Add overlap requirements for all of these algorithms.
     
   
-  // Iterator copyable (concept)
-  //
-  // FIXME: Can we find a better name for this?
+  // Iterative copy (algorithm concept)
+  // The iterative copy concept defines the requirements of copying values 
+  // from an I iterator range into an O iterator range.
   template<typename I, typename O>
-    bool constexpr Iter_copyable()
+    constexpr bool Copy()
     {
       return Input_iterator<I>() && Weak_output_iterator<O, Value_type<I>>();
     }
   
   
   
-  // Range copyable (concept)
-  template<typename Ri, typename Ro>
-    bool constexpr Range_copyable()
+  // Range copy (algorithm concept)
+  // The range copy concept defines the requirements of copying values from
+  // an input range (R) into output range (O).
+  template<typename R, typename O>
+    constexpr bool Range_copy()
     {
-      return Input_range<Ri>() && Output_range<Ro, Value_type<R>>();
+      return Input_range<R>() && Output_range<O, Value_type<R>>();
     }
     
     
     
+  // Iterative move (algorithm concept)
+  template<typename I, typename O>
+    constexpr bool Move()
+    {
+      return Input_iterator<I>() && Weak_output_iterator<O, Value_type<I>&&>();
+    }
+    
+    
+  
+  // Range move (algorithm concept)
+  template<typename R, typename O>
+    constexpr bool Range_move()
+    {
+      return Input_range<R>() && Output_range<O, Value_type<R>&&>();
+    }
+    
 
   // Copy
   // Copy the elements in a range a into another range b.
+  //
+  // FIXME: Implement optimizations.
   template<typename I, typename O>
     inline O std_copy(I first, I last, O result)
     {
-      static_assert(Iter_copyable<I>(), "");
+      static_assert(Copy<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, distance(first, last), *first));
 
@@ -81,7 +101,7 @@ namespace origin
   template<typename I, typename O>
     inline void copy(const I& range, O& result)
     {
-      static_assert(Range_copyable<I>(), "");
+      static_assert(Range_copy<I, O>(), "");
       assume(size(range) <= size(out));
       // FIXME: Overlapping requirements
       
@@ -91,11 +111,18 @@ namespace origin
 
 
   // Copy n
-  template<typename Iter, typename Out>
-    inline Out std_copy_n(Iter first, Distance_type<Iter> n, Out result)
+  template<typename I, typename O>
+    inline O std_copy_n(I first, Distance_type<I> n, O result)
     {
-      static_assert(Iter_copyable<I>(), "");
-      return std::copy_n(first, n, result);
+      static_assert(Copy<I, O>(), "");
+      
+      while(n != 0) {
+        *result = *first;
+        ++result;
+        ++first;
+        --n;
+      }
+      return result;
     }
 
 
@@ -104,8 +131,8 @@ namespace origin
   template<typename I, typename O, typename P>
     inline O std_copy_if(I first, I last, O result, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
-      static_assert(Iter_copyable<I, O>(), "");
+      static_assert(Query<I, P>(), "");
+      static_assert(Copy<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, std_count_if(first, last, pred), *first));
       
@@ -122,79 +149,115 @@ namespace origin
     
   
   // Copy if (range)
-  template<typename Ri, typename Ro, typename P>
-    inline void copy_if(const Ri& in, Ro& out, P pred)
+  template<typename I, typename O, typename P>
+    inline void copy_if(const I& in, O& out, P pred)
     {
-      static_assert(Queryable_range<Ri, P>(), "");
-      static_assert(Range_copyable<Ri, Ro>(), "");
+      static_assert(Range_query<I, P>(), "");
+      static_assert(Range_copy<I, O>(), "");
       assume(size(out) >= count_if(in, pred));
 
       std_copy_if(std::begin(in), std::end(in), std::begin(out), pred);
     }
 
 
-    
+
   // Copy backward
   template<typename I, typename O>
     inline O std_copy_backward(I first, I last, O result)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Bidirectional_iterator<O>(), "");
-      static_assert(Iter_copyable<I, O>(), "");
+      static_assert(Copy<I, O>(), "");
       
       return std::copy_backward(first, last, result);
+    }
+    
+    
+  
+  // Copy backward (range)
+  template<typename R1, typename R2>
+    inline void copy_backward(const R1& in, R2& out)
+    {
+      static_assert(Bidirectional_range<R1>(), "");
+      static_assert(Bidirectional_range<R2>(), "");
+      static_assert(Range_copy<R1, R2>(), "");
+      return std_copy_backward(std::begin(in), std::end(in), std::begin(out));
     }
 
 
 
   // Move
   // Move the elements in a range a into another range b.
-
-  template<typename Iter, typename Out>
-    inline Out std_move(Iter first, Iter last, Out result)
+  template<typename I, typename O>
+    inline O std_move(I first, I last, O result)
     {
-      static_assert(Input_iterator<Iter>(), "");
-      static_assert(Move_writable<Out, Value_type<Iter>>(), "");
+      static_assert(Move<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_movable_range(result, distance(first, last), *first));
       
       return std::copy(first, last, result);
     }
   
-  template<typename In, typename Out>
-    inline Iterator_type<Out> move(const In& i, Out& o)
+  
+  
+  // Move (range)
+  template<typename I, typename O>
+    inline void move(const I& i, O& o)
     {
-      static_assert(Input_range<In>(), "");
-      static_assert(Move_range<Out, Value_type<In>>(), "");
+      static_assert(Range_move<I, O>(), "");
       assume(size(i) <= size(o));
       
-      return std_copy(std::begin(i), std::end(i), std::begin(o));
+      std_copy(std::begin(i), std::end(i), std::begin(o));
     }
 
 
-
+    
   // Move backward
-  template<typename Iter, typename Out>
-    inline Out std_move_backward(Iter first, Iter last, Out result)
+  template<typename I, typename O>
+    inline O std_move_backward(I first, I last, O result)
     {
+      static_assert(Bidirectional_iterator<I>(), "");
+      static_assert(Bidirectional_iterator<O>(), "");
+      static_assert(Move<I, O>(), "");
+
       return std::move_backward(first, last, result);
     }
 
 
+    
+  // Move backward (range)
+  template<typename I, typename O>
+    inline void move_backward(const I& in, O& out)
+    {
+      static_assert(Bidirectional_range<I>(), "");
+      static_assert(Bidirectional_range<O>(), "");
+      static_assert(Range_move<I, O>(), "");
+
+      return std_move_backward(std::begin(in), std::end(in), std::begin(out));
+    }
+  
   
   // Iterator swap
-  template<typename Iter1, typename Iter2>
-    inline void std_iter_swap(Iter1 i, Iter2 j)
+  template<typename I1, typename I2>
+    inline void std_iter_swap(I1 i, I2 j)
     {
-      std::iter_swap(i, j);
+      static_assert(Writable<I1, Value_type<I2>&&>(), "");
+      static_assert(Writable<I2, Value_type<I1>&&>(), "");
+
+      Value_type<I1> x = std::move(*i);
+      *i = std::move(*j);
+      *j = std::move(x);
     }
     
 
 
   // Swap ranges
-  template<typename Iter1, typename Iter2>
-    inline Iter2 std_swap_ranges(Iter1 first1, Iter1 last1, Iter2 first2)
+  template<typename I1, typename I2>
+    inline I2 std_swap_ranges(I1 first1, I1 last1, I2 first2)
     {
+      static_assert(Move<I1, I2>(), "");
+      static_assert(Move<I2, I1>(), "");
+
       return std::swap_ranges(first1, last1, first2);
     }
 

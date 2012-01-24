@@ -104,7 +104,7 @@ namespace origin
   template<typename I, typename P>
     inline bool std_all_of(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -123,7 +123,7 @@ namespace origin
   template<typename R, typename P>
     inline bool all_of(const R& range, P pred)
     {
-      static_assert(Range_queryable<R, P>(), "");
+      static_assert(Range_query<R, P>(), "");
 
       return std_all_of(std::begin(range), std::end(range), pred);
     }
@@ -147,7 +147,7 @@ namespace origin
   template<typename I, typename P>
     inline bool not_all_of(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -166,7 +166,7 @@ namespace origin
   template<typename R, typename P>
     inline bool not_all_of(const R& range, P pred)
     {
-      static_assert(Range_queryable<R, P>(), "");
+      static_assert(Range_query<R, P>(), "");
 
       return nall_of(std::begin(range), std::end(range), pred);
     }
@@ -192,7 +192,7 @@ namespace origin
   template<typename I, typename P>
     inline bool some_of(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -211,7 +211,7 @@ namespace origin
   template<typename R, typename P>
     inline bool some_of(const R& range, P pred)
     {
-      static_assert(Range_queryable<R, P>(), "");
+      static_assert(Range_query<R, P>(), "");
 
       return some_of(std::begin(range), std::end(range), pred);
     }
@@ -235,7 +235,7 @@ namespace origin
   template<typename I, typename P>
     inline bool std_none_of(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -253,7 +253,7 @@ namespace origin
   template<typename R, typename P>
     inline bool none_of(const R& range, P pred)
     {
-      static_assert(Range_queryable<R, P>(), "");
+      static_assert(Range_query<R, P>(), "");
       
       return std_none_of(std::begin(range), std::end(range), pred);
     }
@@ -278,7 +278,7 @@ namespace origin
   template<typename I, typename P>
     inline bool one_of(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
       
       first = std_find_if(first, last, pred);
@@ -295,7 +295,7 @@ namespace origin
   template<typename R, typename P>
     inline bool one_of(const R& range, P pred)
     {
-      static_assert(Range_queryable<R, P>(), "");
+      static_assert(Range_query<R, P>(), "");
       
       return one_of(std::begin(range), std::end(range), pred);
     }
@@ -320,7 +320,7 @@ namespace origin
   template<typename I, typename T>
     bool all_equal(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -352,7 +352,7 @@ namespace origin
   template<typename R, typename T>
     inline bool all_equal(const R& range, const T& value)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return all_equal(std::begin(range), std::end(range), value);
     }
@@ -394,7 +394,7 @@ namespace origin
   template<typename I, typename T>
     bool not_all_equal(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -426,7 +426,7 @@ namespace origin
   template<typename R, typename T>
     inline bool not_all_equal(const R& range, const T& value)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return not_all_equal(std::begin(range), std::end(range), value);
     }
@@ -470,12 +470,13 @@ namespace origin
   template<typename I, typename T>
     bool some_equal(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
         if(*first == value)
           return true;
+        ++first;
       }
       return false;
     }
@@ -490,6 +491,7 @@ namespace origin
       while(first != last) {
         if(comp(*first, value))
           return true;
+        ++first;
       }
       return false;
     }
@@ -501,7 +503,7 @@ namespace origin
   template<typename R, typename T>
     inline bool some_equal(const R& range, const T& value)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return some_equal(std::begin(range), std::end(range), value);
     }
@@ -545,12 +547,13 @@ namespace origin
   template<typename I, typename T>
     bool none_equal(I first, I last, T const& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
         if(*first == value)
           return false;
+        ++first;
       }
       return true;
     }
@@ -565,6 +568,7 @@ namespace origin
       while(first != last) {
         if(comp(*first, value))
           return false;
+        ++first;
       }
       return true;
     }
@@ -576,7 +580,7 @@ namespace origin
   template<typename R, typename T>
     inline bool none_equal(const R& range, const T& value)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return none_equal(std::begin(range), std::end(range), value);
     }
@@ -620,7 +624,7 @@ namespace origin
   template<typename I, typename T>
     inline bool one_equal(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       first = find(first, last, value);
@@ -651,7 +655,7 @@ namespace origin
   template<typename R, typename T>
     inline bool one_equal(const R& range, const T& value)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return one_equal(std::begin(range), std::end(range), value);
     }
@@ -663,7 +667,7 @@ namespace origin
   template<typename R, typename T, typename Rn>
     inline bool one_equal(const R& range, const T& value, Rn comp)
     {
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return one_equal(std::begin(range), std::end(range), value, comp);
     }

@@ -22,12 +22,12 @@ namespace origin
   // std algorithms. They are primiarly used for testing
 
 
-  // Queryable (concept)
+  // Query (concept)
   // A query is an algorithm that iterates over the elements of a range,
   // searching for one or more that satisfy some property. The property is
   // given as a unary predicate.
   template<typename I, typename P>
-    constexpr bool Queryable()
+    constexpr bool Query()
     {
       return Input_iterator<I>() && Predicate<P, Value_type<I>>();
     }
@@ -35,27 +35,27 @@ namespace origin
   // Range queryable (concept)
   // A range is queryable if its iterator type is queryable.
   template<typename R, typename P>
-    constexpr bool Range_queryable()
+    constexpr bool Range_query()
     {
-      return Input_range<R>() && Queryable<Iterator_type<R>, P>();
+      return Input_range<R>() && Query<Iterator_type<R>, P>();
     }
 
      
 
-  // Searchable (concept)
+  // Search (concept)
   // A search is an algorithm that iterates over the elements of a range,
   // searching for one or more that is equal to a value type. The value type
   // may the same as or different than as the iterator's, and the equality
   // comparison may be generalized to a relation. There are three overloads of
   // this concept.
   //
-  //    Searchable<I>       Can be searched for a Value_type<I> value
-  //    Searchable<I, T>    Can be searched for a T value
-  //    Searchable<I, T, R> Can be searched for a T value using a relation R
+  //    Search<I>       Can be searched for a Value_type<I> value
+  //    Search<I, T>    Can be searched for a T value
+  //    Search<I, T, R> Can be searched for a T value using a relation R
 
-  // Searchable<I, T, R> implementation.
+  // Search<I, T, R> implementation.
   template<typename I, typename T, typename R>
-    struct Searchable_concept
+    struct Search_concept
     {
       static constexpr bool check()
       {
@@ -63,9 +63,9 @@ namespace origin
       }
     };
     
-  // Searchable<I, T> implementation.
+  // Search<I, T> implementation.
   template<typename I, typename T>
-    struct Searchable_concept<I, T, default_t>
+    struct Search_concept<I, T, default_t>
     {
       static constexpr bool check()
       {
@@ -73,9 +73,9 @@ namespace origin
       }
     };
 
-  // Searchable<I> implementation.
+  // Search<I> implementation.
   template<typename I>
-    struct Searchable_concept<I, default_t, default_t>
+    struct Search_concept<I, default_t, default_t>
     {
       static constexpr bool check()
       {
@@ -85,9 +85,9 @@ namespace origin
      
   // Returns true if the iterator can be used for searching.
   template<typename I, typename T = default_t, typename R = default_t>
-    constexpr bool Searchable()
+    constexpr bool Search()
     {
-      return Searchable_concept<I, T, R>::check();
+      return Search_concept<I, T, R>::check();
     }
   
   
@@ -96,15 +96,15 @@ namespace origin
   // A range is searchable if its underlying iterator type is searchable. Like 
   // the searchable concept, there are three forms of this concept.
   //
-  //    Range_searchable<R>         Can be searched for a Value_type<R> value
-  //    Range_searchable<R, T>      Can be searched for a T value
-  //    Range_searchable<R, T, Rel> Can be searched for a T value using a relation R
+  //    Range_search<R>         Can be searched for a Value_type<R> value
+  //    Range_search<R, T>      Can be searched for a T value
+  //    Range_search<R, T, Rel> Can be searched for a T value using a relation R
   
   // Returns true if the input iterator can be searched for a value of type T.
   template<typename R, typename T = default_t, typename Rel = default_t>
-    constexpr bool Range_searchable()
+    constexpr bool Range_search()
     {
-      return Input_range<R>() && Searchable<Iterator_type<R>, T, Rel>();
+      return Input_range<R>() && Search<Iterator_type<R>, T, Rel>();
     }
 
   
@@ -172,48 +172,48 @@ namespace origin
   // Mergeable
   // The mergeable concept describes common requirements on the family of
   // (non-inplace) merge and set operations. There are two mergeable concepts:
-  // - Mergeable<Iter1, Iter2, Out>
-  // - Mergeable<Iter1, Iter2, Out, R>
+  // - Mergeable<Iter1, Iter2, O>
+  // - Mergeable<Iter1, Iter2, O, R>
   // The first requires the value types of Iter1 and Iter2 to be totally
   // ordered. The second is generalized over a relation.
   
   // This specialization implements the requirements for the generalized
   // version.
-  template<typename Iter1, typename Iter2, typename Out, typename R>
+  template<typename Iter1, typename Iter2, typename O, typename R>
     struct Mergeable_concept
     {
       static constexpr bool check()
       {
         return Input_iterator<Iter1>() && 
                Input_iterator<Iter2>() &&
-               Weakly_incrementable<Out>() &&
-               Writable<Out, Value_type<Iter1>>() &&
-               Writable<Out, Value_type<Iter2>>() &&
+               Weakly_incrementable<O>() &&
+               Writable<O, Value_type<Iter1>>() &&
+               Writable<O, Value_type<Iter2>>() &&
                Relation<R, Value_type<Iter1>, Value_type<Iter2>>();
       }
     };
 
   // This specialization implements the requirements for algorithms that 
   // directly use the < operator.
-  template<typename Iter1, typename Iter2, typename Out>
-    struct Mergeable_concept<Iter1, Iter2, Out, default_t>
+  template<typename Iter1, typename Iter2, typename O>
+    struct Mergeable_concept<Iter1, Iter2, O, default_t>
     {
       static constexpr bool check()
       {
         return Input_iterator<Iter1>() && 
                Input_iterator<Iter2>() &&
-               Weakly_incrementable<Out>() &&
-               Writable<Out, Value_type<Iter1>>() &&
-               Writable<Out, Value_type<Iter2>>() &&
+               Weakly_incrementable<O>() &&
+               Writable<O, Value_type<Iter1>>() &&
+               Writable<O, Value_type<Iter2>>() &&
                Totally_ordered<Value_type<Iter1>, Value_type<Iter2>>();
       }
     };
     
-  // Returns true when Iter1 and Iter2 can be merged into Out.
-  template<typename Iter1, typename Iter2, typename Out, typename R = default_t>
+  // Returns true when Iter1 and Iter2 can be merged into O.
+  template<typename Iter1, typename Iter2, typename O, typename R = default_t>
     constexpr bool Mergeable()
     {
-      return Mergeable_concept<Iter1, Iter2, Out, R>::check();
+      return Mergeable_concept<Iter1, Iter2, O, R>::check();
     }
 
 
@@ -245,7 +245,7 @@ namespace origin
       }
     };
     
-  // Returns true if Iter is sortable.
+  // Returns true if I is sortable.
   template<typename I, typename R = default_t>
     constexpr bool Sortable()
     {
@@ -705,7 +705,7 @@ namespace origin
     inline I std_search_n(I first, I last, Distance_type<I> n, const T& value)
     {
       static_assert(Forward_iterator<I>(), "");
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
       return std::search_n(first, last, n, value);
@@ -718,7 +718,7 @@ namespace origin
     inline I std_search_n(I first, I last, Distance_type<I> n, const T& value, R comp)
     {
       static_assert(Forward_iterator<I>(), "");
-      static_assert(Searchable<I, T, R>(), "");
+      static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
 
       return std::search_n(first, last, n, value, comp);
@@ -732,7 +732,7 @@ namespace origin
       -> decltype(std::begin(range))
     {
       static_assert(Forward_range<R>(), "");
-      static_assert(Range_searchable<R, T>(), "");
+      static_assert(Range_search<R, T>(), "");
     
       return std_search_n(std::begin(range), std::end(range), n, value);
     }
@@ -745,7 +745,7 @@ namespace origin
       -> decltype(std::begin(range))
     {
       static_assert(Forward_range<R>(), "");
-      static_assert(Range_searchable<R, T, Rel>(), "");
+      static_assert(Range_search<R, T, Rel>(), "");
     
       return std_search_n(std::begin(range), std::end(range), n, value, comp);
     }
@@ -762,13 +762,14 @@ namespace origin
   // Transform (unary)
   //
   // FIXME: The combination of Input_iterator and Regular_function should be
-  // called Transformable.
+  // called Transform. Are there other useful occurrences of this conceptf?
   template<typename I, typename O, typename F>
     inline O std_transform(I first, I last, O result, F f)
     {
       static_assert(Input_iterator<I>(), "");
       static_assert(Regular_function<F, Value_type<I>>(), "");
       static_assert(Weak_output_iterator<O, Result_of<F(Value_type<I>)>>(), "");
+      
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, std_distance(first, last)));
       
@@ -785,17 +786,13 @@ namespace origin
   // Trnsform (unary, range)
   //
   // FIXME: The combination of Input_range and Regular function should be
-  // called Transformable_range.
-  //
-  // TODO: Can we have a Semirange that accepts a single iterator? or should
-  // we just have an overload that accepts an iterator. Probably the latter,
-  // if needed.
-  template<typename Ri, typename Ro, typename F>
-    inline void transform(const Ri& in, Ro& out, F f)
+  // called Range_transform
+  template<typename R1, typename R2, typename F>
+    inline void transform(const R1& in, R2& out, F f)
     {
-      static_assert(Input_range<Ri>(), "");
-      static_assert(Regular_function<F, Value_type<Ri>>(), "");
-      static_assert(Output_range<Ro, Result_of<F(Value_type<Ri>)>>(), "");
+      static_assert(Input_range<R1>(), "");
+      static_assert(Regular_function<F, Value_type<R2>>(), "");
+      static_assert(Output_range<R2, Result_of<F(Value_type<R1>)>>(), "");
       assume(size(in) <= size(out));
 
       std_transform(std::begin(in), std::end(in), std::begin(out), f);
@@ -806,47 +803,149 @@ namespace origin
     
   // Transform (binary)
   template<typename I1, typename I2, typename O, typename F>
-    inline O std_transform(I1 first1, I1 last1, I2 first2, O result, F f)
+    O std_transform(I1 first1, I1 last1, I2 first2, O result, F f)
     {
-      return std::transform(first1, last1, first2, result, f);
+      static_assert(Input_iterator<I1>(), "");
+      static_assert(Input_iterator<I2>(), "");
+      static_assert(Regular_function<F, Value_type<I1>(), Value_type<I2>>(), "");
+      static_assert(Weak_output_iterator<O, Result_of<F(Value_type<I1>, Value_type<I2>)>>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+      assume(is_writable_range(result, distance(first1, last1)));
+
+      while(first1 != last1) {
+        *result = f(*first1, *first2);
+        ++first1;
+        ++first2;
+        ++result;
+      }
+      return result;
     }
 
     
     
-  // Fill
-  template<typename Out, typename T>
-    inline void std_fill(Out first, Out last, const T& value)
+  template<typename R1, typename R2, typename R3, typename F>
+    inline void transform(const R1& range1, const R2& range2, R3& result, F f)
     {
-      return std::fill(first, last, value);
+      static_assert(Input_range<R1>(), "");
+      static_assert(Input_range<R2>(), "");
+      static_assert(Regular_function<F, Value_type<R1>(), Value_type<R2>>(), "");
+      static_assert(Output_range<R3, Result_of<F(Value_type<R1>, Value_type<R2>)>>(), "");
+
+      return std_transform(std::begin(range1), std::end(range1), 
+                           std::begin(range2), std::begin(result), f);
+    }
+    
+    
+    
+  // Fill (concept)
+  // An iterator O can be filled with a value of type T if T is copyable and
+  // O is an output iterator supporting assignment of T.
+  template<typename O, typename T>
+    constexpr bool Fill()
+    {
+      return Copyable<T>() && Output_iterator<O, T>();
+    }
+
+
+    
+  // Range fill (concept)
+  // A range R can be filled with a value of type T if its underlying iterator
+  // can be filled with that value.
+  template<typename R, typename T>
+    constexpr bool Range_fill()
+    {
+      return Range<R>() && Fill<Iterator_type<R>, T>();
+    }
+    
+    
+    
+  // Fill
+  template<typename O, typename T>
+    void std_fill(O first, O last, const T& value)
+    {
+      static_assert(Fill<O, T>(), "");
+      assert(is_writable_range(first, last, value));
+      
+      while(first != last) {
+        *first = value;
+        ++first;
+      }
+    }
+    
+    
+    
+  // Fill (range)
+  template<typename R, typename T>
+    inline void fill(R& range, const T& value)
+    {
+      static_assert(Copyable<T>(), "");
+      static_assert(Output_range<T>(), "");
+      
+      return std_fill(std::begin(range), std::end(range));
     }
     
     
     
   // Fill n
-  template<typename Out, typename T>
-    inline Out std_fill_n(Out first, Distance_type<Out> n, const T& value)
+  template<typename O, typename T>
+    inline O std_fill_n(O first, Distance_type<O> n, const T& value)
     {
-      return std::fill(first, n, value);
+      static_assert(Copyable<T>(), "");
+      static_assert(Weak_output_iterator<O, T>(), "");
+      assert(is_writable_range(first, n, value));
+
+      while(n != 0) {
+        *first = value;
+        ++first;
+        --n;
+      }
     }
     
     
     
   // Generate
-  template<typename Out, typename F>
-    inline F std_generate(Out first, Out last, F gen)
+  template<typename O, typename F>
+    inline F std_generate(O first, O last, F gen)
     {
-      std::generate(first, last, gen);
+      static_assert(Function<F>(), "");
+      static_assert(Output_iterator<O, Result_of<F()>>(), "");
+      assert(is_writable_range(first, last));
+      
+      while(first != last) {
+        *first = gen();
+        ++first;
+      }
       return gen;
     }
     
     
     
-  // Generate n
-  template<typename Out, typename F>
-    inline std::pair<Out, F> std_generate_n(Out first, Distance_type<Out> n, F gen)
+  // Generate (range)
+  template<typename R, typename F>
+    inline F generate(R& range, F gen)
     {
-      auto result = std::generate(first, n, gen);
-      return {result, gen};
+      static_assert(Function<F>(), "");
+      static_assert(Output_range<R, Result_of<F()>>(), "");
+
+      return std_generate(std::begin(range), std::end(range));
+    }
+    
+    
+  // Generate n
+  template<typename O, typename F>
+    inline std::pair<O, F> std_generate_n(O first, Distance_type<O> n, F gen)
+    {
+      static_assert(Function<F>(), "");
+      static_assert(Output_iterator<O, Result_of<F()>>(), "");
+      assert(is_writable_range(first, n));
+
+      while(n != 0) {
+        *first = gen();
+        ++first;
+        --n;
+      }
+      return {first, gen};
     }
   
   
@@ -854,37 +953,99 @@ namespace origin
   // The Replace Family
 
   // Replace
-  template<typename Iter, typename T>
-    inline void std_replace(Iter first, Iter last, const T& old_value, const T& new_value)
+  template<typename I, typename T>
+    void std_replace(I first, I last, const T& old_value, const T& new_value)
     {
-      return std::replace(first, last, old_value, new_value);
+      static_assert(Search<I, T>(), "");
+      static_assert(Copy<I, T>(), "");
+
+      while(first != last) {
+        if(*first == old_value)
+          *first = new_value;
+        ++first;
+      }
+    }
+    
+    
+    
+  // Replace (range)
+  template<typename R, typename T>
+    inline void replace(R& range, const T& old_value, const T& new_value)
+    {
+      static_assert(Range_search<R, T>(), "");
+      static_assert(Range_copy<R, T>(), "");
+      
+      std_replace(std::begin(range), std::end(range), old_value, new_value);
     }
     
   
 
   // Replace_if
-  template<typename Iter, typename Pred, typename T>
-    inline void std_replace_if(Iter first, Iter last, Pred pred, const T& new_value)
+  template<typename I, typename P, typename T>
+    inline void std_replace_if(I first, I last, P pred, const T& new_value)
     {
-      return std::replace_if(first, last, pred, new_value);
+      static_assert(Query<I, P>(), "");
+      static_assert(Copy<I, T>(), "");
+      
+      while(first != last) {
+        if(pred(*first)) 
+          *first = new_value;
+        ++first;
+      }
     }
     
     
   
-  // Replace copy
-  template<typename Iter, typename Out, typename T>
-    inline Out std_replace_copy(Iter first, Iter last, Out result, const T& old_value, const T& new_value)
+  // Replace if (range)
+  template<typename R, typename P, typename T>
+    inline void replace_if(R& range, P pred, const T& new_value)
     {
-      return std::replace_copy(first, last, result, old_value, new_value);
+      static_assert(Range_query<R, P>(), "");
+      static_assert(Range_copy<R, T>(), "");
+      
+      std_replace_if(std::begin(range), std::end(range), pred, new_value);
+    }
+
+    
+    
+  // Replace copy
+  template<typename I, typename O, typename T>
+    inline O std_replace_copy(I first, I last, O result, const T& old_value, const T& new_value)
+    {
+      static_assert(Search<I, T>(), "");
+      static_assert(Copy<I, O>(), "");
+      static_assert(Fill<O, T>(), "");
+      
+      while(first != last) {
+        if(*first == old_value)
+          *result = new_value;
+        else
+          *result = *first;
+        ++result;
+        ++first;
+      }
+      return result;
     }
     
     
   
   // Replace copy if
-  template<typename Iter, typename Out, typename Pred, typename T>
-    inline Out std_replace_copy(Iter first, Iter last, Out result, Pred pred, const T& new_value)
+  template<typename I, typename O, typename P, typename T>
+    inline O std_replace_copy_if(I first, I last, O result, P pred, const T& new_value)
     {
-      return std::replace_copy_if(first, last, result, pred, new_value);
+      static_assert(Query<I, P>(), "");
+      static_assert(Copy<I, O>(), "");
+      static_assert(Fill<O, T>(), "");
+      
+      while(first != last) {
+        if(pred(*first))
+          *result = new_value;
+        else
+          *result = *first;
+        ++result;
+        ++first;
+      }
+      return result;
     }
 
 
@@ -892,8 +1053,8 @@ namespace origin
   // The Remove Family
 
   // Remove
-  template<typename Iter, typename T>
-    Iter std_remove(Iter first, Iter last, const T& value)
+  template<typename I, typename T>
+    I std_remove(I first, I last, const T& value)
     {
       return std::remove(first, last, value);
     }
@@ -901,16 +1062,16 @@ namespace origin
   
   
   // Remove if
-  template<typename Iter, typename Pred>
-    Iter std_remove_if(Iter first, Iter last, Pred pred)
+  template<typename I, typename Pred>
+    I std_remove_if(I first, I last, Pred pred)
     {
       return std::remove_if(first, last, pred);
     }
     
     
   // Remove copy  
-  template<typename Iter, typename Out, typename T>
-    Out std_remove_copy(Iter first, Iter last, Out result, const T& value)
+  template<typename I, typename O, typename T>
+    O std_remove_copy(I first, I last, O result, const T& value)
     {
       return std::remove_copy(first, last, result, value);
     }
@@ -918,8 +1079,8 @@ namespace origin
   
   
   // Remove copy if
-  template<typename Iter, typename Out, typename Pred>
-    Out std_remove_copy_if(Iter first, Iter last, Out result, Pred pred)
+  template<typename I, typename O, typename Pred>
+    O std_remove_copy_if(I first, I last, O result, Pred pred)
     {
       return std::remove_copy_if(first, last, result, pred);
     }
@@ -933,12 +1094,12 @@ namespace origin
   // a pair {new_last, result_last} where the range [first, new_last) is a
   // bounded range containing the elements not extracted and the output range
   // [result, result_last) contains the extracted elements.
-  template<typename Iter, typename Out, typename T>
-    std::pair<Iter, Out> extract(Iter first, Iter last, Out result, T const& value)
+  template<typename I, typename O, typename T>
+    std::pair<I, O> extract(I first, I last, O result, const T& value)
     {
-      static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Equality_comparable<Value_type<Iter>, T>(), "");
-      static_assert(Move_writable<Out, Value_type<Iter>>(), "");
+      static_assert(Permutable_iterator<I>(), "");
+      static_assert(Search<I, T>(), "");
+      static_assert(Move<I, O>(), "");
       assert(( is_readable_range(first, last) ));
       assume(( is_movable_range(result, std_count(first, last, value), *first) ));
 
@@ -948,7 +1109,7 @@ namespace origin
 
       *result = std::move(*first);
       ++result;
-      Iter hole = first;
+      I hole = first;
       ++first;
       while(first != last) {
         if(*first != value) {
@@ -972,12 +1133,12 @@ namespace origin
   // a pair {new_last, result_last} where the range [first, new_last) is a
   // bounded range containing the elements not extracted and the output range
   // [result, result_last) contains the extracted elements.
-  template<typename Iter, typename Out, typename Pred>
-    std::pair<Iter, Out> extract_if(Iter first, Iter last, Out result, Pred pred)
+  template<typename I, typename O, typename Pred>
+    std::pair<I, O> extract_if(I first, I last, O result, Pred pred)
     {
-      static_assert(Forward_iterator<Iter>(), "");
-      static_assert(Predicate<Pred, Value_type<Iter>>(), "");
-      static_assert(Move_writable<Out, Value_type<Iter>>(), "");
+      static_assert(Permutable_iterator<I>(), "");
+      static_assert(Query<I, Pred>(), "");
+      static_assert(Move<I, O>(), "");
       assert(( is_readable_range(first, last) ));
       assume(( is_movable_range(result, std_count_if(first, last, pred), *first) ));
 
@@ -987,7 +1148,7 @@ namespace origin
 
       *result = std::move(*first);
       ++result;
-      Iter hole = first;
+      I hole = first;
       ++first;
       while(first != last) {
         if(!pred(*first)) {
@@ -1007,8 +1168,8 @@ namespace origin
   // The Unique Family
   
   // Unique
-  template<typename Iter>
-    Iter std_unique(Iter first, Iter last)
+  template<typename I>
+    I std_unique(I first, I last)
     {
       return std::unique(first, last);
     }
@@ -1016,8 +1177,8 @@ namespace origin
   
   
   // Unique (predicate)
-  template<typename Iter, typename R>
-    Iter std_unique(Iter first, Iter last, R comp)
+  template<typename I, typename R>
+    I std_unique(I first, I last, R comp)
     {
       return std::unique(first, last, comp);
     }
@@ -1025,8 +1186,8 @@ namespace origin
     
   
   // Unique copy
-  template<typename Iter, typename Out>
-    Out std_unique_copy(Iter first, Iter last, Out result)
+  template<typename I, typename O>
+    O std_unique_copy(I first, I last, O result)
     {
       return std::unique(first, last, result);
     }
@@ -1034,8 +1195,8 @@ namespace origin
     
     
   // Unique copy (predicate)
-  template<typename Iter, typename Out, typename R>
-    Out std_unique_copy(Iter first, Iter last, Out result, R comp)
+  template<typename I, typename O, typename R>
+    O std_unique_copy(I first, I last, O result, R comp)
     {
       return std::unique_copy(first, last, result, comp);
     }
@@ -1048,8 +1209,8 @@ namespace origin
   // TODO: Implement a (perfect) riffle algorithm.
 
   // Reverse
-  template<typename Iter>
-    void std_reverse(Iter first, Iter last)
+  template<typename I>
+    void std_reverse(I first, I last)
     {
       std::reverse(first, last);
     }
@@ -1057,8 +1218,8 @@ namespace origin
   
   
   // Reverse copy
-  template<typename Iter, typename Out>
-    void std_reverse_copy(Iter first, Iter last, Out result)
+  template<typename I, typename O>
+    void std_reverse_copy(I first, I last, O result)
     {
       std::reverse(first, last, result);
     }
@@ -1066,8 +1227,8 @@ namespace origin
     
 
   // Rotate
-  template<typename Iter>
-    Iter std_rotate(Iter first, Iter mid, Iter last)
+  template<typename I>
+    I std_rotate(I first, I mid, I last)
     {
       return std::rotate(first, mid, last);
     }
@@ -1075,8 +1236,8 @@ namespace origin
   
   
   // Rotate copy
-  template<typename Iter, typename Out>
-    Iter std_rotate_copy(Iter first, Iter mid, Iter last, Out result)
+  template<typename I, typename O>
+    I std_rotate_copy(I first, I mid, I last, O result)
     {
       return std::rotate_copy(first, mid, last, result);
     }
@@ -1090,8 +1251,8 @@ namespace origin
   // TODO: Implement a randomized riffle algorithm.
 
   // Random shuffle
-  template<typename Iter>
-    void std_random_shuffle(Iter first, Iter last)
+  template<typename I>
+    void std_random_shuffle(I first, I last)
     {
       return std::random_shuffle(first, last);
     }
@@ -1099,8 +1260,8 @@ namespace origin
   
   
   // Random shuffle (generator)
-  template<typename Iter, typename Gen>
-    void std_random_shuffle(Iter first, Iter last, Gen&& rand)
+  template<typename I, typename Gen>
+    void std_random_shuffle(I first, I last, Gen&& rand)
     {
       return std::random_shuffle(first, last, rand);
     }
@@ -1108,8 +1269,8 @@ namespace origin
   
   
   // Shuffle
-  template<typename Iter, typename Gen>
-    void std_shuffle(Iter first, Iter last, Gen&& rand)
+  template<typename I, typename Gen>
+    void std_shuffle(I first, I last, Gen&& rand)
     {
       return std::shuffle(first, last, rand);
     }
@@ -1120,8 +1281,8 @@ namespace origin
   // This family of algorithms deals with partitions of a sequence.
   
   // Is partitioned
-  template<typename Iter, typename Pred>
-    bool std_is_partitioned(Iter first, Iter last, Pred pred)
+  template<typename I, typename Pred>
+    bool std_is_partitioned(I first, I last, Pred pred)
     {
       return std::is_partitioned(first, last, pred);
     }
@@ -1129,8 +1290,8 @@ namespace origin
   
   
   // Partition point
-  template<typename Iter, typename Pred>
-    Iter std_partition_point(Iter first, Iter last, Pred pred)
+  template<typename I, typename Pred>
+    I std_partition_point(I first, I last, Pred pred)
     {
       return std::partition_point(first, last, pred);
     }
@@ -1138,8 +1299,8 @@ namespace origin
   
   
   // Paritition
-  template<typename Iter, typename Pred>
-    Iter std_partition(Iter first, Iter last, Pred pred)
+  template<typename I, typename Pred>
+    I std_partition(I first, I last, Pred pred)
     {
       return std::partition(first, last, pred);
     }
@@ -1147,8 +1308,8 @@ namespace origin
   
   
   // Stable partition
-  template<typename Iter, typename Pred>
-    Iter std_stable_partition(Iter first, Iter last, Pred pred)
+  template<typename I, typename Pred>
+    I std_stable_partition(I first, I last, Pred pred)
     {
       return std::stable_partition(first, last, pred);
     }
@@ -1156,8 +1317,8 @@ namespace origin
     
   
   // Partition copy
-  template<typename Iter, typename Out1, typename Out2, typename Pred>
-    std::pair<Out1, Out2> std_partition_copy(Iter first, Iter last, 
+  template<typename I, typename Out1, typename Out2, typename Pred>
+    std::pair<Out1, Out2> std_partition_copy(I first, I last, 
                                              Out1 out_true, Out2 out_false, 
                                              Pred pred)
     {
@@ -1171,8 +1332,8 @@ namespace origin
   // a sequence.
   
   // Is sorted
-  template<typename Iter>
-    bool std_is_sorted(Iter first, Iter last)
+  template<typename I>
+    bool std_is_sorted(I first, I last)
     {
       return std::is_sorted(first, last);
     }
@@ -1180,8 +1341,8 @@ namespace origin
   
   
   // Is sorted (relation)
-  template<typename Iter, typename Ord>
-    bool std_is_sorted(Iter first, Iter last, Ord comp)
+  template<typename I, typename Ord>
+    bool std_is_sorted(I first, I last, Ord comp)
     {
       return std::is_sorted(first, last, comp);
     }
@@ -1189,8 +1350,8 @@ namespace origin
 
 
   // Is sorted until
-  template<typename Iter>
-    Iter std_is_sorted_until(Iter first, Iter last)
+  template<typename I>
+    I std_is_sorted_until(I first, I last)
     {
       return std::is_sorted(first, last);
     }
@@ -1198,8 +1359,8 @@ namespace origin
   
   
   // Is sorted until (relation)
-  template<typename Iter, typename Ord>
-    Iter std_is_sorted_until(Iter first, Iter last, Ord comp)
+  template<typename I, typename Ord>
+    I std_is_sorted_until(I first, I last, Ord comp)
     {
       return std::is_sorted(first, last, comp);
     }
@@ -1225,8 +1386,8 @@ namespace origin
     
   
   // Stable sort
-  template<typename Iter>
-    void std_stable_sort(Iter first, Iter last)
+  template<typename I>
+    void std_stable_sort(I first, I last)
     {
       return std::stable_sort(first, last);
     }
@@ -1234,8 +1395,8 @@ namespace origin
     
     
   // Stable sort (relation)
-  template<typename Iter, typename Ord>
-    void std_stable_sort(Iter first, Iter last, Ord comp)
+  template<typename I, typename Ord>
+    void std_stable_sort(I first, I last, Ord comp)
     {
       return std::stable_sort(first, last, comp);
     }
@@ -1243,8 +1404,8 @@ namespace origin
 
 
   // Partial sort
-  template<typename Iter>
-    void std_partial_sort(Iter first, Iter middle, Iter last)
+  template<typename I>
+    void std_partial_sort(I first, I middle, I last)
     {
       return std::partial_sort(first, last);
     }
@@ -1252,8 +1413,8 @@ namespace origin
     
     
   // Partial sort (relation)
-  template<typename Iter, typename Ord>
-    void std_partial_sort(Iter first, Iter middle, Iter last, Ord comp)
+  template<typename I, typename Ord>
+    void std_partial_sort(I first, I middle, I last, Ord comp)
     {
       return std::partial_sort(first, last, comp);
     }
@@ -1281,8 +1442,8 @@ namespace origin
 
 
   // Nth element
-  template<typename Iter>
-    void std_nth_element(Iter first, Iter last)
+  template<typename I>
+    void std_nth_element(I first, I last)
     {
       return std::nth_element(first, last);
     }
@@ -1290,8 +1451,8 @@ namespace origin
 
 
   // Nth element (relation)
-  template<typename Iter, typename Ord>
-    void std_nth_element(Iter first, Iter last, Ord ord)
+  template<typename I, typename Ord>
+    void std_nth_element(I first, I last, Ord ord)
     {
       return std::nth_element(first, last);
     }
@@ -1302,8 +1463,8 @@ namespace origin
   // This family of algorithms is admitted by sorted sequences.
   
   // Lower bound
-  template<typename Iter, typename T>
-    Iter std_lower_bound(Iter first, Iter last, const T& value)
+  template<typename I, typename T>
+    I std_lower_bound(I first, I last, const T& value)
     {
       return std::lower_bound(first, last, value);
     }
@@ -1311,8 +1472,8 @@ namespace origin
   
   
   // Lower bound (relation)
-  template<typename Iter, typename T, typename Ord>
-    Iter std_lower_bound(Iter first, Iter last, const T& value, Ord comp)
+  template<typename I, typename T, typename Ord>
+    I std_lower_bound(I first, I last, const T& value, Ord comp)
     {
       return std::lower_bound(first, last, value, comp);
     }
@@ -1320,8 +1481,8 @@ namespace origin
 
 
   // Upper bound
-  template<typename Iter, typename T>
-    Iter std_upper_bound(Iter first, Iter last, const T& value)
+  template<typename I, typename T>
+    I std_upper_bound(I first, I last, const T& value)
     {
       return std::upper_bound(first, last, value);
     }
@@ -1329,8 +1490,8 @@ namespace origin
   
   
   // Upper bound (relation)
-  template<typename Iter, typename T, typename Ord>
-    Iter std_upper_bound(Iter first, Iter last, const T& value, Ord comp)
+  template<typename I, typename T, typename Ord>
+    I std_upper_bound(I first, I last, const T& value, Ord comp)
     {
       return std::upper_bound(first, last, value, comp);
     }
@@ -1338,8 +1499,8 @@ namespace origin
 
 
   // Equal range
-  template<typename Iter, typename T>
-    Iter std_equal_range(Iter first, Iter last, const T& value)
+  template<typename I, typename T>
+    I std_equal_range(I first, I last, const T& value)
     {
       return std::equal_range(first, last, value);
     }
@@ -1347,8 +1508,8 @@ namespace origin
   
   
   // Equal range (relation)
-  template<typename Iter, typename T, typename Ord>
-    Iter std_equal_range(Iter first, Iter last, const T& value, Ord comp)
+  template<typename I, typename T, typename Ord>
+    I std_equal_range(I first, I last, const T& value, Ord comp)
     {
       return std::equal_range(first, last, value, comp);
     }
@@ -1356,8 +1517,8 @@ namespace origin
   
   
   // Binary search
-  template<typename Iter, typename T>
-    Iter std_binary_search(Iter first, Iter last, const T& value)
+  template<typename I, typename T>
+    I std_binary_search(I first, I last, const T& value)
     {
       return std::binary_search(first, last, value);
     }
@@ -1365,8 +1526,8 @@ namespace origin
   
   
   // Binary search (relation)
-  template<typename Iter, typename T, typename Ord>
-    Iter std_binary_search(Iter first, Iter last, const T& value, Ord comp)
+  template<typename I, typename T, typename Ord>
+    I std_binary_search(I first, I last, const T& value, Ord comp)
     {
       return std::binary_search(first, last, value, comp);
     }

@@ -77,7 +77,7 @@ namespace origin
   template<typename I, typename T>
     I std_find(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -96,7 +96,7 @@ namespace origin
   template<typename I, typename T, typename R>
     I std_find(I first, I last, const T& value, R comp)
     {
-      static_assert(Searchable<I, T, R>(), "");
+      static_assert(Search<I, T, R>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -116,7 +116,7 @@ namespace origin
     inline auto find(R&& range, const T& value) 
       -> Requires<!Has_member_find<Unqualified<R>, T>(), decltype(std::begin(range))>
     {
-      static_assert(Range_searchable<Unqualified<R>, T>(), "");
+      static_assert(Range_search<Unqualified<R>, T>(), "");
       
       return std_find(std::begin(range), std::end(range), value);
     }
@@ -140,7 +140,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline auto find(R&& range, const T& value, Rel comp) -> decltype(std::begin(range))
     {
-      static_assert(Range_searchable<Unqualified<R>, T, Rel>(), "");
+      static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
       
       return std_find(std::begin(range), std::end(range), value);
     }
@@ -153,7 +153,7 @@ namespace origin
   template<typename I, typename T>
     inline I find_not_equal(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
 
       while(first != last) {
         if(*first != value)
@@ -171,7 +171,7 @@ namespace origin
   template<typename I, typename T, typename R>
     inline I find_not_equal(I first, I last, const T& value, R comp)
     {
-      static_assert(Searchable<I, T, R>(), "");
+      static_assert(Search<I, T, R>(), "");
 
       while(first != last) {
         if(!comp(*first, value))
@@ -190,7 +190,7 @@ namespace origin
     inline auto find_not_equal(R&& range, const T& value) 
     -> decltype(std::begin(range))
     {
-      static_assert(Range_searchable<Unqualified<R>, T>(), "");
+      static_assert(Range_search<Unqualified<R>, T>(), "");
 
       return find_not_equal(std::begin(range), std::end(range), value);
     }
@@ -204,7 +204,7 @@ namespace origin
     inline auto find_not_equal(R&& range, const T& value, Rel comp) 
     -> decltype(std::begin(range))
     {
-      static_assert(Range_searchable<Unqualified<R>, T, Rel>(), "");
+      static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
   
       return find_not_equal(std::begin(range), std::end(range), value, comp);
     }
@@ -220,7 +220,7 @@ namespace origin
   template<typename I, typename T>
     inline I find_next(I first, I last, const T& value)
     {
-      static_assert(Searchable<I, T>(), "");
+      static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
       
       if(first != last)
@@ -237,7 +237,7 @@ namespace origin
   template<typename I, typename T, typename R>
     inline I find_next(I first, I last, const T& value, R comp)
     {
-      static_assert(Searchable<I, T, R>(), "");
+      static_assert(Search<I, T, R>(), "");
       assert(( is_readable_range(first, last) ));
       
       if(first != last)
@@ -254,7 +254,7 @@ namespace origin
   template<typename I, typename T, typename R>
     inline I find_nth(I first, I last, Distance_type<I> n, const T& value, R comp)
     {
-      static_assert(Searchable<I, T, R>(), "");
+      static_assert(Search<I, T, R>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last && n != 0) {
@@ -273,7 +273,7 @@ namespace origin
     inline auto find_nth(R&& range, Distance_type<R> n, T const& value, Rel comp)
       -> decltype(std::begin(range))
     {
-      static_assert(Range_searchable<Unqualified<R>, T, Rel>(), "");
+      static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
       
       return find_nth(std::begin(range), std::end(range), n, value, comp);
     }
@@ -286,7 +286,7 @@ namespace origin
   template<typename I, typename P>
     inline I std_find_if(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -305,7 +305,7 @@ namespace origin
   template<typename R, typename P>
     inline auto find_if(R&& range, P pred) -> decltype(std::begin(range))
     {
-      static_assert(Queryable<Unqualified<R>, P>(), "");
+      static_assert(Query<Unqualified<R>, P>(), "");
       
       return std_find_if(std::begin(range), std::end(range), pred);
     }
@@ -318,7 +318,7 @@ namespace origin
   template<typename I, typename P>
     inline I std_find_if_not(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       while(first != last) {
@@ -337,7 +337,7 @@ namespace origin
   template<typename R, typename P>
     inline auto find_if_not(R&& range, P pred) -> decltype(std::begin(range))
     {
-      static_assert(Queryable<Unqualified<R>, P>(), "");
+      static_assert(Query<Unqualified<R>, P>(), "");
       
       return std_find_if_not(std::begin(range), std::end(range), pred);
     }
@@ -353,7 +353,7 @@ namespace origin
   template<typename I, typename P>
     inline I find_next_if(I first, I last, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
 
       if(first != last)
@@ -370,7 +370,7 @@ namespace origin
   template<typename I, typename P>
     I find_nth_if(I first, I last, Distance_type<I> n, P pred)
     {
-      static_assert(Queryable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
       
       while(first != last && n != 0) {
@@ -390,7 +390,7 @@ namespace origin
     inline auto find_nth_if(R&& range, Distance_type<R> n, P pred)
       -> decltype(std::begin(range))
     {
-      static_assert(Range_queryable<Unqualified<R>, P>(), "");
+      static_assert(Range_query<Unqualified<R>, P>(), "");
       
       return find_nth_if(std::begin(range), std::end(range), n, pred);
     }
@@ -484,7 +484,7 @@ namespace origin
   template<typename I>
     inline I find_adjacent(I first, I last)
     {
-      static_assert(Searchable<I>(), "");
+      static_assert(Search<I>(), "");
       static_assert(Forward_iterator<I>(), "");
       assert(( is_readable_range(first, last) ));
 
@@ -498,7 +498,7 @@ namespace origin
   template<typename R>
     inline auto find_adjacent(R&& range) -> decltype(std::begin(range))
     {
-      static_assert(Range_searchable<R>(), "");
+      static_assert(Range_search<R>(), "");
       static_assert(Forward_range<R>(), "");
 
       return find_adjacent(std::begin(range), std::end(range));

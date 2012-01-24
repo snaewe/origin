@@ -135,29 +135,23 @@ namespace origin
     }
 
 
-
+  
+  // Output range (concept)
   // Returns true if R is an output range. An output range is a range of 
   // writable iterators and is writable everywhere except its limit.
+  //
+  // If T is an rvalue reference, then this concept additionally requires that
+  // T implement move semantics. If T is not an rvalue reference, then copy
+  // semantics are required.
   template<typename R, typename T>
     constexpr bool Output_range()
     {
-      return Range<R>() && Writable<Iterator_type<R>, T>();
+      return Range<R>() && Output_iterator<Iterator_type<R>, T>();
     }
-
-
-  
-  // Returns true if R is a move range. A move range is a range of movable
-  // iterators and is movable everywhere except its limit.
-  //
-  // FIXME: Is there a better name for this?
-  template<typename R, typename T>
-    constexpr bool Move_range()
-    {
-      return Range<R>() && Move_writable<Iterator_type<R>, T>();
-    }
-
-
     
+    
+  
+  // Permutable range (concept)
   // Returns true if R is a permutable range. A permutable range is permutable
   // everywhere except its limit.
   template<typename R>
@@ -168,6 +162,7 @@ namespace origin
 
 
 
+  // Mutable range (concept)
   // Returns true if R is a mutable range.
   template<typename R>
     constexpr bool Mutable_range()
