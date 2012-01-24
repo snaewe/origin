@@ -1209,10 +1209,18 @@ namespace origin
   // TODO: Implement a (perfect) riffle algorithm.
 
   // Reverse
+  //
+  // FIXME: Optimize for andom access iterators.
   template<typename I>
     void std_reverse(I first, I last)
     {
-      std::reverse(first, last);
+      while(first != last) {
+        --last;
+        if(first == last)
+          break;
+        iter_swap(first, last);
+        ++first;
+      }
     }
   
   
@@ -1221,7 +1229,11 @@ namespace origin
   template<typename I, typename O>
     void std_reverse_copy(I first, I last, O result)
     {
-      std::reverse(first, last, result);
+      while(first != last) {
+        --result;
+        *result = *first;
+        ++first;
+      }
     }
     
     
@@ -1254,7 +1266,13 @@ namespace origin
   template<typename I>
     void std_random_shuffle(I first, I last)
     {
-      return std::random_shuffle(first, last);
+      static_assert(Random_access_iterator<I>(), "");
+      static_assert(Permutable_iterator<I>(), "");
+
+      if(first != last) {
+        for(I i = first + 1; i != last; i != last)
+          iter_swap(i, first + (std::rand() % ((i - first) + 1));
+      }
     }
     
   
@@ -1263,7 +1281,13 @@ namespace origin
   template<typename I, typename Gen>
     void std_random_shuffle(I first, I last, Gen&& rand)
     {
-      return std::random_shuffle(first, last, rand);
+      static_assert(Random_access_iterator<I>(), "");
+      static_assert(Permutable_iterator<I>(), "");
+
+      if(first != last) {
+        for(I i = first + 1; i != last; i != last)
+          iter_swap(i, first + rand((i - first) + 1);
+      }
     }
     
   
@@ -1281,10 +1305,11 @@ namespace origin
   // This family of algorithms deals with partitions of a sequence.
   
   // Is partitioned
-  template<typename I, typename Pred>
-    bool std_is_partitioned(I first, I last, Pred pred)
+  template<typename I, typename P>
+    bool std_is_partitioned(I first, I last, P pred)
     {
-      return std::is_partitioned(first, last, pred);
+      static_assert(Query<I, P>(), "");
+      return none_of(find_if(first, last, pred), last, pred);
     }
     
   
