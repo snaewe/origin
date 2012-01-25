@@ -397,7 +397,7 @@ namespace origin
     
 
     
-  // TODO: The following are Comparable algorithms. Maybe they belong with
+  // TODO: The following are Comparison algorithms. Maybe they belong with
   // equal and mismatch -- even though they're find algorithms.
   
   
@@ -408,9 +408,8 @@ namespace origin
   template<typename I1, typename I2>
     inline I1 find_first_in(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      
-      static_assert(Comparable<I1, I2>(), "");
       static_assert(Forward_iterator<I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
 
@@ -429,7 +428,7 @@ namespace origin
   template<typename R1, typename R2>
     inline auto find_first_in(R1&& range1, const R2& range2) -> decltype(std::begin(range1))
     {
-      static_assert(Range_comparable<Unqualified<R1>, R2>(), "");
+      static_assert(Range_comparison<Unqualified<R1>, R2>(), "");
       static_assert(Forward_range<R2>(), "");
       
       return find_first_in(std::begin(range1), std::end(range1),
@@ -444,7 +443,7 @@ namespace origin
   template<typename I1, typename I2, typename R>
     inline I1 find_first_in(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       static_assert(Forward_iterator<I2>(), "");
       assert(( is_readable_range(first1, last1) ));
       assert(( is_readable_range(first2, last2) ));
@@ -468,7 +467,7 @@ namespace origin
     inline auto find_first_in(R1&& range1, const R2& range2, R comp)
       -> decltype(std::begin(range1))
     {
-      static_assert(Range_comparable<Unqualified<R1>, R2, R>(), "");
+      static_assert(Range_comparison<Unqualified<R1>, R2, R>(), "");
       static_assert(Forward_range<R2>(), "");
       
       return find_first_in(std::begin(range1), std::end(range1),
@@ -479,18 +478,50 @@ namespace origin
   
   // Find adjacent
   // Return the first iterator i in [first, last) where *i == *(i + 1).
-  //
-  // TODO: Do these requirements appear anywhere else?
   template<typename I>
     inline I find_adjacent(I first, I last)
     {
-      static_assert(Search<I>(), "");
       static_assert(Forward_iterator<I>(), "");
-      assert(( is_readable_range(first, last) ));
+      static_assert(Search<I>(), "");
+      assert(is_readable_range(first, last));
 
-      return std::adjacent_find(first, last);
+      if(first != last) {
+        for(I i = std_next(first); i != last; ++i) {
+          if(*first == i)
+            return first;
+          ++first;
+        }
+      }
+      return last;
     }
     
+    
+    
+  // Find adjacent (relation)
+  // Returns the first iterator i in [first, last) where comp(*i, *(i + 1)) is
+  // true.
+  //
+  // FIXME: Is there a better way to name the Search requirement? We can't 
+  // overload Search<I, R> since it collides with Search<I, T>. The requirement 
+  // could correctly be Comparison<I, I, R>, although the algorithm does not 
+  // compare elements from different ranges. Note that these requirements are 
+  // not  especially commononly: only here and unique.
+  template<typename I, typename R>
+    inline I find_adjacent(I first, I last, R comp)
+    {
+      static_assert(Forward_iterator<I>(), "");
+      static_assert(Search<I, Value_type<I>, R>(), "");
+      assert(is_readable_range(first, last, comp));
+      
+      if(first != last) {
+        for(I i = std_next(first); i != last; ++i) {
+          if(comp(*first, *i))
+            return first;
+          ++first;
+        }
+      }
+      return last;
+    }
     
   
   // Find adjacent (range)
@@ -504,6 +535,19 @@ namespace origin
       return find_adjacent(std::begin(range), std::end(range));
     }
   
+
+  
+  // Find adjacent (range, relation)
+  // Return the first iterator i in range wheren *i == *(i + 1).
+  template<typename R, typename Rel>
+    inline auto find_adjacent(R&& range, Rel comp) -> decltype(std::begin(range))
+    {
+      static_assert(Range_search<R, Value_type<R>, Rel>(), "");
+      static_assert(Forward_range<R>(), "");
+
+      return find_adjacent(std::begin(range), std::end(range), comp);
+    }
+
 } // namespace origin
 
 #endif

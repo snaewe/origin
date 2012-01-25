@@ -103,6 +103,28 @@ namespace origin
     }
 
 
+    
+  // Mutable (concept)
+  // Returns true if I mutable. A mutable iterator is readable and writable,
+  // and has a copyable value type.
+  template<typename I>
+    constexpr bool Mutable()
+    {
+      return Readable<I>() && Copyable<Value_type<I>>() && Writable<I, Value_type<I>>();
+    }
+    
+    
+    
+  // Permutable (concept)
+  // Returns true if I is permutable. A permutable iterator is readable,
+  // move-writable, and has a movable value type.
+  template<typename I>
+    constexpr bool Permutable()
+    {
+      return Readable<I>() && Movable<Value_type<I>>() && Writable<I, Value_type<I>&&>();
+    }
+    
+    
 
   // Incrementable types
   //
@@ -473,43 +495,6 @@ namespace origin
       return Random_access_iterator_concept<Iter>::check();
     };
     
-    
-    
-  // Permutable and mutable iterators
-  // There are two kinds of mutable iterators: Permutable iterators allow
-  // values to be exchanged (moved). Mutable iterators allow values to be
-  // replaced (copied). Note that mutable iterators are also permutable.
-  // Permutable and mutable iterators are forward iterators.
-
-    
-    
-  // Permutable Iterators
-  // A permutable iterator allows values to be exchanged (moved) between
-  // different iterators without copying. This also includes moving values
-  // into temporary values.
-  template<typename I>
-    constexpr bool Permutable_iterator()
-    {
-      return Forward_iterator<I>() 
-          && Movable<Value_type<I>>() 
-          && Writable<I, Value_type<I>&&>();
-    }
-    
-    
-    
-  // Mutable Iterators
-  // A mutable iterator allows its referenced values to be re-assigned to new
-  // values (through copies). Note that mutable iterators are inherently 
-  // permutable.
-  template<typename I>
-    constexpr bool Mutable_iterator()
-    {
-      return Forward_iterator<I>() 
-          && Copyable<Value_type<I>> 
-          && Writable<I, Value_type<I>>();
-    }
-
-
     
   // A strict input iterator is at most an input iterator. That is I is not
   // a forward iterator. This is provided for convenience.

@@ -20,9 +20,9 @@ namespace origin
   template<typename I1, typename I2>
     bool is_sorted_permutation(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Sortable<I1>(), "");
-      static_assert(Sortable<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Sort<I1>(), "");
+      static_assert(Sort<I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       
       std_sort(first1, last1);
       std_sort(first2, last2);
@@ -38,15 +38,15 @@ namespace origin
   // although there are 2n copies and 2 executions of the sort.
   //
   // The comp relation is required to be a strict weak ordering. Equality is 
-  // checked using the symmetric complement of comp. Note that the Comparable
+  // checked using the symmetric complement of comp. Note that the Comparison
   // requirement below covers the case where equal is used with its symmetric
   // complement.
   template<typename I1, typename I2, typename R>
     bool is_sorted_permutation(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Sortable<I1, R>(), "");
-      static_assert(Sortable<I2, R>(), "");
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Sort<I1, R>(), "");
+      static_assert(Sort<I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       // static_assert(is_strict_weak_ordering(comp));
       
       std_sort(first1, last1);
@@ -68,7 +68,7 @@ namespace origin
       static_assert(Copyable<Value_type<I2>>(), "");
       static_assert(Totally_ordered<Value_type<I1>>(), "");
       static_assert(Totally_ordered<Value_type<I2>>(), "");
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, distance(first1, last1)));
 
@@ -100,7 +100,7 @@ namespace origin
       static_assert(Copyable<Value_type<I2>>(), "");
       static_assert(Relation<R, Value_type<I1>>(), "");
       static_assert(Relation<R, Value_type<I2>>(), "");
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, distance(first1, last1)));
 
@@ -120,15 +120,15 @@ namespace origin
   // Is permutation (range)
   // Returns true if a is a permutation of b.
   //
-  // Note that the minimum requirement for is_permutation is Comparable,
-  // but the the optiized version requires Sortable, with the weaker 
+  // Note that the minimum requirement for is_permutation is Comparison,
+  // but the the optiized version requires Sort, with the weaker 
   // requirements acting as a fallback.
   template<typename R1, typename R2>
     inline bool is_permutation(const R1& a, const R2& b)
     {
-      static_assert(Range_sortable<R1>(), "");
-      static_assert(Range_sortable<R2>(), "");
-      static_assert(Range_comparable<R1, R2>(), "");
+      static_assert(Range_sort<R1>(), "");
+      static_assert(Range_sort<R2>(), "");
+      static_assert(Range_comparison<R1, R2>(), "");
       assert(size(a) == size(b));
 
       return std_is_permutation(std::begin(a), std::end(a), std::begin(b));
@@ -145,9 +145,9 @@ namespace origin
   template<typename R1, typename R2, typename Rel>
     inline bool is_permutation(const R1& a, const R2& b, Rel comp)
     {
-      static_assert(Range_sortable<R1, Rel>(), "");
-      static_assert(Range_sortable<R2, Rel>(), "");
-      static_assert(Range_comparable<R1, R2, Rel>(), "");
+      static_assert(Range_sort<R1, Rel>(), "");
+      static_assert(Range_sort<R2, Rel>(), "");
+      static_assert(Range_comparison<R1, R2, Rel>(), "");
       assert(size(a) == size(b));
       assert(strict_weak_ordering(comp));
 
@@ -162,7 +162,7 @@ namespace origin
     inline bool std_next_permutation(I first, I last)
     {
       static_assert(Bidirectional_iterator<I>(), "");
-      static_assert(Sortable<I>(), "");
+      static_assert(Sort<I>(), "");
       assert(is_permutable_range(first, last));
 
       return std::next_permutation(first, last);
@@ -176,7 +176,7 @@ namespace origin
     inline bool next_permutation(R& range)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R>(), "");
+      static_assert(Range_sort<R>(), "");
 
       return std_next_permutation(std::begin(range), std::end(range));
     }
@@ -204,7 +204,7 @@ namespace origin
     inline bool next_permutation(R& range, Rel comp)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R, Rel>(), "");
+      static_assert(Range_sort<R, Rel>(), "");
     
       return std::next_permutation(std::begin(range), std::end(range), comp);
     }
@@ -217,7 +217,7 @@ namespace origin
     inline bool std_prev_permutation(I first, I last)
     {
       static_assert(Bidirectional_iterator<I>(), "");
-      static_assert(Sortable<I>(), "");
+      static_assert(Sort<I>(), "");
       assert(( is_permutable_range(first, last) ));
 
       return std::prev_permutation(first, last);
@@ -231,7 +231,7 @@ namespace origin
     inline bool prev_permutation(R& range)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R>(), "");
+      static_assert(Range_sort<R>(), "");
 
       return std::prev_permutation(std::begin(range), std::end(range));
     }
@@ -259,7 +259,7 @@ namespace origin
   template<typename R, typename Rel>
     inline bool prev_permutation(R& range, Rel comp)
     {
-      static_assert(Sortable_range<R, Rel>(), "");
+      static_assert(Range_sort<R, Rel>(), "");
       static_assert(Bidirectional_range<R>(), "");
 
       return std::prev_permutation(std::begin(range), std::end(range), comp);
@@ -287,7 +287,7 @@ namespace origin
     inline bool next_partial_permutation(R& range, Iterator_type<R> mid)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R>(), "");
+      static_assert(Range_sort<R>(), "");
 
       return next_partial_permutation(std::begin(range), mid, std::end(range));
     }
@@ -299,7 +299,7 @@ namespace origin
     inline bool next_partial_permutation(R& range, Iterator_type<R> mid, Rel comp)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R, Rel>(), "");
+      static_assert(Range_sort<R, Rel>(), "");
 
       return next_partial_permutation(std::begin(range), mid, std::end(range), comp);
     }
@@ -313,7 +313,7 @@ namespace origin
     inline bool prev_partial_permutation(R& range, Iterator_type<R> mid)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R>(), "");
+      static_assert(Range_sort<R>(), "");
 
       return prev_partial_permutation(std::begin(range), mid, std::end(range));
     }
@@ -325,7 +325,7 @@ namespace origin
     inline bool prev_partial_permutation(R& range, Iterator_type<R> mid, Rel comp)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R, Rel>(), "");
+      static_assert(Range_sort<R, Rel>(), "");
 
       return prev_partial_permutation(std::begin(range), mid, std::end(range), comp);
     }
@@ -339,7 +339,7 @@ namespace origin
     inline bool next_combination(R& range, Iterator_type<R> mid)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R>(), "");
+      static_assert(Range_sort<R>(), "");
 
       return next_combination(std::begin(range), mid, std::end(range));
     }
@@ -351,7 +351,7 @@ namespace origin
     inline bool next_combination(R& range, Iterator_type<R> mid, Rel comp)
     {
       static_assert(Bidirectional_range<R>(), "");
-      static_assert(Sortable_range<R, Rel>(), "");
+      static_assert(Range_sort<R, Rel>(), "");
 
       return next_combination(std::begin(range), mid, std::end(range), comp);
     }

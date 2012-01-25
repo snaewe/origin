@@ -150,28 +150,8 @@ namespace origin
     }
     
     
-  
-  // Permutable range (concept)
-  // Returns true if R is a permutable range. A permutable range is permutable
-  // everywhere except its limit.
-  template<typename R>
-    constexpr bool Permutable_range()
-    {
-      return Range<R>() && Permutable_iterator<Iterator_type<R>>();
-    }
 
-
-
-  // Mutable range (concept)
-  // Returns true if R is a mutable range.
-  template<typename R>
-    constexpr bool Mutable_range()
-    {
-      return Range<R>() && Mutable_iterator<Iterator_type<R>>();
-    }
-
-
-    
+  // Forward range (concept)
   // Returns true if R is a forward range. A forward range is a range whose 
   // iterator type is a forward iterator.
   template<typename R>
@@ -182,6 +162,7 @@ namespace origin
 
 
   
+  // Bidirectional range (concept)
   // Returns true if R is a bidirectional range.
   template<typename R>
     constexpr bool Bidirectional_range()
@@ -190,7 +171,8 @@ namespace origin
     }
 
 
-    
+
+  // Random access range (concept)
   // Returns true if R is a random access range.
   template<typename R>
     constexpr bool Random_access_range()
@@ -200,43 +182,6 @@ namespace origin
   
   
   
-  // Sortable range
-  // A sortable range is a permutable range whose values are either totally
-  // ordered or weakly ordered by some relation. 
-  
-  // Requirements for a sortable range.
-  template<typename Rng, typename R>
-    struct Sortable_range_concept
-    {
-      static constexpr bool check()
-      {
-        return Forward_range<Rng>() 
-            && Permutable_range<Rng>() 
-            && Relation<R, Value_type<Rng>>();
-      }
-    };
-  
-  // Totally ordered.
-  template<typename Rng>
-    struct Sortable_range_concept<Rng, default_t>
-    {
-      static constexpr bool check()
-      {
-        return Forward_range<Rng>()
-            && Permutable_range<Rng>()
-            && Totally_ordered<Value_type<Rng>>();
-      }
-    };
-  
-  // Returns true if Rng is sortable (with respect to the relation R).
-  template<typename Rng, typename R = default_t>
-    constexpr bool Sortable_range()
-    {
-      return Sortable_range_concept<Rng, R>::check();
-    }
-    
-    
-
   // The following type traits and type predicates establish the notion of
   // sized type, some type for which size(x) is valid query. Size is defined
   // in 3 ways:
@@ -392,6 +337,8 @@ namespace origin
   // Wraps an array reference with static bounds and guarantees that it will 
   // behave like an array. This is useful to prevent array types from decaying
   // into pointers. 
+  //
+  // FIXME: I think this goes away with perfect forwarding.
   template<typename T, std::size_t N>
     struct array_range
     {

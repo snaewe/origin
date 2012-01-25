@@ -109,17 +109,17 @@ namespace origin
 
   
   
-  // Comparable iterators (concept)
+  // Comparison (concept)
   // A comparison algorithm compares the elements in two different ranges for 
   // equality. The comparison can also be generalized to a relation. There are
   // two forms of this concept:
   //
-  //    Comparable<I1, I2>    Compare the elements of I1 and I2 for equality
-  //    Comparable<I1, I2, R> Compare the elements of I1 and I2 using the relation R
+  //    Comparison<I1, I2>    Compare the elements of I1 and I2 for equality
+  //    Comparison<I1, I2, R> Compare the elements of I1 and I2 using the relation R
   
-  // Comparable<I1, I2, R> implementation
+  // Comparison<I1, I2, R> implementation
   template<typename I1, typename I2, typename R>
-    struct Comparable_concept
+    struct Comparison_concept
     {
       static constexpr bool check()
       {
@@ -129,9 +129,9 @@ namespace origin
       }
     };
   
-  // Comparable<I1, I2> implementation
+  // Comparison<I1, I2> implementation
   template<typename I1, typename I2>
-    struct Comparable_concept<I1, I2, default_t>
+    struct Comparison_concept<I1, I2, default_t>
     {
       static constexpr bool check()
       {
@@ -143,28 +143,28 @@ namespace origin
   
   // Returns true I1 and I2 can be compared.
   template<typename I1, typename I2, typename R = default_t>
-    constexpr bool Comparable()
+    constexpr bool Comparison()
     {
-      return Comparable_concept<I1, I2, R>::check();
+      return Comparison_concept<I1, I2, R>::check();
     }
     
     
 
-  // Comparable ranges (concept)
+  // Range comparison (concept)
   // Two ranges are comparable if their iterators can be compared. Like the
-  // Comparable concept, there are two forms of this concept:
+  // Comparison concept, there are two forms of this concept:
   //
-  //    Range_comparable<R1, R2>      Compare the elements of R1 and R2 for equality
-  //    Range_comparable<R1, R2, Rel> Compare the elements of R1 and R2 using Rel
+  //    Range_comparison<R1, R2>      Compare the elements of R1 and R2 for equality
+  //    Range_comparison<R1, R2, Rel> Compare the elements of R1 and R2 using Rel
   
   // Returns true if R1 and R2 are ranges that can be compared using value
   // equality or a relation R.
   template<typename R1, typename R2, typename Rel = default_t>
-    constexpr bool Range_comparable()
+    constexpr bool Range_comparison()
     {
       return Input_range<R1>() 
           && Input_range<R2>() 
-          && Comparable<Iterator_type<R1>, Iterator_type<R2>, Rel>();
+          && Comparison<Iterator_type<R1>, Iterator_type<R2>, Rel>();
     }
 
 
@@ -218,74 +218,75 @@ namespace origin
 
 
 
-  // Sortable
-  // The Sortable concept describes the requirements of algorithms that permute
-  // ranges sequences in some sorted order. There are two:
+  // Permutation (concept)
+  // A permutation allows values to be exchanged (moved) between different 
+  // iterators in a range without copying. This also includes moving values
+  // into temporary values.
+  template<typename I>
+    constexpr bool Permutation()
+    {
+      return Forward_iterator<I>() && Permutable<I>();
+    }
+    
+  
+  
+  // Range permutation (concept)
+  // A range permutation is a range whose iterators can be permuted.
+  template<typename R>
+    constexpr bool Range_permutation()
+    {
+      return Range<R> && Permutation<Iterator_type<R>>();
+    }
+
+  
+  
+  // Sort (concept)
+  // The Sort concept describes the requirements of algorithms that permute
+  // an iterator range according to the ordering of the elements. There are
+  // two forms of this conceopt:
   //
-  //    Sortable<I>
-  //    Sortable<I, R>
+  //    Sort<I>
+  //    Sort<I, R>
   
   // Requirements for the generalized overload.
   template<typename I, typename R>
-    struct Sortable_concept
+    struct Sort_concept
     {
       static constexpr bool check()
       {
-        return Permutable_iterator<I>() && Relation<R, Value_type<I>>();
+        return Permutation<I>() && Relation<R, Value_type<I>>();
       }
     };
     
   // Requirements using operator <.
   template<typename I>
-    struct Sortable_concept<I, default_t>
+    struct Sort_concept<I, default_t>
     {
       static constexpr bool check()
       {
-        return Permutable_iterator<I>() && Totally_ordered<Value_type<I>>();
+        return Permutation<I>() && Totally_ordered<Value_type<I>>();
       }
     };
     
   // Returns true if I is sortable.
   template<typename I, typename R = default_t>
-    constexpr bool Sortable()
+    constexpr bool Sort()
     {
-      return Sortable_concept<I, R>::check();
+      return Sort_concept<I, R>::check();
     }
 
 
 
-  // Range sortable
-  // The range sortable concept describes common requirements for sorting
-  // iterator ranges. There are two forms of this concept:
+  // Range sort (concept)
+  // A range can be sorted if its underlying iterators can be sorted. There
+  // are two forms of this concept:
   //
-  //    Range_sortable<R>
-  //    Range_sortable<R, Rel>
-
-  // Requirements for the generalized overload.
-  template<typename R, typename Rel>
-    struct Range_sortable_concept
-    {
-      static constexpr bool check()
-      {
-        return Permutable_range<R>() && Relation<Rel, Value_type<R>>();
-      }
-    };
-    
-  // Requirements using operator <.
-  template<typename R>
-    struct Range_sortable_concept<R, default_t>
-    {
-      static constexpr bool check()
-      {
-        return Permutable_range<R>() && Totally_ordered<Value_type<R>>();
-      }
-    };
-    
-  // Returns true if R is a sortable range.
+  //    Range_sort<R>
+  //    Range_sort<R, Rel>
   template<typename R, typename Rel = default_t>
-    constexpr bool Range_sortable()
+    constexpr bool Range_sort()
     {
-      return Range_sortable_concept<R, Rel>::check();
+      return Range<R>() && Sort<Iterator_type<R>, Rel>();
     }
 }
 
@@ -302,7 +303,7 @@ namespace origin
     inline auto std_equal(I1 first1, I1 last1, I2 first2)
       -> Requires<!Can_memcmp<I1, I2>(), bool>
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
 
@@ -336,7 +337,7 @@ namespace origin
     inline auto equal(R1 const& a, R2 const& b)
       -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
     {
-      static_assert(Range_comparable<R1, R2>(), "");
+      static_assert(Range_comparison<R1, R2>(), "");
     
       return std_equal(std::begin(a), std::end(a), std::begin(b));
     }
@@ -351,7 +352,7 @@ namespace origin
     inline auto equal(R1 const& a, R2 const& b)
       -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
     {
-      static_assert(Range_comparable<R1, R2>(), "");
+      static_assert(Range_comparison<R1, R2>(), "");
     
       return size(a) <= size(b) 
           && std_equal(std::begin(a), std::end(a), std::begin(b));
@@ -367,7 +368,7 @@ namespace origin
   template<typename I1, typename I2, typename R>
     inline bool std_equal(I1 first1, I1 last1, I2 first2, R comp)
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
 
@@ -389,7 +390,7 @@ namespace origin
     inline auto equal(const R1& a, const R2& b, Rel comp)
       -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
     {
-      static_assert(Range_comparable<R1, R2, Rel>(), "");
+      static_assert(Range_comparison<R1, R2, Rel>(), "");
 
       return std_equal(std::begin(a), std::end(a), std::begin(b), comp);
     }
@@ -404,7 +405,7 @@ namespace origin
     inline auto equal(const R1& a, const R2& b, Rel comp)
       -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
     {
-      static_assert(Range_comparable<R1, R2, Rel>(), "");
+      static_assert(Range_comparison<R1, R2, Rel>(), "");
 
       return size(a) <= size(b)
           && std_equal(std::begin(a), std::end(a), std::begin(b), comp);
@@ -419,7 +420,7 @@ namespace origin
     inline auto std_mismatch(I1 first1, I1 last1, I2 first2)
       -> std::pair<I1, I2>
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
 
@@ -441,7 +442,7 @@ namespace origin
     inline auto mismatch(const R1& a, const R2& b)
       -> std::pair<Iterator_type<R1>, Iterator_type<R2>> 
     {
-      static_assert(Range_comparable<R1>(), "");
+      static_assert(Range_comparison<R1>(), "");
 
       return std_mismatch(std::begin(a), std::end(a), std::begin(b));
     }
@@ -453,7 +454,7 @@ namespace origin
     inline auto std_mismatch(I1 first1, I1 last1, I2 first2, R comp)
       -> std::pair<I1, I2> 
     {
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
 
@@ -473,7 +474,7 @@ namespace origin
     inline auto mismatch(const R1& a, const R2& b, Rel comp)
       -> std::pair<Iterator_type<R1>, Iterator_type<R2>>
     {
-      static_assert(Range_comparable<R1, R2, Rel>(), "");
+      static_assert(Range_comparison<R1, R2, Rel>(), "");
 
       return std_mismatch(std::begin(a), std::end(a), std::begin(b), comp);
     }
@@ -485,7 +486,7 @@ namespace origin
   template<typename I1, typename I2>
     bool equal_elements_impl(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
 
@@ -514,7 +515,7 @@ namespace origin
   template<typename I1, typename I2, typename R>
     bool equal_elements_impl(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assume(is_readable_range(first2, distance(first1, last1)));
       assume(is_equivalence_relation(comp));
@@ -548,7 +549,7 @@ namespace origin
   template<typename I1, typename I2>
     bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
 
@@ -572,7 +573,7 @@ namespace origin
   template<typename I1, typename I2, typename R>
     bool equal_elements(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
       assume(is_equivalence_relation(comp));
@@ -591,7 +592,7 @@ namespace origin
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
       
@@ -606,7 +607,7 @@ namespace origin
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Comparable<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, R>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
 
@@ -621,7 +622,7 @@ namespace origin
     {
       static_assert(Forward_range<R1>(), "");
       static_assert(Forward_range<R2>(), "");
-      static_assert(Comparable<R1, R2>(), "");
+      static_assert(Comparison<R1, R2>(), "");
       
       return std_search(std::begin(a), std::end(a), std::begin(b), std::end(b));
     }
@@ -634,7 +635,7 @@ namespace origin
     {
       static_assert(Forward_range<R1>(), "");
       static_assert(Forward_range<R2>(), "");
-      static_assert(Comparable<R1, R2, Rel>(), "");
+      static_assert(Comparison<R1, R2, Rel>(), "");
       
       return std_search(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
     }
@@ -650,7 +651,7 @@ namespace origin
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
       
@@ -665,7 +666,7 @@ namespace origin
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
-      static_assert(Comparable<I1, I2>(), "");
+      static_assert(Comparison<I1, I2>(), "");
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
 
@@ -680,7 +681,7 @@ namespace origin
     {
       static_assert(Forward_range<R1>(), "");
       static_assert(Forward_range<R2>(), "");
-      static_assert(Comparable<R1, R2>(), "");
+      static_assert(Comparison<R1, R2>(), "");
       
       return search_end(std::begin(a), std::end(a), std::begin(b), std::end(b));
     }
@@ -693,7 +694,7 @@ namespace origin
     {
       static_assert(Forward_range<R1>(), "");
       static_assert(Forward_range<R2>(), "");
-      static_assert(Comparable<R1, R2, Rel>(), "");
+      static_assert(Comparison<R1, R2, Rel>(), "");
       
       return search_end(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
     }
@@ -923,13 +924,15 @@ namespace origin
     
   // Generate (range)
   template<typename R, typename F>
-    inline F generate(R& range, F gen)
+    inline F generate(R&& range, F gen)
     {
+      using Rx = Forwarded<R>;
       static_assert(Function<F>(), "");
-      static_assert(Output_range<R, Result_of<F()>>(), "");
+      static_assert(Range_fill<Rx, Result_of<F()>>(), "");
 
       return std_generate(std::begin(range), std::end(range));
     }
+    
     
     
   // Generate n
@@ -950,256 +953,7 @@ namespace origin
   
   
   
-  // The Replace Family
 
-  // Replace
-  template<typename I, typename T>
-    void std_replace(I first, I last, const T& old_value, const T& new_value)
-    {
-      static_assert(Search<I, T>(), "");
-      static_assert(Copy<I, T>(), "");
-
-      while(first != last) {
-        if(*first == old_value)
-          *first = new_value;
-        ++first;
-      }
-    }
-    
-    
-    
-  // Replace (range)
-  template<typename R, typename T>
-    inline void replace(R& range, const T& old_value, const T& new_value)
-    {
-      static_assert(Range_search<R, T>(), "");
-      static_assert(Range_copy<R, T>(), "");
-      
-      std_replace(std::begin(range), std::end(range), old_value, new_value);
-    }
-    
-  
-
-  // Replace_if
-  template<typename I, typename P, typename T>
-    inline void std_replace_if(I first, I last, P pred, const T& new_value)
-    {
-      static_assert(Query<I, P>(), "");
-      static_assert(Copy<I, T>(), "");
-      
-      while(first != last) {
-        if(pred(*first)) 
-          *first = new_value;
-        ++first;
-      }
-    }
-    
-    
-  
-  // Replace if (range)
-  template<typename R, typename P, typename T>
-    inline void replace_if(R& range, P pred, const T& new_value)
-    {
-      static_assert(Range_query<R, P>(), "");
-      static_assert(Range_copy<R, T>(), "");
-      
-      std_replace_if(std::begin(range), std::end(range), pred, new_value);
-    }
-
-    
-    
-  // Replace copy
-  template<typename I, typename O, typename T>
-    inline O std_replace_copy(I first, I last, O result, const T& old_value, const T& new_value)
-    {
-      static_assert(Search<I, T>(), "");
-      static_assert(Copy<I, O>(), "");
-      static_assert(Fill<O, T>(), "");
-      
-      while(first != last) {
-        if(*first == old_value)
-          *result = new_value;
-        else
-          *result = *first;
-        ++result;
-        ++first;
-      }
-      return result;
-    }
-    
-    
-  
-  // Replace copy if
-  template<typename I, typename O, typename P, typename T>
-    inline O std_replace_copy_if(I first, I last, O result, P pred, const T& new_value)
-    {
-      static_assert(Query<I, P>(), "");
-      static_assert(Copy<I, O>(), "");
-      static_assert(Fill<O, T>(), "");
-      
-      while(first != last) {
-        if(pred(*first))
-          *result = new_value;
-        else
-          *result = *first;
-        ++result;
-        ++first;
-      }
-      return result;
-    }
-
-
-
-  // The Remove Family
-
-  // Remove
-  template<typename I, typename T>
-    I std_remove(I first, I last, const T& value)
-    {
-      return std::remove(first, last, value);
-    }
-  
-  
-  
-  // Remove if
-  template<typename I, typename Pred>
-    I std_remove_if(I first, I last, Pred pred)
-    {
-      return std::remove_if(first, last, pred);
-    }
-    
-    
-  // Remove copy  
-  template<typename I, typename O, typename T>
-    O std_remove_copy(I first, I last, O result, const T& value)
-    {
-      return std::remove_copy(first, last, result, value);
-    }
-    
-  
-  
-  // Remove copy if
-  template<typename I, typename O, typename Pred>
-    O std_remove_copy_if(I first, I last, O result, Pred pred)
-    {
-      return std::remove_copy_if(first, last, result, pred);
-    }
-    
-  
-  
-  // Extract
-  //
-  // Extract the elements of [first, last) that are equal to value by moving 
-  // them into the output range [result, last - first). The algorithm returns
-  // a pair {new_last, result_last} where the range [first, new_last) is a
-  // bounded range containing the elements not extracted and the output range
-  // [result, result_last) contains the extracted elements.
-  template<typename I, typename O, typename T>
-    std::pair<I, O> extract(I first, I last, O result, const T& value)
-    {
-      static_assert(Permutable_iterator<I>(), "");
-      static_assert(Search<I, T>(), "");
-      static_assert(Move<I, O>(), "");
-      assert(( is_readable_range(first, last) ));
-      assume(( is_movable_range(result, std_count(first, last, value), *first) ));
-
-      first = std::find(first, last, value);
-      if(first == last)
-        return {first, result};
-
-      *result = std::move(*first);
-      ++result;
-      I hole = first;
-      ++first;
-      while(first != last) {
-        if(*first != value) {
-          *hole = std::move(*first);
-          ++hole;
-        } else {
-          *result = std::move(*first);
-          ++result;
-        }
-        ++first;
-      }
-      return {hole, result};
-    }
-    
-    
-    
-  // Remove move if
-  //
-  // Remove the elements of [first, last) that satisfy pred by moving them
-  // into the output range [result, last - first). The algorithm returns
-  // a pair {new_last, result_last} where the range [first, new_last) is a
-  // bounded range containing the elements not extracted and the output range
-  // [result, result_last) contains the extracted elements.
-  template<typename I, typename O, typename Pred>
-    std::pair<I, O> extract_if(I first, I last, O result, Pred pred)
-    {
-      static_assert(Permutable_iterator<I>(), "");
-      static_assert(Query<I, Pred>(), "");
-      static_assert(Move<I, O>(), "");
-      assert(( is_readable_range(first, last) ));
-      assume(( is_movable_range(result, std_count_if(first, last, pred), *first) ));
-
-      first = std::find_if(first, last, pred);
-      if(first == last)
-        return {first, result};
-
-      *result = std::move(*first);
-      ++result;
-      I hole = first;
-      ++first;
-      while(first != last) {
-        if(!pred(*first)) {
-          *hole = std::move(*first);
-          ++hole;
-        } else {
-          *result = std::move(*first);
-          ++result;
-        }
-        ++first;
-      }
-      return {hole, result};
-    }
-
-
-
-  // The Unique Family
-  
-  // Unique
-  template<typename I>
-    I std_unique(I first, I last)
-    {
-      return std::unique(first, last);
-    }
-    
-  
-  
-  // Unique (predicate)
-  template<typename I, typename R>
-    I std_unique(I first, I last, R comp)
-    {
-      return std::unique(first, last, comp);
-    }
-    
-    
-  
-  // Unique copy
-  template<typename I, typename O>
-    O std_unique_copy(I first, I last, O result)
-    {
-      return std::unique(first, last, result);
-    }
-    
-    
-    
-  // Unique copy (predicate)
-  template<typename I, typename O, typename R>
-    O std_unique_copy(I first, I last, O result, R comp)
-    {
-      return std::unique_copy(first, last, result, comp);
-    }
 
 
 
@@ -1236,7 +990,12 @@ namespace origin
       }
     }
     
-    
+} // namespace origin
+
+#include <origin/algorithm/replace.hpp>
+#include <origin/algorithm/remove.hpp>
+
+namespace origin {
 
   // Rotate
   template<typename I>
@@ -1257,36 +1016,40 @@ namespace origin
 
 
   // Random Permutations
-  // This family of algorithmsm randomly permute a sequence of elements by
+  // This family of algorithms randomly permute a sequence of elements by
   // shuffling them.
   //
+  // TODO: Implement shuffle copy algorithms.
+  //
   // TODO: Implement a randomized riffle algorithm.
+  
 
   // Random shuffle
   template<typename I>
     void std_random_shuffle(I first, I last)
     {
       static_assert(Random_access_iterator<I>(), "");
-      static_assert(Permutable_iterator<I>(), "");
+      static_assert(Permutation<I>(), "");
 
+      
       if(first != last) {
         for(I i = first + 1; i != last; i != last)
-          iter_swap(i, first + (std::rand() % ((i - first) + 1));
+          iter_swap(i, first + rand() % ((i - first) + 1));
       }
     }
+
     
-  
   
   // Random shuffle (generator)
   template<typename I, typename Gen>
     void std_random_shuffle(I first, I last, Gen&& rand)
     {
       static_assert(Random_access_iterator<I>(), "");
-      static_assert(Permutable_iterator<I>(), "");
+      static_assert(Permutation<I>(), "");
 
       if(first != last) {
         for(I i = first + 1; i != last; i != last)
-          iter_swap(i, first + rand((i - first) + 1);
+          iter_swap(i, first + rand((i - first) + 1));
       }
     }
     
@@ -1296,7 +1059,10 @@ namespace origin
   template<typename I, typename Gen>
     void std_shuffle(I first, I last, Gen&& rand)
     {
-      return std::shuffle(first, last, rand);
+      static_assert(Random_access_iterator<I>(), "");
+      static_assert(Permutation<I>(), "");
+      
+      std::shuffle(first, last, std::forward<Gen>(rand));
     }
     
 
@@ -1309,6 +1075,8 @@ namespace origin
     bool std_is_partitioned(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
+      assert(is_readable_range(first, last, pred));
+
       return none_of(find_if(first, last, pred), last, pred);
     }
     

@@ -19,7 +19,7 @@ namespace origin
   template<typename I, typename P>
     class filter_range
     {
-      static_assert(Searchable<I, P>(), "");
+      static_assert(Query<I, P>(), "");
     public:
       using value_type = Value_type<I>;
       using difference_type = Distance_type<I>;
@@ -72,21 +72,11 @@ namespace origin
   // Returns a bounded range r' where pred(x) is true for all elements in that
   // range.
   template<typename R, typename P>
-    inline filter_range<Iterator_type<R>, P> filtered(R& range, P pred)
+    inline filter_range<Iterator_type<R>, P> filtered(R&& range, P pred)
     {
       return {std::begin(range), std::end(range), pred};
     }
 
-    
-    
-  // Filter (const range)
-  // Return a bounded range r' where pred(x) is true for all elemnts in that
-  // range.
-  template<typename R, typename P>
-    inline filter_range<Iterator_type<const R>, P> filtered(const R& range, P pred)
-    {
-      return {std::begin(range), std::end(range), pred};
-    }
 
 } // namespace origin
 

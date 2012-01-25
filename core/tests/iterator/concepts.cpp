@@ -16,98 +16,95 @@
 using namespace std;
 using namespace origin;
 
-template<typename T>
+template<typename I>
   void not_an_iterator()
   {
-    static_assert(!Readable<T>(), "");
-    static_assert(!Input_iterator<T>(), "");
-    static_assert(!Forward_iterator<T>(), "");
-    static_assert(!Bidirectional_iterator<T>(), "");
-    static_assert(!Random_access_iterator<T>(), "");
+    static_assert(!Readable<I>(), "");
+    static_assert(!Input_iterator<I>(), "");
+    static_assert(!Forward_iterator<I>(), "");
+    static_assert(!Bidirectional_iterator<I>(), "");
+    static_assert(!Random_access_iterator<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void input()
   {
-    static_assert(Input_iterator<T>(), "");
-    static_assert(!Forward_iterator<T>(), "");
+    static_assert(Input_iterator<I>(), "");
+    static_assert(!Forward_iterator<I>(), "");
   }
 
 
 // Forward iterators
-template<typename T>
+template<typename I>
   void forward()
   {
-    static_assert(Input_iterator<T>(), "");
-    static_assert(Forward_iterator<T>(), "");
-    static_assert(!Bidirectional_iterator<T>(), "");
+    static_assert(Input_iterator<I>(), "");
+    static_assert(Forward_iterator<I>(), "");
+    static_assert(!Bidirectional_iterator<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void mutable_forward()
   {
-    static_assert(Mutable_iterator<T>(), "");
-    forward<T>();
+    forward<I>();
+    static_assert(Mutable<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void permutable_forward()
   {
-    static_assert(Permutable_iterator<T>(), "");
-    static_assert(!Mutable_iterator<T>(), "");
-    forward<T>();
+    forward<I>();
+    static_assert(Permutable<I>(), "");
   }
 
 
 // Bidirectional iterators
-template<typename T>
+template<typename I>
   void bidirectional()
   {
-    static_assert(Input_iterator<T>(), "");
-    static_assert(Forward_iterator<T>(), "");
-    static_assert(Bidirectional_iterator<T>(), "");
-    static_assert(!Random_access_iterator<T>(), "");
+    static_assert(Input_iterator<I>(), "");
+    static_assert(Forward_iterator<I>(), "");
+    static_assert(Bidirectional_iterator<I>(), "");
+    static_assert(!Random_access_iterator<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void mutable_bidirectional()
   {
-    static_assert(Mutable_iterator<T>(), "");
-    bidirectional<T>();
+    bidirectional<I>();
+    static_assert(Mutable<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void permutable_bidirectional()
   {
-    static_assert(Permutable_iterator<T>(), "");
-    static_assert(!Mutable_iterator<T>(), "");
-    bidirectional<T>();
+    bidirectional<I>();
+    static_assert(Permutable<I>(), "");
   }
 
   
 // Random access iterators
-template<typename T>
+template<typename I>
   void random_access()
   {
-    static_assert(Input_iterator<T>(), "");
-    static_assert(Forward_iterator<T>(), "");
-    static_assert(Bidirectional_iterator<T>(), "");
-    static_assert(Random_access_iterator<T>(), "");
+    static_assert(Input_iterator<I>(), "");
+    static_assert(Forward_iterator<I>(), "");
+    static_assert(Bidirectional_iterator<I>(), "");
+    static_assert(Random_access_iterator<I>(), "");
   }
   
-template<typename T>
+template<typename I>
   void mutable_random_access()
   {
-    static_assert(Mutable_iterator<T>(), "");
-    random_access<T>();
+    random_access<I>();
+    static_assert(Mutable<I>(), "");
   }
 
-template<typename T>
+template<typename I>
   void permutable_random_access()
   {
-    static_assert(Permutable_iterator<T>(), "");
-    static_assert(!Mutable_iterator<T>(), "");
-    random_access<T>();
+    random_access<I>();
+    static_assert(Permutable<I>(), "");
   }
   
   

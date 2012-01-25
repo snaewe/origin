@@ -385,6 +385,14 @@ namespace origin
   template<typename T>
     using Unqualified = Remove_cv<Remove_reference<T>>;
     
+  
+    
+  // The Forwarded trait returns the value type of a forwarded template
+  // argument. This must be used to remove qualifiers from template arguments
+  // when the function argument is forwarded.
+  template<typename T>
+    using Forwarded = Unqualified<T>;
+    
 
   // Layout and initialization
 

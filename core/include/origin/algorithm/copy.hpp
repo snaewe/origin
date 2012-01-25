@@ -75,6 +75,23 @@ namespace origin
     }
     
 
+    
+  // Copy step
+  // Copy the value of *i to the object pointed at by o and increment both
+  // iterators.
+  template<typename I, typename O>
+    void copy_step(I& i, O& o)
+    {
+      static_assert(Weak_input_iterator<I>(), "");
+      static_assert(Weak_output_iterator<O, Value_type<I>>(), "");
+
+      *o = *i;
+      ++i;
+      ++o;
+    }
+    
+    
+    
   // Copy
   // Copy the elements in a range a into another range b.
   //
@@ -86,11 +103,8 @@ namespace origin
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, distance(first, last), *first));
 
-      while(first != last) {
-        *result = *first;
-        ++result;
-        ++first;
-      }
+      while(first != last)
+        copy_step(first, result);
       return result;
     }
   
@@ -117,9 +131,7 @@ namespace origin
       static_assert(Copy<I, O>(), "");
       
       while(n != 0) {
-        *result = *first;
-        ++result;
-        ++first;
+        copy_step(first, result);
         --n;
       }
       return result;
@@ -137,11 +149,10 @@ namespace origin
       assume(is_writable_range(result, std_count_if(first, last, pred), *first));
       
       while(first != last) {
-        if(pred(*first)) {
-          *result = *first;
-          ++result;
-        }
-        ++first;
+        if(pred(*first))
+          copy_step(first, result);
+        else
+          ++first;
       }
       return result;
     }
@@ -161,6 +172,22 @@ namespace origin
 
 
 
+  // Copy backward step
+  // Decrement both iterators and copy the value of *i to the object pointed
+  // at by o.
+  template<typename I, typename O>
+    void copy_backward_step(I& i, O& o)
+    {
+      static_assert(Bidirectional_iterator<I>(), "");
+      static_assert(Bidirectional_iterator<O>(), "");
+      static_assert(Output_iterator<O, Value_type<I>>(), "");
+
+      --i;
+      --o;
+      *o = *i;
+    }
+    
+
   // Copy backward
   template<typename I, typename O>
     inline O std_copy_backward(I first, I last, O result)
@@ -168,8 +195,10 @@ namespace origin
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Bidirectional_iterator<O>(), "");
       static_assert(Copy<I, O>(), "");
-      
-      return std::copy_backward(first, last, result);
+
+      while(first != last)
+        copy_backward_step(first, result);
+      return result;
     }
     
     
@@ -181,21 +210,41 @@ namespace origin
       static_assert(Bidirectional_range<R1>(), "");
       static_assert(Bidirectional_range<R2>(), "");
       static_assert(Range_copy<R1, R2>(), "");
+      
       return std_copy_backward(std::begin(in), std::end(in), std::begin(out));
     }
 
 
+    
+  // Move step
+  // Move the value of *i into the object pointed at by *o and increment both
+  // iterators.
+  template<typename I, typename O>
+    void move_step(I& i, O& o)
+    {
+      static_assert(Weak_input_iterator<I>(), "");
+      static_assert(Weak_output_iterator<O, Value_type<I>&&>(), "");
 
+      *o = std::move(*i);
+      ++i;
+      ++o;
+    }
+
+    
+    
   // Move
-  // Move the elements in a range a into another range b.
+  // Move the elements in the range [first, last) into the range 
+  // [result, result + (last - first)).
   template<typename I, typename O>
     inline O std_move(I first, I last, O result)
     {
       static_assert(Move<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_movable_range(result, distance(first, last), *first));
-      
-      return std::copy(first, last, result);
+
+      while(first != last)
+        move_step(first, result);
+      return result;
     }
   
   
@@ -212,6 +261,23 @@ namespace origin
 
 
     
+  // Move step
+  // Move the value of *i into the object pointed at by *o and increment both
+  // iterators.
+  template<typename I, typename O>
+    void move_backward_step(I& i, O& o)
+    {
+      static_assert(Bidirectional_iterator<I>(), "");
+      static_assert(Bidirectional_iterator<O>(), "");
+      static_assert(Output_iterator<O, Value_type<I>>(), "");
+
+      --i;
+      --o;
+      *o = std::move(*i);
+    }
+
+    
+    
   // Move backward
   template<typename I, typename O>
     inline O std_move_backward(I first, I last, O result)
@@ -220,7 +286,9 @@ namespace origin
       static_assert(Bidirectional_iterator<O>(), "");
       static_assert(Move<I, O>(), "");
 
-      return std::move_backward(first, last, result);
+      while(first != last)
+        move_backward_step(first, result);
+      return result;
     }
 
 
@@ -236,7 +304,8 @@ namespace origin
       return std_move_backward(std::begin(in), std::end(in), std::begin(out));
     }
   
-  
+
+
   // Iterator swap
   template<typename I1, typename I2>
     inline void std_iter_swap(I1 i, I2 j)
@@ -248,7 +317,7 @@ namespace origin
       *i = std::move(*j);
       *j = std::move(x);
     }
-    
+
 
 
   // Swap ranges
