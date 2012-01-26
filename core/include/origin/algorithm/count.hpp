@@ -48,7 +48,7 @@ namespace origin
   // Count
   // Returns the number of elements x in [first, last) where x == value.
   template<typename I, typename T>
-    inline Distance_type<I> std_count(I first, I last, const T& value)
+    inline Distance_type<I> o_count(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
@@ -67,7 +67,7 @@ namespace origin
   // Count (relation)
   // Returns the number of elements x in [first, last) where x == value.
   template<typename I, typename T, typename R>
-    inline Distance_type<I> std_count(I first, I last, const T& value, R comp)
+    inline Distance_type<I> o_count(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
@@ -90,7 +90,7 @@ namespace origin
     {
       static_assert(Range_search<R>(), "");
 
-      return std_count(std::begin(range), std::end(range), value);
+      return o_count(std::begin(range), std::end(range), value);
     }
    
    
@@ -102,7 +102,7 @@ namespace origin
     {
       static_assert(Range_search<R, T, Rel>(), "");
 
-      return std_count(std::begin(range), std::end(range), value, comp);
+      return o_count(std::begin(range), std::end(range), value, comp);
     }
 
 
@@ -172,7 +172,7 @@ namespace origin
   // Count if
   // Returns the number of elements x in [first, last) where pred(x) is true.
   template<typename I, typename P>
-    inline Distance_type<I> std_count_if(I first, I last, P pred)
+    inline Distance_type<I> o_count_if(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
@@ -195,7 +195,7 @@ namespace origin
     {
       static_assert(Range_query<R, P>(), "");
 
-      return std_count_if(std::begin(range), std::end(range), pred);
+      return o_count_if(std::begin(range), std::end(range), pred);
     }
 
     

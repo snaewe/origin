@@ -36,8 +36,8 @@ int main()
 
   // These should use the optimized version.
   // Is there some way to test this?
-  assert(std_equal(a, a + 5, a)); 
-  assert(std_equal(v.begin(), v.end(), v.begin()));
+  assert(o_equal(a, a + 5, a)); 
+  assert(o_equal(v.begin(), v.end(), v.begin()));
   
   // These should use the optimized version also.
   assert(equal(a, a));
@@ -45,6 +45,6 @@ int main()
   
   // This should not use the optimized version.
   vector<my_pair> p = { {0, 'a'}, {1, 'b'} };
-  assert(std_equal(&p[0], &p[2], &p[0]));
+  assert(o_equal(&p[0], &p[2], &p[0]));
   
 }

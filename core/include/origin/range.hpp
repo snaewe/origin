@@ -320,6 +320,26 @@ namespace origin
     }
 
 
+    
+  // Begin and end
+  // These functions wrap the calls to std::begin() and std::end() and are
+  // essentially only provided for convenience.
+    
+  // Return the begin iterator of a range
+  template<typename R>
+    auto o_begin(R&& range) -> decltype(std::begin(range))
+    {
+      return std::begin(range);
+    }
+
+  // Return the end iterator of a range.
+  template<typename R>
+    auto o_end(R&& range) -> decltype(std::end(range))
+    {
+      return std::end(range);
+    }
+    
+    
 
   // Range adaptors
   // A range adaptor is a model of a range. These typically wrap other data
@@ -575,7 +595,7 @@ namespace origin
   template<typename I>
     inline Requires<Integral<I>(), iterator_range<I>> closed_range(I first, I last)
     {
-      assume(( is_bounded_range(first, std_next(last)) ));
+      assume(( is_bounded_range(first, o_next(last)) ));
       return {first, ++last};
     }
 
@@ -585,7 +605,7 @@ namespace origin
   template<typename I>
     inline Requires<Iterator<I>(), bounded_range<I>> closed_range(I first, I last)
     {
-      assume(( is_bounded_range(first, std_next(last)) ));
+      assume(( is_bounded_range(first, o_next(last)) ));
       return {first, ++last};
     }
     

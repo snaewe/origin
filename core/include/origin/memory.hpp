@@ -15,8 +15,8 @@
 namespace origin
 {
   // Forward declarations
-  template<typename I, typename O> O std_copy(I, I, O);
-  template<typename I, typename O> O std_copy_n(I, Distance_type<I>, O);
+  template<typename I, typename O> O o_copy(I, I, O);
+  template<typename I, typename O> O o_copy_n(I, Distance_type<I>, O);
 
   
   
@@ -44,10 +44,10 @@ namespace origin
       // memory is not allocated.
       template<typename I>
         temporary_buffer(I first, I last)
-          : len{std_distance(first, last)}, buf{std::get_temporary_buffer<T>(len)}
+          : len{o_distance(first, last)}, buf{std::get_temporary_buffer<T>(len)}
         {
           if(len == buf.second)
-            std_copy(first, last, buf.first);
+            o_copy(first, last, buf.first);
         }
 
       // Allocate a temporary buffer, and if enough memory is returned, copy
@@ -58,7 +58,7 @@ namespace origin
           : len{n}, buf{std::get_temporary_buffer<T>(n)}
         {
           if(len == buf.second)
-            std_copy_n(first, n, buf.first);
+            o_copy_n(first, n, buf.first);
         }
 
       ~temporary_buffer() { std::return_temporary_buffer(buf.first); }

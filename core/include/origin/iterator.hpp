@@ -675,7 +675,7 @@ namespace origin
   // Advance interator
   // Advance i by n positions.
   template<typename Iter>
-    inline void std_advance(Iter& i, Distance_type<Iter> n = 1)
+    inline void o_advance(Iter& i, Distance_type<Iter> n = 1)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
       assert(( is_weak_range(i, n) ));
@@ -688,7 +688,7 @@ namespace origin
   // Next iterator
   // Return the nth iterator past i.
   template<typename Iter>
-    inline Iter std_next(Iter i, Distance_type<Iter> n = 1)
+    inline Iter o_next(Iter i, Distance_type<Iter> n = 1)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
       assert(( is_weak_range(i, n) ));
@@ -700,7 +700,7 @@ namespace origin
   // Previous iterator
   // Return the nth iterator before i.
   template<typename Iter>
-    inline Iter std_prev(Iter i, Distance_type<Iter> n = 1)
+    inline Iter o_prev(Iter i, Distance_type<Iter> n = 1)
     {
       static_assert(Bidirectional_iterator<Iter>(), "");
       assume(( bounded_range(prev(i, n), i) ));
@@ -716,7 +716,7 @@ namespace origin
   // FIXME: Because [first, last) is a boundd range, the result of this
   // operation must be non-negative.
   template<typename Iter>
-    inline Distance_type<Iter> std_distance(Iter first, Iter last)
+    inline Distance_type<Iter> o_distance(Iter first, Iter last)
     {
       static_assert(Weakly_incrementable<Iter>(), "");
       assert(( is_bounded_range(first, last) ));
@@ -776,7 +776,7 @@ namespace origin
     {
       advance_action(Distance_type<I> n) : increment{n} { }
 
-      void operator()(I& i) const { std_advance(i, increment); }
+      void operator()(I& i) const { o_advance(i, increment); }
       
       Distance_type<I> increment;
     };
@@ -786,7 +786,7 @@ namespace origin
   template<typename I, Incrementable_distance<I> N>
     struct static_advance_action
     {
-      void operator()(I& i) const { std_advance(i, N); }
+      void operator()(I& i) const { o_advance(i, N); }
       
       static constexpr Incrementable_distance<I> increment = N;
     };

@@ -14,11 +14,37 @@
 
 namespace origin
 {
+  // The strict less function object defines the relation a < b, but only if 
+  // a and b are totally ordered.
+  struct strict_less
+  {
+    template<typename T, typename U>
+      bool operator()(const T& a, const T& b) const
+      {
+        static_assert(Totally_ordered<T, U>(), "");
+        return a < b;
+      }
+  };
+  
+  // The weak_less function object defines the relation a <= b, but only if
+  // a and b are totally ordered.
+  struct weak_less
+  {
+    template<typename T, typename U>
+      bool operator()(const T& a, const T& b) const
+      {
+        static_assert(Totally_ordered<T, U>(), "");
+        return a <= b;
+      }
+  };
+  
+  
+  
   // If r is a Relation, then the complement of r(a, b) is !r(a, b).
   template<typename R>
-    struct complement_relation
+    struct complement
     {
-      complement_relation(R r) : r(r) { };
+      complement(R r) : r(r) { };
       
       template<typename T, typename U>
         bool operator()(T const& a, U const& b) const
@@ -32,9 +58,9 @@ namespace origin
   
   // If r is a Relation, the the converse of r(a, b) is r(b, a).
   template<typename R>
-    struct converse_relation
+    struct converse
     {
-      converse_relation(R r) : r(r) { };
+      converse(R r) : r(r) { };
       
       template<typename T, typename U>
         bool operator()(T const& a, U const& b) const

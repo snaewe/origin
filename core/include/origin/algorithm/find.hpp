@@ -57,7 +57,13 @@ namespace origin
   // library.
   //
   //    find_adjacent(first, last)
+  //    find_adjacent(first, last, comp)
   //    find_adjacent(range)
+  //    find_adjacent(range, comp)
+  //    find_not_adjacent(first, last)
+  //    find_not_adjacent(first, last, comp)
+  //    find_not_adjacent(range)
+  //    find_not_adjacent(range, comp)
   //
   // TODO: Write find_next_adjacent and find_nth_adjacent
 
@@ -75,7 +81,7 @@ namespace origin
   // Return the first iterator i in [first, last) where *i == value or last if 
   // no such iterator exists.
   template<typename I, typename T>
-    I std_find(I first, I last, const T& value)
+    I o_find(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(( is_readable_range(first, last) ));
@@ -94,7 +100,7 @@ namespace origin
   // Return the first iterator i in [first, last) where comp(*i, value) is true
   // or last if no such iterator exists.
   template<typename I, typename T, typename R>
-    I std_find(I first, I last, const T& value, R comp)
+    I o_find(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(( is_readable_range(first, last) ));
@@ -118,7 +124,7 @@ namespace origin
     {
       static_assert(Range_search<Unqualified<R>, T>(), "");
       
-      return std_find(std::begin(range), std::end(range), value);
+      return o_find(std::begin(range), std::end(range), value);
     }
 
 
@@ -142,7 +148,7 @@ namespace origin
     {
       static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
       
-      return std_find(std::begin(range), std::end(range), value);
+      return o_find(std::begin(range), std::end(range), value);
     }
     
 
@@ -224,7 +230,7 @@ namespace origin
       assert(( is_readable_range(first, last) ));
       
       if(first != last)
-        return std_find(std_next(first), last, value);
+        return o_find(o_next(first), last, value);
       else
         return last;
     }
@@ -241,7 +247,7 @@ namespace origin
       assert(( is_readable_range(first, last) ));
       
       if(first != last)
-        return std_find(std_next(first), last, value, comp);
+        return o_find(o_next(first), last, value, comp);
       else
         return last;
     }
@@ -284,7 +290,7 @@ namespace origin
   // Returns the first iterator i in [first, last) where pred(*i) is true or
   // last if no such iterator exists.
   template<typename I, typename P>
-    inline I std_find_if(I first, I last, P pred)
+    inline I o_find_if(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -307,7 +313,7 @@ namespace origin
     {
       static_assert(Query<Unqualified<R>, P>(), "");
       
-      return std_find_if(std::begin(range), std::end(range), pred);
+      return o_find_if(std::begin(range), std::end(range), pred);
     }
     
     
@@ -316,7 +322,7 @@ namespace origin
   // Returns the first iterator i in [first, last) where !pred(*i) is true or
   // last if no such iterator exists.
   template<typename I, typename P>
-    inline I std_find_if_not(I first, I last, P pred)
+    inline I o_find_if_not(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -339,7 +345,7 @@ namespace origin
     {
       static_assert(Query<Unqualified<R>, P>(), "");
       
-      return std_find_if_not(std::begin(range), std::end(range), pred);
+      return o_find_if_not(std::begin(range), std::end(range), pred);
     }
 
      
@@ -357,7 +363,7 @@ namespace origin
       assert(( is_readable_range(first, last) ));
 
       if(first != last)
-        return std_find_if(std_next(first), last, pred);
+        return o_find_if(o_next(first), last, pred);
       else
         return last;
     }
@@ -481,12 +487,11 @@ namespace origin
   template<typename I>
     inline I find_adjacent(I first, I last)
     {
-      static_assert(Forward_iterator<I>(), "");
-      static_assert(Search<I>(), "");
+      static_assert(Equality_query<I>(), "");
       assert(is_readable_range(first, last));
 
       if(first != last) {
-        for(I i = std_next(first); i != last; ++i) {
+        for(I i = o_next(first); i != last; ++i) {
           if(*first == i)
             return first;
           ++first;
@@ -500,21 +505,14 @@ namespace origin
   // Find adjacent (relation)
   // Returns the first iterator i in [first, last) where comp(*i, *(i + 1)) is
   // true.
-  //
-  // FIXME: Is there a better way to name the Search requirement? We can't 
-  // overload Search<I, R> since it collides with Search<I, T>. The requirement 
-  // could correctly be Comparison<I, I, R>, although the algorithm does not 
-  // compare elements from different ranges. Note that these requirements are 
-  // not  especially commononly: only here and unique.
   template<typename I, typename R>
     inline I find_adjacent(I first, I last, R comp)
     {
-      static_assert(Forward_iterator<I>(), "");
-      static_assert(Search<I, Value_type<I>, R>(), "");
+      static_assert(Relational_query<I, R>(), "");
       assert(is_readable_range(first, last, comp));
       
       if(first != last) {
-        for(I i = std_next(first); i != last; ++i) {
+        for(I i = o_next(first); i != last; ++i) {
           if(comp(*first, *i))
             return first;
           ++first;
@@ -525,12 +523,12 @@ namespace origin
     
   
   // Find adjacent (range)
-  // Return the first iterator i in range wheren *i == *(i + 1).
+  // Returns the first iterator i in range [first, last) where *i == *(i + 1).
   template<typename R>
     inline auto find_adjacent(R&& range) -> decltype(std::begin(range))
     {
-      static_assert(Range_search<R>(), "");
-      static_assert(Forward_range<R>(), "");
+      using Rx = Forwarded<R>;
+      static_assert(Range_equality_query<Rx>(), "");
 
       return find_adjacent(std::begin(range), std::end(range));
     }
@@ -538,14 +536,101 @@ namespace origin
 
   
   // Find adjacent (range, relation)
-  // Return the first iterator i in range wheren *i == *(i + 1).
+  // Returns the first iterator i in range wheren *i == *(i + 1).
   template<typename R, typename Rel>
     inline auto find_adjacent(R&& range, Rel comp) -> decltype(std::begin(range))
     {
-      static_assert(Range_search<R, Value_type<R>, Rel>(), "");
-      static_assert(Forward_range<R>(), "");
+      using Rx = Forwarded<R>;
+      static_assert(Range_relational_query<Rx, Rel>(), "");
 
       return find_adjacent(std::begin(range), std::end(range), comp);
+    }
+
+    
+    
+  // Find not adjacent
+  // Returns the first iterator i in range [first, last) where *i != *(i + 1).
+  template<typename I>
+    inline I find_not_adjacent(I first, I last)
+    {
+      static_assert(Equality_query<I>(), "");
+      assert(is_readable_range(first, last));
+
+      if(first != last) {
+        for(I i = o_next(first); i != last; ++i) {
+          if(*first != *i)
+            return first;
+          ++first;
+        }
+      }
+      return last;
+    }
+    
+    
+  
+  // Returns the first iterator i in range [first, last) where 
+  // comp(*i, *(i + 1)) is false.
+  template<typename I, typename R>
+    inline I find_not_adjacent(I first, I last, R comp)
+    {
+      static_assert(Relational_query<I, R>(), "");
+      assert(is_readable_range(first, last, comp));
+
+      if(first != last) {
+        for(I i = o_next(first); i != last; ++i) {
+          if(!comp(*first, *i))
+            return first;
+          ++first;
+        }
+      }
+      return last;
+    }
+
+    
+    
+  // Find not adjacent (range)
+  template<typename R>
+    inline auto find_not_adjacent(R&& range) -> decltype(std::begin(range))
+    {
+      static_assert(Range_equality_query<R>(), "");
+
+      return find_not_adjacent(std::begin(range), std::end(range));
+    }
+    
+    
+  // Find not adjacent (range, relation)
+  template<typename R, typename Rel>
+    inline auto find_not_adjacent(R&& range, Rel comp) -> decltype(std::begin(range))
+    {
+      static_assert(Range_relational_query<R, Rel>(), "");
+
+      return find_not_adjacent(std::begin(range), std::end(range), comp);
+    }
+  
+  
+  
+  // Is relation preserving
+  // Returns true if comp(*i, *next(i)) is true for each pair of consecutive
+  // iterators in [first, last).
+  template<typename I, typename R>
+    inline bool is_relation_preserving(I first, I last, R comp)
+    {
+      static_assert(Relational_query<I, R>(), "");
+
+      return find_not_adjacent(first, last, comp) == last;
+    }
+    
+    
+    
+  // Is relation preserving (range)
+  // Returns true if comp(*i, *next(i)) is true for each pair of consecutive
+  // iterators in range.
+  template<typename R, typename Rel>
+    inline bool is_relation_preserving(const R& range, Rel comp)
+    {
+      static_assert(Relational_query<R, Rel>(), "");
+
+      return is_relation_preserving(std::begin(range), std::end(range), comp);
     }
 
 } // namespace origin

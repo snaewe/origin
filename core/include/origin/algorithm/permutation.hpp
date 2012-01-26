@@ -24,9 +24,9 @@ namespace origin
       static_assert(Sort<I2>(), "");
       static_assert(Comparison<I1, I2>(), "");
       
-      std_sort(first1, last1);
-      std_sort(first2, last2);
-      return std_equal(first1, last1, first2);
+      o_sort(first1, last1);
+      o_sort(first2, last2);
+      return o_equal(first1, last1, first2);
     }
     
   
@@ -49,9 +49,9 @@ namespace origin
       static_assert(Comparison<I1, I2, R>(), "");
       // static_assert(is_strict_weak_ordering(comp));
       
-      std_sort(first1, last1);
-      std_sort(first2, last2);
-      return std_equal(first1, last1, first2, symmetric_complement<R>{comp});
+      o_sort(first1, last1);
+      o_sort(first2, last2);
+      return o_equal(first1, last1, first2, symmetric_complement<R>{comp});
     }
 
 
@@ -61,7 +61,7 @@ namespace origin
   // [first2, first2 + (last1 - first1)). The complexity of this algorithm
   // is O(nlog n) if sufficient memory is available, otherwise O(n^2).
   template<typename I1, typename I2>
-    bool std_is_permutation(I1 first1, I1 last1, I2 first2)
+    bool o_is_permutation(I1 first1, I1 last1, I2 first2)
     {
       // FIXME: Is there a concept for Semiregular + Totally ordered?
       static_assert(Copyable<Value_type<I1>>(), "");
@@ -72,13 +72,13 @@ namespace origin
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, distance(first1, last1)));
 
-      auto n = std_distance(first1, last1);
+      auto n = o_distance(first1, last1);
       temporary_buffer<Value_type<I1>> b1(first1, n);
       temporary_buffer<Value_type<I2>> b2(first2, n);
       if(b1 && b2) {
         return is_sorted_permutation(b1.begin(), b1.end(), b2.begin(), b2.end());
       } else {
-        I2 last2 = std_next(first2, n);
+        I2 last2 = o_next(first2, n);
         return equal_elements(first1, last1, first2, last2);
       }
     }
@@ -94,7 +94,7 @@ namespace origin
   // type of those types. If the value types are different, then R will most 
   // likely need to be polymorphic in order to avoid conversions.
   template<typename I1, typename I2, typename R>
-    bool std_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
+    bool o_is_permutation(I1 first1, I1 last1, I2 first2, R comp)
     {
       static_assert(Copyable<Value_type<I1>>(), "");
       static_assert(Copyable<Value_type<I2>>(), "");
@@ -104,13 +104,13 @@ namespace origin
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, distance(first1, last1)));
 
-      auto n = std_distance(first1, last1);
+      auto n = o_distance(first1, last1);
       temporary_buffer<Value_type<I1>> b1(first1, n);
       temporary_buffer<Value_type<I2>> b2(first2, n);      
       if(b1 && b2) {
         return is_sorted_permutation(b1.begin(), b1.end(), b2.begin(), b2.end(), comp);
       } else {
-        I2 last2 = std_next(first2, n);
+        I2 last2 = o_next(first2, n);
         return equal_elements(first1, last1, first2, last2, symmetric_complement<R>{comp});
       }
     }
@@ -131,7 +131,7 @@ namespace origin
       static_assert(Range_comparison<R1, R2>(), "");
       assert(size(a) == size(b));
 
-      return std_is_permutation(std::begin(a), std::end(a), std::begin(b));
+      return o_is_permutation(std::begin(a), std::end(a), std::begin(b));
     }
 
   
@@ -151,7 +151,7 @@ namespace origin
       assert(size(a) == size(b));
       assert(strict_weak_ordering(comp));
 
-      return std_is_permutation(std::begin(a), std::end(a), std::begin(b), comp);
+      return o_is_permutation(std::begin(a), std::end(a), std::begin(b), comp);
     }
 
 
@@ -159,7 +159,7 @@ namespace origin
   // Next permutation
   // Compute the next lexicographical permutation of [first, last).
   template<typename I>
-    inline bool std_next_permutation(I first, I last)
+    inline bool o_next_permutation(I first, I last)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Sort<I>(), "");
@@ -178,7 +178,7 @@ namespace origin
       static_assert(Bidirectional_range<R>(), "");
       static_assert(Range_sort<R>(), "");
 
-      return std_next_permutation(std::begin(range), std::end(range));
+      return o_next_permutation(std::begin(range), std::end(range));
     }
 
 
@@ -186,7 +186,7 @@ namespace origin
   // Next permutation (relation)
   // Compute the next lexicographical permutation of [first, last).
   template<typename I, typename R>
-    inline bool std_next_permutation(I first, I last, R comp)
+    inline bool o_next_permutation(I first, I last, R comp)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Relation<Value_type<I>>(), "");
@@ -214,7 +214,7 @@ namespace origin
   // Previous permutation
   // Compute the previous lexicographical permutation of [first, last).
   template<typename I>
-    inline bool std_prev_permutation(I first, I last)
+    inline bool o_prev_permutation(I first, I last)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Sort<I>(), "");
@@ -241,7 +241,7 @@ namespace origin
   // Previous permutation (relation)
   // Compute the previous lexicographical permutation of [first, last).
   template<typename I, typename R>
-    inline bool std_prev_permutation(I first, I last, R comp)
+    inline bool o_prev_permutation(I first, I last, R comp)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Relation<Value_type<I>>(), "");

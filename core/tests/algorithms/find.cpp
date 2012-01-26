@@ -29,7 +29,7 @@ int main()
     Vec v = {1, 2, 3, 0, 5, 0, 7};
     const Vec& cv = v;
 
-    auto i = std_find(v.begin(), v.end(), 0);
+    auto i = o_find(v.begin(), v.end(), 0);
     assert(i == v.begin() + 3);
     
     auto vi = find(v, 0);

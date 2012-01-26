@@ -14,15 +14,15 @@
 using namespace std;
 using namespace origin;
 
-bool nonneg(int n) { return n >= 0; }
 bool neg(int n) { return n < 0; }
-bool zero(int n) { return n == 0; }
-bool nonzero(int n) { return n != 0; }
 
 int main()
 {
-  vector<int> v = {1, 0, 2, 0, 3, 0};
-  
-  assert(( all_of(v.begin(), v.end(), nonneg) ));
-  assert(( all_of(v, nonneg) ));
+  vector<int> v1 = {1, -1, 2, -2, 3, -3};
+  vector<int> v2 = {-1, -2, -3, 1, 2, 3};
+
+  partition(v1, neg);
+  for(auto x : v1) cout << x << ' '; cout << '\n';
+  assert(is_partitioned(v1, neg));
+  assert(is_permutation(v1, v2));
 }

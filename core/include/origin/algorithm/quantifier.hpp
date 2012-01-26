@@ -94,15 +94,15 @@ namespace origin
   // Breaking that dependency simplifies the organization of the library.
 
 
-  template<typename I, typename T> I std_find(I, I, const T&);
-  template<typename I, typename P> I std_find_if(I, I, P);
+  template<typename I, typename T> I o_find(I, I, const T&);
+  template<typename I, typename P> I o_find_if(I, I, P);
 
 
   // All of
   // Returns true if first == last or pred(x) is true for all elements x in 
   // [first, last).
   template<typename I, typename P>
-    inline bool std_all_of(I first, I last, P pred)
+    inline bool o_all_of(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -125,7 +125,7 @@ namespace origin
     {
       static_assert(Range_query<R, P>(), "");
 
-      return std_all_of(std::begin(range), std::end(range), pred);
+      return o_all_of(std::begin(range), std::end(range), pred);
     }
 
 
@@ -137,7 +137,7 @@ namespace origin
     {
       static_assert(Predicate<P, T>(), "");
 
-      return std_all_of(list.begin(), list.end(), pred);
+      return o_all_of(list.begin(), list.end(), pred);
     }
     
     
@@ -233,7 +233,7 @@ namespace origin
   // Returns true if first == last or !pred(x) is true for all elements x in 
   // [first, last).
   template<typename I, typename P>
-    inline bool std_none_of(I first, I last, P pred)
+    inline bool o_none_of(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -255,7 +255,7 @@ namespace origin
     {
       static_assert(Range_query<R, P>(), "");
       
-      return std_none_of(std::begin(range), std::end(range), pred);
+      return o_none_of(std::begin(range), std::end(range), pred);
     }
  
  
@@ -267,7 +267,7 @@ namespace origin
     {
       static_assert(Predicate<P, T>(), "");
 
-      return std_none_of(list.begin(), list.end(), pred);
+      return o_none_of(list.begin(), list.end(), pred);
     }
 
 
@@ -281,7 +281,7 @@ namespace origin
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
       
-      first = std_find_if(first, last, pred);
+      first = o_find_if(first, last, pred);
       if(first != last)
         return none_of(++first, last, pred);
       else
