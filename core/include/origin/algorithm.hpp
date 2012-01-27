@@ -413,12 +413,7 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Input_iterator<I1>() && 
-               Input_iterator<I2>() &&
-               Weakly_incrementable<O>() &&
-               Copy<I1, O>() &&
-               Copy<I2, O>() &&
-               Relation<R, Value_type<I1>, Value_type<I2>>();
+        return Comparison<I1, I2, R>() && Copy<I1, O>() && Copy<I2, O>();
       }
     };
 
@@ -429,12 +424,7 @@ namespace origin
     {
       static constexpr bool check()
       {
-        return Input_iterator<I1>() && 
-               Input_iterator<I2>() &&
-               Weakly_incrementable<O>() &&
-               Copy<I1, O>() &&
-               Copy<I2, O>() &&
-               Totally_ordered<Value_type<I1>, Value_type<I2>>();
+        return Lexicographical_comparison<I1, I2>() && Copy<I1, O>() && Copy<I2, O>();
       }
     };
     
@@ -1351,19 +1341,50 @@ namespace origin {
   
   // Partition copy
   template<typename I, typename Out1, typename Out2, typename P>
-    std::pair<Out1, Out2> o_partition_copy(I first, I last, 
-                                             Out1 out_true, Out2 out_false, 
-                                             P pred)
+    std::pair<Out1, Out2> o_partition_copy(I first, I last, Out1 out_true, Out2 out_false, P pred)
     {
       return std::partition_copy(first, last, out_true, out_false, pred);
     }
 
+    
+    
+  // Lexicographical compare (relation)
+  template<typename I1, typename I2, typename R>
+    bool lexicographical_compare(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    {
+      while(true) {
+        if(first1 == last1) return false;
+        if(first2 == last2) return true;
+        if(comp(*first1, *first2)) return true;
+        if(comp(*first2, *first1)) return false;
+        ++first1;
+        ++first2;
+      }
+    }
+    
+    
+  
+  // Lexicographical compare (less)
+  template<typename I1, typename I2>
+    bool lexicographical_compare(I1 first1, I1 last1, I2 first2, I2 last2)
+    {
+      while(true) {
+        if(first1 == last1) return false;
+        if(first2 == last2) return true;
+        if(comp(*first1, *first2)) return true;
+        if(comp(*first2, *first1)) return false;
+        ++first1;
+        ++first2;
+      }
+    }
 
 } // namespace origin
 
 #include <origin/algorithm/sort.hpp>
 #include <origin/algorithm/binary_search.hpp>
-
+#include <origin/algorithm/merge.hpp>
+#include <origin/algorithm/set.hpp>
+#include <origin/algorithm/heap.hpp>
 #include <origin/algorithm/minmax.hpp>
 #include <origin/algorithm/permutation.hpp>
 
