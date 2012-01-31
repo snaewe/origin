@@ -89,7 +89,7 @@ namespace origin
       static_assert(Binary_search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return o_lower_bound(first, last, value, strict_less{});
+      return o_lower_bound(first, last, value, lt{});
     }
 
 
@@ -137,7 +137,7 @@ namespace origin
       static_assert(Binary_search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return o_upper_bound(first, last, value, strict_less{});
+      return o_upper_bound(first, last, value, lt{});
     }
 
     
@@ -184,7 +184,7 @@ namespace origin
       static_assert(Binary_search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return o_equal_range(first, last, value, strict_less{});
+      return o_equal_range(first, last, value, lt{});
     }
     
   
@@ -205,11 +205,11 @@ namespace origin
   // Lower bound (range, less)
   template<typename R, typename T>
     inline auto equal_range(R&& range, const T& value) 
-      -> decltype(equal_range(range, value, strict_less{}))
+      -> decltype(equal_range(range, value, lt{}))
     {
       static_assert(Range_binary_search<R, T>(), "");
 
-      return o_equal_range(range, value, strict_less{});
+      return o_equal_range(range, value, lt{});
     }
     
     

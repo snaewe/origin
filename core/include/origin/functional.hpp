@@ -14,29 +14,57 @@
 
 namespace origin
 {
-  // The strict less function object defines the relation a < b, but only if 
-  // a and b are totally ordered.
-  struct strict_less
+  // NOTE: The standard relation operators (o_equal, o_less, etc.) vary from
+  // the standard operators in that a) they are not templates, b) they are
+  // defined on heterogeneous types, and c) they are constrained by their
+  // corresponding concepts.
+  
+  // The equal function object defines the relation a == b.
+  struct o_equal
   {
     template<typename T, typename U>
-      bool operator()(const T& a, const T& b) const
+      bool operator()(T&& a, U&& b) const
       {
-        static_assert(Totally_ordered<T, U>(), "");
-        return a < b;
+        static_assert(Equality_comparable<T, U>(), "");
+        return std::forward<T>(a) == std::forward<T>(b);
       }
   };
   
-  // The weak_less function object defines the relation a <= b, but only if
-  // a and b are totally ordered.
-  struct weak_less
+  // The type eq is an alias for o_equal.
+  using eq = o_equal;
+  
+  
+  // The less function object defines the relation a < b.
+  struct o_less
   {
     template<typename T, typename U>
-      bool operator()(const T& a, const T& b) const
+      bool operator()(T&& a, U&& b) const
       {
         static_assert(Totally_ordered<T, U>(), "");
-        return a <= b;
+        return std::forward<T>(a) < std::forward<T>(b);
       }
   };
+  
+  // The type lt is an alias for strict_less.
+  using lt = o_less;
+  
+  
+  
+  // The less equal function object defines the relation a <= b, but only if
+  // a and b are totally ordered.
+  struct o_less_equal
+  {
+    template<typename T, typename U>
+      bool operator()(T&& a, U&& b) const
+      {
+        static_assert(Totally_ordered<T, U>(), "");
+        return std::forward<T>(a) <= std::forward<T>(b);
+      }
+  };
+  
+  // The type leq is an alias for weak_less.
+  using leq = o_less_equal;
+
   
   
   

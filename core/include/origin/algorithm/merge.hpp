@@ -35,7 +35,7 @@ namespace origin
     {
       static_assert(Merge<I1, I2, O>(), "");
       
-      return o_merge(first1, last1, first2, last2, result, strict_less{});
+      return o_merge(first1, last1, first2, last2, result, lt{});
     }
     
     
