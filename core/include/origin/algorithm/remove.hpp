@@ -72,7 +72,7 @@ namespace origin
       static_assert(Query<I, P>(), "");
       static_assert(Permutation<I>(), "");
       assert(is_permutable_range(first, last));
-      
+
       first = o_find_if(first, last, pred);
       if(first != last)
         move_if_not(o_next(first), last, first);

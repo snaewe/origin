@@ -71,40 +71,34 @@ namespace origin
   //
   // Note that the actual result type is pushed down into the function. This 
   // prevents us from having to reconstruct it from the arguments in every 
-  // recursion.
+  // recursion (which is realy a pain).
   template<size_t I, size_t N, typename Result>
   struct tuple_expand_args
   {
+    // NOTE: x is the tuple being expanded into a call for x.
     template<typename F, typename T, typename... Args>
-      static Result apply(F f, T& x, Args&&... args)
+      static Result apply(F f, T&& x, Args&&... args)
       {
+        using Ith_type = Tuple_element<Forwarded<T>, I>;
         return tuple_expand_args<I + 1, N, Result>::apply(
-          f, x, std::forward<Args>(args)..., std::get<I>(x)
+          f, 
+          std::forward<T>(x),             // the tuple
+          std::forward<Args>(args)...,    // previously constructed arguments
+          std::get<I>(x)                  // the latest argument
         );
     }
-
-    template<typename F, typename T, typename... Args>
-      static Result apply(F f, T const& x, Args&&... args)
-      {
-        return tuple_expand_args<I + 1, N, Result>::apply(
-          f, x, std::forward<Args>(args)..., std::get<I>(x)
-        );
-      }
   };
 
   // Base case. This ultimately calls the target function.
   template<size_t N, typename Result>
   struct tuple_expand_args<N, N, Result>
   {
+    // Note: x is the tuple being expanded. At this point, args... will contain
+    // all of the arguments that have been expanded. Here, just call the
+    // function and yield the result.
     template<typename F, typename T, typename... Args>
-      static Result apply(F f, T& x, Args&&... args)
-      { 
-        return f(std::forward<Args>(args)...); 
-      };
-
-    template<typename F, typename T, typename... Args>
-      static Result apply(F f, T const& x, Args&&... args)
-      { 
+      static Result apply(F f, T&& x, Args&&... args)
+      {
         return f(std::forward<Args>(args)...); 
       };
   };
@@ -116,19 +110,19 @@ namespace origin
   // the target function call.
 
   template<typename F, typename... Args>
-  inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...>& x)
-  {
-    using Result = Result_type<F, Args...>;
-    return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
-  }
+    inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...>& x)
+    {
+      using Result = Result_type<F, Args...>;
+      return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
+    }
   
   // A const version of the function above.
   template<typename F, typename... Args>
-  inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...> const& x)
-  {
-    using Result = Result_type<F, Args...>;
-    return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
-  }
+    inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...> const& x)
+    {
+      using Result = Result_type<F, Args...>;
+      return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
+    }
 
 } // namespace origin
 

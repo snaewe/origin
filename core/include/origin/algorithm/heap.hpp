@@ -38,25 +38,7 @@ namespace origin
     }
   
   
-  // Returns the offset m past first such that is_d_heap_n<D>(first, m) is 
-  // false.
-  template<std::size_t D, typename I, typename R>
-    Distance_type<I> is_d_heap_until_distance(I first, Distance_type<I> n, R comp)
-    {
-      static_assert(D > 1, "");
-      static_assert(Relational_query<I, R>(), "");
 
-      Distance_type<I> p = 0;
-      for(Distance_type<I> c = 1; c < n; ++c) {
-        if(comp(first[p], first[c]))
-          return c;
-        if(is_d_heap_last_child<D>(c))
-          ++p;
-      }
-      return n;
-    }   
-  
-  
   // Is heap until n (relation)
   // Returns the last iterator iterator i for which is_d_heap<D>(first, i, comp)
   // is true.
@@ -64,10 +46,23 @@ namespace origin
     inline I is_d_heap_until_n(I first, Distance_type<I> n, R comp)
     {
       static_assert(D > 1, "");
+      static_assert(Forward_iterator<I>(), "");
       static_assert(Relational_query<I, R>(), "");
-      assert(is_readable_range(first, n));
 
-      return first + is_d_heap_until_distance<D>(first, n, comp);
+      // FIXME: This is broken. Broken broken broken.
+
+      Distance_type<I> c = 0;
+      I parent = first++;
+      for (Distance_type<I> i = 0; i < n; ++i) {
+        if (comp(*parent, *first))
+          return first;
+      
+        // Move to the next child.
+        if ((i + 1) % D == 0)
+          ++parent;
+        ++first;
+      }
+      return first;
     }
     
   // Is heap until n (less)
@@ -77,9 +72,9 @@ namespace origin
     {
       return is_d_heap_until_n(first, n, lt{});
     }
-  
-  
-  
+    
+
+
   // Is heap until (relation)
   // Returns the last iterator i in [first, last) for which 
   // is_d_heap<D>(first, i, comp) is true.
@@ -103,20 +98,13 @@ namespace origin
 
 
     
-  template<std::size_t D, typename I, typename R>
-    bool is_d_heap_n(I first, Distance_type<I> n, R comp)
-    {
-      return is_d_heap_until_distance<D>(first, n, comp) == n;
-    }
-    
-  
   // Is heap (relation)
   // Returns true if the elements of [first, last) are heap-ordered by comp.
   template<std::size_t D, typename I, typename R>
     bool is_d_heap(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
-      assert(is_readable_reange(first, last));
+      assert(is_readable_range(first, last));
       return is_d_heap_until<D>(first, last, comp) == last;
     }
     
@@ -181,6 +169,7 @@ namespace origin
       static_assert(Sort<I, R>(), "");
       assert(first != last);
       assert(is_permutable_range(first, last));
+      assert(is_d_heap<D>(first, last - 1, comp));
 
       push_d_heap_back_n<D>(first, last - first, comp);
     }
@@ -221,47 +210,38 @@ namespace origin
     }
   
 
+
   // Select d-heap child.
   // This class is used to select an iterator pointing to the maximum child
   // in a d-ary heap. If sel is a function object of this type, then
   //
-  //    sel(last, comp)
+  //    select_d_heap_child<D>(last, comp)
   //
   // Will select the maximum of the D - 1 elements preceeding last. Note that
   // last is a valid iterator in this context.
-  template<std::size_t D, typename I, typename R> struct select_d_heap_child;
   
   // Specialization for binary heaps.
-  template<typename I, typename R>
-    struct select_d_heap_child<2, I, R>
+  template<std::size_t D, typename I, typename R>
+    Requires<D == 2, I> select_d_heap_child(I first, R comp)
     {
-      I operator()(I last, R comp) const
-      { 
-        return iter_select_1_2(last - 1, last, comp);
-      }
-    };
+      return iter_select_1_2(first, first + 1, comp);
+    }
     
   // Specialization for ternary heaps.
-  template<typename I, typename R>
-    struct select_d_heap_child<3, I, R>
-    {
-      I operator()(I last, R comp) const
-      { 
-        return iter_select_2_3(last - 2, last - 1, last, comp);
-      }
-    };
+  template<std::size_t D, typename I, typename R>
+    Requires<D == 3, I> select_d_heap_child(I first, R comp)
+    { 
+      return iter_select_2_3(first, first + 1, first + 2, comp);
+    }
 
   // Specialization for quaternary heaps.
-  template<typename I, typename R>
-    struct select_d_heap_child<4, I, R>
-    {
-      I operator()(I last, R comp) const
-      { 
-        return iter_select_3_4(last - 3, last - 2, last - 1, last, comp);
-      }
-    };
-
+  template<std::size_t D, typename I, typename R>
+    Requires<D == 4, I> select_d_heap_child(I first, R comp)
+    { 
+      return iter_select_3_4(first, first + 1, first + 2, first + 3, comp);
+    }
     
+
 
   // Push d-heap front (counted range, relation)
   // Re-establish the heap ordering of [first, first + n) after an element
@@ -270,40 +250,24 @@ namespace origin
   template<std::size_t D, typename I, typename R> 
     void push_d_heap_front_n(I first, Distance_type<I> n, R comp)
     {
-      // assert(is_d_heap_n<D>(first, n, comp) == n);
+      Distance_type<I> p = 0;  // The root.
+      Distance_type<I> c = 1;  // The first child of the root.
+      while(c < n) {
+        // Find the greatest child to compare and swap.
+        
+        // FIXME: This shouldn't work if c + D >= n.
+        // FIXME: I should be using index_select to choose the right index.
+        I i = select_d_heap_child<D>(first + c, comp);
+        c = i - first;
 
-      Distance_type<I> top = 0;
-      
-      Distance_type<I> p = 0; // The current parent (hole).
-      Distance_type<I> c = p; // The current child
-      I hole = first + p;
-      Value_type<I> tmp = std::move(first[p]);
-      
-      while(c < (n - 1) / Distance_type<I>{D}) {  // FIXME: Probably not right...
-        c = d_heap_last_child<D>(p);
-
-        // Select the max (according to comp) of the current set of children.
-        // Note that first + c referes to the last child of p.
-        select_d_heap_child<D, I, R> sel;
-        hole = sel(first + c, comp);
-        first[p] = std::move(*hole);
-
-        p = hole - first;
+        // Swap if the heap order is violated (n < c).
+        if(comp(p, c)) {
+          iter_swap(first + p, i);
+          p = c;
+          c = d_heap_first_child<D>(c);
+        } else
+          break;
       }
-      
-      std::cout << c << "\n";
-      *hole = std::move(tmp);
-      
-      /*
-      // FIXME: Replace this with a switch
-      if ((len & 1) == 0 && c == (len - 2) / 2) {
-        c = 2 * (c + 1); 
-        *(first + p) = _GLIBCXX_MOVE(*(first + (c - 1)));
-        p = c - 1;
-      }
-      
-      std::push_heap(first, p, top, _GLIBCXX_MOVE(value));
-      */
     }
     
   
@@ -313,7 +277,7 @@ namespace origin
     {
       static_assert(Sort<I, R>(), "");
       assert(first != last);
-      // assert(is_d_heap<D>(first, last, comp));
+      assert(is_d_heap<D>(first, last, comp));
       
       iter_swap(first, --last);
       push_d_heap_front_n<D>(first, last - first, comp);

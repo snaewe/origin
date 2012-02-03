@@ -35,7 +35,7 @@ template<typename S>
   void pop(S&& seq)
   {
     pop_d_heap<2>(seq);
-//     seq.pop_back();
+    seq.pop_back();
   }
   
 int main()
@@ -50,5 +50,10 @@ int main()
   push(v, 31); print(v);
   push(v, 29); print(v);
   
+  pop(v); print(v);
+  pop(v); print(v);
+  pop(v); print(v);
+  pop(v); print(v);
+  pop(v); print(v);
   pop(v); print(v);
 }
