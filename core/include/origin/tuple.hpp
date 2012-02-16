@@ -62,7 +62,7 @@ namespace origin
 
     
   
-  // Tuple invoke
+  // Tuple invoke (details)
   // This framework expands a tuple as arguments to a given function.
 
   // The expander template is responsible for recursively constructing the
@@ -103,12 +103,14 @@ namespace origin
       };
   };
 
+
+  
+  // Tuple invoke
   // The tuple invoke function invokes the polymorphic forwarding function f
   // over the arguments expanded from the given tuple. A "polymorphic
   // forwarding function object" is a function object that defines a variadic
   // template function call operator that forwards the expanded arguments to
   // the target function call.
-
   template<typename F, typename... Args>
     inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...>& x)
     {

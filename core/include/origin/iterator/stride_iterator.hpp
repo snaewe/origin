@@ -64,7 +64,7 @@ namespace origin
       bool operator>=(const stride_iterator& x) const { return iter() >= x.iter(); }
 
       // Incrementable
-      stride_iterator& operator++() { std_advance(iter(), stride()); return *this; }
+      stride_iterator& operator++() { o_advance(iter(), stride()); return *this; }
       
       stride_iterator operator++(int) 
       {
@@ -74,7 +74,7 @@ namespace origin
       }
 
       // Decrement
-      stride_iterator& operator--() { advance(iter(), -stride()); return *this; }
+      stride_iterator& operator--() { o_advance(iter(), -stride()); return *this; }
       
       stride_iterator operator--(int) 
       {

@@ -19,56 +19,63 @@ namespace origin
   // defined on heterogeneous types, and c) they are constrained by their
   // corresponding concepts.
   
-  // The equal function object defines the relation a == b.
-  struct o_equal
-  {
-    template<typename T, typename U>
-      bool operator()(T&& a, U&& b) const
-      {
-        static_assert(Equality_comparable<T, U>(), "");
-        return std::forward<T>(a) == std::forward<T>(b);
-      }
-  };
+  
+  // Equal (relation)
+  // The equal function object names the relation a == b.
+  template<typename T = default_t, typename U = T>
+    struct o_equal_to
+    {
+      static_assert(Equality_comparable<T, U>(), "");
+      
+      bool operator()(const T& a, const U& b) const { return a == b; }
+    };
+
+  // The default specialization is polymorphic.
+  template<>
+    struct o_equal_to<default_t, default_t>
+    {
+      template<typename T, typename U>
+        bool operator()(T&& a, U&& b) const
+        {
+          static_assert(Equality_comparable<T, U>(), "");
+          return std::forward<T>(a) == std::forward<T>(b);
+        }
+    };
   
   // The type eq is an alias for o_equal.
-  using eq = o_equal;
+  using eq = o_equal_to<>;
   
   
-  // The less function object defines the relation a < b.
-  struct o_less
-  {
-    template<typename T, typename U>
-      bool operator()(T&& a, U&& b) const
-      {
+  
+  // Less (relation)
+  // The less function object names the relation a < b.
+  template<typename T = default_t, typename U = T>
+    struct o_less
+    {
         static_assert(Totally_ordered<T, U>(), "");
-        return std::forward<T>(a) < std::forward<T>(b);
-      }
-  };
-  
-  // The type lt is an alias for strict_less.
-  using lt = o_less;
-  
-  
-  
-  // The less equal function object defines the relation a <= b, but only if
-  // a and b are totally ordered.
-  struct o_less_equal
-  {
-    template<typename T, typename U>
-      bool operator()(T&& a, U&& b) const
-      {
-        static_assert(Totally_ordered<T, U>(), "");
-        return std::forward<T>(a) <= std::forward<T>(b);
-      }
-  };
-  
-  // The type leq is an alias for weak_less.
-  using leq = o_less_equal;
+        
+        bool operator()(const T& a, const U& b) const { return a < b; }
+    };
 
+  // The default specialization is polymorphic.
+  template<>
+    struct o_less<default_t, default_t>
+    {
+      template<typename T, typename U>
+        bool operator()(T&& a, U&& b) const
+        {
+          static_assert(Totally_ordered<T, U>(), "");
+          return std::forward<T>(a) < std::forward<T>(b);
+        }
+    };
+  
+  // The type lt is an alias for o_less<>.
+  using lt = o_less<>;
   
   
   
-  // If r is a Relation, then the complement of r(a, b) is !r(a, b).
+  // Complement (relation)
+  // For a and b, the complement of r(a, b)  is !r(a, b).
   template<typename R>
     struct complement
     {
@@ -84,7 +91,10 @@ namespace origin
       R r;
     };
   
-  // If r is a Relation, the the converse of r(a, b) is r(b, a).
+  
+  
+  // Converse (relation)
+  // For a and b, the converse of r(a, b) is r(b, a).
   template<typename R>
     struct converse
     {
@@ -100,8 +110,10 @@ namespace origin
       R r;
     };
 
-  // If r is a Relation, then the complement of the converse of r(a, b) is
-  // !r(b, a).
+    
+
+  // Complement of converse (relation)
+  // For a and b, the complement of the converse of r(a, b) is !r(b, a).
   template<typename R>
     struct complement_of_converse_relation
     {
@@ -117,9 +129,10 @@ namespace origin
       R r;
     };
 
-  // If r is a Relation, the symmetric complement of r is true if and
-  // only if !r(a, b) and !r(b, a) is true. In the case of orderings, this
-  // is the case that neither a < b nor b < a.
+    
+
+  // Symmetric complement (relation)
+  // For a and b, the symmetric complement of r is !r(a, b) && !r(b, a).
   template<typename R>
     struct symmetric_complement
     {

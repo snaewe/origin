@@ -28,13 +28,13 @@ template<typename I, typename F>
     
     using V = std::vector<Value_type<I>>;
     
-    V a(std_distance(first, last));
-    std_transform(first, last, a.begin(), func);
+    V a(o_distance(first, last));
+    o_transform(first, last, a.begin(), func);
     
-    V b(std_distance(first, last));
+    V b(o_distance(first, last));
     auto first2 = transform_iter(first, func);
     auto last2 = transform_iter(last, func);
-    std_copy(first2, last2, b.begin());
+    o_copy(first2, last2, b.begin());
     
     return equal(a, b);
   }

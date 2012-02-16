@@ -436,6 +436,17 @@ namespace origin
     }
 
     
+  
+  // Range merge (concept)
+  template<typename R1, typename R2, typename O, typename Rel = default_t>
+    constexpr bool Range_merge()
+    {
+      return Range<R1>()
+          && Range<R2>()
+          && Merge<Iterator_type<R1>, Iterator_type<R2>, O, Rel>();
+    }
+    
+    
     
   // Sort (concept)
   // The Sort concept describes the requirements of algorithms that permute

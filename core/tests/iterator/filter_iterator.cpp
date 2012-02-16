@@ -21,15 +21,15 @@ template<typename I, typename P>
   {
     using V = vector<Value_type<I>>;
     
-    auto n = std_count_if(first, last, pred);
+    auto n = o_count_if(first, last, pred);
     
     V a(n);
-    std_copy_if(first, last, a.begin(), pred);
+    o_copy_if(first, last, a.begin(), pred);
     
     V b(n);
     auto first2 = filter_iter(first, last, pred);
     auto last2 = filter_iter(last, pred);
-    std_copy(first2, last2, b.begin());
+    o_copy(first2, last2, b.begin());
     
     return equal(a, b);
   }

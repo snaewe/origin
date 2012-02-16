@@ -13,9 +13,7 @@
 
 namespace origin
 {
-  // NOTE: We can't include <origin/algorithm.hpp> without inducing a cyclic 
-  // dependency on <origin/iterator.hpp> (through range).
-  template<typename I, typename P> I std_find_if(I, I, P);
+  template<typename I, typename P> I o_find_if(I, I, P);
   template<typename I, typename P> I find_next_if(I, I, P);
 
 
@@ -55,7 +53,7 @@ namespace origin
       // postcondition: this->pred() == pred
       // postcondition: this->pred(**this) == true
       filter_iterator(Iter first, Iter last, Pred pred)
-        : data{std_find_if(first, last, pred), last, pred}
+        : data{o_find_if(first, last, pred), last, pred}
       { }
       
       // TODO: Do we need conversion constructors for const-interoperability?

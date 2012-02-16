@@ -245,6 +245,7 @@ namespace origin
     
     
   // Binary search (range, relation)
+  // Returns true if value can be found in range.
   template<typename R, typename T, typename Rel>
     inline bool binary_search(const R& range, const T& value, Rel comp)
     {
@@ -257,6 +258,7 @@ namespace origin
     
 
   // Binary search (range, less)
+  // Returns true if value can be found in range.
   template<typename R, typename T>
     inline bool binary_search(const R& range, const T& value)
     {
