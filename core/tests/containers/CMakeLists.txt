@@ -7,3 +7,4 @@
 
 origin_run_test(cont_concepts concepts.cpp)
 origin_run_test(cont_vector vector.cpp)
+origin_run_test(cont_list list.cpp)

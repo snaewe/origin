@@ -1,26 +1,26 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011-2012 Texas A&M University
+// Copyright (c) 2011 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#ifndef ORIGIN_VECTOR_HPP
-#define ORIGIN_VECTOR_HPP
+#ifndef ORIGIN_CONTAINER_LIST_HPP
+#define ORIGIN_CONTAINER_LIST_HPP
 
-#include <vector>
+#include <list>
 
 #include <origin/range.hpp>
 
 namespace origin
 {
-  // Vector (container)
-  // A vector is a dynamically resizable sequence of contiguously allocated
+  // impltor (container)
+  // A impltor is a dynamically resizable sequence of contiguously allocated
   // elements.
-  template<typename T, typename Alloc = std::allocator<T>>
-    class o_vector
+  template <typename T, typename Alloc = std::allocator<T>>
+    class o_list
     {
-      using base_type = std::vector<T, Alloc>;
+      using base_type = std::list<T, Alloc>;
     public:
       using allocator_type = typename base_type::allocator_type;
 
@@ -40,42 +40,42 @@ namespace origin
       
       
       // Default constructible
-      explicit o_vector(const allocator_type& alloc = {}) 
+      explicit o_list(const allocator_type& alloc = {}) 
         : impl(alloc) 
       { }
       
       
       
       // Movable
-      o_vector(o_vector&& x, const allocator_type& alloc = {})
+      o_list(o_list&& x, const allocator_type& alloc = {})
         : impl(std::move(x.impl), alloc)
       { }
        
-      o_vector& operator=(o_vector&& x) 
-      { 
-        impl = std::move(x.impl);
+      o_list& operator=(o_list&& x) 
+      {
+        impl = std::move(x.impl); 
         return *this;
       }
       
       
       
       // Copyable
-      o_vector(const o_vector& x, const allocator_type& alloc = {})
-        : impl(x.impl, alloc)
+      o_list(const o_list& x, const allocator_type& alloc = {})
+        : impl(x, alloc)
       { }
       
-      o_vector& operator=(const o_vector& x) 
+      o_list& operator=(const o_list& x) 
       { 
-        impl = x.impl;
+        return impl = x.impl;
         return *this;
       }
       
       
       
       // Fill initialization
-      explicit o_vector(size_type n, 
-                        const value_type& value = {}, 
-                        const allocator_type& alloc = {})
+      explicit o_list(size_type n, 
+                      const value_type& value = {}, 
+                      const allocator_type& alloc = {})
         : impl(n, value, alloc)
       { }
       
@@ -87,14 +87,14 @@ namespace origin
       
       
       // Iterator range initialization
-      // Initialize or assign the vector by copying the elements in the range 
+      // Initialize or assign the impltor by copying the elements in the range 
       // [first, last).
-      template<typename I>
-        o_vector(I first, I last, const allocator_type& alloc = {})
+      template <typename I>
+        o_list(I first, I last, const allocator_type& alloc = {})
           : impl(first, last, alloc)
         { }
         
-      template<typename I>
+      template <typename I>
         void assign(I first, I last) 
         { 
           impl.assign(first, last); 
@@ -103,15 +103,15 @@ namespace origin
       
       
       // Range initialization
-      // Initialize or assign the vector by copying the elements in range.
-      template<typename R>
-        explicit o_vector(const R& range, 
-                          const allocator_type& alloc = {}, 
-                          Requires<Input_range<R>()>* = {})
+      // Initialize or assign the impltor by copying the elements in range.
+      template <typename R>
+        explicit o_list(const R& range, 
+                        const allocator_type& alloc = {}, 
+                        Requires<Input_range<R>()>* = {})
           : impl(o_begin(range), o_end(range), alloc)
         { }
       
-      template<typename R>
+      template <typename R>
         void assign(const R& range, Requires<Input_range<R>()>* = {}) 
         { 
           impl.assign(o_begin(range), o_end(range));
@@ -120,12 +120,12 @@ namespace origin
       
       
       // Initializer list initialization
-      // Initialize or assign the vector by copying the elements in list.
-      o_vector(std::initializer_list<value_type> list, const allocator_type& alloc = {})
+      // Initialize or assign the impltor by copying the elements in list.
+      o_list(std::initializer_list<value_type> list, const allocator_type& alloc = {})
         : impl(list.begin(), list.end(), alloc)
       { }
       
-      o_vector& operator=(std::initializer_list<value_type> list)
+      o_list& operator=(std::initializer_list<value_type> list)
       {
         impl = list;
         return *this;
@@ -139,42 +139,30 @@ namespace origin
       
       
       // Equality comparable
-      bool operator==(const o_vector& v) const { return impl == v.impl; }
-      bool operator!=(const o_vector& v) const { return impl != v.impl; }
+      bool operator==(const o_list& v) const { return impl == v.impl; }
+      bool operator!=(const o_list& v) const { return impl != v.impl; }
       
       
       // Totally ordered
-      bool operator<(const o_vector& v) const  { return impl < v.impl; }
-      bool operator>(const o_vector& v) const  { return impl > v.impl; }
-      bool operator<=(const o_vector& v) const { return impl <= v.impl; }
-      bool operator>=(const o_vector& v) const { return impl >= v.impl; }
+      bool operator<(const o_list& v) const  { return impl < v.impl; }
+      bool operator>(const o_list& v) const  { return impl > v.impl; }
+      bool operator<=(const o_list& v) const { return impl <= v.impl; }
+      bool operator>=(const o_list& v) const { return impl >= v.impl; }
       
       
       
       // Size and capacity
       bool empty() const { return impl.empty(); }
       size_type size() const { return impl.size(); }
-      size_type capacity() const { return impl.capacity(); }
       
       void resize(size_type n, const value_type& value = {}) 
       { 
         impl.resize(n, value); 
       }
       
-      void reserve(size_type n)
-      {
-        impl.reserve(n);
-      }
-      
       
       
       // Element access
-      reference       operator[](size_type n)       { return impl[n]; }
-      const_reference operator[](size_type n) const { return impl[n]; }
-      
-      reference       at(size_type n)       { return impl.at(n); }
-      const_reference at(size_type n) const { return impl.at(n); }
-      
       reference       front()       { return impl.front(); }
       const_reference front() const { return impl.front(); }
       
@@ -183,11 +171,18 @@ namespace origin
       
       
       
-      // Data access
-      pointer data()             { return impl.data(); }
-      const_pointer data() const { return impl.data(); }
-      
-      
+      // Push and pop front
+      template<typename... Args>
+        void emplace_front(Args&&... args)
+        {
+          impl.emplace_front(std::forward<Args>(args)...);
+        }
+        
+      void push_front(const value_type& value) { impl.push_front(value); }
+      void push_front(value_type&& value) { impl.push_front(std::move(value)); }
+      void pop_front() { impl.pop_front(); }
+        
+
       
       // Push and pop back
       template<typename... Args>
@@ -262,8 +257,74 @@ namespace origin
       
       
       
+      // Splice
+      void splice(const_iterator pos, o_list& x)  { impl.splice(pos, x); }
+      void splice(const_iterator pos, o_list&& x) { impl.splice(pos, std::move(x)); }
+      
+      void splice(const_iterator pos, o_list& x, const_iterator i)
+      {
+        impl.splice(pos, x, i);
+      }
+      
+      void splice(const_iterator pos, o_list&& x, const_iterator i)
+      {
+        impl.splice(pos, std::move(x), i);
+      }
+      
+      void splice(const_iterator pos, o_list& x, const_iterator first, const_iterator last)
+      {
+        impl.splice(pos, x, first, last);
+      }
+      
+      void splice(const_iterator pos, o_list&& x, const_iterator first, const_iterator last)
+      {
+        impl.splice(pos, std::move(x), first, last);
+      }
+      
+      
+      
+      // Reverse
+      void reverse() { impl.reverse(); }
+      
+      
+      
+      // Remove
+      void remove(const value_type& value) { impl.remove(value); }
+      
+      template <typename P>
+        void remove_if(P pred) { impl.remove(pred); }
+      
+      
+      
+      // Unique
+      void unique() { impl.unique(); }
+      
+      template <typename R>
+        void unique(R comp) { impl.unique(comp); }
+      
+      
+      
+      // Merge
+      void merge(o_list& x)  { impl.merge(x); }
+      void merge(o_list&& x) { impl.merge(std::move(x)); }
+      
+      template <typename R>
+        void merge(o_list& x, R comp) { impl.merge(x, comp); }
+      
+      template <typename R>
+        void merge(o_list&& x, R comp) { impl.merge(std::move(x), comp); }
+      
+      
+      
+      // Sort
+      void sort() { impl.sort(); }
+      
+      template <typename R>
+        void sort(R comp) { impl.sort(comp); }
+      
+      
       // Swap
-      void swap(o_vector& x) { impl.swap(x.vec); }
+      void swap(o_list& v) { impl.swap(v.impl); }
       
       
       
@@ -280,10 +341,10 @@ namespace origin
     };
     
     
-  
+    
   // Specialization for std::swap.
-  template<typename T, typename A>
-    void swap(o_vector<T, A>& a, o_vector<T, A>& b) { a.swap(b); }
+  template <typename T, typename A>
+    void swap(o_list<T, A>& a, o_list<T, A>& b) { a.swap(b); }
     
 } // namespace origin
 
