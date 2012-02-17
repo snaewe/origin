@@ -48,14 +48,14 @@ namespace origin
   // Count
   // Returns the number of elements x in [first, last) where x == value.
   template<typename I, typename T>
-    inline Distance_type<I> o_count(I first, I last, const T& value)
+    Distance_type<I> o_count(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
-      while(first != last) {
-        if(*first == value)
+      while (first != last) {
+        if (*first == value)
           ++n;
         ++first;
       }
@@ -67,14 +67,14 @@ namespace origin
   // Count (relation)
   // Returns the number of elements x in [first, last) where x == value.
   template<typename I, typename T, typename R>
-    inline Distance_type<I> o_count(I first, I last, const T& value, R comp)
+    Distance_type<I> o_count(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
 
      Distance_type<I> n = 0;
-      while(first != last) {
-        if(comp(*first, value))
+      while (first != last) {
+        if (comp(*first, value))
           ++n;
         ++first;
       }

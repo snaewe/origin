@@ -18,7 +18,28 @@ namespace origin
   template<typename I, typename O> O o_copy(I, I, O);
   template<typename I, typename O> O o_copy_n(I, Distance_type<I>, O);
 
+
+  /*
+  template<typename T>
+    Requires<Same<Value_type<I>, T>() && !Trivially_copy_constructible<T>(), I>
+    uninitialized_fill(I first, I last, const T& value)
+    {
+      assert(is_readable_range(first, last));
+      while(first != last) {
+        new &*first(value);
+        ++first;
+      }
+    }
   
+  template<typename T>
+    Requires<Same<Value_type<I>, T>() && Trivially_copy_constructible<T>(), I>
+    uninitialized_fill(I first, I last, const T& value)
+    {
+      assert(is_readable_range(first, last));
+      o_fill(first, last, value);
+    }
+    */
+
   
   // A temporary buffer is like a unique pointer to a dynamically sized array
   // except that it is specifically designed to work with the standard library's

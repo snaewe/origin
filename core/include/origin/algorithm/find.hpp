@@ -84,10 +84,10 @@ namespace origin
     I o_find(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
 
-      while(first != last) {
-        if(*first == value)
+      while (first != last) {
+        if (*first == value)
           return first;
         ++first;
       }
@@ -103,10 +103,10 @@ namespace origin
     I o_find(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
 
-      while(first != last) {
-        if(comp(*first, value))
+      while (first != last) {
+        if (comp(*first, value))
           return first;
         ++first;
       }

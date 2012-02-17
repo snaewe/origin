@@ -29,6 +29,9 @@ int main()
   assert(( x == 5 ));
   
   
+  
+  
+  
   // This is a system configuration test that determines if std::tuple will 
   // compress empty classes at any position in their structure. Good 
   // implementations will.
