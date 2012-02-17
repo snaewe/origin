@@ -10,6 +10,9 @@
 
 namespace origin
 {
+  // FIXME: This is a nascient and broken implementation of a generalized
+  // d-ary heap. Finish this at some point in the future.
+#if 0
   // D-ary heaps
   // The d-ary heap algorithms parallel the standard heap algorithms but
   // are explicitly parameterized over the arity of the heap.
@@ -302,39 +305,242 @@ namespace origin
     {
       pop_d_heap<D>(o_begin(range), o_end(range));
     }
+#endif
+
+
+  // Is heap (iterator, relation)
+  template<typename I, typename R>
+    inline bool o_is_heap(I first, I last, R comp)
+    {
+      static_assert(Relational_query<I, R>(), "");
+
+      return std::is_heap(first, last, comp);
+    }
+    
+    
+    
+  // Is heap (iterator, less)
+  template<typename I>
+    inline bool o_is_heap(I first, I last)
+    {
+      static_assert(Relational_query<I, lt>(), "");
+      
+      return std::is_heap(first, last);
+    }
+    
+    
+  
+  // Is heap (range, relation)
+  template<typename R, typename Rel>
+    inline bool is_heap(const R& range, Rel comp)
+    {
+      return o_is_heap(o_begin(range), o_end(range), comp);
+    }
+    
+  
+  
+  // Is heap (range, less)
+  template<typename R>
+    inline bool is_heap(const R& range)
+    {
+      return o_is_heap(o_begin(range), o_end(range), lt{});
+    }
+  
+  
+  
+  // Is heap until (iterator, relation)
+  template<typename I, typename R>
+    inline I o_is_heap_until(I first, I last, R comp)
+    {
+      static_assert(Relational_query<I, R>(), "");
+
+      return std::is_heap_until(first, last, comp);
+    }
+    
+  
+
+  // Is heap until (iterator, less)
+  template<typename I>
+    inline I o_is_heap_until(I first, I last)
+    {
+      static_assert(Relational_query<I>(), "");
+      
+      return std::is_heap_until(first, last);
+    }
+  
+
+  
+  // Is heap until (range, relation)
+  template<typename R, typename Rel>
+    inline auto is_heap_until(const R& range, Rel comp) -> decltype(o_begin(range))
+    {
+      return o_is_heap_until(o_begin(range), o_end(range), comp);
+    }
+  
+  
+  
+  // Is heap until (range, less)
+  template<typename R>
+    inline auto is_heap_until(const R& range) -> decltype(o_begin(range))
+    {
+      return o_is_heap_until(o_begin(range), o_end(range), lt{});
+    }
+  
+  
+  // Push heap (iterator, relation)
+  template<typename I, typename R>
+    inline void o_push_heap(I first, I last, R comp)
+    {
+      static_assert(Sort<I, R>(), "");
+
+      return std::push_heap(first, last, comp);
+    }
+    
+    
+    
+  // Push heap (iterator, less)
+  template<typename I>
+    inline void o_push_heap(I first, I last)
+    {
+      static_assert(Sort<I>(), "");
+
+      return o_push_heap(first, last, lt{});
+    }
     
 
     
+  // Push heap (range, relation)
+  template<typename R, typename Rel>
+    inline void push_heap(R&& range, Rel comp)
+    {
+      o_push_heap(o_begin(range), o_end(range), comp);
+    }
     
+    
+  
+  // Push heap (range, less)
+  template<typename R>
+    inline void push_heap(R&& range)
+    {
+      o_push_heap(o_begin(range), o_end(range), lt{});
+    }
+  
+      
+    
+  // Pop heap (iterator, relation)
+  template<typename I, typename R>
+    inline void o_pop_heap(I first, I last, R comp)
+    {
+      static_assert(Sort<I, R>(), "");
+
+      std::pop_heap(first, last, comp);
+    }
+    
+  
+  
+  // Pop heap (iterator, less)
+  template<typename I>
+    inline void o_pop_heap(I first, I last)
+    {
+      static_assert(Sort<I>(), "");
+      
+      o_pop_heap(first, last, lt{});
+    }
+    
+    
+
+  // Pop heap (range, relation)
+  template<typename R, typename Rel>
+    inline void pop_heap(R&& range, Rel comp)
+    {
+      o_pop_heap(o_begin(range), o_end(range), comp);
+    }
+    
+    
+  
+  // Pop heap (range, less)
+  template<typename R>
+    inline void pop_heap(R&& range)
+    {
+      o_pop_heap(o_begin(range), o_end(range), lt{});
+    }
+    
+    
+  
+  // Make heap (iterator, relation)
   template<typename I, typename R>
     void o_make_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
+
       std::make_heap(first, last, comp);
     }
-    
+  
+  
+  
+  // Make heap (iterator, less)
   template<typename I>
     void o_make_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
-      std::make_heap(first, last);
+
+      o_make_heap(first, last, lt{});
+    }
+    
+    
+    
+  template<typename R, typename Rel>
+    void make_heap(R&& range, Rel comp)
+    {
+      o_make_heap(o_begin(range), o_end(range), comp);
+    }
+    
+    
+  
+  template<typename R>
+    void make_heap(R&& range)
+    {   
+      o_make_heap(o_begin(range), o_end(range), lt{});
     }
 
     
     
+  // Sort heap (iterator, relation)
   template<typename I, typename R>
     void o_sort_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
+
       std::sort_heap(first, last, comp);
     }
 
+    
+    
+  // Sort heap (iterator, less)
   template<typename I>
     void o_sort_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
-      std::sort_heap(first, last);
+
+      o_sort_heap(first, last, lt{});
     }
+    
+    
+  
+  template<typename R, typename Rel>
+    void sort_heap(R&& range, Rel comp)
+    {
+      o_sort_heap(o_begin(range), o_end(range), comp);
+    }
+    
+    
+  
+  template<typename R>
+    void sort_heap(R&& range)
+    {
+      o_sort_heap(o_begin(range), o_end(range), lt{});
+    }
+    
 
 } // namespace origin
 

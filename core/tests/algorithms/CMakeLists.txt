@@ -7,9 +7,11 @@
 
 # TODO: Add tests for some_of and not_all_of.
 origin_run_test(algo_all_of all_of.cpp)
+origin_run_test(algo_not_all_of not_all_of.cpp)
 origin_run_test(algo_some_of some_of.cpp)
 origin_run_test(algo_none_of none_of.cpp)
 origin_run_test(algo_one_of one_of.cpp)
+origin_run_test(algo_all_equal all_equal.cpp)
 
 origin_run_test(algo_find find.cpp)
 origin_run_test(algo_find_nth_if find_nth_if.cpp)

@@ -14,6 +14,20 @@
 using namespace std;
 using namespace origin;
 
+template<typename S, typename T>
+  void push(S& seq, const T& value)
+  {
+    seq.push_back(value);
+    push_heap(seq);
+  }
+  
+template<typename S>
+  void pop(S& seq, S& result)
+  {
+    result.push_back(seq.front());
+    pop_heap(seq);
+    seq.pop_back();
+  }
 
 template<typename R>
   void print(const R& range)
@@ -22,6 +36,22 @@ template<typename R>
       cout << x << ' ';
     cout << '\n';
   }
+
+int main()
+{
+  vector<int> v1;
+  for(auto n : {1, 2, 3, 4, 5})
+    push(v1, n);
+  
+  vector<int> v2;
+  while(!v1.empty())
+    pop(v1, v2);
+  print(v2);
+}
+
+
+// FIXME: Test d-ary heaps.
+#if 0
 
   
 template<typename S, typename T>
@@ -57,3 +87,4 @@ int main()
   pop(v); print(v);
   pop(v); print(v);
 }
+#endif

@@ -20,13 +20,13 @@ struct positive
 
 int main()
 {
-  vector<int> v1 = {0, 0, 1};
-  assert(some_of(v1.begin(), v1.end(), positive{}));
-  assert(some_of(v1, positive{}));
-  assert(some_of({0, 0, 1}, positive{}));
+  vector<int> v1 = {1, 2, -1};
+  assert(not_all_of(v1.begin(), v1.end(), positive{}));
+  assert(not_all_of(v1, positive{}));
+  assert(not_all_of({1, 2, -1}, positive{}));
 
-  vector<bool> v2 = {false, false, true};
-  assert(some_of(v2.begin(), v2.end()));
-  assert(some_of(v2));
-  assert(some_of({false, false, true}));
+  vector<bool> v2 = {true, true, false};
+  assert(not_all_of(v2.begin(), v2.end()));
+  assert(not_all_of(v2));
+  assert(not_all_of({true, true, false}));
 }

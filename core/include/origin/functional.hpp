@@ -14,6 +14,30 @@
 
 namespace origin
 {
+  // As bool (function)
+  // The as bool function object evaluates its argument as a boolean value,
+  // returning true or false.
+  template<typename T = default_t>
+    struct as_bool
+    {
+      static_assert(Convertible<T, bool>(), "");
+      
+      bool operator()(const T& x) const { return x; }
+    };
+    
+  // The default specialization is polymorphic.
+  template<>
+    struct as_bool<default_t>
+    {
+      template<typename T>
+        bool operator()(const T& x)
+        {
+          static_assert(Convertible<T, bool>(), "");
+          return x;
+        }
+    };
+
+  
   // NOTE: The standard relation operators (o_equal, o_less, etc.) vary from
   // the standard operators in that a) they are not templates, b) they are
   // defined on heterogeneous types, and c) they are constrained by their
@@ -35,10 +59,10 @@ namespace origin
     struct o_equal_to<default_t, default_t>
     {
       template<typename T, typename U>
-        bool operator()(T&& a, U&& b) const
+        bool operator()(const T& a, const U& b) const
         {
           static_assert(Equality_comparable<T, U>(), "");
-          return std::forward<T>(a) == std::forward<T>(b);
+          return a == b;
         }
     };
   
@@ -73,6 +97,10 @@ namespace origin
   using lt = o_less<>;
   
   
+  
+  // TODO: Write more relations and add operators.
+  
+
   
   // Complement (relation)
   // For a and b, the complement of r(a, b)  is !r(a, b).

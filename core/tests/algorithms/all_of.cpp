@@ -6,7 +6,6 @@
 // and conditions.
 
 #include <cassert>
-#include <iostream>
 #include <vector>
 
 #include <origin/algorithm.hpp>
@@ -14,15 +13,20 @@
 using namespace std;
 using namespace origin;
 
-bool nonneg(int n) { return n >= 0; }
-bool neg(int n) { return n < 0; }
-bool zero(int n) { return n == 0; }
-bool nonzero(int n) { return n != 0; }
+struct positive
+{
+  bool operator()(int n) const { return n > 0; }
+};
 
 int main()
 {
-  vector<int> v = {1, 0, 2, 0, 3, 0};
-  
-  assert(( all_of(v.begin(), v.end(), nonneg) ));
-  assert(( all_of(v, nonneg) ));
+  vector<int> v1 = {1, 2, 3};
+  assert(all_of(v1.begin(), v1.end(), positive{}));
+  assert(all_of(v1, positive{}));
+  assert(all_of({1, 2, 3}, positive{}));
+
+  vector<bool> v2 = {true, true, true};
+  assert(all_of(v2.begin(), v2.end()));
+  assert(all_of(v2));
+  assert(all_of({true, true, true}));
 }

@@ -14,7 +14,7 @@ namespace origin
 {
   // The stride iterator adaptor advances and element some number of times
   // during a single increment. Note that the actual advance operation is
-  // parameterized by the Adv action.
+  // parameterized by the Act action.
   //
   // The stride iterator has the same traversal and read/write properties as
   // its underlying iterator.
