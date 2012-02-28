@@ -378,6 +378,11 @@ namespace origin
 
 
 
+  // Aligned storage
+  template<std::size_t Size, std::size_t Align>
+    using Aligned_storage = typename std::aligned_storage<Size, Align>::type;
+
+
   // Return an unqualified a type name by removing any references and 
   // CV-qualifiers. This is helpful when concept checking template arguments 
   // of types that are known to be non-value (i.e., qualified) types, 

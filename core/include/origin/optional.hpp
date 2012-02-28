@@ -8,8 +8,7 @@
 #ifndef ORIGIN_OPTIONAL_HPP
 #define ORIGIN_OPTIONAL_HPP
 
-#include <cassert>
-#include <algorithm>
+#include <origin/traits.hpp>
 
 namespace origin
 {
@@ -121,11 +120,12 @@ namespace origin
       }
 
       
-      // Dereferenceable
+      // Dereference
       // Return a reference to the underlying object.
       reference       operator*()       { return get(); }
       const_reference operator*() const { return get(); }
 
+      // Arrow
       // Return a pointer to the underlying object.
       pointer       operator->()       { return &get(); }
       const_pointer operator->() const { return &get(); }
@@ -191,6 +191,8 @@ namespace origin
       friend bool operator>=(optional const& a, std::nullptr_t) { return true; }
       friend bool operator>=(std::nullptr_t, optional const& b) { return true; }
       
+      
+      // Mutators
       void swap(optional& x)
       {
         std::swap(init, x.init);
@@ -207,8 +209,8 @@ namespace origin
 
     private:
       // Return a pointer to the underlying memory.
-      pointer       ptr()       { return reinterpret_cast<T*>(mem); }
-      const_pointer ptr() const { return reinterpret_cast<T const*>(mem); }
+      pointer       ptr()       { return reinterpret_cast<T*>(&mem); }
+      const_pointer ptr() const { return reinterpret_cast<T const*>(&mem); }
       
       // Checked pointer access
       reference       get()       { assert(( init )); return *ptr(); }
@@ -216,7 +218,7 @@ namespace origin
 
     private:
       bool init;
-      char mem[sizeof(T)];
+      Aligned_storage<sizeof(T), alignof(T)> mem;
     };
 
   // Swap specialization.
