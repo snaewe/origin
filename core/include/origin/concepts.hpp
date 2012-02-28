@@ -16,108 +16,156 @@
 namespace origin
 {
   // Declarations
-  template<typename T, typename U = T> constexpr bool Equality_comparable();
-  template<typename T, typename U = T> constexpr bool Totally_ordered();
-  
-  
-  // The Axiom class is the base class of all axioms specifications. It derives
-  // from bool_constant<true>, making axiom objects convertible to bool.
-  struct axiom_type
-  {
-    explicit operator bool() const
-    {
-      return true;
-    }
-  };
-  
-  
+  template <typename T, typename U = T> constexpr bool Equality_comparable();
+  template <typename T, typename U = T> constexpr bool Totally_ordered();
+  template <typename R, typename... Args> constexpr bool Relation();
+
   
   // Properties of relations
-    
+  // This framework is used to support the assertion and testing of properties
+  // of (binary) relations. Each of these properties is comprised of three
+  // components: 
+  //
+  //    - a test function that evaluates the property over some arguments
+  //    - a constructor function
+  //    - a predicate that always returns true.
+  //
+  // The test functions do not evaluate the entire domain of a relation r; that
+  // would be impossible. Instead, they evaluate the semantics of the relation
+  // for a particular set of input values. This should allow users to do e.g.,
+  // boundary value testing to help ensure that their function arguments 
+  // actually do what they are supposed to.
+  //
+  // The predicate returns true so that no assertions fail. We can't actually
+  // assert the property since it's quantified over the domain of the relation,
+  // but we'd still like to document the requirement. It should be a queue for
+  // programmers to verify function arguments.
+  
+
+  // Reflexive property (property)
   // A relation is reflexive if, for all a, r(a, a) is true.
-  template<typename R>
-    struct reflexive_property : axiom_type
+  template <typename R>
+    struct reflexive_property_test
     {
-      reflexive_property(R r) : r{r} { }
+      reflexive_property_test(R r) : r{r} { }
       
-      template<typename T>
-        bool operator()(T a) const { return r(a, a); }
+      template <typename T>
+        bool operator()(T a) const 
+        { 
+          static_assert(Relation<R, T>(), "");
+          return r(a, a); 
+        }
       
       R r;
     };
     
-  template<typename R>
-    reflexive_property<R> reflexive(R r) { return r; }
+  // Returns a function that evaluates whether r(a, a) is true for some a in 
+  // the domain of r.
+  template <typename R>
+    reflexive_property_test<R> reflexive_property(R r) { return r; }
+    
+  // Evaluates whether r is an reflexive relation. Always returns true.
+  template <typename R>
+    constexpr bool is_reflexive_relation(R r) { return true; }
 
 
 
+  // Irreflexive property (property)
   // A relation is irreflexive if, for all a, r(a, a) is false.
-  template<typename R>
-    struct irreflexive_property : axiom_type
+  template <typename R>
+    struct irreflexive_property_test
     {
-      irreflexive_property(R r) : r{r} { }
+      irreflexive_property_test(R r) : r{r} { }
       
-      template<typename T>
-        bool operator()(R r, T a, T b) const { return !r(a, a); }
+      template <typename T>
+        bool operator()(R r, T a, T b) const 
+        {
+          static_assert(Relation<R, T>(), "");
+          return !r(a, a); 
+        }
       
       R r;
     };
+
+  // Returns a function that evaluates whether r(a, a) is false for some a in
+  // the domain of r.
+  template <typename R>
+    irreflexive_property_test<R> irreflexive_property(R r) { return r; }
     
-  template<typename R>
-    irreflexive_property<R> irreflexive(R r) { return r; }
+  // Evaluates whether r is an irreflexive relation. Always returns true.
+  template <typename R>
+    constexpr bool is_irreflexive_relation(R r) { return true; }
 
 
 
+  // Symmetric property (property)
   // A relation is symmetric if, for all a and b, r(a, b) => r(b, a).
-  template<typename R>
-    struct symmetric_property : axiom_type
+  template <typename R>
+    struct symmetric_property_test
     {
-      symmetric_property(R r) : r{r} { }
+      symmetric_property_test(R r) : r{r} { }
     
-      template<typename T>
+      template <typename T>
         bool operator()(R r, T a, T b) const 
         { 
+          static_assert(Relation<R, T>(), "");
           return r(a, b) ? r(b, a) : true; 
         }
       
       R r;
     };
 
-  template<typename R>
-    symmetric_property<R> symmetric(R r) { return r; }
+  // Returns a function that evaluates whether r(a, b) => r(b, a) for some
+  // a and b in the domain of r.
+  template <typename R>
+    symmetric_property_test<R> symmetric_property(R r) { return r; }
+    
+  // Evaluates whether r is a symmetric relation. Always returns true.
+  template <typename R>
+    constexpr bool is_symmetric_relation(R r) { return true; }
 
 
     
+  // Asymmetric relation (property)
   // A relation is asymmetric if, for all a and b, r(a, b) => !r(b, a)
-  template<typename R>
-    struct asymmetric_property : axiom_type
+  template <typename R>
+    struct asymmetric_property_test
     {
       asymmetric_property(R r) : r{r} { }
     
-      template<typename T>
+      template <typename T>
         bool operator()(T a, T b) const
         {
+          static_assert(Relation<R, T>(), "");
           return r(a, b) ? !r(b, a) : true;
         }
       
       R r;
     };
   
-  template<typename R>
-    asymmetric_property<R> asymmetric(R r) { return r; }
+  // Returns a function that evaluates whether r(a, b) => !r(b, a) for some
+  // a and b in the domain of r.
+  template <typename R>
+    asymmetric_property<R> asymmetric_property(R r) { return r; }
+
+  // Returns true if r is an asymmetric relation., Always returns true.
+  template <typename R>
+    constexpr bool is_asymmetric_relation(R r) { return true; }
     
   
   
+  // Antisymmetric relation (property)
   // A relation is antisymmetric if, for all a and b, 
   // r(a, b) && r(b, a) => a == b.
-  template<typename R>
-    struct antisymmetric_property : axiom_type
+  template <typename R>
+    struct antisymmetric_property_test
     {
-      antisymmetric_property(R r) : r{r} { }
+      antisymmetric_property_test(R r) : r{r} { }
       
-      template<typename T>
+      template <typename T>
         bool operator()(T a, T b) const
         {
+          static_assert(Relation<R, T>(), "");
           static_assert(Equality_comparable<T>(), "");
           
           return r(a, b) && r(b, a) ? a == b : true;
@@ -125,46 +173,59 @@ namespace origin
       
       R r;
     };
+
+  // Returns a function that evaluates whether r(a, b) && r(b, a) => a == b
+  // for some a and b in the domaion of r.
+  template <typename R>
+    antisymmetric_property_test<R> antisymmetric_property(R r) { return r; }
     
-  template<typename R>
-    antisymmetric_property<R> antisymmetric(R r) { return r; }
+  // Evaluates whether r is an antisymmetric property. Always returnst true.
+  template <typename R>
+    constexpr bool is_antisymmetric_property(R r) { return true; }
 
 
 
+  // Transitive property (property)
   // A relation is transitive if, for all a, b, and c, 
-  // r(a, b) && r(b, c) => r(a, c)
-  template<typename R>
-    struct transitive_property : axiom_type
+  // r(a, b) && r(b, c) => r(a, c).
+  template <typename R>
+    struct transitive_property_test
     {
-      transitive_property(R r) : r{r} { }
+      transitive_property_test(R r) : r{r} { }
       
-      template<typename T>
+      template <typename T>
         bool operator()(T a, T b, T c) const
         {
+          static_assert(Relation<R, T>(), "");
           return r(a, b) && r(b, c) ? r(a, c) : true;
         }
       
       R r;
     };
     
-  template<typename R>
-    transitive_property<R> transitive(R r)
-    {
-      return r;
-    }
+  // Returns a function that evaluates whether r(a, b) && r(b, c) => r(a, c)
+  // for some a, b, and c in the domain of r.
+  template <typename R>
+    transitive_property_test<R> transitive_property(R r) { return r; }
+    
+  // Evaluates whether r is a transitive relation. Always returns true.
+  template <typename R>
+    constexpr bool is_transitive_relation(R r) { return true; }
     
   
   
+  // Trichotomous property (property)
   // A relation is trichotomous if, for all a and b, exactly one of the 
   // following are true: a < b, b < a, or a == b.
-  template<typename R>
-    struct trichotomous_property : axiom_type
+  template <typename R>
+    struct trichotomous_property_test
     {
-      trichotomous_property(R r) : r{r} { }
+      trichotomous_property_test(R r) : r{r} { }
       
-      template<typename T>
+      template <typename T>
         bool operator()(T a, T b) const
         {
+          static_assert(Relation<R, T>(), "");
           static_assert(Equality_comparable<T>(), "");
 
           if(r(a, b))
@@ -178,34 +239,50 @@ namespace origin
       R r;
     };
     
-  template<typename R>
-    trichotomous_property<R> trichotomous(R r) { return r; }
+  // Returns a function that evaluates whether exactly one of r(a, b), r(b, a),
+  // or a == b is true for some a and b in the domain of r.
+  template <typename R>
+    trichotomous_property_test<R> trichotomous_property(R r) { return r; }
+    
+  // Evaluates whether r is a trichotomous relation. Awlays returns true.
+  template <typename R>
+    constexpr bool is_trichotomous_relation(R r) { return true; }
     
     
     
-  // An equivalence relation is reflexive, symmetric, and transitive.
-  template<typename R>
-    struct equivalence_relation_properties : axiom_type
+  // Equivalence relation (property)
+  // An equivalence relation is a relation that is reflexive, symmetric, and 
+  // transitive.
+  template <typename R>
+    struct equivalence_relation_test
     {
-      equivalence_relation_properties(R r)
+      equivalence_relation_test(R r)
         : reflexive{r}, symmetric{r}, transitive{r}
       { }
 
+      // FIXME: I'm not sure I like this, but I'm not really sure how to test
+      // it effectively either. 3 overloads for all the 1, 2 and 3 argument
+      // properties? Meh.
       reflexive_property<R> reflexive;
       symmetric_property<R> symmetric;
       transitive_property<R> transitive;
     };
     
-  template<typename R>
-    equivalence_relation_properties<R> equivalence_relation(R r)
-    {
-      return r;
-    }
+  // FIXME: What does  this return?
+  template <typename R>
+    equivalence_relation_test<R> equivalence_relation(R r) { return r; }
+
+  // Evaluates whether r is an equivalence relation. Always returns true.
+  template <typename R>
+    constexpr bool is_equivalence_relation(R r) { return true; }
     
     
     
-  // A strict weak ordering is irreflexive, asymmetric, and transitive.
-  template<typename R>
+  // Strict weak order (property)
+  // A strict weak order is irreflexive, asymmetric, and transitive, and
+  // its symmetric complement (a.k.a., incomparability) is transitive. Note
+  // that incomparability can be shown to be an equivalence relation.
+  template <typename R>
     struct strict_weak_ordering_properties : axiom_type
     {
       strict_weak_ordering_properties(R r)
@@ -217,7 +294,7 @@ namespace origin
       transitive_property<R> transitive;
     };
     
-  template<typename R>
+  template <typename R>
     strict_weak_ordering_properties<R> strict_weak_ordering(R r)
     {
       return r;
@@ -226,8 +303,8 @@ namespace origin
     
     
   // A strict total ordering is antisymmetric, transitive, and trichotomous.
-  template<typename R>
-    struct strict_total_ordering_properties : axiom_type
+  template <typename R>
+    struct strict_total_ordering_properties
     {
       strict_total_ordering_properties(R r)
         : antisymmetric{r}, transitive{r}, trichotomous{r}
@@ -238,7 +315,7 @@ namespace origin
       trichotomous_property<R> trichotomous;
     };
 
-  template<typename R>
+  template <typename R>
     strict_total_ordering_properties<R> strict_total_ordering(R r)
     {
       return r;
@@ -252,7 +329,7 @@ namespace origin
   // When given two types, the requirements are different.
   //
   // FIXME: Refactor requirements so Common<> won't generate lookup errors.
-  template<typename T, typename U = T>
+  template <typename T, typename U = T>
     struct Equality_comparable_concept
     {
       static constexpr bool check()
@@ -277,7 +354,7 @@ namespace origin
       }
     };
   
-  template<typename T>
+  template <typename T>
     struct Equality_comparable_concept<T, T>
     {
       static constexpr bool check()
@@ -302,7 +379,7 @@ namespace origin
     };
     
   // Returns true if the values of T (and U) can be compared for value equality.
-  template<typename T, typename U>
+  template <typename T, typename U>
     constexpr bool Equality_comparable()
     {
       return Equality_comparable_concept<T, U>::check();
@@ -313,7 +390,7 @@ namespace origin
   // The Totally_ordered concept defines the syntax and semantics of ordering
   // values.
   // FIXME: Refactor requirements so Common<> won't generate lookup errors.
-  template<typename T, typename U>
+  template <typename T, typename U>
     struct Totally_ordered_concept
     {
       static constexpr bool check()
@@ -346,7 +423,7 @@ namespace origin
       }
     };
     
-  template<typename T>
+  template <typename T>
     struct Totally_ordered_concept<T, T>
     {
       static constexpr bool check()
@@ -383,7 +460,7 @@ namespace origin
 
   // Returns true if the values of T (and U) can be totally ordered using
   // the standard inequality operators.
-  template<typename T, typename U>
+  template <typename T, typename U>
     constexpr bool Totally_ordered()
     {
       return Totally_ordered_concept<T, U>::check();
@@ -395,7 +472,7 @@ namespace origin
   // Return true if T is movable. A movable type is both destructible,
   // move constructible and mvoe assignable. Note that movable types may not be
   // copyable.
-  template<typename T>
+  template <typename T>
     constexpr bool Movable()
     {
       return Destructible<T>() && Move_constructible<T>() && Move_assignable<T>();
@@ -413,7 +490,7 @@ namespace origin
   // Movable (concept).
   // Return true if T is copyable. A copyable type is both copy constructible
   // and assignable. Note that copyable types are also inherently Movable.
-  template<typename T>
+  template <typename T>
     constexpr bool Copyable()
     {
       return Movable<T>() && Copy_constructible<T>() && Copy_assignable<T>();
@@ -428,7 +505,7 @@ namespace origin
   // Semiregular types are not required to be default constructible. That
   // requirement invalidates a number of useful adaptor types (e.g., iterator 
   // and range adaptors).
-  template<typename T>
+  template <typename T>
     constexpr bool Semiregular()
     {
       return Copyable<T>();
@@ -441,7 +518,7 @@ namespace origin
   // that is also equality comparable.
   //
   // FIXME: Isn't this also Default_constructible? I thinks so.
-  template<typename T>
+  template <typename T>
     constexpr bool Regular()
     {
       return Semiregular<T>() && Equality_comparable<T>();
@@ -463,7 +540,7 @@ namespace origin
   // not required to be equality preserving.
   
   // A type F is a Function if it can be called with the given arguments.
-  template<typename F, typename... Args>
+  template <typename F, typename... Args>
     struct Function_concept
     {
       static constexpr bool check()
@@ -472,14 +549,14 @@ namespace origin
       }
     };
   
-  template<typename F, typename... Args>
+  template <typename F, typename... Args>
     constexpr bool Function()
     {
       return Function_concept<F, Args...>::check();
     }
     
   // The result type of a Function.
-  template<typename F, typename... Args>
+  template <typename F, typename... Args>
     using Result_type = Call_result<F, Args...>;
     
 
@@ -489,7 +566,7 @@ namespace origin
   // is a purely semantic refinement of Function, so the two are statically 
   // synonymous.
     
-  template<typename F, typename... Args>
+  template <typename F, typename... Args>
     struct Regular_function_concept
     {
       static constexpr bool check()
@@ -505,7 +582,7 @@ namespace origin
     };
     
   // Return true if F is a regular function.
-  template<typename F, typename... Args>
+  template <typename F, typename... Args>
     constexpr bool Regular_function()
     {
       return Regular_function_concept<F, Args...>::check();
@@ -518,13 +595,13 @@ namespace origin
   // bool.
 
   // A helper class to check syntactic requirements.
-  template<bool Prereqs, typename P, typename... Args>
+  template <bool Prereqs, typename P, typename... Args>
     struct Predicate_requirements
     {
       static constexpr bool check() { return false; }
     };
 
-  template<typename P, typename... Args>
+  template <typename P, typename... Args>
     struct Predicate_requirements<true, P, Args...>
     {
       static constexpr bool check() 
@@ -534,7 +611,7 @@ namespace origin
     };
 
   // Specification of the Predicate concept.
-  template<typename P, typename... Args>
+  template <typename P, typename... Args>
     struct Predicate_concept
     {
       static constexpr bool check()
@@ -544,7 +621,7 @@ namespace origin
     };
     
   // Return true if P is a Predicate.
-  template<typename P, typename... Args>
+  template <typename P, typename... Args>
     constexpr bool Predicate()
     {
       return Predicate_concept<P, Args...>::check();
@@ -559,14 +636,14 @@ namespace origin
   
   // A helper class for checking syntactic requirements of generalized
   // Relations.
-  template<bool Prereqs, typename R, typename T, typename U>
+  template <bool Prereqs, typename R, typename T, typename U>
     struct Relation_requirements
     {
       static constexpr bool check() { return false; }
     };
     
     
-  template<typename R, typename T, typename U>
+  template <typename R, typename T, typename U>
     struct Relation_requirements<true, R, T, U>
     {
       static constexpr bool check()
@@ -588,7 +665,7 @@ namespace origin
   
   
   // Specification of Relation syntax and semantics.
-  template<typename R, typename T, typename U = T>
+  template <typename R, typename T, typename U = T>
     struct Relation_concept
     {
       static constexpr bool check()
@@ -597,7 +674,7 @@ namespace origin
       }
     };
     
-  template<typename R, typename T>
+  template <typename R, typename T>
     struct Relation_concept<R, T, T>
     {
       static constexpr bool check()
@@ -607,7 +684,7 @@ namespace origin
     };
     
   // Returns true if R is a Relation on T x U.
-  template<typename R, typename T, typename U = T>
+  template <typename R, typename T, typename U = T>
     constexpr bool Relation()
     {
       return Relation_concept<R, T, U>::check();
@@ -636,14 +713,14 @@ namespace origin
   //
   // NOTE: This *must* be specialized for externally adapted types (e.g.,
   // pointers). We handle pointer types internally as a special case.
-  template<typename T>
+  template <typename T>
     struct get_value_type
     {
     private:
-      template<typename X> static typename X::value_type check(X&&);
-      template<typename X> static X check(X*);
-      template<typename X> static X check(X const*);
-      template<typename X, std::size_t N> X check(X(&)[N]);
+      template <typename X> static typename X::value_type check(X&&);
+      template <typename X> static X check(X*);
+      template <typename X> static X check(X const*);
+      template <typename X, std::size_t N> X check(X(&)[N]);
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>()));
@@ -651,11 +728,11 @@ namespace origin
 
   // The Value_type alias associates a value type with another type, usually
   // the type of a sub-object or contained object.
-  template<typename T>
+  template <typename T>
     using Value_type = typename get_value_type<T>::type;
   
   // Return true if T has an associated value type.
-  template<typename T>
+  template <typename T>
     constexpr bool Has_value_type()
     {
       return Subst_succeeded<Value_type<T>>();
@@ -680,22 +757,22 @@ namespace origin
 
 
   // Safely deduce the distance type.
-  template<typename T>
+  template <typename T>
     struct get_distance_type
     {
     private:
-      template<typename X> 
+      template <typename X> 
         static auto check(const X&, Requires<!(Integral<X>() || Pointer<X>())>* = {})
           -> typename X::difference_type;
       
-      template<typename X> 
+      template <typename X> 
         static auto check(const X&, Requires<Integral<X>() || Pointer<X>()>* = {})
           -> std::ptrdiff_t;
           
-      template<typename X, std::size_t N>
+      template <typename X, std::size_t N>
         static std::ptrdiff_t check(const X(&)[N]);
         
-      template<typename X>
+      template <typename X>
         static std::ptrdiff_t check(std::initializer_list<X>);
 
       static subst_failure check(...);
@@ -704,11 +781,11 @@ namespace origin
     };
   
   // An alias to the associated distance type, if supported.
-  template<typename T>
+  template <typename T>
     using Distance_type = typename get_distance_type<T>::type;
     
   // Returns true if T has an associated difference type.
-  template<typename T>
+  template <typename T>
     constexpr bool Has_distance_type()
     {
       return Subst_succeeded<Distance_type<T>>();
@@ -738,11 +815,11 @@ namespace origin
   
   // Safely deduce the result type of an input streaming operator, s >> x, for
   // any Stream s.
-  template<typename S, typename T>
+  template <typename S, typename T>
     struct get_input_stream_result
     {
     private:
-      template<typename X, typename Y>
+      template <typename X, typename Y>
         static auto check(X& x, Y& y) -> decltype(x >> y);
       
       static subst_failure check(...);
@@ -751,11 +828,11 @@ namespace origin
     };
 
   // An alias for the result type of the expression, s >> x, for any Stream s.
-  template<typename S, typename T>
+  template <typename S, typename T>
     using Input_stream_result = typename get_input_stream_result<S, T>::type;
 
   // The Input_streamable concept.
-  template<typename S, typename T>
+  template <typename S, typename T>
     struct Input_streamable_concept
     {
       static constexpr bool check()
@@ -764,7 +841,7 @@ namespace origin
       }
     };
     
-  template<typename T>
+  template <typename T>
     struct Input_streamable_concept<T, default_t>
     {
       static constexpr bool check()
@@ -774,7 +851,7 @@ namespace origin
     };
 
   // Return true if values of type T can be read from an input stream.
-  template<typename T, typename U = default_t>
+  template <typename T, typename U = default_t>
     constexpr bool Input_streamable()
     {
       return Input_streamable_concept<T, U>::check();
@@ -796,11 +873,11 @@ namespace origin
   
   // Safely deduce the result type of an input streaming operator, s << x, for
   // any Stream s.
-  template<typename S, typename T>
+  template <typename S, typename T>
     struct get_output_stream_result
     {
     private:
-      template<typename X, typename Y>
+      template <typename X, typename Y>
         static auto check(X& x, Y const& y) -> decltype(x << y);
       
       static subst_failure check(...);
@@ -809,11 +886,11 @@ namespace origin
     };
 
   // An alias for the result type of the expression, s >> x, for any Stream s.
-  template<typename S, typename T>
+  template <typename S, typename T>
     using Output_stream_result = typename get_output_stream_result<S, T>::type;
 
   // The Input_streamable concept.
-  template<typename S, typename T>
+  template <typename S, typename T>
     struct Output_streamable_concept
     {
       static constexpr bool check()
@@ -822,7 +899,7 @@ namespace origin
       }
     };
     
-  template<typename T>
+  template <typename T>
     struct Output_streamable_concept<T, default_t>
     {
       static constexpr bool check()
@@ -832,7 +909,7 @@ namespace origin
     };
 
   // Return true if values of type T can be read from an input stream.
-  template<typename T, typename U = default_t>
+  template <typename T, typename U = default_t>
     constexpr bool Output_streamable()
     {
       return Output_streamable_concept<T, U>::check();
@@ -842,7 +919,7 @@ namespace origin
 
   // Return true if the values of T can be streamed: read from and written to
   // a stream.
-  template<typename T, typename U = default_t>
+  template <typename T, typename U = default_t>
     constexpr bool Streamable()
     {
       return Input_streamable<T, U>() && Output_streamable<T, U>();
