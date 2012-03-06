@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -112,18 +112,16 @@ namespace origin
   // template function call operator that forwards the expanded arguments to
   // the target function call.
   template<typename F, typename... Args>
-    inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...>& x)
+    inline Result_of<F(Args...)> tuple_invoke(F f, std::tuple<Args...>& x)
     {
-      using Result = Result_type<F, Args...>;
-      return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
+      return tuple_expand_args<0, sizeof...(Args), Result_of<F(Args...)>>::apply(f, x);
     }
   
   // A const version of the function above.
   template<typename F, typename... Args>
-    inline Result_type<F, Args...> tuple_invoke(F f, std::tuple<Args...> const& x)
+    inline Result_of<F(Args...)> tuple_invoke(F f, const std::tuple<Args...>& x)
     {
-      using Result = Result_type<F, Args...>;
-      return tuple_expand_args<0, sizeof...(Args), Result>::apply(f, x);
+      return tuple_expand_args<0, sizeof...(Args), Result_of<F(Args...)>>::apply(f, x);
     }
 
 } // namespace origin

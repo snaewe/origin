@@ -34,7 +34,7 @@ namespace origin
 
 
   // SFINAE support
-    
+
   // The substitution failure type represents the result of failed name lookup
   // and is used to support queries about the existence or state of expressions
   // that might fail.
@@ -641,14 +641,8 @@ namespace origin
       return std::is_function<T>();
     }
     
-  // An alias for the result of the function type F. Note that F must have
-  // the form G(Args...) where G is a callable type and Args... is a sequence
-  // of arguments.
-  template<typename F>
-    using Result_of = typename std::result_of<F>::type;
-
-
     
+
   // Relational operator traits
   
   // Safely deduce the result type of the expression t == u.
@@ -1410,7 +1404,32 @@ namespace origin
     {
       return Subst_succeeded<Call_result<F, Args...>>();
     }
+
     
+  
+  // A helper class for computing the result type of a function.
+  template <typename X>
+    struct result_of_impl
+    {
+      using type = subst_failure;
+    };
+    
+  template <typename F, typename... Args>
+    struct result_of_impl<F(Args...)>
+    {
+      using type = Call_result<F, Args...>;
+    };
+    
+    
+  
+  // Result_of (type trait)
+  // An alias for the result of the function type F. Note that F must have
+  // the form G(Args...) where G is a callable type and Args... is a sequence
+  // of arguments.
+  template<typename F>
+    using Result_of = typename result_of_impl<F>::type;
+
+
 
   // Compound assignment
     

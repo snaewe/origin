@@ -8,6 +8,8 @@
 #ifndef ORIGIN_UTILITY_HPP
 #define ORIGIN_UTILITY_HPP
 
+#include <cassert>
+
 #include <origin/utility/meta.hpp>
 #include <origin/utility/typestr.hpp>
 
@@ -41,7 +43,7 @@ namespace origin
   
   // The unspecified_t type is a tag class used to indicate that an argument
   // for a template parameter has not been specified.
-  struct uspecified_t { };
+  struct unspecified_t { };
 
   
   // The empty type is an empty, trivial type that is meant to be used as a
