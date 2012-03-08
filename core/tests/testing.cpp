@@ -10,18 +10,27 @@
 
 #include <origin/concepts.hpp>
 #include <origin/range.hpp>
+#include <origin/tuple.hpp>
 #include <origin/testing.hpp>
 
 using namespace std;
 using namespace origin;
 
 
-template <typename Env, typename P, typename Eng, typename Gen>
-  void stuff(Env& env, P pred, Eng&& eng, Gen&& gen)
+template <typename R>
+  void print(const R& range)
   {
-    cout << Randomized_specification_check<Env, P, Eng, Gen>() << '\n';
-    cout << Randomized_property_check<Env, P, Eng, Gen>() << '\n';
+    for (const auto& x : range)
+      cout << x << ' ';
+    cout << '\n';
   }
+
+template <typename Env, typename Check, typename Eng, typename... Gens>
+  void stuff(Env& env, Check check, Eng& eng, Gens&... gens)
+  {
+    cout << Randomized_property_check<Env, Check, Eng, Gens...>() << '\n';
+  }
+
 
   
 int main()
@@ -34,7 +43,7 @@ int main()
   // Initialize the checking invironment.
   assert_checker env;
 
-  auto gen_int = default_distribution<int>();
+  auto gen_int = uniform_int_distribution<int>(0, 100);
   auto gen_double = default_distribution<double>();
 
   // Properties under test
@@ -54,6 +63,7 @@ int main()
   
   // Specifications under test
   equivalence_relation_spec<eq> equiv;
+
   check(env, equiv, eng, gen_int);
   
   equality_comparable_semantics<int> eq_int;
@@ -65,4 +75,22 @@ int main()
   totally_ordered_semantics<int, double> ord_int_double;
   check(env, eq_int_double, eng, gen_int, gen_double);
   check(env, ord_int_double, eng, gen_int, gen_double);
+
+  regular_function_semantics<eq> reg_eq;
+  check(env, reg_eq, eng, gen_int, gen_int);
+
+
+  {
+    // Testing iterators is not fun. Testing ranges should be easy.
+    using V = vector<int>;
+    using I = V::iterator;
+    vector<int> v(100);
+    generate_random(v, eng, gen_int);
+    random_iterator_generator<V> gen_iter(v);
+    constant_value_generator<I> gen_end(v.end());
+
+
+    test_pre_increment_result<vector<int>::iterator> t1;
+    check(env, t1, eng, gen_iter, gen_end);
+  }
 }

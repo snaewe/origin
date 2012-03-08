@@ -15,104 +15,6 @@
 
 namespace origin
 {
-
-  // Properties of relations
-  //
-  // FIXME: Document this correctly.
-  //
-  // This framework is used to support the assertion and testing of properties
-  // of (binary) relations. Each of these properties is comprised of three
-  // components: 
-  //
-  //    - a test function that evaluates the property over some arguments
-  //    - a constructor function
-  //    - a predicate that always returns true.
-  //
-  // The test functions do not evaluate the entire domain of a relation r; that
-  // would be impossible. Instead, they evaluate the semantics of the relation
-  // for a particular set of input values. This should allow users to do e.g.,
-  // boundary value testing to help ensure that their function arguments 
-  // actually do what they are supposed to.
-  //
-  // The predicate returns true so that no assertions fail. We can't actually
-  // assert the property since it's quantified over the domain of the relation,
-  // but we'd still like to document the requirement. It should be a queue for
-  // programmers to verify function arguments.
-  
-  
-  // FIXME: Clean this section up.
-
-  template <typename Expr> struct common_type_equivalence_property;
-  template <typename R> struct reflexive_property;
-  template <typename R> struct irreflexive_property;
-  template <typename R> struct symmetric_property;
-  template <typename R> struct asymmetric_property;
-  template <typename R> struct antisymmetric_property;
-  template <typename R> struct transitive_property;
-  template <typename R> struct trichotomous_property;
-  template <typename R> struct equivalence_relation_spec;
-  template <typename R> struct strict_partial_order_spec;
-  template <typename R> struct strict_weak_order_spec;
-  template <typename R> struct strict_total_order_spec;
-  template <typename R, typename N> struct negation_property;
-
-   
-
-  // Evaluates whether r is an reflexive relation. Always returns true.
-  template <typename R>
-    constexpr bool is_reflexive_relation(R r) { return true; }
-
-
-  // Evaluates whether r is an irreflexive relation. Always returns true.
-  template <typename R>
-    constexpr bool is_irreflexive_relation(R r) { return true; }
-
-
-  // Evaluates whether r is a symmetric relation. Always returns true.
-  template <typename R>
-    constexpr bool is_symmetric_relation(R r) { return true; }
-
-  // Returns true if r is an asymmetric relation., Always returns true.
-  template <typename R>
-    constexpr bool is_asymmetric_relation(R r) { return true; }
-    
-
-  // Evaluates whether r is an antisymmetric property. Always returns true.
-  template <typename R>
-    constexpr bool is_antisymmetric_property(R r) { return true; }
-
-
-  // Evaluates whether r is a transitive relation. Always returns true.
-  template <typename R>
-    constexpr bool is_transitive_relation(R r) { return true; }
-    
-
-  // Evaluates whether r is a trichotomous relation. Always returns true.
-  template <typename R>
-    constexpr bool is_trichotomous_relation(R r) { return true; }
-    
-
-  // Evaluates whether r is an equivalence relation. Always returns true.
-  template <typename R>
-    constexpr bool is_equivalence_relation(R r) { return true; }
-
-
-  // Determines whether r is a strict partial order. Always returns true.
-  template <typename R>
-    constexpr bool is_strict_partial_order(R r) { return true; }
-
-
-  // Determines whether r is a strict weak order. Always returns true.
-  template <typename R>
-    constexpr bool is_strict_weak_order(R r) { return true; }
-
-
-  // Determines whether r is a total order. Always returns true.
-  template <typename R>
-    constexpr bool is_total_order(R r) { return true; }
-
-
-
   // Equality comparable (concept)
   // The equality comparable concept defines the syntax and semantics of
   // comparing for value equality.
@@ -152,19 +54,19 @@ namespace origin
       return Equality_comparable_concept<T, U>::check();
     }
 
-  // The specification of equality semantics.
-  template <typename T, typename U = T> struct equality_comparable_semantics;
 
 
-    
-  // TODO: Add Weakly_ordered as a concept.
-    
-
-  // Totally ordered (concept)
-  // The totally ordered concept defines the syntax and semantics of ordering
-  // values.
+  // Weakly ordered (concept)
+  // A type is weakly ordered if it defines the standard relational operators
+  // <, >, <=, and >= with the usual meaning. In particular < must be a strict
+  // weak order.
+  //
+  // The concept is extended for heterogeneous types. In order for two types
+  // to be weak-order comparable, they must both be weakly ordered and
+  // symmetrically comparable. (i.e., if a < b is valid, b < a must also be
+  // valid).
   template <typename T, typename U>
-    struct Totally_ordered_concept
+    struct Weakly_ordered_concept
     {
       static constexpr bool check()
       {
@@ -181,23 +83,11 @@ namespace origin
             && Has_greater_equal<T, U>() && Boolean<Greater_equal_result<T, U>>()
             && Has_greater_equal<U, T>() && Boolean<Greater_equal_result<U, T>>();
       }
-      
-      static bool test(T a, U b)
-      {
-        using C = Common_type<T, U>;
-        return (a < b) == (C{a} < C{b})
-            && (b < a) == (C{b} < C{a})
-            && (a > b) == (C{a} > C{b})
-            && (b > a) == (C{b} > C{a})
-            && (a <= b) == (C{a} <= C{b})
-            && (a <= b) == (C{b} <= C{a})
-            && (a >= b) == (C{a} >= C{b})
-            && (b >= a) == (C{b} >= C{a});
-      }
     };
-    
+
+  // Specialization for the unary type.
   template <typename T>
-    struct Totally_ordered_concept<T, T>
+    struct Weakly_ordered_concept<T, T>
     {
       static constexpr bool check()
       {
@@ -208,18 +98,27 @@ namespace origin
       }
     };
 
-  // Returns true if the values of T (and U) can be totally ordered using
-  // the standard inequality operators.
+  // Returns true if T (and U) are weakly ordered.
+  template <typename T, typename U>
+    constexpr bool Weakly_ordered()
+    {
+      return Weakly_ordered_concept<T, U>::check();
+    }
+  
+
+
+  // Totally ordered (concept)
+  // A type T is totally ordered if it is equality comparable and weakly
+  // ordered such that the equivalence of incomparable values is the same as
+  // equality.
   template <typename T, typename U>
     constexpr bool Totally_ordered()
     {
-      return Totally_ordered_concept<T, U>::check();
+      return Equality_comparable<T, U>() && Weakly_ordered<T, U>();
     }
     
-  // The specification of total ordering semantics.
-  template <typename T, typename U = T> struct totally_ordered_semantics;
-    
-    
+
+
   // Movable (concept)
   // Return true if T is movable. A movable type is both destructible,
   // move constructible and mvoe assignable. Note that movable types may not be
@@ -230,8 +129,6 @@ namespace origin
       return Destructible<T>() && Move_constructible<T>() && Move_assignable<T>();
     };
     
-  template <typename T> struct move_semantics;
-  
   
   // FIXME: The Copyable, Semiregular, and Regular concepts need to be
   // Re-aligned. Copyable should be the new Semiregular. Semiregular should
@@ -271,14 +168,15 @@ namespace origin
 
 
   // Regular (concept)
-  // Returns true if T is a Regular type. A Regular type is a Semiregular type 
-  // that is also equality comparable.
-  //
+  // A regular type is default constructible, copyable, and equality
+  // comparable.
   // FIXME: Isn't this also Default_constructible? I thinks so.
   template <typename T>
     constexpr bool Regular()
     {
-      return Semiregular<T>() && Equality_comparable<T>();
+      return Default_constructible<T>
+          && Copyable<T> 
+          && Equality_comparable<T>();
     }
     
     
@@ -337,7 +235,6 @@ namespace origin
   // argument types are the same). This can be generalized to different types
   // that share a common type.
 
-  // Specification of Relation syntax and semantics.
   template <typename R, typename T, typename U = T>
     struct Relation_concept
     {
@@ -367,6 +264,31 @@ namespace origin
     {
       return Relation_concept<R, T, U>::check();
     }
+
+
+  // Relation properties
+  // The followwing predicates are used to write preconditions in generic
+  // algorithms or other data structures. Note that because these properties
+  // cannot be evaluated at runtime, they simply return true.
+  //
+  // FIXME: Can these actually evaluate properties of functions? Probably
+  // not -- at least not without some kind of improved runtime support.
+
+  // Evaluates whether r is an equivalence relation. Always returns true.
+  template <typename R>
+    constexpr bool is_equivalence_relation(R r) { return true; }
+
+  // Determines whether r is a strict partial order. Always returns true.
+  template <typename R>
+    constexpr bool is_strict_partial_order(R r) { return true; }
+
+  // Determines whether r is a strict weak order. Always returns true.
+  template <typename R>
+    constexpr bool is_strict_weak_order(R r) { return true; }
+
+  // Determines whether r is a total order. Always returns true.
+  template <typename R>
+    constexpr bool is_total_order(R r) { return true; }
 
 
     

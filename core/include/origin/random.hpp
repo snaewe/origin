@@ -102,11 +102,11 @@ namespace origin
   // and distributed by dist.
   //
   // FIXME: Write requirements
-  template <typename I, typename Dist, typename Gen>
-    void random_generate(I first, I last, Dist&& dist, Gen&& gen)
+  template <typename I, typename Eng, typename Gen>
+    void generate_random(I first, I last, Eng&& eng, Gen&& gen)
     {
       while(first != last) {
-        *first = dist(gen);
+        *first = gen(eng);
         ++first;
       }
     }
@@ -118,11 +118,11 @@ namespace origin
   // distributed by dist.
   //
   // FIXME: Write requirements.
-  template <typename R, typename Dist, typename Gen>
-    void random_generate(R&& range, Dist&& dist, Gen&& gen)
+  template <typename R, typename Eng, typename Gen>
+    void generate_random(R&& range, Eng&& eng, Gen&& gen)
     {
-      random_generate(o_begin(range), o_end(range),
-                      std::forward<Dist>(dist),
+      generate_random(o_begin(range), o_end(range),
+                      std::forward<Eng>(eng),
                       std::forward<Gen>(gen));
     }
 
@@ -180,36 +180,70 @@ namespace origin
       = decltype(default_distribution_traits<T>::get());
 
       
-      
+
+  // Constant value generator (random value generator)      
+  // A constant value generator continuously generates the same value. Note
+  // that the value type T must be equality comparable.
+  template <typename T>
+    struct constant_value_generator
+    {
+      static_assert(Equality_comparable<T>(), "");
+
+      using result_type = T;
+
+      constant_value_generator(const T& x) : value(x) { }
+
+      template <typename Eng>
+        const result_type& operator()(Eng& eng) const
+        {
+          return value;
+        }
+
+      // Equality comparable
+        bool operator==(const constant_value_generator& x) const
+        {
+          return value == x.value;
+        }
+
+        bool operator!=(const constant_value_generator& x) const
+        {
+          return value != x.value;
+        }
+
+      T value;
+    };
+
+
+
   // Random sequence generator (random value generator) 
   // The random sequence distribution creates random sequences of values with 
   // randomly generated size, which is determined by the Len distribution, 
-  // whose values are distributed by the Dist distribution.
+  // whose values are distributed by the Gen distribution.
   //
   // FIXME: The default size distribution should be zipf or zeta.
   template <typename Seq, 
             typename Size = std::uniform_int_distribution<Size_type<Seq>>,
-            typename Dist = Default_distribution_type<Value_type<Seq>>>
+            typename Gen = Default_distribution_type<Value_type<Seq>>>
     class random_sequence_generator
     {
     public:
       random_sequence_generator(const Size& s = Size{0, 32},
-                                const Dist& d = Dist{})
-        : size{s}, dist{d}
+                                const Gen& d = Gen{})
+        : size{s}, gen{d}
       { }
       
-      template <typename Gen>
-        Seq operator()(Gen& gen)
+      template <typename Eng>
+        Seq operator()(Eng& eng)
         {
           Seq s(size(gen), Value_type<Seq>{});
-          random_generate(s, dist, gen);
+          generate_random(s, eng, gen);
           return std::move(s);
         }
         
       // Equality comparable
       bool operator==(const random_sequence_generator& x) const
       {
-        return size == x.size() && dist == x.dist;
+        return size == x.size() && gen == x.gen;
       }
       
       bool operator!=(const random_sequence_generator& x) const
@@ -218,7 +252,7 @@ namespace origin
       }
       
       Size size;
-      Dist dist;
+      Gen gen;
     };
 
 
@@ -246,7 +280,51 @@ namespace origin
     };
     
 
+
+  // Random iterator generator (random value generator)
+  // The random iterator generator returns iterators at random positions in
+  // the given container. Positions are uniformly generated.
+  //
+  // TODO: Should we parameterize over the distribution of positions? That
+  // would let us test operations close to the front or back.
+  template <typename Cont>
+    class random_iterator_generator
+    {
+      using Dist = std::uniform_int_distribution<Size_type<Cont>>;
+    public:
+      using result_type = Iterator_type<Cont>;
+
+      random_iterator_generator(Cont& c) 
+        : cont(c), dist(0, c.size() - 1)
+        { }
+
+      template <typename Eng>
+        result_type operator()(Eng& eng)
+        {
+          return o_next(cont.begin(), dist(eng));
+        }
+
+      // Equality comparable
+      // Two random iterator generators are equal if they generate iterators
+      // into the same container with their positions having the same
+      // distribution (currently, that's uniform).
+      bool operator==(const random_iterator_generator& x) const
+      {
+        return &cont == &x.cont;
+      }
+
+      bool operator!=(const random_iterator_generator& x) const
+      {
+        return &cont != &x.cont;
+      }
+
+    private:
+      Cont& cont;
+      Dist dist;
+    };
+
     
+
   // Default distribution (specializations)
       
   // Specialization for bool.

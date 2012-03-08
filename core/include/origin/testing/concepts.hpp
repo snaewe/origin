@@ -15,7 +15,7 @@ namespace origin
   //
   // In actuality, the == operator must compare for value equality, but we have
   // no way to actually test that.
-  template <typename T, typename U>
+  template <typename T, typename U = T>
     struct equality_comparable_semantics
     {
       static_assert(Equality_comparable<T, U>(), "");
@@ -73,12 +73,76 @@ namespace origin
     };
 
 
+
+  // Weakly ordered semantics (specification)
+  // The weak ordering specification defines the semantics for weakly ordered
+  // types.
+  template <typename T, typename U = T>
+    struct weakly_ordered_semantics
+    {
+      static_assert(Weakly_ordered<T, U>(), "");
+      using C = Common_type<T, U>;
+
+      template <typename Env, typename Eng, typename Gen1, typename Gen2>
+        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2) const
+        {
+          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
+          (*this)(env, eng, gen1, gen2, default_distribution<C>());
+        }
+      
+      template <typename Env, typename Eng, typename Gen1, typename Gen2, typename Gen3>
+        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3) const
+        {
+          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
+          static_assert(Same<C, Result_type<Forwarded<Gen3>>>(), "");
+          
+          check(env, weakly_ordered_semantics<T>{}, eng, gen1);
+          check(env, weakly_ordered_semantics<U>{}, eng, gen2);
+          check(env, weakly_ordered_semantics<C>{}, eng, gen3);
+          
+          check(env, lt, eng, gen1, gen2);  // a < b <=> C(a) < C(b)
+          check(env, gt, eng, gen1, gen2);  // a > b <=> C(a) > C(b)
+          check(env, leq, eng, gen1, gen2); // a <= b <=> C(a) <= C(b)
+          check(env, geq, eng, gen1, gen2); // b >= a <=> C(a) >= C(b)
+        }
+        
+      common_type_equivalence<origin::lt> lt;
+      common_type_equivalence<origin::gt> gt;
+      common_type_equivalence<origin::leq> leq;
+      common_type_equivalence<origin::geq> geq;
+    };
     
+  // Specialization for the unary type.
+  template <typename T>
+    struct weakly_ordered_semantics<T, T>
+    {
+      static_assert(Weakly_ordered<T>(), "");
+
+      template <typename Env, typename Eng, typename Gen>
+        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+        {
+          static_assert(Same<T, Result_type<Forwarded<Gen>>>(), "");
+          check(env, lt, eng, gen);
+          check(env, gt, eng, gen, gen);
+          check(env, leq, eng, gen, gen);
+          check(env, geq, eng, gen, gen);
+        }
+        
+      strict_weak_order_spec<origin::lt> lt;
+      logical_equivalence<origin::gt, converse<origin::lt>> gt;
+      logical_equivalence<origin::leq, complement_of_converse<origin::lt>> leq;
+      logical_equivalence<origin::geq, complement<origin::lt>> geq;
+    };
+
+
+
   // Totally ordered (specification)
-  // The total ordering specification defines the semantics for totally order
+  // The total ordering specification defines the semantics for totally ordered
   // types. When used with heterogeneous types, the semantics are defined in
   // terms of the common type.
-  template <typename T, typename U>
+  template <typename T, typename U = T>
     struct totally_ordered_semantics
     {
       static_assert(Totally_ordered<T, U>(), "");
@@ -102,17 +166,13 @@ namespace origin
           check(env, totally_ordered_semantics<T>{}, eng, gen1);
           check(env, totally_ordered_semantics<U>{}, eng, gen2);
           check(env, totally_ordered_semantics<C>{}, eng, gen3);
-          
-          check(env, lt, eng, gen1, gen2);  // a < b <=> C(a) < C(b)
-          check(env, gt, eng, gen1, gen2);  // a > b <=> C(a) > C(b)
-          check(env, leq, eng, gen1, gen2); // a <= b <=> C(a) <= C(b)
-          check(env, geq, eng, gen1, gen2); // b >= a <=> C(a) >= C(b)
+
+          check(env, weak, eng, gen1, gen2, gen3);
+          check(env, equal, eng, gen1, gen2);
         }
         
-      common_type_equivalence<origin::lt> lt;
-      common_type_equivalence<origin::gt> gt;
-      common_type_equivalence<origin::leq> leq;
-      common_type_equivalence<origin::geq> geq;
+      weakly_ordered_semantics<T, U> weak;
+      logical_equivalence<eq, symmetric_complement<lt>> equal;
     };
     
   // Specialization for the unary type.
@@ -145,13 +205,15 @@ namespace origin
   template <typename T>
     struct move_semantics
     {
-      template <typename Eng, typename Gen>
-        void operator()(Eng&&, Gen&&) { }
+      template <typename Env, typename Eng, typename Gen>
+        void operator()(Env&&, Eng&&, Gen&&) { }
     };
-    
+
 
     
   // Copy construction preservation (property)
+  // The result of a copy construction is a new value that is equal to the
+  // unmodified original.
   template <typename T>
     struct copy_construction_preservation
     {
@@ -167,6 +229,8 @@ namespace origin
     
   
   // Copy assignment preservation (property)
+  // The result of copy-assigning a value is that the assigned variable is
+  // equal to the unmodified original.
   template <typename T>
     struct copy_assignment_preservation
     {
@@ -188,20 +252,22 @@ namespace origin
   template <typename T>
     struct copy_semantics
     {
-      template <typename Eng, typename Gen>
-        void operator()(Eng&& eng, Gen& gen)
+      template <typename Env, typename Eng, typename Gen>
+        void operator()(Env&& env, Eng&& eng, Gen& gen)
         {
-          check(construct, eng, gen);
-          check(assign, eng, gen);
+          check(env, move, eng, gen);
+          check(env, construct, eng, gen);
+          check(env, assign, eng, gen);
         }
 
+      move_semantics<T> move;
       copy_construction_preservation<T> construct;
       copy_assignment_preservation<T> assign;
     };
 
 
   
-  // Default value property
+  // Default value (property)
   // The default value property is true when T has a unique default value, that
   // is initialized by expression T{}.
   template <typename T>
@@ -212,17 +278,19 @@ namespace origin
         return T{} == T{};
       }
     };
-  
-  // Default initialization semantics (specification)
+
+
+
+  // Default semantics (specification)
   // The default initialization semantics require a default initialized type
   // to have a unique default value.
   template <typename T>
     struct default_semantics
     {
-      template <typename Eng>
-        void operator()(Eng&)
+      template <typename Env, typename Eng>
+        void operator()(Env&& env, Eng&& eng) const
         {
-          check(init);
+          check(env, init);
         }
         
       default_value_property<T> init;
@@ -230,31 +298,87 @@ namespace origin
     
     
 
+  // Regular semantics (specification)
+  // A regular type is required to implement default initializtaion, copy,
+  // and 
   template <typename T>
     struct regular_semantics
     {
-      template <typename Eng, typename Gen>
-        void operator()(Eng&& eng, Gen&& gen)
+      template <typename Env, typename Eng, typename Gen>
+        void operator()(Env&& env, Eng&& eng, Gen&& gen) const
         {
-          check(def, eng);
-          check(copy, eng, gen);
+          check(env, def, eng);
+          check(env, copy, eng, gen);
+          check(env, equal, eng, gen);
         }
       
       default_semantics<T> def;
       copy_semantics<T> copy;
+      equality_comparable_semantics<T> equal;
     };
     
-    
-    
-  // Check regular
-  // Check the type of the randomly generated value to determine if it 
-  // satisfies the semantics of the Regular concept.
-  template <typename Eng, typename Gen>
-    void check_regular(Eng&& eng, Gen&& gen)
-    {
-      using T = Result_type<Forwarded<Gen>>;
-      check(regular_semantics<T>{}, eng, gen);
-    }
 
-    
+
+  // Function semantics (specification)
+  // A function is only required to be copy constructible. 
+
+  // Note that we can't  randomly generate functions (a strange though), the 
+  // tested function must be assigned during the initialization of the
+  // specification.
+  template <typename F>
+    struct function_semantics
+    {
+      function_semantics(F f = {}) : fn(f) { }
+
+      template <typename Env>
+        void operator()(Env& env) const
+        {
+            check(env, copy, fn);
+        }
+
+      F fn;
+      copy_construction_preservation<F> copy;
+    };
+
+
+
+  // Equality preserving (property)
+  // A function is equality preserving if equal inputs yield equal outputs,
+  // for all posssible inputs to the function, including the implicit program
+  // state. In other words, given the same arguments, the function always
+  // gives the same results.
+  template <typename F>
+    struct equality_preserving
+    {
+      equality_preserving(F f = {}) : fn(f) { }
+
+      template <typename... Args>
+        bool operator()(Args&&... args) const
+        {
+          return fn(args...) == fn(args...);
+        }
+
+      F fn;
+    };
+
+
+
+  // Regular function semantics (specification)
+  // A regular function is equality preserving: equal inputs yield equal
+  // outputs.
+  template <typename F>
+    struct regular_function_semantics
+    {
+      regular_function_semantics(F f = {}) : fn(f) { }
+
+      template <typename Env, typename Eng, typename... Gens>
+        void operator()(Env& env, Eng&& eng, Gens&&... gens) const
+        {
+          check(env, regular, eng, gens...);
+        }
+
+      F fn;
+      equality_preserving<F> regular;
+    };
+
 } // namespace origin

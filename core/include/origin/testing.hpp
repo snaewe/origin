@@ -28,6 +28,66 @@ namespace origin
   // TODO: Refactor the environment so that it has a random number engine
   // by default?
   
+
+
+  namespace traits 
+  {
+    // Infrastructure for determining if the expression
+    //
+    //    p.accept(args...) 
+    //
+    // is valid, and safely deducing its result type.
+
+    template <typename P, typename... Args>
+      struct get_property_accept
+      {
+      private:
+        template <typename X, typename... Ys>
+          static auto check(X x, Ys&&... ys) 
+            -> decltype(x.accept(std::forward<Ys>(ys)...));
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<P>(), std::declval<Args>()...));
+      };
+      
+    template <typename P, typename... Args>
+      using Property_accept_result = typename get_property_accept<P, Args...>::type;
+      
+    template <typename P, typename... Args>
+      constexpr bool Has_property_accept()
+      {
+        return Subst_succeeded<Property_accept_result<P, Args...>>();
+      }
+  } // namespace traits
+  
+  
+  
+  // Conditional property
+  // A conditional property is one that has the mathematical form:
+  //
+  //    P => Q
+  //
+  // Here, P is the antecedent of the conditionally specified property, and
+  // Q is the consequent. Conditional properties are meaningfully verified
+  // if both P and Q are true. If P is false, the entire property is vacuously
+  // true. In the testing sense, P is a guard for Q.
+  //
+  // Conditional properties have an additional member, p.accept(args...) that 
+  // determines if the precedent P is true.
+  //
+  // Note that the the predicate should still incorporate P into its actual
+  // definition. Not all checking environments, algorithms, or uses will
+  // use the conditional property concept.
+  //
+  // TODO: I'm not really using this right now. It's not bad (it works), but
+  // it's not terribly important.
+  template <typename P, typename... Args>
+    constexpr bool Conditional_property()
+    {
+      return traits::Has_property_accept<P, Args...>();
+    }
+
+  
   
   // Property check (concept)
   template <typename Env, typename P, typename... Args>
@@ -244,7 +304,10 @@ namespace origin
 
   // The basic check environment evaluates predicates and records the results.
   //
-  // TODO: There is a ton of stuff we can do with this. Actually 
+  // TODO: There is a ton of stuff we can do with this, but I'd need to develop
+  // more fully thought out approaches to input classification, conditional
+  // properties, and property/input association. There's a lot of work that
+  // could go into this.
   struct basic_checker
   {
     template <typename P>
@@ -323,5 +386,6 @@ namespace origin
 
 #include <origin/testing/relations.hpp>
 #include <origin/testing/concepts.hpp>
+#include <origin/testing/iterators.hpp>
 
 #endif

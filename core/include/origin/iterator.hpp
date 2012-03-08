@@ -14,66 +14,34 @@
 
 namespace origin
 {
-  // Separate the checking of static requirements out of the Readable concept.
-  // This prevents compiler errors when associated types aren't found. If
-  // associated types can't be found, then the requirements will obviously
-  // fail to pass.
-  template<typename Iter, bool Types>
-    struct Readable_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-
-  template<typename Iter> 
-    struct Readable_requirements<Iter, true>
-    {
-      static constexpr bool check()
-      {
-        return Has_dereference<Iter>()
-            && Convertible<Dereference_result<Iter>, const Value_type<Iter>&>();
-      }
-    };
-  
-  // Allows the following expression: Value_type<Iter> const& x = *i.
-  template<typename Iter>
-    struct Readable_concept
-    {
-      static constexpr bool check()
-      {
-        return Readable_requirements<Iter, Has_value_type<Iter>()>::check();
-      }
-      
-      static bool test(Iter i)
-      {
-        const Value_type<Iter>& x = *i; // NOTE: Not an axiom.
-        return true;
-      }
-    };
-    
-    
-  // Returns true if Iter is readable.
+  // Readable (conept)
+  // A type is readable if it has an associated value type, is dereferenceable,
+  // and a constant refernce to the value type can be bound to the result of
+  // dereferencing.
   //
-  // FIXME: To better align this with standard terminology, this should be
-  // called Value_readable.
-  template<typename Iter>
+  // TODO: Consider calling this Value_readable to better align with names
+  // in the standard.
+  template<typename I>
     constexpr bool Readable()
     {
-      return Readable_concept<Iter>::check();
+      return Has_value_type<I>()
+          && Has_dereference<I>() 
+          && Convertible<Dereference_result<I>, const Value_type<I>&>();
     }
 
     
 
   // Writable (concept)
-  // Returns true if values of T can be written through an iterator of type
-  // I using the syntax: *i = value. 
+  // A type I is writable with a value type T, if values of T can be written
+  // (assigned) through a dereferenced value of type I.
   //
-  // Note that if T is an rvalue reference, the concept requires T to support
-  // move semantics. If T is not an rvalue reference, then copy semantics are
-  // required.
+  // Note that if T is an rvalue reference (i.e., of the form U&&), the concept 
+  // requires T to support move semantics. If T is not an rvalue reference, 
+  // then copy semantics are required.
   //
   // It is strongly recommended to include Movable/Copyable requirements
   // in addition to those implied by Writable concept. The Permutable and
-  // Mutable concepts do this.
+  // Mutable concepts do exactly this.
   
   // If T is not an rvalue reference, check for copy assigment.
   template<typename I, typename T>
@@ -110,7 +78,9 @@ namespace origin
   template<typename I>
     constexpr bool Mutable()
     {
-      return Readable<I>() && Copyable<Value_type<I>>() && Writable<I, Value_type<I>>();
+      return Readable<I>() 
+          && Copyable<Value_type<I>>() 
+          && Writable<I, Value_type<I>>();
     }
     
     
@@ -121,69 +91,71 @@ namespace origin
   template<typename I>
     constexpr bool Permutable()
     {
-      return Readable<I>() && Movable<Value_type<I>>() && Writable<I, Value_type<I>&&>();
+      return Readable<I>() 
+          && Movable<Value_type<I>>() 
+          && Writable<I, Value_type<I>&&>();
     }
     
     
 
   // Incrementable types
   //
-  // FIXME: Rewrite the incrementable concepts so that equality comparison is
+  // TODO: Rethink the incrementable concepts so that equality comparison is
   // always required. Weakly_incrementable should be Semi_incrementable and
   // Incrementable should be as it is. This will let me get rid of
   // Weak_input_iterator.
   
   
+
+  // Weakly incrementable (concept)
   // A weakly incrementable type is a semiregular type that can be pre- and
   // post-incremented. Neither operation is requireed to be equality
   // preserving, and the result of post-increment is unspecified.
-  template<typename I>
-    struct Weakly_incrementable_concept
-    {
-      static constexpr bool check()
-      {
-        return Semiregular<I>()
-            && Has_distance_type<I>()
-            
-            // I& == { ++i }
-            && Has_pre_increment<I>()
-            && Same<Pre_increment_result<I>, I&>()
-            
-            // i++
-            && Has_post_increment<I>();
-      }
-      
-      // FIXME: Write semantics? Not sure if it's really possible.
-    };
-
+  //
+  // Note that the weakly incrementable type does not include the
+  // post-increment operator.
   template<typename I>
     constexpr bool Weakly_incrementable()
     {
-      return Weakly_incrementable_concept<I>::check();
+      return Copyable<I>()
+          && Has_distance_type<I>()
+          
+          // I& == { ++i }
+          && Has_pre_increment<I>()
+          && Same<Pre_increment_result<I>, I&>();
     }
     
   
-  
-  // An Incrementable type is a Regular, weakly incrementable type with
-  // equality preserving pre- and post-increment operations.
-  template<typename I>
-    struct Incrementable_concept
-    {
-      static constexpr bool check()
-      {
-        return Regular<I>()
-            && Weakly_incrementable<I>()
 
-            // I == { i++ }
-            && Same<Post_increment_result<I>, I>();
-      }
-    };
-
+  // Incrementable (concept)  
+  // An incrementable type is an equality comparable, weakly incrementable 
+  // type with a post-increment operator.
   template<typename I>
     constexpr bool Incrementable()
     {
-      return Incrementable_concept<I>::check();
+      return Weakly_incrementable<I>()
+          && Equality_comparable<I>()
+          && Same<Post_increment_result<I>, I>();
     }
+
+
+
+  // Decrementable (concept)
+  // A decrementable type is an inrementable type that can also be pre- and
+  // post-decremented.
+  template <typename I>
+      constexpr bool Decrementable()
+      {
+        return Incrementable<I>()
+
+            // I& == { --i }
+            && Has_pre_decrement<I>()
+            && Same<Pre_decrement_result<I>, I&>()
+            
+            // I == { i-- }
+            && Has_post_decrement<I>()
+            && Same<Post_decrement_result<I>, I>();
+      }
 
 
 
@@ -192,41 +164,50 @@ namespace origin
   // capabilities for iterator concepts.
     
     
-    
-  // Iterator categories
-  //
+
+  namespace traits
+  {
+    // Infrastructure for safely deducing an iterator cateogry.
+
+    template<typename Iter>
+      struct get_iterator_category
+      {
+      private:
+        template<typename X>
+          static typename X::iterator_category check(X&&);
+
+        template<typename X>
+          static typename std::iterator_traits<X*>::iterator_category check(X*);
+          
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<Iter>()));
+      };
+  } // namespace traits
+
+
+
+  // Iterator category (alias)
   // Every iterator type explicitly describes its category, one of the
   // std::*_iterator_tag classes. For user-defined iterators, this is provided
   // as a nested type name (i.e., Iter::iterator_category). For pointers, the
   // category is random access.
+  template<typename Iter>
+    using Iterator_category = typename traits::get_iterator_category<Iter>::type;
+    
   
-  // Safely deduce a custom iterator category as a nested type.
-  template<typename Iter>
-    struct get_iterator_category
-    {
-    private:
-      template<typename X>
-        static typename X::iterator_category check(X&&);
 
-      template<typename X>
-        static typename std::iterator_traits<X*>::iterator_category check(X*);
-        
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<Iter>()));
-    };
-    
-  // An alias for the category of Iter.
-  template<typename Iter>
-    using Iterator_category = typename get_iterator_category<Iter>::type;
-    
-  // Return true if the iterator category is valid.
+  // Has iterator category (trait)
+  // Returns true if the iterator category is valid.
   template<typename Iter>
     constexpr bool Has_iterator_category()
     {
       return Subst_succeeded<Iterator_category<Iter>>();
     }
 
+  
+
+  // Clamp iterator category (trait)
   // Return an iterator category that is not more derived than the given limit. 
   // For example, if Tag is "random access" and Limit is "forward", this will
   // return limit. 
@@ -244,7 +225,9 @@ namespace origin
 
 
 
-  // Returns true if Iter has all of the associated iterator types.
+  // Has iterator types (trait)
+  // Returns true if Iter has all of the associated iterator types: iterator
+  // cateogry, value type, and distance type.
   template<typename Iter>
     constexpr bool Has_iterator_types()
     {
@@ -255,16 +238,24 @@ namespace origin
 
     
     
-  // Return true if T is an iterator. Here, T is an iterator if it has all of
+  // Iterator (concept)
+  // Return true if I is an iterator. Here, I is an iterator if it has all of
   // the requisite associated types.
-  template<typename T>
+  //
+  // An Iterator is minimally a weakly incrementable and dereferenceable type.
+  // Note that no constraints are placed on the result of the dereference
+  // operator.
+  template<typename I>
     constexpr bool Iterator()
     {
-      return Has_iterator_types<T>();
+      return Has_iterator_types<I>()
+          && Weakly_incrementable<I>() 
+          && Has_dereference<I>();
     }
   
 
 
+  // Iterator reference (alias)
   // An alias for the associated reference type of the iterator. This supports 
   // writing  backwards compatible iterators where the reference type is 
   // actually named even though it should be deduced as decltype(*i).
@@ -363,80 +354,35 @@ namespace origin
     
 
     
-  // Bidirectional Iterators
+  // Bidirectional Iterator (concept)
   // A bidirectional iterator is a forward iterator that can also move 
   // backwards using decrement operators.
-    
-  // A helper class for checking syntactic requirements.
-  template<typename Iter, bool Prereqs>
-    struct Bidirectional_iterator_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
-  template<typename Iter>
-    struct Bidirectional_iterator_requirements<Iter, true>
-    {
-      static constexpr bool check()
-      {
-        return Derived<Iterator_category<Iter>, std::bidirectional_iterator_tag>()
-            
-            // Iter& == { --i }
-            && Has_pre_decrement<Iter>()
-            && Same<Pre_decrement_result<Iter>, Iter&>()
-            
-            // Iter == { i-- }
-            && Has_post_decrement<Iter>()
-            && Same<Post_decrement_result<Iter>, Iter>();
-      }
-    };
-    
-  
-  
-  // A bidirectional iterator is a forward iterator that supports 
-  template<typename Iter>
-    struct Bidirectional_iterator_concept
-    {
-      static constexpr bool check()
-      {
-        return Bidirectional_iterator_requirements<
-          Iter, Forward_iterator<Iter>()
-        >::check();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics.
-        return true;
-      }
-    };
-
   template<typename Iter>
     constexpr bool Bidirectional_iterator()
     {
-      return Bidirectional_iterator_concept<Iter>::check();
+      return Forward_iterator<Iter>()
+          
+          // Iter& == { --i }
+          && Has_pre_decrement<Iter>()
+          && Same<Pre_decrement_result<Iter>, Iter&>()
+          
+          // Iter == { i-- }
+          && Has_post_decrement<Iter>()
+          && Same<Post_decrement_result<Iter>, Iter>()
+
+          // Iterator category 
+          && Derived<Iterator_category<Iter>, std::bidirectional_iterator_tag>();
     };
-    
 
     
     
-  // Random Access Iterators
+  // Random Access Iterator (concept)
   // A random access iterator is a bidirectional iterator that can advance 
   // any number of steps in constant time.
-    
-  // A helper class for checking syntactic requirements.
-  template<typename Iter, bool Prereqs>
-    struct Random_access_iterator_requirements
-    {
-      static constexpr bool check() { return false; }
-    };
-    
   template<typename Iter>
-    struct Random_access_iterator_requirements<Iter, true>
+    constexpr bool Random_access_iterator()
     {
-      static constexpr bool check()
-      {
-        return Derived<Iterator_category<Iter>, std::random_access_iterator_tag>()
+      return Bidirectional_iterator<Iter>()
             && Signed<Distance_type<Iter>>()
 
             // Iter& == { i += n }
@@ -465,37 +411,14 @@ namespace origin
             
             // decltype(*i) == { i[n] }
             && Has_subscript<Iter, Distance_type<Iter>>()
-            && Same<Subscript_result<Iter, Distance_type<Iter>>, Dereference_result<Iter>>();
-      }
-    };
-    
-    
-  // The specification of random access iterators.
-  template<typename Iter>
-    struct Random_access_iterator_concept
-    {
-      static constexpr bool check()
-      {
-        return Random_access_iterator_requirements<
-          Iter, Bidirectional_iterator<Iter>()
-        >::check();
-      }
-      
-      static bool test()
-      {
-        // FIXME: Write semantics
-        return true;
-      }
-    };
+            && Same<Subscript_result<Iter, Distance_type<Iter>>, Dereference_result<Iter>>()
 
-  // Returns true if Iter is random access iterator.
-  template<typename Iter>
-    constexpr bool Random_access_iterator()
-    {
-      return Random_access_iterator_concept<Iter>::check();
+            // iterator category
+            && Derived<Iterator_category<Iter>, std::random_access_iterator_tag>();
     };
     
     
+  // Strict input iterator (concept)
   // A strict input iterator is at most an input iterator. That is I is not
   // a forward iterator. This is provided for convenience.
   template<typename I>
@@ -506,6 +429,7 @@ namespace origin
     
     
     
+  // Strict output iterator (concept)
   // A strict output iterator is at most an output iterator. That is, I is not
   // also an readable.
   template<typename I>
@@ -521,9 +445,10 @@ namespace origin
   // If an abstraction can be adapted to incrementable but not necessarily
   // readable types, then these traits can be used instead of the usual 
   // iterator traits.
-  
-  
-  
+
+
+
+  // Incrementable distance (alias)
   // An alias for the difference type of a counter argument. For Integral types,
   // this is the signed value of that type. For Iterator types, it is the 
   // distance type.
@@ -534,6 +459,9 @@ namespace origin
     using Incrementable_distance = 
       If<Integral<I>(), Make_signed<I>, Distance_type<I>>;
 
+  
+
+  // Incrementable category (alias)
   // An alias for the iterator category of a counter. If I is an integral type,
   // the category is "random access". Otherwise, it is the iterator's category.
   template<typename I>
@@ -542,15 +470,15 @@ namespace origin
 
   
   
-  
-  
   // Iterator range properties
   // The following properties are just used to indicate un-checkable
   // preconditions.
   //
-  // Even though these could be constexpr function, they are not intended to
-  // be used in constant expressions.
-  
+  // TODO: Specialize these operations so that we can actually check the
+  // ones that we know about.
+
+
+
   // Returns true if [first, n) is a weak range.
   template<typename I>
     inline bool is_weak_range(I first, Distance_type<I> n) 

@@ -71,7 +71,7 @@ namespace origin
       reflexive_property(R r = {}) : r(r) { }
       
       template <typename T>
-        bool operator()(T a) const 
+        bool operator()(const T& a) const 
         { 
           static_assert(Relation<R, T>(), "");
           return r(a, a); 
@@ -90,7 +90,7 @@ namespace origin
       irreflexive_property(R r = {}) : r(r) { }
       
       template <typename T>
-        bool operator()(T a, T b) const 
+        bool operator()(const T& a) const 
         {
           static_assert(Relation<R, T>(), "");
           return !r(a, a); 
@@ -109,7 +109,7 @@ namespace origin
       symmetric_property(R r = {}) : r(r) { }
     
       template <typename T>
-        bool operator()(T a, T b) const 
+        bool operator()(const T& a, const T& b) const 
         { 
           static_assert(Relation<R, T>(), "");
           return r(a, b) ? r(b, a) : true; 
@@ -117,7 +117,6 @@ namespace origin
       
       R r;
     };
-
 
 
   // Asymmetric relation (property)
@@ -128,7 +127,7 @@ namespace origin
       asymmetric_property(R r = {}) : r(r) { }
     
       template <typename T>
-        bool operator()(T a, T b) const
+        bool operator()(const T& a, const T& b) const
         {
           static_assert(Relation<R, T>(), "");
           return r(a, b) ? !r(b, a) : true;
@@ -152,10 +151,9 @@ namespace origin
         {
           static_assert(Relation<R, T>(), "");
           static_assert(Equality_comparable<T>(), "");
-
           return r(a, b) && r(b, a) ? a == b : true;
         }
-      
+
       R r;
     };
 
@@ -170,12 +168,12 @@ namespace origin
       transitive_property(R r = {}) : r(r) { }
       
       template <typename T>
-        bool operator()(T a, T b, T c) const
+        bool operator()(const T& a, const T& b, const T& c) const
         {
           static_assert(Relation<R, T>(), "");
           return r(a, b) && r(b, c) ? r(a, c) : true;
         }
-      
+
       R r;
     };
     
@@ -190,7 +188,7 @@ namespace origin
       trichotomous_property(R r = {}) : r(r) { }
       
       template <typename T>
-        bool operator()(T a, T b) const
+        bool operator()(const T& a, const T& b) const
         {
           static_assert(Relation<R, T>(), "");
           static_assert(Equality_comparable<T>(), "");
@@ -217,7 +215,7 @@ namespace origin
       equivalence_relation_spec(R r = {})
         : reflexive(r), symmetric(r), transitive(r)
       { }
-      
+
       template <typename Env, typename Eng, typename Gen>
         void operator()(Env& env, Eng&& eng, Gen&& gen) const
         {
@@ -246,8 +244,8 @@ namespace origin
         void operator()(Env& env, Eng&& eng, Gen&& gen) const
         {
           check(env, irreflexive, eng, gen);
-          check(env, asymmetric, eng, gen);
-          check(env, transitive, eng, gen);
+          check(env, asymmetric, eng, gen, gen);
+          check(env, transitive, eng, gen, gen, gen);
         }
     
       irreflexive_property<R> irreflexive;
@@ -272,7 +270,7 @@ namespace origin
         void operator()(Env& env, Eng&& eng, Gen&& gen) const
         {
           check(env, partial, eng, gen);
-          check(env, equivalence, eng, gen);
+          check(env, equivalence, eng, gen, gen, gen);
         }
     
       strict_partial_order_spec<R> partial;

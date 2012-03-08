@@ -1138,10 +1138,6 @@ namespace origin
     }
   
   
-  
-
-
-
 
   // Reverse and Rotate Permutations
   // The reverse and rotate algorithms define permutations of a sequence.
