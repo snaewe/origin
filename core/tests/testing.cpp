@@ -25,10 +25,16 @@ template <typename R>
     cout << '\n';
   }
 
-template <typename Env, typename Check, typename Eng, typename... Gens>
-  void stuff(Env& env, Check check, Eng& eng, Gens&... gens)
+template <typename T>
+    using Fwd = Forwarded<T>;
+
+template <typename Env, typename Check, typename... Vars>
+  void stuff(Env& env, Check check, Vars&&... vars)
   {
-    cout << Randomized_property_check<Env, Check, Eng, Gens...>() << '\n';
+    cout << Property_check<Check, Fwd<Vars>...>() << '\n';
+    cout << Randomized_property_check<Env, Check, Fwd<Vars>...>() << '\n';
+    cout << Randomized_specification_check<Env, Check, Fwd<Vars>...>() << '\n';
+    cout << Specification<Check, Env, Fwd<Vars>...>() << '\n';
   }
 
 
@@ -43,10 +49,11 @@ int main()
   // Initialize the checking invironment.
   assert_checker env;
 
-  auto gen_int = uniform_int_distribution<int>(0, 100);
-  auto gen_double = default_distribution<double>();
+  auto geni = make_random<int>(eng);
+  auto gend = make_random<double>(eng);
+  auto genstr = make_random<string>(eng);
 
-  // Properties under test
+ // Properties under test
   reflexive_property<eq> refl;
   symmetric_property<eq> sym;
   transitive_property<eq> trans;
@@ -55,42 +62,37 @@ int main()
   check(env, sym, 1, 1);
   check(env, trans, 1, 1, 1);
 
-  
-  check(env, refl, eng, gen_int);
-  check(env, sym, eng, gen_int, gen_int);
-  check(env, trans, eng, gen_int, gen_int, gen_int);
-  
-  
+  check(env, refl, geni);
+  check(env, sym, geni, geni);
+  check(env, trans, geni, geni, geni);
+
   // Specifications under test
   equivalence_relation_spec<eq> equiv;
+  check(env, equiv, geni);
 
-  check(env, equiv, eng, gen_int);
-  
   equality_comparable_semantics<int> eq_int;
   totally_ordered_semantics<int> ord_int;
-  check(env, eq_int,       eng, gen_int);
-  check(env, ord_int,      eng, gen_int);
+  check(env, eq_int, geni);
+  check(env, ord_int, geni);
 
   equality_comparable_semantics<int, double> eq_int_double;
   totally_ordered_semantics<int, double> ord_int_double;
-  check(env, eq_int_double, eng, gen_int, gen_double);
-  check(env, ord_int_double, eng, gen_int, gen_double);
+  check(env, eq_int_double, geni, gend);
+  check(env, ord_int_double, geni, gend);
 
   regular_function_semantics<eq> reg_eq;
-  check(env, reg_eq, eng, gen_int, gen_int);
-
+  check(env, reg_eq, geni, geni);
 
   {
     // Testing iterators is not fun. Testing ranges should be easy.
     using V = vector<int>;
     using I = V::iterator;
     vector<int> v(100);
-    generate_random(v, eng, gen_int);
-    random_iterator_generator<V> gen_iter(v);
-    constant_value_generator<I> gen_end(v.end());
-
+    generate(v, geni);
+    auto geniter = make_random(eng, random_iterator_distribution<V>(v));
+    auto genend = make_random(eng, single_value_distribution<I>(v.end()));
 
     test_pre_increment_result<vector<int>::iterator> t1;
-    check(env, t1, eng, gen_iter, gen_end);
+    check(env, t1, geniter, genend);
   }
 }

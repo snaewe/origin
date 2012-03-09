@@ -11,21 +11,8 @@
 // This file contains common declarations for all containers. It does not
 // include any specific containers.
 
+#include <origin/container_fwd.hpp>
 #include <origin/range.hpp>
-
-
-// For convenience, forward declare STL containers
-namespace std
-{
-  template<typename T, std::size_t N> class array;
-  template<typename T, typename A> class vector;
-  template<typename T, typename A> class list;
-  template<typename T, typename A> class forward_list;
-  template<typename T, typename A> class deque;
-  
-  // TODO:Add the rest of the containers, here.
-
-} // namespace std;
 
 namespace origin
 {
@@ -196,10 +183,14 @@ namespace origin
     };
 
   // Return true if C is an associative container.
+  //
+  // FIXME: Member find takes the KEY type, not the value type.
   template<typename C>
     constexpr bool Associative_container()
     {
-      return Associative_container_concept<C>::check();
+      return Container<C>()
+          && Has_member_find<C, Value_type<C>>()
+          && Same<Member_find_result<C, Value_type<C>>, Begin_result<C>>();
     }
     
 } // namespace origin

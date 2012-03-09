@@ -22,74 +22,13 @@ namespace origin
   //    Randomized_check
   //    Randomized_property_check
   //    Randomized_specification_check
-  //
-  // TODO: Finish writing documentation.
-  //
-  // TODO: Refactor the environment so that it has a random number engine
-  // by default?
   
 
 
-  namespace traits 
-  {
-    // Infrastructure for determining if the expression
-    //
-    //    p.accept(args...) 
-    //
-    // is valid, and safely deducing its result type.
-
-    template <typename P, typename... Args>
-      struct get_property_accept
-      {
-      private:
-        template <typename X, typename... Ys>
-          static auto check(X x, Ys&&... ys) 
-            -> decltype(x.accept(std::forward<Ys>(ys)...));
-        static subst_failure check(...);
-      public:
-        using type = decltype(check(std::declval<P>(), std::declval<Args>()...));
-      };
-      
-    template <typename P, typename... Args>
-      using Property_accept_result = typename get_property_accept<P, Args...>::type;
-      
-    template <typename P, typename... Args>
-      constexpr bool Has_property_accept()
-      {
-        return Subst_succeeded<Property_accept_result<P, Args...>>();
-      }
-  } // namespace traits
-  
-  
-  
-  // Conditional property
-  // A conditional property is one that has the mathematical form:
-  //
-  //    P => Q
-  //
-  // Here, P is the antecedent of the conditionally specified property, and
-  // Q is the consequent. Conditional properties are meaningfully verified
-  // if both P and Q are true. If P is false, the entire property is vacuously
-  // true. In the testing sense, P is a guard for Q.
-  //
-  // Conditional properties have an additional member, p.accept(args...) that 
-  // determines if the precedent P is true.
-  //
-  // Note that the the predicate should still incorporate P into its actual
-  // definition. Not all checking environments, algorithms, or uses will
-  // use the conditional property concept.
-  //
-  // TODO: I'm not really using this right now. It's not bad (it works), but
-  // it's not terribly important.
-  template <typename P, typename... Args>
-    constexpr bool Conditional_property()
-    {
-      return traits::Has_property_accept<P, Args...>();
-    }
-
-  
-  
   // Property check (concept)
+  // A property check algorithm is an algorithm that takes a predicate P, and
+  // a checking environment Env, which is a function that evalutes the 
+  // predicate type P over its arguments.
   template <typename Env, typename P, typename... Args>
     constexpr bool Property_check()
     {
@@ -102,47 +41,37 @@ namespace origin
   // A specification is a function object that can be checked using a
   // checking environment (Env) with values provided by some random value 
   // generators (Gens...) and a random number engine (Eng).
-  template <typename Spec, typename Env, typename Eng, typename... Gens>
+  template <typename Spec, typename Env, typename... Vars>
     constexpr bool Specification()
     {
-      return Function<Spec, Env&, Eng&, Forwarded<Gens>&...>();
+      return Function<Spec, Env&, Forwarded<Vars>...>();
     }
 
   
 
-  // Randomized check (concept)
-  // A randomized check is a property or specification check whose values are
-  // generated using a random engine (Eng) and some number of random value
-  // generators (Gens...)
-  template <typename Eng, typename... Gens>
-    constexpr bool Randomized_check()
-    {
-      return Random_bit_generator<Forwarded<Eng>>()
-          && All(Random_value_generator<Forwarded<Gens>>()...);
-    }
-    
-
+  // Randomized property check (concept)
   // A randomized property check is an algorithm that invokes some predicate
   // over randomly generated data. A pseudorandom bit generator (Eng) is 
   // required along with random value generators (Gens...) for each predicate 
   // argument.
-  template <typename Env, typename P, typename Eng, typename... Gens>
+  template <typename Env, typename P, typename... Vars>
     constexpr bool Randomized_property_check()
     {
-      return Randomized_check<Eng, Gens...>()
-          && Property_check<Env, P, Result_type<Forwarded<Gens>>...>();
+      return All(Random_variable<Forwarded<Vars>>()...)
+          && Property_check<Env, P, Result_type<Forwarded<Vars>>...>();
     }
 
   
+
   // Randomized specification check (algorithm concept)
   // A randomized specification check is an algorithm that invokes a 
   // specification testing function using a psuedorandom value generator and a
   // random value geenrator for each specification argument (Gens...)
-  template <typename Env, typename Spec, typename Eng, typename... Gens>
+  template <typename Env, typename Spec, typename... Vars>
     constexpr bool Randomized_specification_check()
     {
-      return Randomized_check<Eng, Gens...>()
-          && Specification<Spec, Env, Eng, Gens...>();
+      return All(Random_variable<Forwarded<Vars>>()...)
+          && Specification<Spec, Env, Forwarded<Vars>...>();
     }
 
 
@@ -194,44 +123,17 @@ namespace origin
 
   // Randomized property checking
   // The following algoirthms evaluate a property over a set of randomly
-  // generated values. The following syntax is supported:
+  // generated values. It supports the following syntax:
   //
-  //    check(env, pred, eng, gen)
-  //    check(env, pred, eng, gen1, gen2)
-  //    check(env, pred, eng, gen1, gen2, gen3)
+  //    check(env, pred, vars...)
   //
-  // Here, eng is a random number engine, and gen* are random value generators.
-  
-  
-  // Check the given unary property for a randomly generated value from the
-  // given distribution.
-  template <typename Env, typename P, typename Eng, typename Gen>
-    auto check(Env& env, P pred, Eng&& eng, Gen&& gen)
-      -> Requires<Randomized_property_check<Env, P, Eng, Gen>()>
+  // Vars is a sequence of random variables. There must be the same number of
+  // random variables as the arity of the pred function.
+  template <typename Env, typename P, typename... Vars>
+    auto check(Env& env, P pred, Vars&&... vars)
+      -> Requires<Randomized_property_check<Env, P, Vars...>()>
     {
-      check(env, pred, gen(eng));
-    }
-
-
-  
-  // Check the given binary property for randomly generated values from the 
-  // given distributions.
-  template <typename Env, typename P, typename Eng, typename Gen1, typename Gen2>
-    auto check(Env& env, P pred, Eng&& eng, Gen1&& gen1, Gen2&& gen2)
-      -> Requires<Randomized_property_check<Env, P, Eng, Gen1, Gen2>()>
-    {
-      check(env, pred, gen1(eng), gen2(eng));
-    }
-    
-  
-  
-  // Check the given ternary property for randomly generated values from the
-  // given distributions.
-  template <typename Env, typename P, typename Eng, typename Gen1, typename Gen2, typename Gen3>
-    auto check(Env& env, P pred, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3)
-      -> Requires<Randomized_property_check<Env, P, Eng, Gen1, Gen2, Gen3>()>
-    {
-      check(env, pred, gen1(eng), gen2(eng), gen3(eng));
+      check(env, pred, vars()...);
     }
 
 
@@ -240,22 +142,15 @@ namespace origin
   // The following algorithms evaluate a specification over a sequence of 
   // randomly generated values. The following syntax is supported.
   //
-  //    check(env, spec, eng, gen)
-  //    check(env, spec, eng, gen1, gen2)
-  //    check(env, spec, eng, gen1, gen2, gen3)
+  //    check(env, spec, vars...)
   //
-  // Here, env is the checking environment, eng is a random number engine and 
-  // gen* are random value generators.
-  
-  
-  
-  // Check the given specification using values generated by the given
-  // specification.
-  template <typename Env, typename Spec, typename Eng, typename... Gens>
-    auto check(Env& env, Spec spec, Eng&& eng, Gens&&... gens)
-      -> Requires<Randomized_specification_check<Env, Spec, Eng, Gens...>()>
+  // Vars is a sequence of random variables. There must be the same number of
+  // random variables as the arity of the spcification function.
+  template <typename Env, typename Spec, typename... Vars>
+    auto check(Env& env, Spec spec, Vars&&... vars)
+      -> Requires<Randomized_specification_check<Env, Spec, Vars...>()>
     {
-      spec(env, std::forward<Eng>(eng), std::forward<Gens>(gens)...);
+      spec(env, std::forward<Vars>(vars)...);
     }
 
 
@@ -275,31 +170,33 @@ namespace origin
       }
     }
     
+  
+
   // Check the unary property specification 100 times.
-  template <typename Env, typename Check, typename Eng, typename Gen>
-    void quick_check(Env& env, Check c, Eng&& eng, Gen&& gen, int n = 100)
+  template <typename Env, typename Check, typename Var>
+    void quick_check(Env& env, Check c, Var&& var, int n = 100)
     {
-      check_n_impl(n, c, eng, gen);
+      check_n_impl(n, c, var);
     }
     
   
   
   // Check the binary property specification 100 times.
-  template <typename Env, typename Check, typename Eng, typename Gen1, typename Gen2>
-    void quick_check(Env& env, Check c, Eng&& eng, Gen1&& gen1, Gen2&& gen2, int n = 100)
+  template <typename Env, typename Check, typename Var1, typename Var2>
+    void quick_check(Env& env, Check c, Var1&& var1, Var2&& var2, int n = 100)
     {
-      check_n_impl(n, c, eng, gen1, gen2);
+      check_n_impl(n, c, var1, var2);
     }
 
   
   
   // Check the ternary property specification 100 times.
-  template <typename Env, typename Check, typename Eng, typename Gen1, typename Gen2, typename Gen3>
-    void quick_check(Env& env, Check c, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3, int n = 100)
+  template <typename Env, typename Check, typename Var1, typename Var2, typename Var3>
+    void quick_check(Env& env, Check c, Var1&& var1, Var2&& var2, Var3&& var3, int n = 100)
     {
-      check_n_impl(n, c, eng, gen1, gen2, gen3);
+      check_n_impl(n, c, var1, var2, var3);
     }
-    
+
 
 
   // The basic check environment evaluates predicates and records the results.
@@ -310,42 +207,15 @@ namespace origin
   // could go into this.
   struct basic_checker
   {
-    template <typename P>
-      void operator()(P pred)
+    template <typename P, typename... Args>
+      void operator()(P pred, Args&&... args)
       {
-        if(pred())
-          ++succ;
-        else
-          ++fail;
-      }
-    
-    template <typename P, typename T>
-      void operator()(P pred, const T& a)
-      {
-        if(pred(a)) 
-          ++succ;
-        else
-          ++fail;
-      }
-    
-    template <typename P, typename T1, typename T2>
-      void operator()(P pred, const T1& a, const T2& b)
-      {
-        if(pred(a, b)) 
+        if(pred(std::forward<Args>(args)...))
           ++succ;
         else
           ++fail;
       }
 
-    template <typename P, typename T1, typename T2, typename T3>
-      void operator()(P pred, const T1& a, const T2& b, const T3& c)
-      {
-        if(pred(a, b, c))
-          ++succ;
-        else
-          ++fail;
-      }
-      
     int succ;   // Number of tests succeeded
     int fail;   // Number of tests failed.
   };
@@ -357,28 +227,10 @@ namespace origin
   // is useful for debugging.
   struct assert_checker
   {
-    template <typename P>
-      void operator()(P pred) const
+    template <typename P, typename... Args>
+      void operator()(P pred, Args&&... args) const
       {
-        assert(pred());
-      }
-
-    template <typename P, typename T>
-      void operator()(P pred, const T& a) const
-      {
-        assert(pred(a));
-      }
-    
-    template <typename P, typename T1, typename T2>
-      void operator()(P pred, const T1& a, const T2& b) const
-      {
-        assert(pred(a, b));
-      }
-
-    template <typename P, typename T1, typename T2, typename T3>
-      void operator()(P pred, const T1& a, const T2& b, const T3& c)
-      {
-        assert(pred(a, b, c));
+        assert(pred(std::forward<Args>(args)...));
       }
   };
     

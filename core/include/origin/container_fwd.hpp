@@ -30,7 +30,14 @@ namespace std
   template <typename T, typename H, typename C, typename A> class unorderd_multiset;
   template <typename K, typename V, typename H, typename C, typename A> class unorderd_map;
   template <typename K, typename V, typename H, typename C, typename A> class unorderd_multimap;
-  
+
 } // namespace std;
+
+namespace origin
+{
+  // Concepts
+  template <typename T> constexpr bool Sequence();
+  template <typename T> constexpr bool Associative_container();
+} // namespace origin
 
 #endif

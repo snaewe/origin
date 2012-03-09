@@ -216,12 +216,12 @@ namespace origin
         : reflexive(r), symmetric(r), transitive(r)
       { }
 
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          check(env, reflexive, eng, gen);
-          check(env, symmetric, eng, gen, gen);
-          check(env, transitive, eng, gen, gen, gen);
+          check(env, reflexive, var);
+          check(env, symmetric, var, var);
+          check(env, transitive, var, var, var);
         }
 
       reflexive_property<R> reflexive;
@@ -240,12 +240,12 @@ namespace origin
         : irreflexive(r), asymmetric(r), transitive(r)
       { }
       
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          check(env, irreflexive, eng, gen);
-          check(env, asymmetric, eng, gen, gen);
-          check(env, transitive, eng, gen, gen, gen);
+          check(env, irreflexive, var);
+          check(env, asymmetric, var, var);
+          check(env, transitive, var, var, var);
         }
     
       irreflexive_property<R> irreflexive;
@@ -266,11 +266,11 @@ namespace origin
         : partial(r), equivalence(r)
       { }
       
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          check(env, partial, eng, gen);
-          check(env, equivalence, eng, gen, gen, gen);
+          check(env, partial, var);
+          check(env, equivalence, var, var, var);
         }
     
       strict_partial_order_spec<R> partial;
@@ -293,13 +293,13 @@ namespace origin
         : antisymmetric{r}, transitive{r}, trichotomous{r}
       { }
     
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          static_assert(Equality_comparable<Result_type<Forwarded<Gen>>>(), "");
-          check(env, antisymmetric, eng, gen, gen);
-          check(env, transitive, eng, gen, gen, gen);
-          check(env, trichotomous, eng, gen, gen);
+          static_assert(Equality_comparable<Result_type<Forwarded<Var>>>(), "");
+          check(env, antisymmetric, var, var);
+          check(env, transitive, var, var, var);
+          check(env, trichotomous, var, var);
         }
 
       antisymmetric_property<R> antisymmetric;

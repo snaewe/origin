@@ -21,33 +21,34 @@ namespace origin
       static_assert(Equality_comparable<T, U>(), "");
       using C = Common_type<T, U>;
 
-      // Randomly test the specification using values of type T generated from
-      // gen1 and values of type U generated from gen2.
-      template <typename Env, typename Eng, typename Gen1, typename Gen2>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2) const
+      // Randomly test the specification using values of type T varerated from
+      // var1 and values of type U varerated from var2.
+      template <typename Env, typename Var1, typename Var2>
+        void operator()(Env& env, Var1&& var1, Var2&& var2) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          (*this)(env, eng, gen1, gen2, default_distribution<C>());
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          auto var3 = make_random<C>(var1.engine());
+          (*this)(env, var1, var2, var3);
         }
 
         
-      // Randomly test the specification using values of type T generated
-      // from gen1, values of type U generated from gen2, and values of type
-      // C (the common type) generated from gen3.
-      template <typename Env, typename Eng, typename Gen1, typename Gen2, typename Gen3>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3) const
+      // Randomly test the specification using values of type T varerated
+      // from var1, values of type U varerated from var2, and values of type
+      // C (the common type) varerated from var3.
+      template <typename Env, typename Var1, typename Var2, typename Var3>
+        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Gen3>>>(), "");
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
 
-          check(env, equality_comparable_semantics<T>{}, eng, gen1);
-          check(env, equality_comparable_semantics<U>{}, eng, gen2);
-          check(env, equality_comparable_semantics<C>{}, eng, gen3);
+          check(env, equality_comparable_semantics<T>{}, var1);
+          check(env, equality_comparable_semantics<U>{}, var2);
+          check(env, equality_comparable_semantics<C>{}, var3);
 
-          check(env, eq, eng, gen1, gen2);  // a == b <=> C(a) == C(b)
-          check(env, neq, eng, gen1, gen2); // a != b <=> C(a) != C(b)
+          check(env, eq, var1, var2);  // a == b <=> C(a) == C(b)
+          check(env, neq, var1, var2); // a != b <=> C(a) != C(b)
         }
 
       common_type_equivalence<origin::eq> eq;
@@ -60,12 +61,12 @@ namespace origin
     {
       static_assert(Equality_comparable<T>(), "");
       
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen>>>(), "");
-          check(env, equivalence, eng, gen);
-          check(env, not_equal, eng, gen, gen);
+          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
+          check(env, equivalence, var);
+          check(env, not_equal, var, var);
         }
 
       equivalence_relation_spec<eq> equivalence;
@@ -83,29 +84,30 @@ namespace origin
       static_assert(Weakly_ordered<T, U>(), "");
       using C = Common_type<T, U>;
 
-      template <typename Env, typename Eng, typename Gen1, typename Gen2>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2) const
+      template <typename Env, typename Var1, typename Var2>
+        void operator()(Env& env, Var1&& var1, Var2&& var2) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          (*this)(env, eng, gen1, gen2, default_distribution<C>());
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          auto var3 = make_random<C>(var1.engine());
+          (*this)(env, var1, var2, var3);
         }
       
-      template <typename Env, typename Eng, typename Gen1, typename Gen2, typename Gen3>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3) const
+      template <typename Env, typename Var1, typename Var2, typename Var3>
+        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Gen3>>>(), "");
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
           
-          check(env, weakly_ordered_semantics<T>{}, eng, gen1);
-          check(env, weakly_ordered_semantics<U>{}, eng, gen2);
-          check(env, weakly_ordered_semantics<C>{}, eng, gen3);
+          check(env, weakly_ordered_semantics<T>{}, var1);
+          check(env, weakly_ordered_semantics<U>{}, var2);
+          check(env, weakly_ordered_semantics<C>{}, var3);
           
-          check(env, lt, eng, gen1, gen2);  // a < b <=> C(a) < C(b)
-          check(env, gt, eng, gen1, gen2);  // a > b <=> C(a) > C(b)
-          check(env, leq, eng, gen1, gen2); // a <= b <=> C(a) <= C(b)
-          check(env, geq, eng, gen1, gen2); // b >= a <=> C(a) >= C(b)
+          check(env, lt, var1, var2);  // a < b <=> C(a) < C(b)
+          check(env, gt, var1, var2);  // a > b <=> C(a) > C(b)
+          check(env, leq, var1, var2); // a <= b <=> C(a) <= C(b)
+          check(env, geq, var1, var2); // b >= a <=> C(a) >= C(b)
         }
         
       common_type_equivalence<origin::lt> lt;
@@ -120,14 +122,14 @@ namespace origin
     {
       static_assert(Weakly_ordered<T>(), "");
 
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen>>>(), "");
-          check(env, lt, eng, gen);
-          check(env, gt, eng, gen, gen);
-          check(env, leq, eng, gen, gen);
-          check(env, geq, eng, gen, gen);
+          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
+          check(env, lt, var);
+          check(env, gt, var, var);
+          check(env, leq, var, var);
+          check(env, geq, var, var);
         }
         
       strict_weak_order_spec<origin::lt> lt;
@@ -140,7 +142,7 @@ namespace origin
 
   // Totally ordered (specification)
   // The total ordering specification defines the semantics for totally ordered
-  // types. When used with heterogeneous types, the semantics are defined in
+  // types. When used with heterovareous types, the semantics are defined in
   // terms of the common type.
   template <typename T, typename U = T>
     struct totally_ordered_semantics
@@ -148,27 +150,28 @@ namespace origin
       static_assert(Totally_ordered<T, U>(), "");
       using C = Common_type<T, U>;
 
-      template <typename Env, typename Eng, typename Gen1, typename Gen2>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2) const
+      template <typename Env, typename Var1, typename Var2>
+        void operator()(Env& env, Var1&& var1, Var2&& var2) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          (*this)(env, eng, gen1, gen2, default_distribution<C>());
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          auto var3 = make_random<C>(var1.engine());
+          (*this)(env, var1, var2, var3);
         }
       
-      template <typename Env, typename Eng, typename Gen1, typename Gen2, typename Gen3>
-        void operator()(Env& env, Eng&& eng, Gen1&& gen1, Gen2&& gen2, Gen3&& gen3) const
+      template <typename Env, typename Var1, typename Var2, typename Var3>
+        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Gen2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Gen3>>>(), "");
+          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
+          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
+          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
           
-          check(env, totally_ordered_semantics<T>{}, eng, gen1);
-          check(env, totally_ordered_semantics<U>{}, eng, gen2);
-          check(env, totally_ordered_semantics<C>{}, eng, gen3);
+          check(env, totally_ordered_semantics<T>{}, var1);
+          check(env, totally_ordered_semantics<U>{}, var2);
+          check(env, totally_ordered_semantics<C>{}, var3);
 
-          check(env, weak, eng, gen1, gen2, gen3);
-          check(env, equal, eng, gen1, gen2);
+          check(env, weak, var1, var2, var3);
+          check(env, equal, var1, var2);
         }
         
       weakly_ordered_semantics<T, U> weak;
@@ -181,14 +184,14 @@ namespace origin
     {
       static_assert(Totally_ordered<T>(), "");
 
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Gen>>>(), "");
-          check(env, lt, eng, gen);
-          check(env, gt, eng, gen, gen);
-          check(env, leq, eng, gen, gen);
-          check(env, geq, eng, gen, gen);
+          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
+          check(env, lt, var);
+          check(env, gt, var, var);
+          check(env, leq, var, var);
+          check(env, geq, var, var);
         }
         
       strict_total_order_spec<origin::lt> lt;
@@ -205,8 +208,8 @@ namespace origin
   template <typename T>
     struct move_semantics
     {
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env&&, Eng&&, Gen&&) { }
+      template <typename Env, typename Var>
+        void operator()(Env&&, Var&&) { }
     };
 
 
@@ -252,12 +255,12 @@ namespace origin
   template <typename T>
     struct copy_semantics
     {
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env&& env, Eng&& eng, Gen& gen)
+      template <typename Env, typename Var>
+        void operator()(Env&& env, Var& var)
         {
-          check(env, move, eng, gen);
-          check(env, construct, eng, gen);
-          check(env, assign, eng, gen);
+          check(env, move, var);
+          check(env, construct, var);
+          check(env, assign, var);
         }
 
       move_semantics<T> move;
@@ -287,8 +290,8 @@ namespace origin
   template <typename T>
     struct default_semantics
     {
-      template <typename Env, typename Eng>
-        void operator()(Env&& env, Eng&& eng) const
+      template <typename Env>
+        void operator()(Env&& env) const
         {
           check(env, init);
         }
@@ -304,12 +307,12 @@ namespace origin
   template <typename T>
     struct regular_semantics
     {
-      template <typename Env, typename Eng, typename Gen>
-        void operator()(Env&& env, Eng&& eng, Gen&& gen) const
+      template <typename Env, typename Var>
+        void operator()(Env&& env, Var&& var) const
         {
-          check(env, def, eng);
-          check(env, copy, eng, gen);
-          check(env, equal, eng, gen);
+          check(env, def);
+          check(env, copy, var);
+          check(env, equal, var);
         }
       
       default_semantics<T> def;
@@ -322,7 +325,7 @@ namespace origin
   // Function semantics (specification)
   // A function is only required to be copy constructible. 
 
-  // Note that we can't  randomly generate functions (a strange though), the 
+  // Note that we can't  randomly varerate functions (a strange though), the 
   // tested function must be assigned during the initialization of the
   // specification.
   template <typename F>
@@ -353,7 +356,8 @@ namespace origin
       equality_preserving(F f = {}) : fn(f) { }
 
       template <typename... Args>
-        bool operator()(Args&&... args) const
+        auto operator()(Args&&... args) const
+          -> Requires<Function<F, Args...>(), bool> 
         {
           return fn(args...) == fn(args...);
         }
@@ -369,15 +373,14 @@ namespace origin
   template <typename F>
     struct regular_function_semantics
     {
-      regular_function_semantics(F f = {}) : fn(f) { }
+      regular_function_semantics(F f = {}) : regular(f) { }
 
-      template <typename Env, typename Eng, typename... Gens>
-        void operator()(Env& env, Eng&& eng, Gens&&... gens) const
+      template <typename Env, typename... Vars>
+        void operator()(Env& env, Vars&&... vars) const
         {
-          check(env, regular, eng, gens...);
+          check(env, regular, std::forward<Vars>(vars)...);
         }
 
-      F fn;
       equality_preserving<F> regular;
     };
 

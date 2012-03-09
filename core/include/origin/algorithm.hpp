@@ -1097,7 +1097,7 @@ namespace origin
     {
       static_assert(Function<F>(), "");
       static_assert(Output_iterator<O, Result_of<F()>>(), "");
-      assert(is_writable_range(first, last));
+      assume(is_writable_range(first, last, gen()));
       
       while(first != last) {
         *first = gen();
@@ -1116,7 +1116,7 @@ namespace origin
       static_assert(Function<F>(), "");
       static_assert(Range_fill<Rx, Result_of<F()>>(), "");
 
-      return o_generate(std::begin(range), std::end(range));
+      return o_generate(std::begin(range), std::end(range), gen);
     }
     
     
