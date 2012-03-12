@@ -7,7 +7,11 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-set(ORIGIN_ROOT $ENV{ORIGIN_ROOT})
+if(DEFINED $ENV{ORIGIN_ROOT})
+  set(ORIGIN_ROOT $ENV{ORIGIN_ROOT})
+else()
+  set(ORIGIN_ROOT ${CMAKE_SOURCE_DIR})
+endif(DEFINED $ENV{ORIGIN_ROOT})
 list(APPEND CMAKE_MODULE_PATH ${ORIGIN_ROOT}/cmake)
 include(Origin)
 

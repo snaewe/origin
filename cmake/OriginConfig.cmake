@@ -23,5 +23,5 @@
 # quite noisy.
 # FIXME: Disable unused parameters also?
 set(ORIGIN_IGNORED_WARNINGS "-Wno-unused-variable -Wno-unused-value")
-set(CMAKE_CXX_FLAGS "-Wall ${ORIGIN_IGNORED_WARNINGS} -std=c++0x")
+set(CMAKE_CXX_FLAGS "-Wall ${ORIGIN_IGNORED_WARNINGS} -std=c++0x ${CMAKE_CXX_FLAGS}")
 
