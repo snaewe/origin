@@ -14,15 +14,10 @@
 #include <origin/container_fwd.hpp>
 #include <origin/concepts.hpp>
 #include <origin/algorithm.hpp>
+#include <origin/tuple.hpp>
 
 namespace origin
 {
-  // TODO: Build better tools for creating custom distributions. I think that
-  // these will essentially be in the form of constructor functions that
-  // support distribution composition.
-
-  
-  
   // Random bit generator (concepts)
   // A random bit generator (called uniform random number generator in the
   // standard), generates uniformly distributed sequences of random bits
@@ -261,6 +256,7 @@ namespace origin
 
 
   // Zipf distribution
+  //
   // TODO: Implement a zipf distribution to help generate realistic string
   // lengths.
   template <typename T>
@@ -377,7 +373,70 @@ namespace origin
       Dist dist;
     };
 
-    
+
+
+  // Random tuple generator
+  // The random tuple generator creates random tuples of randomly generated
+  // values. Those values are distributed by the distributions over which this
+  // template is parameterized.
+  template <typename... Dists>
+    class random_tuple_generator
+    {
+      using this_type = random_tuple_generator<Dists...>;
+    public:
+      using result_type = std::tuple<Result_type<Dists>...>;
+      
+      random_tuple_generator() : dists{}  { }
+      random_tuple_generator(Dists&&... ds) : dists{ds...} { }
+
+      template <typename Eng>
+        result_type operator()(Eng& eng)
+        {
+          return generate<Dists...>(eng);
+        }
+
+      // Equality comprable.
+      // Two random tuple generators are equal when the their underlying
+      // distribution parameters are equal.
+      bool operator==(const this_type& x) const { return dists == x.dists; }
+      bool operator!=(const this_type& x) const { return dists != x.dists; }
+
+    private:
+      // TODO: This seems like a refactorable tuple pattern. What I really want
+      // to do is expand the tuple as if it were an expansion pack. Something
+      // like this: get(dists)(gen)... Which would expand to:
+      //
+      //    get<0>(dists)(gen), get<1>(dists)(gen), .... get<N>(dists)(gen)
+      //
+      // Unfortunately, that is unlikely to happen.
+      template <typename D1, typename Eng>
+        result_type generate(Eng& eng)
+        {
+          using std::get;
+          return result_type { get<0>(dists(eng)) };
+        }
+
+      template <typename D1, typename D2, typename Eng>
+        result_type generate(Eng& eng)
+        {
+          using std::get;
+          return result_type { get<0>(dists)(eng), get<1>(dists)(eng) };
+        }
+
+      template <typename D1, typename D2, typename D3, typename Eng>
+        result_type generate(Eng& eng)
+        {
+          using std::get;
+          return result_type(
+            get<0>(dists)(eng), 
+            get<1>(dists)(eng), 
+            get<2>(dists)(eng)
+          );
+        }
+
+      std::tuple<Dists...> dists;
+    };
+
 
   // Default distribution (specializations)
 
@@ -480,7 +539,7 @@ namespace origin
   
 
 
-  // Default bool distribtution
+  // Default distribtution (bool)
   // The default distibution for bool values is a fair Bernoulli trial.
   template <>
     struct default_distribution_traits<bool>
@@ -490,7 +549,7 @@ namespace origin
     
 
 
-  // Default string distribution
+  // Default distribution (string)
   // The default string distribution describes random strings whose lengths
   // are Zipf distributed (with the empty string having the highest probability
   // of occurrence) and whose values are uniformly drawn from the set of
@@ -498,13 +557,25 @@ namespace origin
   template <typename C, typename T, typename A>
     struct default_distribution_traits<std::basic_string<C, T, A>>
     {
-      static random_string_distribution<std::basic_string<C, T, A>> get() 
-      { 
-        return random_string_distribution<std::basic_string<C, T, A>>{}; 
-      }
+      using Dist = random_string_distribution<std::basic_string<C, T, A>>;
+      
+      static Dist get()  { return Dist{}; }
     };
 
     
+
+  // Default distribution (tuple)
+  // The default distribution of a tuple is a generator parameterized over the
+  // default distributions of its value types.
+  template <typename... Args>
+    struct default_distribution_traits<std::tuple<Args...>>
+    {
+      using Dist = random_tuple_generator<Default_distribution_type<Args>...>;
+      
+      static Dist get() { return Dist{}; }
+    };
+
+
 /*
   template <> 
     struct default_distribution_traits<char> : integral_distribution_traits<char> { };

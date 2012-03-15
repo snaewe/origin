@@ -231,6 +231,22 @@ namespace origin
 
 
 
+  // Check if comp satisfies the semantics of an equivalence relation.
+  template <typename Env, typename R, typename Var>
+    void check_equivalence_relation(Env& env, R comp, Var&& var)
+    {
+      check(env, equivalence_relation_spec<R>{comp}, var);
+    }
+
+  template <typename T, typename Env, typename R>
+    void check_equivalence_relation(Env& env, R comp)
+    {
+      auto var = checkable_var<T>(env);
+      check_equivalence_relation(env, comp, var);
+    }
+
+
+
   // Strict partial order (specification)
   // A strict partial order is irreflexive, asymmetric, and transitive.
   template <typename R>
@@ -255,6 +271,22 @@ namespace origin
     
 
 
+  // Check if comp satisfies the semantics of a strict partial order.
+  template <typename Env, typename R, typename Var>
+    void check_strict_partial_order(Env& env, R comp, Var&& var)
+    {
+      check(env, strict_partial_order_spec<R>{comp}, var);
+    }
+
+  template <typename T, typename Env, typename R>
+    void check_strict_partial_order(Env& env, R comp)
+    {
+      auto var = checkable_var<T>(env);
+      check_strict_partial_order(env, comp, var);
+    }
+
+
+
   // Strict weak order (specification)
   // A strict weak order is a strict weak order whose symmetric complement 
   // (a.k.a., incomparability) is transitive. Note that incomparability can 
@@ -277,6 +309,21 @@ namespace origin
       transitive_property<symmetric_complement<R>> equivalence;
     };
     
+
+
+  // Check if comp satisfies the semantics of a strict weak order.
+  template <typename Env, typename R, typename Var>
+    void check_strict_weak_order(Env& env, R comp, Var&& var)
+    {
+      check(env, strict_weak_order_spec<R>{comp}, var);
+    }
+
+  template <typename T, typename Env, typename R>
+    void check_strict_weak_order(Env& env, R comp)
+    {
+      auto var = checkable_var<T>(env);
+      check_strict_partial_order(env, comp, var);
+    }
 
 
   // Strict total order (specification)
@@ -306,5 +353,21 @@ namespace origin
       transitive_property<R> transitive;
       trichotomous_property<R> trichotomous;
     };
+
+
+
+  // Check if comp satisfies the requirements of a strict total order.
+  template <typename Env, typename R, typename Var>
+    void check_strict_total_order(Env& env, R comp, Var&& var)
+    {
+      check(env, strict_total_order_spec<R>{comp}, var);
+    }
+
+  template <typename T, typename Env, typename R>
+    void check_strict_total_order(Env& env, R comp)
+    {
+      auto var = checkable_var<T>(env);
+      check_strict_total_order(env, comp, var);
+    }
 
 } // namespace origin

@@ -25,6 +25,30 @@ template <typename R>
     cout << '\n';
   }
 
+
+struct print_tuple
+{
+  template <typename T, typename... Args>
+    void operator()(const T& x, Args&&... args) const
+    {
+      cout << x << ", ";
+      operator()(args...);
+    }
+
+  template <typename T>
+    void operator()(const T& x) const { cout << x; }
+
+  void operator()() const { }
+};
+
+template <typename... Args>
+  void print(const tuple<Args...>& args)
+  {
+    cout << '(';
+    tuple_invoke(print_tuple{}, args);
+    cout << ")\n";
+  }
+
 template <typename T>
     using Fwd = Forwarded<T>;
 
@@ -37,6 +61,7 @@ template <typename Env, typename Check, typename... Vars>
     cout << Specification<Check, Env, Fwd<Vars>...>() << '\n';
   }
 
+bool f(int, char) { return true; }
 
   
 int main()
@@ -46,53 +71,50 @@ int main()
   std::minstd_rand eng(time(0));
   eng();
   
-  // Initialize the checking invironment.
-  assert_checker env;
+  // Initialize the checking invironment and some random variables.
+  assert_checker<std::minstd_rand> env{eng};
+  auto geni = checkable_var<int>(env);
 
-  auto geni = make_random<int>(eng);
-  auto gend = make_random<double>(eng);
-  auto genstr = make_random<string>(eng);
 
- // Properties under test
+  // Properties under test
   reflexive_property<eq> refl;
   symmetric_property<eq> sym;
   transitive_property<eq> trans;
   
+
+  // Property checking with specific arguments.
   check(env, refl, 0);
   check(env, sym, 1, 1);
   check(env, trans, 1, 1, 1);
 
+  // Property testing with quantified (random) arguments.
   check(env, refl, geni);
   check(env, sym, geni, geni);
   check(env, trans, geni, geni, geni);
 
-  // Specifications under test
-  equivalence_relation_spec<eq> equiv;
-  check(env, equiv, geni);
 
-  equality_comparable_semantics<int> eq_int;
-  totally_ordered_semantics<int> ord_int;
-  check(env, eq_int, geni);
-  check(env, ord_int, geni);
 
-  equality_comparable_semantics<int, double> eq_int_double;
-  totally_ordered_semantics<int, double> ord_int_double;
-  check(env, eq_int_double, geni, gend);
-  check(env, ord_int_double, geni, gend);
+  // Check relational specifications.
+  check_equivalence_relation<int>(env, eq{});
+  check_strict_partial_order<int>(env, lt{});
+  check_strict_weak_order<int>(env, lt{});
+  check_strict_total_order<int>(env, lt{});
 
-  regular_function_semantics<eq> reg_eq;
-  check(env, reg_eq, geni, geni);
+  // Check concepts.
+  check_equality_comparable<int>(env);
+  check_equality_comparable<int, char>(env);
+  check_weakly_ordered<int>(env);
+  check_weakly_ordered<int, char>(env);
+  check_totally_ordered<int>(env);
+  check_totally_ordered<int, char>(env);
 
-  {
-    // Testing iterators is not fun. Testing ranges should be easy.
-    using V = vector<int>;
-    using I = V::iterator;
-    vector<int> v(100);
-    generate(v, geni);
-    auto geniter = make_random(eng, random_iterator_distribution<V>(v));
-    auto genend = make_random(eng, single_value_distribution<I>(v.end()));
+  check_copyable<int>(env);
+  check_regular<int>(env);
 
-    test_pre_increment_result<vector<int>::iterator> t1;
-    check(env, t1, geniter, genend);
-  }
+  check_regular_function<eq(int, int)>(env, eq{});
+  check_regular_function<decltype(f)>(env, f);
+  check_predicate<eq(int, int)>(env, eq{});
+  check_predicate<eq(int, int)>(env, eq{});
+  check_relation<eq(int, int)>(env, eq{});
 }
+

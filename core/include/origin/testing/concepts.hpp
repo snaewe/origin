@@ -75,6 +75,52 @@ namespace origin
 
 
 
+  // Check if the quantified variable is equality comparable.
+  template <typename Env, typename Var>
+    void check_equality_comparable(Env& env, Var&& var)
+    {
+      using T = Result_type<Forwarded<Var>>;
+      equality_comparable_semantics<T> spec;
+      check(env, spec, var);
+    }
+
+
+
+  // Check if quantified variables satisfy the requirements of cross-type 
+  // equality comparability.
+  template <typename Env, typename Var1, typename Var2>
+    void check_equality_comparable(Env& env, Var1&& var1, Var2&& var2)
+    {
+      using T = Result_type<Forwarded<Var1>>;
+      using U = Result_type<Forwarded<Var2>>;
+      equality_comparable_semantics<T, U> spec;
+      check(env, spec, var1, var2);
+    }
+
+
+
+  // Check if T is equality comparable.
+  template <typename T, typename Env>
+    void check_equality_comparable(Env& env)
+    {
+      auto var = checkable_var<T>(env);
+      check_equality_comparable(env, var);
+    }
+
+
+
+  // Check if T and U are cross-type equality comparable.
+  template <typename T, typename U, typename Env>
+    void check_equality_comparable(Env& env)
+    {
+      auto var1 = checkable_var<T>(env);
+      auto var2 = checkable_var<U>(env);
+      check_equality_comparable(env, var1, var2);
+    }
+
+
+
+
   // Weakly ordered semantics (specification)
   // The weak ordering specification defines the semantics for weakly ordered
   // types.
@@ -140,6 +186,51 @@ namespace origin
 
 
 
+  // Check if the quantified variable is weakly ordered.
+  template <typename Env, typename Var>
+    void check_weakly_ordered(Env& env, Var&& var)
+    {
+      using T = Result_type<Forwarded<Var>>;
+      weakly_ordered_semantics<T> spec;
+      check(env, spec, var);
+    }
+
+
+
+  // Check if the quantified variables satisfy the requirements of cross-type
+  // weak ordering.
+  template <typename Env, typename Var1, typename Var2>
+    void check_weakly_ordered(Env& env, Var1&& var1, Var2&& var2)
+    {
+      using T = Result_type<Forwarded<Var1>>;
+      using U = Result_type<Forwarded<Var2>>;
+      weakly_ordered_semantics<T, U> spec;
+      check(env, spec, var1, var2);
+    }
+
+
+
+  // Check if T is weakly ordered.
+  template <typename T, typename Env>
+    void check_weakly_ordered(Env& env)
+    {
+      auto var = checkable_var<T>(env);
+      check_weakly_ordered(env, var);
+    }
+
+
+
+  // Check if T and U satisfy the requirements of cross-type weak ordering.
+  template <typename T, typename U, typename Env>
+    void check_weakly_ordered(Env& env)
+    {
+      auto var1 = checkable_var<T>(env);
+      auto var2 = checkable_var<U>(env);
+      check_weakly_ordered(env, var1, var2);
+    }
+
+
+
   // Totally ordered (specification)
   // The total ordering specification defines the semantics for totally ordered
   // types. When used with heterovareous types, the semantics are defined in
@@ -200,7 +291,52 @@ namespace origin
       logical_equivalence<origin::geq, complement<origin::lt>> geq;
     };
     
+
+
+  // Check if the quantified variable is totally ordered.
+  template <typename Env, typename Var>
+    void check_totally_ordered(Env& env, Var&& var)
+    {
+      using T = Result_type<Forwarded<Var>>;
+      totally_ordered_semantics<T> spec;
+      check(env, spec, var);
+    }
+
     
+
+  // Check if the quantified variables satisfy the requirements of cross-type
+  // total ordering.
+  template <typename Env, typename Var1, typename Var2>
+    void check_totally_ordered(Env& env, Var1&& var1, Var2&& var2)
+    {
+      using T = Result_type<Forwarded<Var1>>;
+      using U = Result_type<Forwarded<Var2>>;
+      totally_ordered_semantics<T, U> spec;
+      check(env, spec, var1, var2);
+    }
+
+
+
+  // Check if T is totally ordered.
+  template <typename T, typename Env>
+    void check_totally_ordered(Env& env)
+    {
+      auto var = checkable_var<T>(env);
+      check_totally_ordered(env, var);
+    }
+
+
+
+  // Check if T and U satisfy the requirements for cross-type ordering.
+  template <typename T, typename U, typename Env>
+    void check_totally_ordered(Env& env)
+    {
+      auto var1 = checkable_var<T>(env);
+      auto var2 = checkable_var<U>(env);
+      check_totally_ordered(env, var1, var2);
+    }
+
+
 
   // Move semantics (specification)
   //
@@ -256,7 +392,7 @@ namespace origin
     struct copy_semantics
     {
       template <typename Env, typename Var>
-        void operator()(Env&& env, Var& var)
+        void operator()(Env& env, Var&& var)
         {
           check(env, move, var);
           check(env, construct, var);
@@ -267,6 +403,27 @@ namespace origin
       copy_construction_preservation<T> construct;
       copy_assignment_preservation<T> assign;
     };
+
+
+
+  // Check if the quantified variable is copyable.
+  template <typename Env, typename Var>
+    void check_copyable(Env& env, Var&& var)
+    {
+      using T = Result_type<Forwarded<Var>>;
+      copy_semantics<T> spec;
+      check(env, spec, var);
+    }
+
+
+
+  // Check if T is regular.
+  template <typename T, typename Env>
+    void check_copyable(Env& env)
+    {
+      auto var = checkable_var<T>(env);
+      check_copyable(env, var);
+    }
 
 
   
@@ -301,6 +458,15 @@ namespace origin
     
     
 
+  // Check if T is default constructible.
+  template <typename Env, typename T>
+    void check_default_constructible(Env& env)
+    {
+      check(env, default_semantics<T>{});
+    }
+
+
+
   // Regular semantics (specification)
   // A regular type is required to implement default initializtaion, copy,
   // and 
@@ -322,26 +488,30 @@ namespace origin
     
 
 
-  // Function semantics (specification)
-  // A function is only required to be copy constructible. 
-
-  // Note that we can't  randomly varerate functions (a strange though), the 
-  // tested function must be assigned during the initialization of the
-  // specification.
-  template <typename F>
-    struct function_semantics
+  // Check if the quantified variable is regular.
+  template <typename Env, typename Var>
+    void check_regular(Env& env, Var&& var)
     {
-      function_semantics(F f = {}) : fn(f) { }
+      using T = Result_type<Forwarded<Var>>;
+      regular_semantics<T> spec;
+      check(env, spec, var);
+    }
 
-      template <typename Env>
-        void operator()(Env& env) const
-        {
-            check(env, copy, fn);
-        }
 
-      F fn;
-      copy_construction_preservation<F> copy;
-    };
+  // Check if T is regular.
+  template <typename T, typename Env>
+    void check_regular(Env& env)
+    {
+      auto var = checkable_var<T>(env);
+      check_regular(env, var);
+    }
+
+
+
+  // TODO: We do not have semantics for functions because most functions are
+  // not equality comparable -- and they're kind of weird besides. I can't
+  // really generate random function objects. It would be nice to assert
+  // these properties, but I'm not entirely sure how yet.
 
 
 
@@ -350,16 +520,19 @@ namespace origin
   // for all posssible inputs to the function, including the implicit program
   // state. In other words, given the same arguments, the function always
   // gives the same results.
+  //
+  // Note that arguments to this test must be given as tuples.
   template <typename F>
     struct equality_preserving
     {
       equality_preserving(F f = {}) : fn(f) { }
 
       template <typename... Args>
-        auto operator()(Args&&... args) const
-          -> Requires<Function<F, Args...>(), bool> 
+        auto operator()(const std::tuple<Args...>& args1, 
+                        const std::tuple<Args...>& args2) const
+          -> Requires<Regular_function<F, Args...>(), bool>
         {
-          return fn(args...) == fn(args...);
+          return tuple_invoke(fn, args1) == tuple_invoke(fn, args2);
         }
 
       F fn;
@@ -369,19 +542,68 @@ namespace origin
 
   // Regular function semantics (specification)
   // A regular function is equality preserving: equal inputs yield equal
-  // outputs.
+  // outputs. 
+  //
+  // Note that the random variable over which the test is quantified must be a 
+  // tuple generator of the specified argument types.
+  //
+  // This class does not evaluate the copy semantics of functions since 
+  // functions are not generally equality comparable (i.e., we can't check
+  // the property.
   template <typename F>
     struct regular_function_semantics
     {
       regular_function_semantics(F f = {}) : regular(f) { }
 
-      template <typename Env, typename... Vars>
-        void operator()(Env& env, Vars&&... vars) const
+      template <typename Env, typename Var>
+        void operator()(Env& env, Var&& var) const
         {
-          check(env, regular, std::forward<Vars>(vars)...);
+          check(env, regular, var, var);
         }
 
       equality_preserving<F> regular;
     };
+
+
+
+  // The signature for checking the semantics of regular functions is a bit 
+  // different than the usual approach.
+  //
+  // check_regular_function<F(Args...)>(enf, f)
+  //
+  // where f is the function object or pointer under test and F(Args...) is
+  // its function type. Note that if f is a function pointer, then decltype(f)
+  // will yield a type expression like F(Args...).
+  //
+  // TODO: I could extend this for check(env, f, vars...) where vars are
+  // independent distributions.
+  template <typename Sig, typename Env, typename F>
+    inline void check_regular_function(Env& env, F f)
+    {
+      static_assert(Tuple_callable<F, Argument_types<Sig>>(), "");
+
+      auto var = checkable_var<Argument_types<Sig>>(env);
+      regular_function_semantics<F> spec{f};
+      check(env, spec, var);
+    }
+
+
+
+  template <typename Sig, typename Env, typename P>
+    inline void check_predicate(Env& env, P pred)
+    {
+      static_assert(Tuple_callable<P, Argument_types<Sig>>(), "");
+      check_regular_function<Sig>(env, pred);
+    }
+
+
+
+  template <typename Sig, typename Env, typename R>
+    inline void check_relation(Env& env, R comp)
+    {
+      static_assert(Tuple_callable<R, Argument_types<Sig>>(), "");
+      check_regular_function<Sig>(env, comp);
+    }
+
 
 } // namespace origin

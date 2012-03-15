@@ -34,31 +34,39 @@
 
 namespace origin
 {
-  // Utility types:
-  
+  // Default type (utility)  
   // The default_t type is a tag class used to indicate the selection of a
   // default value. This is only used to support class template specialization.
   struct default_t { };
 
   
+
+  // Unspecified type (utility)
   // The unspecified_t type is a tag class used to indicate that an argument
   // for a template parameter has not been specified.
   struct unspecified_t { };
 
   
+
+  // Empty type (utility)
   // The empty type is an empty, trivial type that is meant to be used as a
   // placeholder for unspecified types in containers or other data structures.
   struct empty_t { };
 
-  // Make sure that empty is I/O-streamable.
-  template<typename Char, typename Traits>
+
+
+  // Streamable<empty_t>
+  //
+  // TODO: Should we actually read and/or write something for this type? It
+  // might be kind of nice.
+  template <typename Char, typename Traits>
     inline std::basic_ostream<Char, Traits>& 
     operator<<(std::basic_ostream<Char, Traits>& os, empty_t)
     { 
       return os; 
     }
 
-  template<typename Char, typename Traits>
+  template <typename Char, typename Traits>
     inline std::basic_istream<Char, Traits>& 
     operator>>(std::basic_istream<Char, Traits>& is, empty_t&)
     { 
@@ -66,8 +74,15 @@ namespace origin
     }
     
     
-  template<typename T>
-    constexpr bool lazy_false()
+
+  // Laze false (trait)
+  // The lazy false function always evaluates to false. However, being a
+  // template, any calls to this function are inherently dependent on the
+  // argument type. Therefore, the compiler cannot eagerly replace the function
+  // call with the false literal. This is sometimes used to defer static
+  // assertions that are known to be failure cases.
+  template <typename T>
+    constexpr bool Lazy_false()
     {
       return false;
     }

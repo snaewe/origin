@@ -205,6 +205,8 @@ namespace origin
   // more fully thought out approaches to input classification, conditional
   // properties, and property/input association. There's a lot of work that
   // could go into this.
+  //
+  // TODO: Make sure that this wraps a random number generator.
   struct basic_checker
   {
     template <typename P, typename... Args>
@@ -225,15 +227,40 @@ namespace origin
   // Assert checker (checking environment)
   // The assert checker simply asserts the validity of a specification. This
   // is useful for debugging.
-  struct assert_checker
-  {
-    template <typename P, typename... Args>
-      void operator()(P pred, Args&&... args) const
-      {
-        assert(pred(std::forward<Args>(args)...));
-      }
-  };
-    
+  template <typename Eng>
+    class assert_checker
+    {
+    public:
+      explicit assert_checker(Eng eng) : eng(eng) { }
+
+
+      // Evaluate the given predicate by asserting it.
+      template <typename P, typename... Args>
+        void operator()(P pred, Args&&... args) const
+        {
+          assert(pred(std::forward<Args>(args)...));
+        }
+
+
+      // Return the psuedo random number engine.
+      Eng& random_engine()       { return eng; }
+      Eng  random_engine() const { return eng; }
+
+    private:
+      Eng eng; // Random number engine
+    };
+
+
+
+  // Return a random variable for the given type T that will be used for
+  // checking in the given environment.
+  template <typename T, typename Env>
+    auto checkable_var(Env& env) 
+      -> decltype(make_random<T>(env.random_engine()))
+    {
+      return make_random<T>(env.random_engine());
+    }
+
 } // namespace origin
 
 #include <origin/testing/relations.hpp>

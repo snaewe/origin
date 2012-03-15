@@ -207,18 +207,21 @@ namespace origin
     }
     
 
+
   // Regular Function (concept)
   // A regular function is a Function that is also equality preserving. This 
   // is a purely semantic refinement of Function, so the two are statically 
   // synonymous.
+  //
+  // FIXME: Should it be the 
   template <typename F, typename... Args>
     constexpr bool Regular_function()
     {
-      return Function<F, Args...>();
+      return Function<F, Args...>() && !Same<Result_of<F(Args...)>, void>();
     }
 
-    
-    
+
+
   // Predicates
   // A predicate is a regular function whose result type is convertible to
   // bool.
