@@ -169,8 +169,8 @@ namespace origin
         --n;
       }
     }
-    
-  
+
+
 
   // Check the unary property specification 100 times.
   template <typename Env, typename Check, typename Var>
@@ -227,10 +227,11 @@ namespace origin
   // Assert checker (checking environment)
   // The assert checker simply asserts the validity of a specification. This
   // is useful for debugging.
-  template <typename Eng>
+  template <typename Eng = std::minstd_rand>
     class assert_checker
     {
     public:
+      assert_checker() : eng() { }
       explicit assert_checker(Eng eng) : eng(eng) { }
 
 
@@ -266,5 +267,6 @@ namespace origin
 #include <origin/testing/relations.hpp>
 #include <origin/testing/concepts.hpp>
 #include <origin/testing/iterators.hpp>
+#include <origin/testing/archetypes.hpp>
 
 #endif

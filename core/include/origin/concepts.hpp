@@ -174,8 +174,8 @@ namespace origin
   template <typename T>
     constexpr bool Regular()
     {
-      return Default_constructible<T>
-          && Copyable<T> 
+      return Default_constructible<T>()
+          && Copyable<T>()
           && Equality_comparable<T>();
     }
     
@@ -267,6 +267,7 @@ namespace origin
     {
       return Relation_concept<R, T, U>::check();
     }
+
 
 
   // Relation properties

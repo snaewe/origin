@@ -231,9 +231,10 @@ namespace origin
   template <typename T>
     class single_value_distribution
     {
+      static_assert(Equality_comparable<T>(), "");
+
       using this_type = single_value_distribution<T>;
     public:
-      static_assert(Equality_comparable<T>(), "");
 
       using result_type = T;
 
@@ -251,6 +252,38 @@ namespace origin
 
     private:
       T value;
+    };
+
+
+
+  // Adapated distribution
+  // The adapted generator type is a random value generator that wraps randomly
+  // generated values of Dist into the Result type. Note that Result type must 
+  // be constructible over the result of Dist.
+  template <typename Dist, typename Result>
+    class adapted_distribution
+    {
+      static_assert(Constructible<Result, Result_type<Dist>>(), "");
+
+      using this_type = adapted_distribution<Dist, Result>;
+      using wrapped_type = Result_type<Dist>;
+    public:
+      using result_type = Result;
+
+      adapted_distribution() : dist(default_distribution<wrapped_type>()) { }
+      adapted_distribution(const Dist& dist) : dist(dist) { }
+
+      template <typename Eng>
+        result_type operator()(Eng& eng)
+        {
+          return result_type(dist(eng));
+        }
+
+      bool operator==(const this_type& x) const { return dist == x.dist; }
+      bool operator!=(const this_type& x) const { return dist != x.dist; }
+
+  private:
+      Dist dist;
     };
 
 

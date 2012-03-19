@@ -87,6 +87,17 @@ namespace origin
       return false;
     }
 
+
+
+  // Swap (utility)
+  // A wrapper for the use of std::swap.
+  template <typename T>
+    void o_swap(T& a, T& b)
+    {
+      using std::swap;
+      swap(a, b);
+    }
+
 } // namespace origin
 
 #endif
