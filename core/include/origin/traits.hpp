@@ -315,7 +315,25 @@ namespace origin
     using Remove_reference = typename std::remove_reference<T>::type;
 
     
-    
+
+  // Member data
+
+  // Returns true if T is a pointer to a member variable.
+  template <typename T>
+    constexpr bool Member_object_pointer()
+    {
+      return std::is_member_object_pointer<T>::value;
+    }
+
+  // Returns true if T is a member function pointer.
+  template <typename T>
+    constexpr bool Member_function_pointer()
+    {
+      return std::is_member_function_pointer<T>::value;
+    }
+
+
+
   // Composite ctaegories
     
   // Returns true if T is an object type. References and function types are
@@ -340,7 +358,7 @@ namespace origin
   template <typename T>
     constexpr bool Arithmetic() { return std::is_arithmetic<T>::value; }
     
-    
+
     
   // Qualifiers
   

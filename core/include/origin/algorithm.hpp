@@ -1144,28 +1144,38 @@ namespace origin
   //
   // TODO: Implement a (perfect) riffle algorithm.
 
-  // Reverse
-  //
-  // FIXME: Optimize for andom access iterators.
-  template<typename I>
+
+
+  // Reverse (iterator)
+  template <typename I>
     void o_reverse(I first, I last)
     {
-      while(first != last) {
+      while (first != last) {
         --last;
-        if(first == last)
+        if (first == last)
           break;
         iter_swap(first, last);
         ++first;
       }
     }
   
+
+
+  // Reverse (range)
+  template <typename R>
+    void reverse(R&& range)
+    {
+      static_assert(Bidirectional_range<Forwarded<R>>(), "");
+      return o_reverse(o_begin(range), o_end(range));
+    }
   
+
   
   // Reverse copy
-  template<typename I, typename O>
+  template <typename I, typename O>
     void o_reverse_copy(I first, I last, O result)
     {
-      while(first != last) {
+      while (first != last) {
         --result;
         *result = *first;
         ++first;
@@ -1211,21 +1221,30 @@ namespace origin {
   
 
   // Random shuffle
-  template<typename I>
+  template <typename I>
     void o_random_shuffle(I first, I last)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Permutation<I>(), "");
 
       
-      if(first != last) {
-        for(I i = first + 1; i != last; i != last)
+      if (first != last) {
+        for (I i = first + 1; i != last; ++i)
           iter_swap(i, first + rand() % ((i - first) + 1));
       }
     }
 
-    
-  
+
+
+  // Random shuffle (range)
+  template <typename R>
+    void random_shuffle(R&& range)
+    {
+      return o_random_shuffle(o_begin(range), o_end(range));
+    }
+
+
+      
   // Random shuffle (generator)
   template<typename I, typename Gen>
     void o_random_shuffle(I first, I last, Gen&& rand)
@@ -1234,14 +1253,25 @@ namespace origin {
       static_assert(Permutation<I>(), "");
 
       if(first != last) {
-        for(I i = first + 1; i != last; i != last)
+        for(I i = first + 1; i != last; ++i)
           iter_swap(i, first + rand((i - first) + 1));
       }
     }
     
   
-  
-  // Shuffle
+
+  // Random shuffle (range)
+  template <typename R, typename Gen>
+    void random_shuffle(R&& range, Gen&& rand)
+    {
+      return o_random_shuffle(o_begi(range), o_end(range), rand);
+    }
+
+
+
+  // Shuffle (iterator)
+  //
+  // FIXME: Implement me!
   template<typename I, typename Gen>
     void o_shuffle(I first, I last, Gen&& rand)
     {
@@ -1249,6 +1279,15 @@ namespace origin {
       static_assert(Permutation<I>(), "");
       
       std::shuffle(first, last, std::forward<Gen>(rand));
+    }
+
+
+
+    // Shuffle (range)
+  template <typename R, typename Gen>
+    void shuffle(R&& range, Gen&& rand)
+    {
+      o_shuffle(o_begin(range), o_end(range), rand);
     }
     
 

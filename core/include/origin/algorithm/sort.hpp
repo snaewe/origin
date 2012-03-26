@@ -172,7 +172,7 @@ namespace origin
     {
       static_assert(Sort<I, R>(), "");
       assert(is_permutable_range(first, last));
-      assert(is_strict_weak_ordering(first, last));
+      assert(is_strict_weak_order(comp));
       
       return std::sort(first, last, comp);
     }
