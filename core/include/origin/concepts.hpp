@@ -203,7 +203,7 @@ namespace origin
   template <typename F, typename... Args>
     constexpr bool Function()
     {
-      return Has_call<F, Args...>();
+      return Copy_constructible<F>() && Has_call<F, Args...>();
     }
     
 
