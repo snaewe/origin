@@ -44,30 +44,27 @@ int main()
 
   // Calling an memvar accessor with a non-const object returns a non-const
   // reference to the object.
-  auto p_first = &person::first;
-  Accessor_function<decltype(p_first)> a_first(p_first);
+  auto a_first = make_accessor(&person::first);
   static_assert(Same<decltype(a_first(p)), string&>(), "");
   static_assert(Same<decltype(a_first(cp)), const string&>(), "");
 
   // If the member variable is constant (or a const ref), then the resulting
   // referenc is always const-qualified.
-  auto p_empty = &person::empty;
-  Accessor_function<decltype(p_empty)> a_empty(p_empty);
+  auto a_empty = make_accessor(&person::empty);
   static_assert(Same<decltype(a_empty(p)), const string&>(), "");
   static_assert(Same<decltype(a_empty(cp)), const string&>(), "");
 
 
   // A const-memfun accessor can be called on a const or non-const object and
   // has the same result type as the wrapped member function.
-  auto p_get_first = &person::get_first;
-  Accessor_function<decltype(p_get_first)> a_get_first {p_get_first};
+  auto a_get_first = make_accessor(&person::get_first);
   static_assert(Same<decltype(a_get_first(p)), const string&>(), "");
   static_assert(Same<decltype(a_get_first(cp)), const string&>(), "");
 
   // A non-const memfun accessor cannot be called on a const-qualified object.
   // The result of the operation is the same as the wrapped member function.
-  auto p_mutable_first = &person::mutable_first;
-  Accessor_function<decltype(p_mutable_first)> a_mutable_first(p_mutable_first);
+  auto a_mutable_first = make_accessor(&person::mutable_first);
   static_assert(Same<decltype(a_mutable_first(p)), string&>(), "");
+  // static_assert(Same<decltype(a_mutable_first(cp)), const string&>(), "");
 }
 

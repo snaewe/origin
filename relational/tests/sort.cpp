@@ -16,6 +16,38 @@ using namespace std;
 using namespace origin;
 
 
+
+template <typename R>
+  void print(const R& range)
+  {
+    for(const auto& x : range)
+      cout << x;
+  }
+
+// FIXME: Implement this generically for tuples.
+
+template <typename C, typename CT, typename T>
+  inline basic_ostream<C, CT>& 
+  operator<<(basic_ostream<C, CT>& os, const tuple<T>& t)
+  {
+    return os << '{' << get<0>(t) << '}';
+  }
+
+template <typename C, typename CT, typename T1, typename T2>
+  inline basic_ostream<C, CT>& 
+  operator<<(basic_ostream<C, CT>& os, const tuple<T1, T2>& t)
+  {
+    return os << '{' << get<0>(t) << ", " << get<1>(t) << '}';
+  }
+
+template <typename C, typename CT, typename T1, typename T2, typename T3>
+  inline basic_ostream<C, CT>& 
+  operator<<(basic_ostream<C, CT>& os, const tuple<T1, T2, T3>& t)
+  {
+    return os << '{' << get<0>(t) << ", " << get<1>(t) << ", " << get<2>(t) << '}';
+  }
+
+
 // Represents a person. There are some data fields.
 struct person 
 {
@@ -29,6 +61,8 @@ struct person
     reverse(result);
     return result;
   }
+
+  string& mutable_last() { return last; }
 };
 
 // Output_streamable.
@@ -58,13 +92,6 @@ struct get_num
 
 
 
-template <typename R>
-  void print(const R& range)
-  {
-    for(const auto& x : range)
-      cout << x;
-  }
-
 
 int main()
 {
@@ -83,19 +110,19 @@ int main()
     {"Hugh", "Lobue", 28},
   };
 
+  auto a1 = &person::first;
+  auto a2 = get_last {};
+  auto a3 = &person::first_reverse;
+  auto a4 = &person::mutable_last;
 
-  project(v[0], &person::first, get_first {});
+  // NOTE: Can't use a4 because its a non-const operation, and comparators
+  // bind their arguments by const reference. Should they?
 
-  /*
-  multi_sort(v, &person::first, get_last {});
+  // Yes, I'm sorting by the last letter in the first name.
+  sort_ascending(v, a3, a2, a1);
   print(v);
   cout << '\n';
-
-  random_shuffle(v);
-  multi_sort(v, &person::first_reverse, &person::first);
+  sort_descending(v, a1, a2);
   print(v);
-  cout << '\n';
-  // multi_sort(v, &)
-  */
 }
 
