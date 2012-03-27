@@ -8,6 +8,8 @@
 #ifndef ORIGIN_COUNTING_HPP
 #define ORIGIN_COUNTING_HPP
 
+#include <cassert>
+
 namespace origin
 {
   // FIXME: How do we represent identity elements?
