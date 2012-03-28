@@ -334,6 +334,72 @@ namespace origin
 
 
 
+  // Infrastructure for accessing a member pointer's pointee and class types.
+  // FIXME: Extend these traits with accessors for this pointers of member
+  // functions and (perhaps), their argument tuples.
+  namespace traits
+  {
+    template <typename Memptr>
+      struct member_pointer_traits
+      {
+        using result_type = subst_failure;
+        using class_type = subst_failure;
+      };
+
+    template <typename T, typename C>
+      struct member_pointer_traits<T(C::*)>
+      {
+        using result_type = T;
+        using class_type = C;
+      };
+
+    template <typename T, typename C, typename... Args>
+      struct member_pointer_traits<T(C::*)(Args...)>
+      {
+        using result_type = T;
+        using class_type = C;
+      };
+
+    template <typename T, typename C, typename... Args>
+      struct member_pointer_traits<T(C::*)(Args...) const>
+      {
+        using result_type = T;
+        using class_type = C;
+      };
+
+    template <typename T, typename C, typename... Args>
+      struct member_pointer_traits<T(C::*)(Args...) volatile>
+      {
+        using result_type = T;
+        using class_type = C;
+      };
+
+    template <typename T, typename C, typename... Args>
+      struct member_pointer_traits<T(C::*)(Args...) const volatile>
+      {
+        using result_type = T;
+        using class_type = C;
+      };
+  } // namespace traits
+
+
+
+  // Member pointee type (alias)
+  // An alias to a member pointer's pointee type.
+  template <typename Ptr>
+    using Member_result_type = 
+      typename traits::member_pointer_traits<Ptr>::result_type;
+
+
+
+  // Member class type (alias)
+  // An alias to a member pointer's class type.
+  template <typename Ptr>
+    using Member_class_type = 
+      typename traits::member_pointer_traits<Ptr>::class_type;
+
+
+
   // Composite ctaegories
     
   // Returns true if T is an object type. References and function types are

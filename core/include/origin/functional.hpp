@@ -335,7 +335,7 @@ namespace origin
     struct o_less<default_t, default_t>
     {
       template <typename T, typename U>
-        bool operator()(const T a, const U b) const
+        bool operator()(const T& a, const& U b) const
         {
           static_assert(Totally_ordered<T, U>(), "");
           return a < b;
