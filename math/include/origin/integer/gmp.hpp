@@ -16,11 +16,7 @@
 
 namespace origin
 {
-	// TODO: Why don't I ship this as part of a binary library? Header only
-	// doesn't make that much sense for this implementation! In fact,
-	// exposing this header doesn't make any sense either. On the other hand,
-	// all these functions are quite trivial and should be inlined.
-
+	// TODO: Remove this implementation once we have our own bigint class.
 
 	namespace gmp
 	{
@@ -94,6 +90,19 @@ namespace origin
 		// Decrementable
 		integer_impl& operator--();
 		integer_impl operator--(int);
+
+
+		// Binary oerations
+		integer_impl& operator&=(const integer_impl& x);
+		integer_impl operator&(const integer_impl& x) const;
+
+		integer_impl& operator|=(const integer_impl& x);
+		integer_impl operator|(const integer_impl& x) const;
+
+		integer_impl& operator^=(const integer_impl& x);
+		integer_impl operator^(const integer_impl& x) const;
+
+		integer_impl operator~() const;
 
 		// Numeric operations
 		integer_impl abs() const;
@@ -176,27 +185,27 @@ namespace origin
 	}
 
 	// Totally_ordered
-	bool integer_impl::operator<(const integer_impl& x) const
+	inline bool integer_impl::operator<(const integer_impl& x) const
 	{
 		return mpz_cmp(value, x.value) < 0;
 	}
 
-	bool integer_impl::operator>(const integer_impl& x) const
+	inline bool integer_impl::operator>(const integer_impl& x) const
 	{
 		return mpz_cmp(value, x.value) > 0;
 	}
 
-	bool integer_impl::operator<=(const integer_impl& x) const
+	inline bool integer_impl::operator<=(const integer_impl& x) const
 	{
 		return !(*this > x);
 	}
 
-	bool integer_impl::operator>=(const integer_impl& x) const
+	inline bool integer_impl::operator>=(const integer_impl& x) const
 	{
 		return !(*this < x);
 	}
 
-	integer_impl& integer_impl::operator+=(const integer_impl& x)
+	inline integer_impl& integer_impl::operator+=(const integer_impl& x)
 	{
 		mpz_add(value, value, x.value);
 		return *this;
@@ -204,9 +213,8 @@ namespace origin
 	
 	integer_impl integer_impl::operator+(const integer_impl& x) const
 	{
-		integer_impl tmp;
-		mpz_add(tmp.value, value, x.value);
-		return tmp;
+		integer_impl tmp {*this};
+		return tmp += x;
 	}
 	
 	integer_impl& integer_impl::operator-=(const integer_impl& x)
@@ -217,9 +225,8 @@ namespace origin
 	
 	integer_impl integer_impl::operator-(const integer_impl& x) const
 	{
-		integer_impl tmp;
-		mpz_sub(tmp.value, value, x.value);
-		return tmp;
+		integer_impl tmp {*this};
+		return tmp -= x;
 	}
 
 	integer_impl& integer_impl::operator*=(const integer_impl& x)
@@ -230,38 +237,36 @@ namespace origin
 
 	integer_impl integer_impl::operator*(const integer_impl& x) const
 	{
-		integer_impl tmp;
-		mpz_mul(tmp.value, value, x.value);
-		return tmp;
+		integer_impl tmp {*this};
+		return tmp *= x;
 	}
 
-	// TODO: Am I dividing correctly? Is integer division truncated or is it
-	// floor. The GMP difference is a bit subtle.
+	// NOTE: Division and remainder are computed using truncated division, where
+	// the quotient is rounded towards 0, and the remainder has the same sign
+	// as the dividend. I think.
 
 	integer_impl& integer_impl::operator/=(const integer_impl& x)
 	{
-		mpz_fdiv_q(value, value, x.value);
+		mpz_tdiv_q(value, value, x.value);
 		return *this;
 	}
 	
 	integer_impl integer_impl::operator/(const integer_impl& x) const
 	{
-		integer_impl tmp;
-		mpz_fdiv_q(tmp.value, value, x.value);
-		return tmp;
+		integer_impl tmp {*this};
+		return tmp /= x;
 	}
 
 	integer_impl& integer_impl::operator%=(const integer_impl& x)
 	{
-		mpz_mod(value, value, x.value);
+		mpz_tdiv_r(value, value, x.value);
 		return *this;
 	}
 	
 	integer_impl integer_impl::operator%(const integer_impl& x) const
 	{
-		integer_impl tmp;
-		mpz_mod(tmp.value, value, x.value);
-		return tmp;
+		integer_impl tmp {*this};
+		return tmp %= x;
 	}
 
 	integer_impl integer_impl::operator-() const
@@ -292,6 +297,49 @@ namespace origin
 	{
 		integer_impl tmp = *this;
 		operator--();
+		return tmp;
+	}
+
+	integer_impl& integer_impl::operator&=(const integer_impl& x)
+	{
+		mpz_and(value, value, x.value);
+		return *this;
+	}
+
+	integer_impl integer_impl::operator&(const integer_impl& x) const
+	{
+		integer_impl tmp {*this};
+		return tmp &= x;
+	}
+
+	integer_impl& integer_impl::operator|=(const integer_impl& x)
+	{
+		mpz_ior(value, value, x.value);
+		return *this;
+	}
+
+	integer_impl integer_impl::operator|(const integer_impl& x) const
+	{
+		integer_impl tmp {*this};
+		return tmp |= x;
+	}
+
+	integer_impl& integer_impl::operator^=(const integer_impl& x)
+	{
+		mpz_xor(value, value, x.value);
+		return *this;
+	}
+
+	integer_impl integer_impl::operator^(const integer_impl& x) const
+	{
+		integer_impl tmp {*this};
+		return tmp ^= x;
+	}
+
+	integer_impl integer_impl::operator~() const
+	{
+		integer_impl tmp;
+		mpz_com(tmp.value, value);
 		return tmp;
 	}
 

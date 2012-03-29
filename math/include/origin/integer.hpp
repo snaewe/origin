@@ -83,8 +83,11 @@ namespace origin
     integer& operator%=(const integer& x) { impl %= x.impl; return *this; }
     integer operator%(const integer& x) const { return impl % x.impl; }
 
-    // Negation
+    // Negation and absolute value
     integer operator-() const { return -impl; }
+
+    // FIXME: Why oh why can't I declare abs as an operator?
+    integer abs() const { return impl.abs(); }
 
     // Incrementable
     integer& operator++() { ++impl; return *this; }
@@ -100,6 +103,15 @@ namespace origin
   };
 
 
+
+  // Numeric algorithms
+  inline integer abs(const integer& n)
+  {
+    return n.abs();
+  }
+
+
+  // Output streamable
   template <typename C, typename T>
     std::basic_ostream<C, T>& 
     operator<<(std::basic_ostream<C, T>& os, const integer& i)
@@ -109,13 +121,11 @@ namespace origin
 
 
   // Input streamable
-  //
-  // FIXME: Implement me!
   template <typename C, typename T>
     std::basic_istream<C, T>& 
     operator<<(std::basic_istream<C, T>& is, integer& i)
     {
-      return is;
+      return is >> is.base();
     }
 
 } // namespace origin

@@ -16,9 +16,9 @@
 
 namespace origin
 {
-  // TODO: Make a basic_real template that is parameterized over rounding
-  // mode and floating point exceptions. Then, make real an alias to the
-  // basic real with default properties.
+  // TODO: This is a work in progress. Make a basic_real template that is
+  // parameterized over rounding mode and floating point exceptions. Then, make
+  // real an alias to the basic real with default properties.
 
 
   // Real

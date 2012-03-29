@@ -15,6 +15,22 @@
 using namespace std;
 using namespace origin;
 
+template <typename T>
+	void check_divmod()
+	{
+		assert(T {5} / T {2} == T {2});
+		assert(T {5} / T {-2} == T {-2});
+		assert(T {-5} / T {2} == T {-2});
+		assert(T {-5} / T {-2} == T {2});
+
+		// C++11 requires that the result of % have the same sign as the
+		// dividend.
+		assert(T {5} % T {2} == T {1});
+		assert(T {5} % T {-2} == T {1});
+		assert(T {-5} % T {2} == T {-1});
+		assert(T {-5} % T {-2} == T {-1});
+	}
+
 
 int main()
 {
@@ -23,5 +39,7 @@ int main()
 	cout << -i << '\n';
 	cout <<  i + integer(3) << '\n';
 
-	cout << factorial(integer {100}) << '\n';
+	// Test division/remainder.
+	check_divmod<int>();
+	check_divmod<integer>();
 }
