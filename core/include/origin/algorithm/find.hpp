@@ -298,8 +298,7 @@ namespace origin
   template<typename R, typename P>
     inline auto find_if(R&& range, P pred) -> decltype(o_begin(range))
     {
-      static_assert(Query<Unqualified<R>, P>(), "");
-      
+      static_assert(Range_query<Forwarded<R>, P>(), "");
       return o_find_if(o_begin(range), o_end(range), pred);
     }
     
@@ -330,7 +329,7 @@ namespace origin
   template <typename R, typename P>
     inline auto find_if_not(R&& range, P pred) -> decltype(o_begin(range))
     {
-      static_assert(Query<Unqualified<R>, P>(), "");
+      static_assert(Range_query<Unqualified<R>, P>(), "");
       
       return o_find_if_not(o_begin(range), o_end(range), pred);
     }

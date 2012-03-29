@@ -140,6 +140,16 @@ namespace origin
   template<typename C>
     using Container_pointer = Address_result<Iterator_type<C>>;
     
+
+
+  // Sequence
+  //
+  // FIXME: This is not at all correct.
+  template <typename S>
+    constexpr bool Sequence()
+    {
+      return Range<S>();
+    }
     
 
   // Associative containers

@@ -165,18 +165,21 @@ namespace origin
     void quick_check_impl(int n, Env& env, Check c, Args&&... args)
     {
       while(n != 0) {
-        check(c, std::forward<Args>(args)...);
+        check(env, c, std::forward<Args>(args)...);
         --n;
       }
     }
 
+
+  // FIXME: Rewrite this so it's variadic, and then pull the optionally
+  // specified count off the end of the argument list.
 
 
   // Check the unary property specification 100 times.
   template <typename Env, typename Check, typename Var>
     void quick_check(Env& env, Check c, Var&& var, int n = 100)
     {
-      check_n_impl(n, c, var);
+      quick_check_impl(n, env, c, var);
     }
     
   
@@ -185,7 +188,7 @@ namespace origin
   template <typename Env, typename Check, typename Var1, typename Var2>
     void quick_check(Env& env, Check c, Var1&& var1, Var2&& var2, int n = 100)
     {
-      check_n_impl(n, c, var1, var2);
+      quick_check_impl(n, env, c, var1, var2);
     }
 
   
@@ -194,7 +197,7 @@ namespace origin
   template <typename Env, typename Check, typename Var1, typename Var2, typename Var3>
     void quick_check(Env& env, Check c, Var1&& var1, Var2&& var2, Var3&& var3, int n = 100)
     {
-      check_n_impl(n, c, var1, var2, var3);
+      quick_check_impl(n, env, c, var1, var2, var3);
     }
 
 

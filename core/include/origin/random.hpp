@@ -608,69 +608,6 @@ namespace origin
       static Dist get() { return Dist{}; }
     };
 
-
-/*
-  template <> 
-    struct default_distribution_traits<char> : integral_distribution_traits<char> { };
-  template <> 
-    struct default_distribution_traits<signed char> : integral_distribution_traits<signed char> { };
-  template <> 
-    struct default_distribution_traits<unsigned char> : integral_distribution_traits<unsigned char> { };
-
-  template <> 
-    struct default_distribution_traits<short> : integral_distribution_traits<short> { };
-  template <> 
-    struct default_distribution_traits<int> : integral_distribution_traits<int> { };
-  template <> 
-    struct default_distribution_traits<long> : integral_distribution_traits<long> { };
-  template <> 
-    struct default_distribution_traits<long long> : integral_distribution_traits<long long> { };
-  
-  template <> 
-    struct default_distribution_traits<unsigned short> : integral_distribution_traits<unsigned short> { };
-  template <> 
-    struct default_distribution_traits<unsigned int> : integral_distribution_traits<unsigned int> { };
-  template <> 
-    struct default_distribution_traits<unsigned long> : integral_distribution_traits<unsigned long> { };
-  template <> 
-    struct default_distribution_traits<unsigned long long> : integral_distribution_traits<unsigned long long> { };
-  
-  template <> 
-    struct default_distribution_traits<float> : floating_point_distribution_traits<float> { };
-  template <> 
-    struct default_distribution_traits<double> : floating_point_distribution_traits<double> { };
-  template <> 
-    struct default_distribution_traits<long double> : floating_point_distribution_traits<long double> { };
-  
-    
-  // Specialization for sequence types
-  template <typename T, typename A>
-    struct default_distribution_traits<std::vector<T, A>> 
-      : sequence_distribution_traits<std::vector<T, A>>
-    { };
-
-  template <typename T, typename A>
-    struct default_distribution_traits<std::forward_list<T, A>> 
-      : sequence_distribution_traits<std::vector<T, A>>
-    { };
-
-  template <typename T, typename A>
-    struct default_distribution_traits<std::list<T, A>> 
-      : sequence_distribution_traits<std::vector<T, A>>
-    { };
-
-  template <typename T, typename A>
-    struct default_distribution_traits<std::deque<T, A>> 
-      : sequence_distribution_traits<std::vector<T, A>>
-    { };
-
-  // TODO: Specialize generators for other container types.
-  //
-  // TODO: Is there some kind of pattern that would allow me to write
-  // specializations in terms of concepts instead individually by type?
-
-  */
-
 } // namespace origin
 
 #endif
