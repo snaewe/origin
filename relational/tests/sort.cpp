@@ -102,7 +102,7 @@ int main()
     {"Clinton", "Welden", 23},
     {"Lonnie", "Rochford", 40},
     {"Javier", "Fragale", 26},
-    {"Jessie", "Altom", 46},
+    {"Lonnie", "Altom", 46},
     {"Clayton", "Wensel", 38},
     {"Fernando", "Maffett", 48},
     {"Mathew", "Pecor", 45},
@@ -120,6 +120,8 @@ int main()
 
   // Yes, I'm sorting by the last letter in the first name.
   sort_ascending(v, a3, a2, a1);
+
+
   print(v);
   cout << '\n';
   sort_descending(v, a1, a2);

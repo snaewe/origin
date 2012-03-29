@@ -14,5 +14,6 @@
 macro(origin_executable progname)
     # Register the executable as before.
     add_executable(${progname} ${ARGN})
+    target_link_libraries(${progname} ${ORIGIN_LIBRARIES})
 endmacro()
 

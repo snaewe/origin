@@ -38,4 +38,5 @@ if(NOT ORIGIN_INCLUDED)
   include(OriginTest)
   include(OriginInstall)
   include(OriginPackage)
+
 endif()
