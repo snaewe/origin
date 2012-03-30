@@ -15,69 +15,125 @@ using namespace std;
 using namespace origin;
 
 
-// The all of quantifier is true when no element can be found that does not
-// satsify the given predicate. That is, the following expression must be
-// true:
-//
-// 		all_of(range, pred) <=> find_if_not(range, pred) == end(range)
-//
-// for all ranges and predicates.
+// Quantifiers in terms of find algorithms.
+
 template <typename R, typename P>
-	struct all_of_equiv_find_if
+	struct all_equiv_find
 	{
-		P pred;
-
-		all_of_equiv_find_if(P pred) : pred(pred) { }
-
-		bool operator()(const R& range) const
+		bool operator()(const R& range, P pred) const
 		{
 			return all_of(range, pred) == (find_if_not(range, pred) == end(range));
 		}
 	};
 
-
-// The all of quantifier is true when the number of elements in the range
-// that satisfy the predicate is equal to the size of the range. That is, the 
-// is true:
-//
-// 		all_of(range, pred) <=> count_if(range, pred) == distance(range)
-//
-// for all ranges and predicates.
 template <typename R, typename P>
-	struct all_of_equiv_count_if
+	struct some_equiv_find
 	{
-		P pred;
+		bool operator()(const R& range, P pred) const
+		{
+			return some_of(range, pred) == (find_if(range, pred) != end(range));
+		}
+	};
 
-		all_of_equiv_count_if(P pred) : pred(pred) { }
+template <typename R, typename P>
+	struct nall_equiv_all
+	{
+		bool operator()(const R& range, P pred) const
+		{
+			return not_all_of(range, pred) == !all_of(range, pred);
+		}
+	};
 
-		bool operator()(const R& range) const
+template <typename R, typename P>
+	struct none_equiv_some
+	{
+		bool operator()(const R& range, P pred) const
+		{
+			return none_of(range, pred) == !some_of(range, pred);
+		}
+	};
+
+
+// Quantifiers in terms of counting algorithms. Because a range has size
+// 0 to n, a distance n != 0 means implies strictly positive, and n != distance
+// means strictly less than distance.
+
+template <typename R, typename P>
+	struct all_equiv_count
+	{
+		bool operator()(const R& range, P pred) const
 		{
 			return all_of(range, pred) == (count_if(range, pred) == distance(range));
 		}
 	};
 
-
-// Check the specification of find_if.
-// FIXME: Should the specification encompass all Query-like quantifiers?
 template <typename R, typename P>
-	struct all_of_spec
+	struct some_equiv_count
+	{
+		bool operator()(const R& range, P pred) const
+		{
+			return some_of(range, pred) == (count_if(range, pred) != 0);
+		}
+	};
+
+template <typename R, typename P>
+	struct nall_equiv_count
+	{
+		bool operator()(const R& range, P pred) const
+		{
+			return not_all_of(range, pred) == (count_if(range, pred) != distance(range));
+		}
+	};
+
+template <typename R, typename P>
+	struct none_equiv_count
+	{
+		bool operator()(const R& range, P pred) const
+		{
+			return none_of(range, pred) == (count_if(range, pred) == 0);
+		}
+	};
+
+// Check the specification of query-based qualifier predicates.
+//
+// FIXME: Finish writing qualifier requirements in terms of count.
+template <typename R, typename P>
+	struct quantifier_spec
 	{
 		static_assert(Range_query<R, P>(), "");
 
-		all_of_equiv_find_if<R, P> all_find_if;
-		all_of_equiv_count_if<R, P> all_count_if;
+		// Positive queries in terms of find_if
+		all_equiv_find<R, P> all_find;
+		some_equiv_find<R, P> some_find;
 
-		explicit all_of_spec(P pred) 
-			: all_find_if(pred)
-			, all_count_if(pred)
-		{ }
+		// Negations of positive queries.
+		nall_equiv_all<R, P> nall;
+		none_equiv_some<R, P> none;
+		
+		// Queries in terms of counting.
+		all_equiv_count<R, P> all_count;
+		some_equiv_count<R, P> some_count;
+		nall_equiv_count<R, P> nall_count;
+		none_equiv_count<R, P> none_count;
+
+		single_value_distribution<P> pred;
+
+		explicit quantifier_spec(P pred) : pred(pred) { }
 
 		template <typename Env, typename Var>
 			void operator()(Env& env, Var&& var) const
 			{
 				static_assert(Same<Result_type<Forwarded<Var>>, R>(), "");
-				check(env, all_find_if, var);
-				check(env, all_count_if, var);
+
+				auto pvar = make_random(env.random_engine(), pred);
+				check(env, all_find, var, pvar);
+				check(env, some_find, var, pvar);
+				check(env, nall, var, pvar);
+				check(env, none, var, pvar);
+				check(env, all_count, var, pvar);
+				check(env, some_count, var, pvar);
+				check(env, nall_count, var, pvar);
+				check(env, none_count, var, pvar);
 			}
 	};
 
@@ -100,6 +156,6 @@ int main()
 
 	auto var = checkable_var<V>(env);
 
-	all_of_spec<V, P> spec {P {}};
-	quick_check(env, spec, var);
+	quantifier_spec<V, P> spec {P {}};
+	quick_check(env, spec, var, 1000);
 }

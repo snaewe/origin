@@ -222,6 +222,7 @@ namespace origin
   // Additional random number distributions.
 
 
+
   // Single value distribution
   // A single value generator continuously generates the same value. Note
   // that the value type T must be equality comparable.
@@ -231,10 +232,9 @@ namespace origin
   template <typename T>
     class single_value_distribution
     {
-      static_assert(Equality_comparable<T>(), "");
-
       using this_type = single_value_distribution<T>;
     public:
+      static_assert(Equality_comparable<T>(), "");
 
       using result_type = T;
 
@@ -248,7 +248,7 @@ namespace origin
 
       // Equality comparable
       bool operator==(const this_type& x) const { return value == x.value; }
-      bool operator!=(const this_type & x) const {return value != x.value; }
+      bool operator!=(const this_type & x) const {return value == x.value; }
 
     private:
       T value;
