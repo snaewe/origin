@@ -498,7 +498,55 @@ namespace origin
     };
 
     
-    
+
+  // Common numeric predicates
+  // These abstractions are useful for testing numeric values with relation
+  // to 0.
+  //
+  // TODO: It may be better to write these in terms of abtracted generic
+  // algorithsm. I know for a fact that there are more efficient ways to
+  // determine positivity/negativity of integers than comparing two values
+  // (i.e., test the high-order bit!).
+
+
+  template <typename T>
+    struct is_zero_pred
+    {
+      bool operator()(const T& x) const { return x == T {0}; }
+    };
+
+  template <typename T>
+    struct non_zero_pred
+    {
+      bool operator()(const T& x) const { return x != T {0}; }
+    };
+
+
+  template <typename T>
+    struct negative_pred
+    {
+      bool operator()(const T& x) const { return x < T {0}; }
+    };
+
+  template <typename T>
+    struct non_negative_pred
+    {
+      bool operator()(const T& x) const { return x >= T {0}; }
+    };
+
+  template <typename T>
+    struct positive_pred
+    {
+      bool operator()(const T& x) const { return x > T {1}; }
+    };
+
+  template <typename T>
+    struct non_positive_pred
+    {
+      bool operator()(const T& x) const { return x <= T {0}; }
+    };
+
+
   // FIXME: Move the hash module into a separate header and borrow some of
   // Boost's facilities. Hashing is a really fundamental service. It probably
   // shouldn't be brought in with the functional header. Maybe something like

@@ -181,7 +181,7 @@ namespace origin
     }
   
   
-  
+
   // The following type traits and type predicates establish the notion of
   // sized type, some type for which size(x) is valid query. Size is defined
   // in 3 ways:
@@ -341,6 +341,19 @@ namespace origin
     
     
 
+  // Distance (range)
+  // Return the distance between the first and last elements of the range.
+  // Note that the result type of distance may be different than that of the
+  // equivalent computation size().
+  template <typename R>
+    auto distance(const R& range) 
+      -> decltype(o_distance(o_begin(range), o_end(range)))
+    {
+      return o_distance(o_begin(range), o_end(range));
+    }
+
+
+  
   // Range adaptors
   // A range adaptor is a model of a range. These typically wrap other data
   // structures or data elements in such a way that they can be iterated over.

@@ -73,21 +73,14 @@ template <typename Env, typename R, typename P>
   }
 
 
-
-
-struct non_zero
-{
-  bool operator()(int x) const { return x != 0; }
-};
-
-
 int main()
 {
   std::minstd_rand eng(time(0));
   assert_checker<std::minstd_rand> env{eng};
 
   using V = vector<int>;
-  find_if_spec<V, non_zero> spec {non_zero {}};
+  using P = non_zero_pred<int>;
+  find_if_spec<V, P> spec {P {}};
 
   // Non-random testing
   V v1 = {0, 0, 0, 0};
