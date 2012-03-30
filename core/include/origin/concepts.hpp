@@ -54,7 +54,30 @@ namespace origin
       return Equality_comparable_concept<T, U>::check();
     }
 
+} // namespace origin
 
+
+
+// Equality comparison (adaptation)
+// If T has no members, then T's value cannot be distinguished from its type.
+// Effectively, T represents a single value.
+template <typename T>
+  inline auto operator==(const T& a, const T& b) 
+    -> origin::Requires<origin::Empty<T>(), bool>
+  {
+    return true;
+  }
+
+template <typename T>
+  inline auto operator!=(const T& a, const T& b) 
+    -> origin::Requires<origin::Empty<T>(), bool>
+  {
+    return true;
+  }
+
+
+
+namespace origin {
 
   // Weakly ordered (concept)
   // A type is weakly ordered if it defines the standard relational operators
