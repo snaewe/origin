@@ -17,6 +17,5 @@ include(Origin)
 
 
 add_subdirectory(core)
-add_subdirectory(range)
 add_subdirectory(data)
 add_subdirectory(graph)

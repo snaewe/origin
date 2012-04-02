@@ -45,7 +45,7 @@ int main()
   assert(( ord(true) == 1 ));
 
   assert(( ord(numeric_limits<char>::min()) == 0 ));
-  assert(( ord(0) == uint(numeric_limits<int>::max()) + 1 ));
+  assert(( ord(0) == unsigned(numeric_limits<int>::max()) + 1 ));
 
   int o = ord(char{0});
   int c = ordinal_cast<char>(o);

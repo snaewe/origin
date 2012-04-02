@@ -15,7 +15,7 @@
 using namespace std;
 using namespace origin;
 
-struct failure { };
+struct failure { int x; };
 
 int main()
 {
