@@ -6,99 +6,12 @@
 // and conditions.
 
 #include <cassert>
-#include <iostream>
-#include <vector>
-#include <set>
 
-#include <origin/algorithm.hpp>
-#include <origin/container.hpp>
-#include <origin/testing.hpp>
+#include "query.hpp"
 
 using namespace std;
 using namespace origin;
-
-
-
-// Find if not is equivalent to find_if when the predicat is negated.
-template <typename R, typename P>
-  struct find_if_not_equiv
-  {
-    bool operator()(const R& range, P pred) const
-    {
-      return find_if_not(range, pred) == find_if(range, negation<P> {pred});
-    }
-  };
-
-
-
-// Find if (specification)
-template <typename R, typename P>
-  struct find_if_specs
-  {
-    static_assert(Range_query<R, P>(), "");
-
-    find_if_not_equiv<R, P> find_if_not;
-    
-    // Check with specific values.
-    template <typename Env>
-      void operator()(Env& env, const R& range, P pred) const
-      {
-        check(env, find_if_not, range, pred);
-      }
-
-    // Check randomly.
-    template <typename Env, typename Rgen, typename Pgen>
-      auto operator()(Env& env, Rgen& range, Pgen& pred)
-        -> Requires<Random_variable<Rgen>() && Random_variable<Pgen>()>
-      {
-        operator()(env, range(), pred());
-      }
-  };
-
-
-// Check find_if against prototypical inputs: boolean sequences. This in
-// turn checks against the derived specifiations of find_if_not.
-struct find_if_check
-{
-  using V = vector<bool>;
-  using P = as_bool<bool>;
-
-  P pred;
-  V v0;
-  V v1;
-  V v2;
-
-  find_if_check() 
-    : pred()
-    , v0 {}         // Empty sequence
-    , v1 {0, 0, 0}  // No such element
-    , v2 {1, 0, 1}  // Returns the first such element
-  { }
-
-  // Check the default property
-  template <typename Env>
-    void operator()(Env& env) const
-    {
-      // An empty sequence has no such element.
-      check(env, eq {}, find_if(v0, pred), end(v0));
-
-      // No such element exists in the sequence.
-      check(env, eq {}, find_if(v1, pred), end(v1));
-
-      // Returns the fuirst such element.
-      check(env, eq {}, find_if(v2, pred), begin(v2));
-    }
-
-  // Test the given specification using these inputs.
-  template <typename Env, typename Spec>
-    void operator()(Env& env, const Spec& spec) const
-    {
-      spec(env, v0, pred);
-      spec(env, v1, pred);
-      spec(env, v2, pred);
-    }
-};
-
+using namespace testing;
 
 int main()
 {

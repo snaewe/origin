@@ -6,95 +6,33 @@
 // and conditions.
 
 #include <cassert>
-#include <iostream>
-#include <vector>
-#include <set>
 
-#include <origin/algorithm.hpp>
-#include <origin/container.hpp>
-#include <origin/testing.hpp>
+#include "query.hpp"
 
 using namespace std;
 using namespace origin;
-
-
-// Count if is equivalent to a reduction.
-template <typename R, typename P>
-  struct count_if_spec
-  {
-    bool operator()(const R& range, P pred) const
-    {
-      // Returns n + 1 if pred(x) is true. Otherwise, n.
-      auto f = [pred](const Value_type<R>& x, Distance_type<R> n)
-        { 
-          return pred(x) ? n + 1 : n; 
-        };
-
-      return count_if(range, pred) == reduce(range, 0, f);
-    }
-  };
-
-
-template <typename R, typename P>
-  struct count_if_not_spec
-  {
-    bool operator()(const R& range, P pred) const
-    {
-      return count_if_not(range, pred) == count_if(range, negation<P> {pred});
-    }
-  };
-
-
-
-// Count if (specification)
-template <typename R, typename P>
-  struct count_if_specs
-  {
-    static_assert(Range_query<R, P>(), "");
-
-    count_if_spec<R, P> count_if;
-    count_if_not_spec<R, P> count_if_not;
-    
-    // Check with specific values.
-    // Note that the same value will be used for each check.
-    template <typename Env>
-      void operator()(Env& env, const R& range, P pred) const
-      {
-        check(env, count_if, range, pred);
-        check(env, count_if_not, range, pred);
-      }
-
-    // Check randomly.
-    template <typename Env, typename Rgen, typename Pgen>
-      auto operator()(Env& env, Rgen& range, Pgen& pred)
-        -> Requires<Random_variable<Rgen>() && Random_variable<Pgen>()>
-      {
-        check(env, count_if, range, pred);
-        check(env, count_if_not, range, pred);
-      }
-  };
-
+using namespace testing;
 
 int main()
 {
-  std::minstd_rand eng(time(0));
-  assert_checker<std::minstd_rand> env{eng};
+  assert_checker<> env;
 
-  using V = vector<int>;
-  using P = non_zero_pred<int>;
+  using V = vector<bool>;
+  using P = as_bool<bool>;
 
-  V v1 = {0, 0, 0, 0};
-  V v2 = {0, 0, 0, 1};
-  P pred;
-  
-  count_if_specs<V, P> spec;
+  // Test find_if
+  count_if_check count_if;
+  count_if(env);
 
-  spec(env, v1, pred);
-  spec(env, v2, pred);
+  // Test affiliated relationships.
+  count_if_specs<V, P> specs;
+  count_if(env, specs);
 
+  // Test randomly for good measure.
+  auto& eng = env.random_engine();
+  auto pdist = single_value_distribution<P> {};
+  auto pvar = make_random(eng, pdist);
   auto rvar = make_random<V>(eng);
-  auto pvar = make_random(eng, single_value_distribution<P> {});
-  quick_check(env, spec, rvar, pvar, 1000);
-
+  quick_check(env, specs, rvar, pvar, 1000);
 }
 

@@ -6,21 +6,17 @@
 # and conditions.
 
 origin_run_test(algo_find_if find_if.cpp)
-
 origin_run_test(algo_count_if count_if.cpp)
+origin_run_test(algo_quant_of quant_of.cpp)
 
-origin_run_test(algo_all_of all_of.cpp)
-origin_run_test(algo_not_all_of not_all_of.cpp)
-origin_run_test(algo_some_of some_of.cpp)
-origin_run_test(algo_none_of none_of.cpp)
-origin_run_test(algo_one_of one_of.cpp)
+
 origin_run_test(algo_all_equal all_equal.cpp)
 
 origin_run_test(algo_find find.cpp)
 origin_run_test(algo_find_nth_if find_nth_if.cpp)
 
 origin_run_test(algo_count_not_equal count_not_equal.cpp)
-origin_run_test(algo_count_if_not count_if_not.cpp)
+
 origin_run_test(algo_equal equal.cpp)
 
 origin_run_test(algo_extract extract.cpp)
