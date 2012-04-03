@@ -12,3 +12,4 @@ add_subdirectory(counting)
 
 origin_run_test(math_integer integer.cpp)
 origin_run_test(math_real real.cpp)
+origin_run_test(math_fraction fraction.cpp)
