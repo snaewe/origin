@@ -18,4 +18,14 @@ using namespace testing;
 int main()
 {
   assert_checker<> env;
+
+  using V = vector<bool>;
+  using P = as_bool<bool>;
+
+  find_if_check find_if;
+  count_if_check count_if;
+
+  quant_of_specs<V, P> quant_of;
+  find_if(env, quant_of);
+  count_if(env, quant_of);
 }

@@ -201,7 +201,7 @@ namespace testing
 	//
 	// FIXME: Finish writing qualifier requirements in terms of count.
 	template <typename R, typename P>
-		struct quantifier_spec
+		struct quant_of_specs
 		{
 			static_assert(Range_query<R, P>(), "");
 
@@ -218,8 +218,6 @@ namespace testing
 			some_equiv_count<R, P> some_count;
 			nall_equiv_count<R, P> nall_count;
 			none_equiv_count<R, P> none_count;
-
-			single_value_distribution<P> pred;
 
 			template <typename Env>
 				void operator()(Env& env, const R& range, P pred) const
