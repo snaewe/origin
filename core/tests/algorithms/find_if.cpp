@@ -18,79 +18,109 @@ using namespace std;
 using namespace origin;
 
 
-// This is a recursive formulation of the find_if algorithm. The purpose of
-// using a recursive specification is to connect the algorithm with a more
-// mathematical model of the computation. Since the underlying abstraction is
-// a sequence, we can effectively describe the computation as a mathematical
-// function.
-//
-// Although there are 3 branches through the list, we only need two values to
-// fully test those paths: a sequence with an element satisfying pred, and one
-// without.
-template <typename I, typename P>
-  I find_if_rec(I first, I last, P pred)
-  {
-    if (first == last) {
-      return last;
-    } else {
-      if (pred(*first))
-        return first;
-      else
-        return find_if_rec(next(first), last, pred);
-    }
-  }
 
-// Range-based version of the algorithm above.
+// Find if not is equivalent to find_if when the predicat is negated.
 template <typename R, typename P>
-  auto find_if_rec(R&& range, P pred) -> decltype(o_begin(range))
+  struct find_if_not_equiv
   {
-    return find_if_rec(o_begin(range), o_end(range), pred);
-  }
-
-
-
-// Find if is equivalent to its recursive specification.
-template <typename R, typename P>
-  struct find_if_spec
-  {
-    P pred;
-
-    find_if_spec(P pred) : pred(pred) { }
-
-    bool operator()(const R& range) const
+    bool operator()(const R& range, P pred) const
     {
-      return find_if(range, pred) == find_if_rec(range, pred);
+      return find_if_not(range, pred) == find_if(range, negation<P> {pred});
     }
   };
 
 
 
-template <typename Env, typename R, typename P>
-  void check_find_if(Env& env, const R& range, P pred)
+// Find if (specification)
+template <typename R, typename P>
+  struct find_if_specs
   {
-    find_if_spec<Forwarded<R>, P> spec;
-    check(env, spec, range, pred);
-  }
+    static_assert(Range_query<R, P>(), "");
+
+    find_if_not_equiv<R, P> find_if_not;
+    
+    // Check with specific values.
+    template <typename Env>
+      void operator()(Env& env, const R& range, P pred) const
+      {
+        check(env, find_if_not, range, pred);
+      }
+
+    // Check randomly.
+    template <typename Env, typename Rgen, typename Pgen>
+      auto operator()(Env& env, Rgen& range, Pgen& pred)
+        -> Requires<Random_variable<Rgen>() && Random_variable<Pgen>()>
+      {
+        operator()(env, range(), pred());
+      }
+  };
+
+
+// Check find_if against prototypical inputs: boolean sequences. This in
+// turn checks against the derived specifiations of find_if_not.
+struct find_if_check
+{
+  using V = vector<bool>;
+  using P = as_bool<bool>;
+
+  P pred;
+  V v0;
+  V v1;
+  V v2;
+
+  find_if_check() 
+    : pred()
+    , v0 {}         // Empty sequence
+    , v1 {0, 0, 0}  // No such element
+    , v2 {1, 0, 1}  // Returns the first such element
+  { }
+
+  // Check the default property
+  template <typename Env>
+    void operator()(Env& env) const
+    {
+      // An empty sequence has no such element.
+      check(env, eq {}, find_if(v0, pred), end(v0));
+
+      // No such element exists in the sequence.
+      check(env, eq {}, find_if(v1, pred), end(v1));
+
+      // Returns the fuirst such element.
+      check(env, eq {}, find_if(v2, pred), begin(v2));
+    }
+
+  // Test the given specification using these inputs.
+  template <typename Env, typename Spec>
+    void operator()(Env& env, const Spec& spec) const
+    {
+      spec(env, v0, pred);
+      spec(env, v1, pred);
+      spec(env, v2, pred);
+    }
+};
 
 
 int main()
 {
-  std::minstd_rand eng(time(0));
-  assert_checker<std::minstd_rand> env{eng};
+  assert_checker<> env;
 
-  using V = vector<int>;
-  using P = non_zero_pred<int>;
-  find_if_spec<V, P> spec {P {}};
+  using V = vector<bool>;
+  using P = as_bool<bool>;
 
-  // Non-random testing
-  V v1 = {0, 0, 0, 0};
-  V v2 = {0, 0, 0, 1};
-  check(env, spec, v1);  
-  check(env, spec, v2);  
+  // Test find_if
+  find_if_check find_if;
+  find_if(env);
 
-  auto var = make_random<V>(eng);
-  quick_check(env, spec, var);
+  // Test affiliated relationships.
+  find_if_specs<V, P> specs;
+  find_if(env, specs);
 
+  // Test randomly for good measure.
+  auto& eng = env.random_engine();
+  auto pdist = single_value_distribution<P> {};
+  auto pvar = make_random(eng, pdist);
+  auto rvar = make_random<V>(eng);
+  quick_check(env, specs, rvar, pvar, 1000);
 }
 
 

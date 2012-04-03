@@ -39,12 +39,11 @@ namespace origin
   
   // Specification (concept)
   // A specification is a function object that can be checked using a
-  // checking environment (Env) with values provided by some random value 
-  // generators (Gens...) and a random number engine (Eng).
-  template <typename Spec, typename Env, typename... Vars>
+  // checking environment (Env) over the given argument types.
+  template <typename Spec, typename Env, typename... Args>
     constexpr bool Specification()
     {
-      return Function<Spec, Env&, Forwarded<Vars>...>();
+      return Function<Spec, Env&, Args...>();
     }
 
   
@@ -71,7 +70,7 @@ namespace origin
     constexpr bool Randomized_specification_check()
     {
       return All(Random_variable<Forwarded<Vars>>()...)
-          && Specification<Spec, Env, Forwarded<Vars>...>();
+          && Specification<Spec, Env, Forwarded<Vars>&...>();
     }
 
 

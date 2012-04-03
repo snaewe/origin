@@ -257,6 +257,7 @@ namespace origin
         }
     };
 
+
   
   // NOTE: The standard relation operators (o_equal, o_less, etc.) vary from
   // the standard operators in that a) they are not templates, b) they are
@@ -419,8 +420,22 @@ namespace origin
   
   
   
-  // TODO: Write more relations and add operators.
-  
+  // Negation (predicate)
+  // The negation of a predicate p(args...) is !p(args...)
+  template <typename P>
+    struct negation
+    {
+      P p;
+
+      negation(P pred = {}) : p(p) { }
+
+      template <typename... Args>
+        bool operator()(Args&&... args) const
+        {
+          return !p(std::forward<Args>(args)...);
+        }
+    };
+
 
   
   // Complement (relation)

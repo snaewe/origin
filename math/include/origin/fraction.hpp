@@ -16,6 +16,11 @@
 namespace origin
 {
   // FIXME: What are the actual requirements of T. Euclidean_domain?
+  //
+  // FIXME: Do I need to build a separate specialization of fractions for
+  // rational numbers? What about rational functions?
+  //
+  // FIXME: User-defined literals.
   template <typename T>
     class fraction
     {
@@ -72,7 +77,6 @@ namespace origin
       // Accessors
       const value_type& numerator() const { return num; }
       const value_type& denominator() const { return den; }
-
 
       // Equality comparable
       bool operator==(const fraction& x) const;
@@ -259,6 +263,7 @@ namespace origin
 
   
   // Numeric operations
+  // Specializations of numeric operations for size.
 
 
   template <typename T>

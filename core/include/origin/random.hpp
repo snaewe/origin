@@ -238,7 +238,7 @@ namespace origin
 
       using result_type = T;
 
-      single_value_distribution(const T& x) : value(x) { }
+      single_value_distribution(const T& x = {}) : value(x) { }
 
       template <typename Eng>
         const result_type& operator()(Eng& eng) const

@@ -498,6 +498,7 @@ namespace origin
     }
 }
 
+#include <origin/algorithm/reduce.hpp>
 #include <origin/algorithm/quantifier.hpp>
 #include <origin/algorithm/find.hpp>
 #include <origin/algorithm/count.hpp>

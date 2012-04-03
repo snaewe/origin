@@ -5,8 +5,9 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-
 origin_run_test(algo_find_if find_if.cpp)
+
+origin_run_test(algo_count_if count_if.cpp)
 
 origin_run_test(algo_all_of all_of.cpp)
 origin_run_test(algo_not_all_of not_all_of.cpp)
