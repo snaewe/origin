@@ -233,217 +233,395 @@ namespace origin
     }
   
 
-  
-  // As bool (function)
-  // The as bool function object evaluates its argument as a boolean value,
-  // returning true or false.
-  template <typename T = default_t>
-    struct as_bool : std::unary_function<T, bool>
-    {
-      static_assert(Boolean<T>(), "");
-      
-      bool operator()(const T& x) const { return x; }
-    };
-    
-  // The default specialization is polymorphic.
-  template <>
-    struct as_bool<default_t> : std::unary_function<unspecified_t, bool>
-    {
-      template <typename T>
-        bool operator()(const T& x)
-        {
-          static_assert(Boolean<T>(), "");
-          return x;
-        }
-    };
+
+  // Identity (function)
+  // The identity function object returns its argument as is.
+  struct identity
+  {
+    template <typename T>
+      const T& operator()(const T& x) const { return x; }
+  };
 
 
-  
-  // NOTE: The standard relation operators (o_equal, o_less, etc.) vary from
-  // the standard operators in that a) they are not templates, b) they are
-  // defined on heterogeneous types, and c) they are constrained by their
-  // corresponding concepts.
-    
-    
-  // TODO: Make sure that all relations and operations use the adaptors above.
-  
-  
-  // Equal (relation)
+
+  // Constant function (function)
+  // A constant function is a nullary function that returns the same value.
+  template <typename T>
+    struct constant_function
+    {
+      T value;
+
+      constant_function(const T& value) : value(value) { }
+
+      const T& operator()() const { return value; }
+    };
+
+  // Create a constant function from the given value.
+  template <typename T>
+    inline constant_function<T> make_constant_function(const T& value) 
+    {
+      return {value};
+    }
+
+
+
+  // To bool (function)
+  // The to bool function object evaluates its argument as a boolean value by
+  // explicitly converting it to bool.
+  struct to_bool_function
+  {
+    template <typename T>
+      bool operator()(const T& x) const
+      {
+        static_assert(Boolean<T>(), "");
+        return x;
+      }
+  };
+
+  // Returns a function that converts values to bool.
+  inline to_bool_function make_to_bool() { return {}; }
+
+
+
+  // Equality (relation)
   // The equal function object denotes the relation a == b.
-  template <typename T = default_t, typename U = T>
-    struct o_equal_to
-    {
-      static_assert(Equality_comparable<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a == b; }
-    };
+  struct equal_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Equality_comparable<T, U>(), bool>
+      {
+        static_assert(Equality_comparable<T, U>(), "");
+        return a == b;
+      }
+  };
+  
 
-  // The default specialization is polymorphic.
-  template <>
-    struct o_equal_to<default_t, default_t>
+
+  // Value equality (predicate)
+  // Denotes the expression value == x for a given value.
+  template <typename T>
+    struct equal_value_predicate
     {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
+      T value;
+
+      equal_value_predicate(const T& value) : value(value) { }
+
+      template <typename U>
+        auto operator()(const U& x) const
+          -> Requires<Equality_comparable<T, U>(), bool>
         {
           static_assert(Equality_comparable<T, U>(), "");
-          return a == b;
+          return value == x;
         }
     };
-  
-  // The type eq is an alias for o_equal.
-  using eq = o_equal_to<>;
-  
 
-  
-  // Not equal (relation)
+
+
+  // Equal to (constructor)
+  // The neq function creates an operation that compares for distinct values. 
+  // All constructors return predicate functions. The supported syntaxes are:
+  // 
+  //    eq()     // A relation evaluating a == b, for all a and b
+  //    eq(x)    // A predicate evaluating x == a for all a.
+  //    eq(x, y) // A constant predicate evaluating x == y  
+  inline equal_relation eq() { return {}; }
+
+  template <typename T>
+    inline equal_value_predicate<T> eq(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto eq(const T& a, const U& b) 
+      -> Requires<Equality_comparable<T, U>(), constant_function<bool>>
+    { 
+      return make_constant_function(a == b);
+    }
+
+
+
+  // Distinction from (relation)
   // The not equal function denotes the expression a != b.
-  template <typename T = default_t, typename U = T>
-    struct o_not_equal_to
+  struct not_equal_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Equality_comparable<T, U>(), bool>
+      {
+        return a != b;
+      }
+  };
+
+
+
+  // Distinct from value (predicate)
+  template <typename T>
+    struct not_equal_value_predicate
     {
-      static_assert(Equality_comparable<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a != b; }
-    };
-  
-  template <>
-    struct o_not_equal_to<default_t, default_t>
-    {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
+      T value;
+
+      not_equal_value_predicate(const T& value) : value(value) { }
+
+      template <typename U>
+        auto operator()(const U& x) const 
+          -> Requires<Equality_comparable<T, U>(), bool>
         {
-          static_assert(Equality_comparable<T, U>(), "");
-          return a != b;
+          return value != x;
         }
     };
 
-  // The type neq denotes the not equal relation.
-  using neq = o_not_equal_to<>;
-  
-  
-  
-  // Less (relation)
-  // The less function object names the relation a < b.
-  template <typename T = default_t, typename U = T>
-    struct o_less
+
+
+  // Distinct from (constructor)
+  // The neq function creates an operation that compares for distinct values. 
+  // All constructors return predicate functions. The supported syntaxes are:
+  // 
+  //    neq()     // A relation evaluating a != b, for all a and b
+  //    neq(x)    // A predicate evaluating x != a for all a.
+  //    neq(x, y) // A constant predicate evaluating x != y
+  inline not_equal_relation neq() { return {}; }
+
+  template <typename T>
+    inline not_equal_value_predicate<T> neq(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto  neq(const T& a, const U& b)
+      -> Requires<Equality_comparable<T, U>(), constant_function<bool>>
     {
-      static_assert(Totally_ordered<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a < b; }
+      return make_constant_function(a != b);
+    }
+
+
+
+  // Less than (relation)
+  // The not equal function denotes the expression a < b.
+  struct less_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Weakly_ordered<T, U>(), bool>
+      {
+        return a < b;
+      }
+  };
+
+
+
+  // Less than value (predicate)
+  template <typename T>
+    struct less_value_predicate
+    {
+      const T& value;
+
+      less_value_predicate(const T& value) : value(value) { }
+
+      template <typename U>
+        auto operator()(const U& x) const
+          -> Requires<Weakly_ordered<T, U>(), bool>
+        {
+          return value < x;
+        }
     };
 
-  // The default specialization is polymorphic.
-  template <>
-    struct o_less<default_t, default_t>
+  
+  
+  // Less than (constructor)
+  // The lt function creates an operation that compares for distinct values. 
+  // All constructors return predicate functions. The supported syntaxes are:
+  // 
+  //    lt()     // A relation evaluating a < b, for all a and b
+  //    lt(x)    // A predicate evaluating x < a for all a.
+  //    lt(x, y) // A constant predicate evaluating x < y
+  inline less_relation lt() { return {}; }
+
+  template <typename T>
+    inline less_value_predicate<T> lt(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto lt(const T& a, const U& b)
+      -> Requires<Weakly_ordered<T, U>(), constant_function<bool>>
     {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
+      return make_constant_function(a < b);
+    }
+
+
+
+  // Greater than (relation)
+  struct greater_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Weakly_ordered<T, U>(), bool>
+      {
+        return a > b;
+      }
+  };
+
+
+
+  // Greater than value (predicate)
+  template <typename T>
+    struct greater_value_predicate
+    {
+      T value;
+
+      template <typename U>
+        auto operator()(const U& x) const
+          -> Requires<Weakly_ordered<T, U>(), bool>
         {
-          static_assert(Totally_ordered<T, U>(), "");
-          return a < b;
+          return value > x;
         }
     };
   
-  // The type lt is an alias for o_less<>.
-  using lt = o_less<>;
-  
-  
-  
-  // Greater (relation)
-  template <typename T = default_t, typename U = T>
-    struct o_greater
+    
+    
+  // Greater than (constructor)
+  // The gt function creates an operation that compares for distinct values. 
+  // All constructors return predicate functions. The supported syntaxes are:
+  // 
+  //    gt()     // A relation evaluating a > b, for all a and b
+  //    gt(x)    // A predicate evaluating x > a for all a.
+  //    gt(x, y) // A constant predicate evaluating x > y
+  inline greater_relation gt() { return {}; }
+
+  template <typename T>
+    inline greater_value_predicate<T> gt(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto gt(const T& a, const U& b)
+      -> Requires<Weakly_ordered<T, U>(), constant_function<bool>>
     {
-      static_assert(Totally_ordered<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a > b; }
-    };
-    
-  template <>
-    struct o_greater<default_t, default_t>
-    {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
-        {
-          static_assert(Totally_ordered<T, U>(), "");
-          return a > b;
-        }
-    };
-  
-  using gt = o_greater<>;
-    
-    
+      return make_constant_function(a > b);
+    }
+
+
 
   // Less than or equal to (relation)
-  template <typename T = default_t, typename U = T>
-    struct o_less_equal
+  struct less_equal_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Weakly_ordered<T, U>(), bool>
+      {
+        return a <= b;
+      }
+  };
+
+
+
+  // Less than or equal to value (predicate)
+  template <typename T>
+    struct less_equal_value_predicate
     {
-      static_assert(Totally_ordered<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a <= b; }
-    };
-    
-  template <>
-    struct o_less_equal<default_t, default_t>
-    {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
+      T value;
+
+      less_equal_value_predicate(const T& value) : value(value) { }
+
+      template <typename U>
+        auto operator()(const U& x) const
+          -> Requires<Weakly_ordered<T, U>(), bool>
         {
-          static_assert(Totally_ordered<T, U>(), "");
-          return a <= b;
+          static_assert(Weakly_ordered<T, U>(), "");
+          return value <= x;
         }
     };
-  
-  using leq = o_less_equal<>;
 
 
-  
+
+  // Less than or equal to (constructor)
+  inline less_equal_relation lte() { return {}; }
+
+  template <typename T>
+    inline less_equal_value_predicate<T> lte(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto lte(const T& a, const U& b)
+      -> Requires<Weakly_ordered<T, U>(), constant_function<bool>>
+    {
+      static_assert(Weakly_ordered<T, U>(), "");
+      return make_constant_function(a <= b);
+    }
+
+
+
   // Greater than or equal to (relation)
-  template <typename T = default_t, typename U = T>
-    struct o_greater_equal
+  struct greater_equal_relation
+  {
+    template <typename T, typename U>
+      auto operator()(const T& a, const U& b) const
+        -> Requires<Weakly_ordered<T, U>(), bool>
+      {
+        return a >= b;
+      }
+  };
+
+
+  // Greater than or equal to value (predicate)
+  template <typename T>
+    struct greater_equal_value_predicate
     {
-      static_assert(Totally_ordered<T, U>(), "");
-      
-      bool operator()(const T& a, const U& b) const { return a >= b; }
-    };
-    
-  template <>
-    struct o_greater_equal<default_t, default_t>
-    {
-      template <typename T, typename U>
-        bool operator()(const T& a, const U& b) const
+      T value;
+
+      greater_equal_value_predicate(const T& value) : value(value) { }
+
+      template <typename U>
+        auto operator()(const U& x) const
+          -> Requires<Weakly_ordered<T, U>(), bool>
         {
-          static_assert(Totally_ordered<T, U>(), "");
-          return a >= b;
+          return value >= x;
         }
     };
+
+
+
+  // Greater than or equal to (constructor)
+  inline greater_equal_relation gte() { return {}; }
+
+  template <typename T>
+    inline greater_equal_value_predicate<T> gte(const T& x) { return {x}; }
+
+  template <typename T, typename U>
+    inline auto gte(const T& a, const U& b)
+      -> Requires<Weakly_ordered<T, U>(), constant_function<bool>> 
+    {
+      return make_constant_function(a <= b);
+    }
   
-  using geq = o_greater_equal<>;
   
-  
-  
+
   // Negation (predicate)
   // The negation of a predicate p(args...) is !p(args...)
   template <typename P>
-    struct negation
+    struct negate_predicate
     {
-      P p;
+      P pred;
 
-      negation(P pred = {}) : p(p) { }
+      negate_predicate(P p = {}) : pred(p) { }
 
       template <typename... Args>
         bool operator()(Args&&... args) const
         {
-          return !p(std::forward<Args>(args)...);
+          return !pred(std::forward<Args>(args)...);
         }
     };
+
+  // Return the negation of the given predicate.
+  //
+  // NOTE: Do not confuse this with the numeric operation neg(x), which 
+  // returns the negation of a numeric value.
+  //
+  // FIXME: This should be called negate(), but that name is taken by a class
+  // in <functional>
+  template <typename P>
+    negate_predicate<P> negation(P p) { return {p}; }
 
 
   
   // Complement (relation)
   // For a and b, the complement of r(a, b)  is !r(a, b).
   template <typename R>
-    struct complement
+    struct complement_relation
     {
-      complement(R r = {}) : r(r) { };
+      complement_relation(R r = {}) : r(r) { }
       
       template <typename T, typename U>
         bool operator()(T const& a, U const& b) const
@@ -454,15 +632,19 @@ namespace origin
 
       R r;
     };
+
+  // Return the complement of the relation r.
+  template <typename R>
+    inline complement_relation<R> complement(R r) { return {r}; }
   
   
   
   // Converse (relation)
   // For a and b, the converse of r(a, b) is r(b, a).
   template <typename R>
-    struct converse
+    struct converse_relation
     {
-      converse(R r = {}) : r(r) { };
+      converse_relation(R r = {}) : r(r) { };
       
       template <typename T, typename U>
         bool operator()(T const& a, U const& b) const
@@ -474,14 +656,18 @@ namespace origin
       R r;
     };
 
+  // Returns the converse of the relation r.
+  template <typename R>
+    inline converse_relation<R> converse(R r) { return {r}; }
     
+
 
   // Complement of converse (relation)
   // For a and b, the complement of the converse of r(a, b) is !r(b, a).
   template <typename R>
-    struct complement_of_converse
+    struct complement_of_converse_relation
     {
-      complement_of_converse(R r = {}) : r(r) { };
+      complement_of_converse_relation(R r = {}) : r(r) { };
       
       template <typename T, typename U>
         bool operator()(T const& a, U const& b) const
@@ -493,14 +679,21 @@ namespace origin
       R r;
     };
 
+  // Returns the complement of the converse of the relation r.
+  template <typename R>
+    inline complement_of_converse_relation<R> complement_of_converse(R r) 
+    { 
+      return {r}; 
+    }
     
+
 
   // Symmetric complement (relation)
   // For a and b, the symmetric complement of r is !r(a, b) && !r(b, a).
   template <typename R>
-    struct symmetric_complement
+    struct symmetric_complement_relation
     {
-      symmetric_complement(R r = {}) : r(r) { };
+      symmetric_complement_relation(R r = {}) : r(r) { };
       
       template <typename T, typename U>
         bool operator()(T const& a, U const& b) const
@@ -512,6 +705,13 @@ namespace origin
       R r;
     };
 
+  // Returns the symmetric complement of the relation r.
+  template <typename R>
+    inline symmetric_complement_relation<R> symmetric_complement(R r)
+    {
+      return {r};
+    }
+
     
 
   // Common numeric predicates
@@ -522,6 +722,10 @@ namespace origin
   // algorithsm. I know for a fact that there are more efficient ways to
   // determine positivity/negativity of integers than comparing two values
   // (i.e., test the high-order bit!).
+  //
+  // FIXME: Follow the naming from above and rename all of these function
+  // objects. Also, they should name expressions; the function object should
+  // not be parameterized over their type.
 
 
   template <typename T>
@@ -560,6 +764,7 @@ namespace origin
     {
       bool operator()(const T& x) const { return x <= T {0}; }
     };
+
 
 
   // FIXME: Move the hash module into a separate header and borrow some of

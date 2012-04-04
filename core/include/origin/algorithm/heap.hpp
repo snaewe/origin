@@ -73,7 +73,7 @@ namespace origin
   template<std::size_t D, typename I>
     inline bool is_d_heap_until_n(I first, Distance_type<I> n)
     {
-      return is_d_heap_until_n(first, n, lt{});
+      return is_d_heap_until_n(first, n, lt());
     }
     
 
@@ -96,7 +96,7 @@ namespace origin
     inline I is_d_heap_until(I first, I last)
     {
       static_assert(Order_query<I>(), "");
-      return is_d_heap_until<D>(first, last, lt{});
+      return is_d_heap_until<D>(first, last, lt());
     }
 
 
@@ -119,7 +119,7 @@ namespace origin
     {
       static_assert(Order_query<I>(), "");
       assert(is_readable_range(first, last));
-      return is_d_heap<D>(first, last, lt{});
+      return is_d_heap<D>(first, last, lt());
     }
 
     
@@ -181,7 +181,7 @@ namespace origin
     void push_d_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
-      push_d_heap<D>(first, last, lt{});
+      push_d_heap<D>(first, last, lt());
     }
     
   template<std::size_t D, typename R, typename Rel>
@@ -291,7 +291,7 @@ namespace origin
     {
       static_assert(Sort<I>(), "");
 
-      pop_d_heap<D>(first, last, lt{});
+      pop_d_heap<D>(first, last, lt());
     }
     
   template<std::size_t D, typename R, typename Rel>
@@ -343,7 +343,7 @@ namespace origin
   template<typename R>
     inline bool is_heap(const R& range)
     {
-      return o_is_heap(o_begin(range), o_end(range), lt{});
+      return o_is_heap(o_begin(range), o_end(range), lt());
     }
   
   
@@ -383,7 +383,7 @@ namespace origin
   template<typename R>
     inline auto is_heap_until(const R& range) -> decltype(o_begin(range))
     {
-      return o_is_heap_until(o_begin(range), o_end(range), lt{});
+      return o_is_heap_until(o_begin(range), o_end(range), lt());
     }
   
   
@@ -404,7 +404,7 @@ namespace origin
     {
       static_assert(Sort<I>(), "");
 
-      return o_push_heap(first, last, lt{});
+      return o_push_heap(first, last, lt());
     }
     
 
@@ -422,7 +422,7 @@ namespace origin
   template<typename R>
     inline void push_heap(R&& range)
     {
-      o_push_heap(o_begin(range), o_end(range), lt{});
+      o_push_heap(o_begin(range), o_end(range), lt());
     }
   
       
@@ -444,7 +444,7 @@ namespace origin
     {
       static_assert(Sort<I>(), "");
       
-      o_pop_heap(first, last, lt{});
+      o_pop_heap(first, last, lt());
     }
     
     
@@ -462,7 +462,7 @@ namespace origin
   template<typename R>
     inline void pop_heap(R&& range)
     {
-      o_pop_heap(o_begin(range), o_end(range), lt{});
+      o_pop_heap(o_begin(range), o_end(range), lt());
     }
     
     
@@ -484,7 +484,7 @@ namespace origin
     {
       static_assert(Sort<I>(), "");
 
-      o_make_heap(first, last, lt{});
+      o_make_heap(first, last, lt());
     }
     
     
@@ -500,7 +500,7 @@ namespace origin
   template<typename R>
     void make_heap(R&& range)
     {   
-      o_make_heap(o_begin(range), o_end(range), lt{});
+      o_make_heap(o_begin(range), o_end(range), lt());
     }
 
     
@@ -522,7 +522,7 @@ namespace origin
     {
       static_assert(Sort<I>(), "");
 
-      o_sort_heap(first, last, lt{});
+      o_sort_heap(first, last, lt());
     }
     
     
@@ -538,7 +538,7 @@ namespace origin
   template<typename R>
     void sort_heap(R&& range)
     {
-      o_sort_heap(o_begin(range), o_end(range), lt{});
+      o_sort_heap(o_begin(range), o_end(range), lt());
     }
     
 

@@ -105,7 +105,7 @@ namespace origin
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return find(first, last, value, eq{});
+      return find(first, last, value, eq());
     }
 
 
@@ -132,7 +132,7 @@ namespace origin
     {
       static_assert(Range_search<Forwarded<R>, T>(), "");
       
-      return find(o_begin(range), o_end(range), value, eq{});
+      return find(o_begin(range), o_end(range), value, eq());
     }
 
 
@@ -177,7 +177,7 @@ namespace origin
     {
       static_assert(Search<I, T>(), "");
 
-      return find_not_equal(first, last, value, eq{});
+      return find_not_equal(first, last, value, eq());
     }
   
     
@@ -202,7 +202,7 @@ namespace origin
     {
       static_assert(Range_search<Forwarded<R>, T>(), "");
 
-      return find_not_equal(o_begin(range), o_end(range), value, eq{});
+      return find_not_equal(o_begin(range), o_end(range), value, eq());
     }
     
     
@@ -236,7 +236,7 @@ namespace origin
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return find_next(first, last, value, eq{});
+      return find_next(first, last, value, eq());
     }
 
 
@@ -497,7 +497,7 @@ namespace origin
       static_assert(Equality_query<I>(), "");
       assert(is_readable_range(first, last));
 
-      return find_adjacent(first, last, eq{});
+      return find_adjacent(first, last, eq());
     }
     
     
@@ -554,7 +554,7 @@ namespace origin
       static_assert(Equality_query<I>(), "");
       assert(is_readable_range(first, last));
 
-      return find_not_adjacent(first, last, eq{});
+      return find_not_adjacent(first, last, eq());
     }
     
     

@@ -20,7 +20,7 @@ int main()
   assert_checker<> env;
 
   using V = vector<bool>;
-  using P = as_bool<bool>;
+  using P = to_bool_function;
 
   find_if_check find_if;
   count_if_check count_if;

@@ -54,7 +54,7 @@ namespace origin
   template<typename T>
     inline const T& select_0_2(const T& a, const T& b)
     {
-      return select_0_2(a, b, lt{});
+      return select_0_2(a, b, lt());
     }
 
     
@@ -72,7 +72,7 @@ namespace origin
   template<typename T>
     inline const T& select_1_2(const T& a, const T& b)
     {
-      return select_1_2(a, b, lt{});
+      return select_1_2(a, b, lt());
     }
     
   
@@ -90,7 +90,7 @@ namespace origin
   template<typename T>
     inline const T& select_0_3(const T& a, const T& b, const T& c)
     {
-      return select_0_3(a, b, c, lt{});
+      return select_0_3(a, b, c, lt());
     }
     
 
@@ -118,7 +118,7 @@ namespace origin
   template<typename T>
     inline const T& select_1_3(const T& a, const T& b, const T& c)
     {
-      return select_1_3(a, b, c, lt{});
+      return select_1_3(a, b, c, lt());
     }
   
   
@@ -136,7 +136,7 @@ namespace origin
   template<typename T>
     inline const T& select_2_3(const T& a, const T& b, const T& c)
     {
-      return select_2_3(a, b, c, lt{});
+      return select_2_3(a, b, c, lt());
     }
     
   
@@ -154,7 +154,7 @@ namespace origin
   template<typename T>
     inline const T& select_0_4(const T& a, const T& b, const T& c, const T& d)
     {
-      return select_0_4(a, b, c, d, lt{});
+      return select_0_4(a, b, c, d, lt());
     }
     
 
@@ -193,7 +193,7 @@ namespace origin
   template<typename T>
     inline const T& select_1_4(const T& a, const T& b, const T& c, const T& d)
     {
-      return select_1_4(a, b, c, d, lt{});
+      return select_1_4(a, b, c, d, lt());
     }
     
     
@@ -232,7 +232,7 @@ namespace origin
   template<typename T>
     inline const T& select_2_4(const T& a, const T& b, const T& c, const T& d)
     {
-      return select_2_4(a, b, c, d, lt{});
+      return select_2_4(a, b, c, d, lt());
     }
   
   
@@ -250,7 +250,7 @@ namespace origin
   template<typename T>
     inline const T& select_3_4(const T& a, const T& b, const T& c, const T& d)
     {
-      return select_3_4(a, b, c, d, lt{});
+      return select_3_4(a, b, c, d, lt());
     }
 
 
@@ -297,7 +297,7 @@ namespace origin
   template<typename I>
     inline I iter_select_0_2(I i, I j)
     {
-      return iter_select_0_2(i, j, lt{});
+      return iter_select_0_2(i, j, lt());
     }
 
     
@@ -315,7 +315,7 @@ namespace origin
   template<typename I>
     inline I iter_select_1_2(I i, I j)
     {
-      return iter_select_1_2(i, j, lt{});
+      return iter_select_1_2(i, j, lt());
     }
     
   
@@ -333,7 +333,7 @@ namespace origin
   template<typename I>
     inline I iter_select_0_3(I i, I j, I k)
     {
-      return iter_select_0_3(i, j, k, lt{});
+      return iter_select_0_3(i, j, k, lt());
     }
     
 
@@ -362,7 +362,7 @@ namespace origin
   template<typename I>
     inline I iter_select_1_3(I i, I j, I k)
     {
-      return iter_select_1_3(i, j, k, lt{});
+      return iter_select_1_3(i, j, k, lt());
     }
   
   
@@ -380,7 +380,7 @@ namespace origin
   template<typename I>
     inline I iter_select_2_3(I i, I j, I k)
     {
-      return iter_select_2_3(i, j, k, lt{});
+      return iter_select_2_3(i, j, k, lt());
     }
     
   
@@ -399,7 +399,7 @@ namespace origin
   template<typename I>
     inline I iter_select_0_4(I i, I j, I k, I l)
     {
-      return iter_select_0_4(i, j, k, l, lt{});
+      return iter_select_0_4(i, j, k, l, lt());
     }
     
 
@@ -440,7 +440,7 @@ namespace origin
   template<typename I>
     inline I iter_select_1_4(I i, I j, I k, I l)
     {
-      return iter_select_1_4(i, j, k, l, lt{});
+      return iter_select_1_4(i, j, k, l, lt());
     }
     
     
@@ -480,7 +480,7 @@ namespace origin
   template<typename I>
     inline I select_2_4(I i, I j, I k, I l)
     {
-      return iter_select_2_4(i, j, k, l, lt{});
+      return iter_select_2_4(i, j, k, l, lt());
     }
   
   
@@ -499,7 +499,7 @@ namespace origin
   template<typename I>
     inline I iter_select_3_4(I i, I j, I k, I l)
     {
-      return iter_select_3_4(i, j, k, l, lt{});
+      return iter_select_3_4(i, j, k, l, lt());
     }
 
     
@@ -547,7 +547,7 @@ namespace origin
       static_assert(Order_query<I>(), "");
       assert(is_readable_range(first, last));
       
-      return o_min_element(first, last, lt{});
+      return o_min_element(first, last, lt());
     }
     
     
@@ -680,7 +680,7 @@ namespace origin
       static_assert(Order_query<I>(), "");
       assert(is_readable_range(first, last));
       
-      return o_max_element(first, last, lt{});
+      return o_max_element(first, last, lt());
     }
 
   
@@ -810,7 +810,7 @@ namespace origin
       static_assert(Order_query<I>(), "");
       assert(is_readable_range(first, last));
       
-      return o_minmax_element(first, last, lt{});
+      return o_minmax_element(first, last, lt());
     }
 
   

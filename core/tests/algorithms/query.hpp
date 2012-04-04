@@ -20,16 +20,60 @@ namespace testing
 	using namespace std;
 	using namespace origin;
 
+	// Find if results (property)
+	template <typename R, typename P>
+		struct find_if_results
+		{
+			bool operator()(const R& range, P pred) const
+			{
+				auto first = begin(range);
+				auto last = end(range);
+				auto i = find_if(first, last, pred);
+				if (i != last)
+					return pred(*i) && find_if(first, i, pred) == i;
+				else
+					return true;
+			}
+		};
+
 	// Find if not (property)
 	template <typename R, typename P>
 	  struct find_if_not_equiv
 	  {
 	    bool operator()(const R& range, P pred) const
 	    {
-	      return find_if_not(range, pred) == find_if(range, negation<P> {pred});
+	      return find_if_not(range, pred) == find_if(range, negation(pred));
 	    }
 	  };
 
+
+
+	// Find equivalence (property)
+	template <typename R, typename T>
+		struct find_equiv
+		{
+			bool operator()(const R& range, const T& value)
+			{
+				return find(range, value) == find_if(range, eq(value));
+			}
+		};
+
+
+	// Count if (property)
+  // The semantics of count if can be specified in terms of a reduction.
+  template <typename R, typename P>
+	  struct count_if_equiv
+	  {
+	  	bool operator()(const R& range, P pred) const
+	  	{
+	  		auto f = [pred](const Value_type<R>& x, Distance_type<R> n)
+	  		{
+	  			return (pred(x)) ? n + 1 : n;
+	  		};
+
+	  		return count_if(range, pred) == reduce(range, 0, f);
+	  	}
+	  };
 
 
 	// Count if not (property)
@@ -38,7 +82,7 @@ namespace testing
 	  {
 	    bool operator()(const R& range, P pred) const
 	    {
-	      return count_if_not(range, pred) == count_if(range, negation<P> {pred});
+	      return count_if_not(range, pred) == count_if(range, negation(pred));
 	    }
 	  };
 
@@ -148,12 +192,14 @@ namespace testing
 	  {
 	    static_assert(Range_query<R, P>(), "");
 
+	    find_if_results<R, P> find_if;
 	    find_if_not_equiv<R, P> find_if_not;
 	    
 	    // Check with specific values.
 	    template <typename Env>
 	      void operator()(Env& env, const R& range, P pred) const
 	      {
+	      	check(env, find_if, range, pred);
 	        check(env, find_if_not, range, pred);
 	      }
 
@@ -176,6 +222,7 @@ namespace testing
 	  {
 	    static_assert(Range_query<R, P>(), "");
 
+	    count_if_equiv<R, P> count_if;
 	    count_if_not_equiv<R, P> count_if_not;
 	    
 	    // Check with specific values.
@@ -183,6 +230,7 @@ namespace testing
 	    template <typename Env>
 	      void operator()(Env& env, const R& range, P pred) const
 	      {
+	      	check(env, count_if, range, pred);
 	        check(env, count_if_not, range, pred);
 	      }
 
@@ -197,9 +245,7 @@ namespace testing
 
 
 
-	// Check the specification of query-based qualifier predicates.
-	//
-	// FIXME: Finish writing qualifier requirements in terms of count.
+	// Quantifiers (specification)
 	template <typename R, typename P>
 		struct quant_of_specs
 		{
@@ -247,7 +293,7 @@ namespace testing
 	struct find_if_check
 	{
 	  using V = vector<bool>;
-	  using P = as_bool<bool>;
+	  using P = to_bool_function;
 
 	  P pred;
 	  V v0;
@@ -266,13 +312,13 @@ namespace testing
 	    void operator()(Env& env) const
 	    {
 	      // An empty sequence has no such element.
-	      check(env, eq {}, find_if(v0, pred), end(v0));
+	      check(env, eq(), find_if(v0, pred), end(v0));
 
 	      // No such element exists in the sequence.
-	      check(env, eq {}, find_if(v1, pred), end(v1));
+	      check(env, eq(), find_if(v1, pred), end(v1));
 
 	      // Returns the first such element.
-	      check(env, eq {}, find_if(v2, pred), begin(v2));
+	      check(env, eq(), find_if(v2, pred), begin(v2));
 	    }
 
 	  // Test the given specification using these inputs.
@@ -291,7 +337,7 @@ namespace testing
 	struct count_if_check
 	{
 	  using V = vector<bool>;
-	  using P = as_bool<bool>;
+	  using P = to_bool_function;
 
 	  P pred;
 	  V v0;
@@ -310,13 +356,13 @@ namespace testing
 	    void operator()(Env& env) const
 	    {
 	      // An empty list has no matching elements.
-	      check(env, eq {}, count_if(v0, pred), 0);
+	      check(env, eq(), count_if(v0, pred), 0);
 
 	      // There are no matching elements.
-	      check(env, eq {}, count_if(v1, pred), 0);
+	      check(env, eq(), count_if(v1, pred), 0);
 
 	      // Returns the number of matching elements.
-	      check(env, eq {}, count_if(v2, pred), 1);
+	      check(env, eq(), count_if(v2, pred), 1);
 	    }
 
 	  // Test the given specification using these inputs.

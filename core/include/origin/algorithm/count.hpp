@@ -71,7 +71,7 @@ namespace origin
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return count(first, last, value, eq{});
+      return count(first, last, value, eq());
     }
     
       
@@ -95,7 +95,7 @@ namespace origin
     {
       static_assert(Range_search<R>(), "");
 
-      return count(o_begin(range), o_end(range), value, eq{});
+      return count(o_begin(range), o_end(range), value, eq());
     }
    
    
@@ -127,7 +127,7 @@ namespace origin
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
 
-      return count_not_equal(first, last, value, eq{});
+      return count_not_equal(first, last, value, eq());
     }
 
     

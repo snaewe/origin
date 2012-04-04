@@ -306,7 +306,7 @@ namespace origin
         }
     
       strict_partial_order_spec<R> partial;
-      transitive_property<symmetric_complement<R>> equivalence;
+      transitive_property<symmetric_complement_relation<R>> equivalence;
     };
     
 

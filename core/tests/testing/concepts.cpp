@@ -31,9 +31,9 @@ int main()
 
 
   // Properties under test
-  reflexive_property<eq> refl;
-  symmetric_property<eq> sym;
-  transitive_property<eq> trans;
+  reflexive_property<equal_relation> refl;
+  symmetric_property<equal_relation> sym;
+  transitive_property<equal_relation> trans;
   
 
   // Property checking with specific arguments.
@@ -49,10 +49,10 @@ int main()
 
 
   // Check relational specifications.
-  check_equivalence_relation<int>(env, eq{});
-  check_strict_partial_order<int>(env, lt{});
-  check_strict_weak_order<int>(env, lt{});
-  check_strict_total_order<int>(env, lt{});
+  check_equivalence_relation<int>(env, eq());
+  check_strict_partial_order<int>(env, lt());
+  check_strict_weak_order<int>(env, lt());
+  check_strict_total_order<int>(env, lt());
 
   // Check concepts.
   check_equality_comparable<int>(env);
@@ -68,10 +68,10 @@ int main()
 
   // NOTE: f is declared above.
   // TODO: Test regularity with lambda expressions.
-  check_regular_function<eq(int, int)>(env, eq{});
+  check_regular_function<equal_relation(int, int)>(env, eq());
   check_regular_function<decltype(f)>(env, f);
-  check_predicate<eq(int, int)>(env, eq{});
-  check_predicate<eq(int, int)>(env, eq{});
-  check_relation<eq(int, int)>(env, eq{});
+  check_predicate<equal_relation(int, int)>(env, eq());
+  check_predicate<equal_relation(int, int)>(env, eq());
+  check_relation<equal_relation(int, int)>(env, eq());
 }
 

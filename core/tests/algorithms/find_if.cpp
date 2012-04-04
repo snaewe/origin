@@ -18,7 +18,7 @@ int main()
   assert_checker<> env;
 
   using V = vector<bool>;
-  using P = as_bool<bool>;
+  using P = to_bool_function;
 
   // Test find_if
   find_if_check find_if;

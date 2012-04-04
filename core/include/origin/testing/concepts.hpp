@@ -51,8 +51,8 @@ namespace origin
           check(env, neq, var1, var2); // a != b <=> C(a) != C(b)
         }
 
-      common_type_equivalence<origin::eq> eq;
-      common_type_equivalence<origin::neq> neq;
+      common_type_equivalence<equal_relation> eq;
+      common_type_equivalence<not_equal_relation> neq;
     };
     
   // Specialization when testing for a single type.
@@ -65,12 +65,16 @@ namespace origin
         void operator()(Env& env, Var&& var) const
         {
           static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
-          check(env, equivalence, var);
-          check(env, not_equal, var, var);
+          check(env, eq, var);
+          check(env, neq, var, var);
         }
 
-      equivalence_relation_spec<eq> equivalence;
-      logical_equivalence<neq, complement<eq>> not_equal;
+      equivalence_relation_spec<equal_relation> eq;
+      
+      logical_equivalence<
+        not_equal_relation, 
+        complement_relation<equal_relation>
+      > neq;
     };
 
 
@@ -156,10 +160,10 @@ namespace origin
           check(env, geq, var1, var2); // b >= a <=> C(a) >= C(b)
         }
         
-      common_type_equivalence<origin::lt> lt;
-      common_type_equivalence<origin::gt> gt;
-      common_type_equivalence<origin::leq> leq;
-      common_type_equivalence<origin::geq> geq;
+      common_type_equivalence<less_relation> lt;
+      common_type_equivalence<greater_relation> gt;
+      common_type_equivalence<less_equal_relation> leq;
+      common_type_equivalence<greater_equal_relation> geq;
     };
     
   // Specialization for the unary type.
@@ -178,10 +182,19 @@ namespace origin
           check(env, geq, var, var);
         }
         
-      strict_weak_order_spec<origin::lt> lt;
-      logical_equivalence<origin::gt, converse<origin::lt>> gt;
-      logical_equivalence<origin::leq, complement_of_converse<origin::lt>> leq;
-      logical_equivalence<origin::geq, complement<origin::lt>> geq;
+      strict_weak_order_spec<less_relation> lt;
+      
+      logical_equivalence<
+        greater_relation, converse_relation<less_relation>
+      > gt;
+      
+      logical_equivalence<
+        less_equal_relation, complement_of_converse_relation<less_relation>
+      > leq;
+      
+      logical_equivalence<
+        greater_equal_relation, complement_relation<less_relation>
+      > geq;
     };
 
 
@@ -262,11 +275,13 @@ namespace origin
           check(env, totally_ordered_semantics<C>{}, var3);
 
           check(env, weak, var1, var2, var3);
-          check(env, equal, var1, var2);
+          check(env, equiv, var1, var2);
         }
         
       weakly_ordered_semantics<T, U> weak;
-      logical_equivalence<eq, symmetric_complement<lt>> equal;
+      logical_equivalence<
+        equal_relation, symmetric_complement_relation<less_relation>
+      > equiv;
     };
     
   // Specialization for the unary type.
@@ -279,16 +294,14 @@ namespace origin
         void operator()(Env& env, Var&& var) const
         {
           static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
-          check(env, lt, var);
-          check(env, gt, var, var);
-          check(env, leq, var, var);
-          check(env, geq, var, var);
+          check(env, weak, var);
+          check(env, equiv, var, var);
         }
         
-      strict_total_order_spec<origin::lt> lt;
-      logical_equivalence<origin::gt, converse<origin::lt>> gt;
-      logical_equivalence<origin::leq, complement_of_converse<origin::lt>> leq;
-      logical_equivalence<origin::geq, complement<origin::lt>> geq;
+      weakly_ordered_semantics<T> weak;
+      logical_equivalence<
+        equal_relation, symmetric_complement_relation<less_relation>
+      > equiv;
     };
     
 

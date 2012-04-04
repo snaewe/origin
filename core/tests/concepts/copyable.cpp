@@ -30,7 +30,7 @@ int main()
   static_assert(Copyable<std::less<int>>(), "");
   
   // Lambda expressions are copy constructible, but not assignable.
-  auto f = [](){};
+  auto f = [](){ return; };
   using F = decltype(f);
   static_assert(Copy_constructible<F>(), "");
   static_assert(!Copy_assignable<F>(), "");

@@ -51,7 +51,7 @@ namespace origin
       
       o_sort(first1, last1);
       o_sort(first2, last2);
-      return o_equal(first1, last1, first2, symmetric_complement<R>{comp});
+      return o_equal(first1, last1, first2, symmetric_complement(comp));
     }
 
 
@@ -111,7 +111,7 @@ namespace origin
         return is_sorted_permutation(b1.begin(), b1.end(), b2.begin(), b2.end(), comp);
       } else {
         I2 last2 = o_next(first2, n);
-        return equal_elements(first1, last1, first2, last2, symmetric_complement<R>{comp});
+        return equal_elements(first1, last1, first2, last2, symmetric_complement(comp));
       }
     }
 

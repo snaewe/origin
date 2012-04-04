@@ -66,7 +66,7 @@ namespace origin
     {
       static_assert(Lexicographical_comparison<I1, I2>(), "");
 
-      return o_includes(first1, last1, first2, last2, lt{});
+      return o_includes(first1, last1, first2, last2, lt());
     }
     
     
@@ -88,7 +88,7 @@ namespace origin
     inline bool includes(const R1& range1, const R2& range2)
     {
       return o_includes(o_begin(range1), o_end(range1), 
-                        o_begin(range2), o_end(range2), lt{});
+                        o_begin(range2), o_end(range2), lt());
     }
     
     
@@ -129,7 +129,7 @@ namespace origin
     inline O o_set_union(I1 first1, I1 last1, I2 first2, I2 last2, O result)
     {
       static_assert(Merge<I1, I2, O>(), "");
-      return o_set_union(first1, last1, first2, last2, result, lt{});
+      return o_set_union(first1, last1, first2, last2, result, lt());
     }
 
     
@@ -198,7 +198,7 @@ namespace origin
     inline O o_set_intersection(I1 first1, I1 last1, I2 first2, I2 last2, O result)
     {
       static_assert(Merge<I1, I2, O>(), "");
-      return o_set_intersection(first1, last1, first2, last2, result, lt{});
+      return o_set_intersection(first1, last1, first2, last2, result, lt());
     }
     
     
@@ -265,7 +265,7 @@ namespace origin
     inline O o_set_difference(I1 first1, I1 last1, I2 first2, I2 last2, O result)
     {
       static_assert(Merge<I1, I2, O>(), "");
-      return o_set_difference(first1, last1, first2, last2, result, lt{});
+      return o_set_difference(first1, last1, first2, last2, result, lt());
     }
 
     
@@ -334,7 +334,7 @@ namespace origin
     {
       static_assert(Merge<I1, I2, O>(), "");
 
-      return o_set_symmetric_difference(first1, last1, first2, last2, result, lt{});
+      return o_set_symmetric_difference(first1, last1, first2, last2, result, lt());
     }
 
     
