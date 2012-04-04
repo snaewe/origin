@@ -36,9 +36,11 @@ namespace testing
 			}
 		};
 
+
+
 	// Find if not (property)
 	template <typename R, typename P>
-	  struct find_if_not_equiv
+	  struct find_ifnt_equiv
 	  {
 	    bool operator()(const R& range, P pred) const
 	    {
@@ -47,14 +49,27 @@ namespace testing
 	  };
 
 
+  
+  // FIXME: Write specs for find_next_if, find_nth_if.
+
 
 	// Find equivalence (property)
 	template <typename R, typename T>
-		struct find_equiv
+		struct find_eq_equiv
 		{
-			bool operator()(const R& range, const T& value)
+			bool operator()(const R& range, const T& value) const
 			{
 				return find(range, value) == find_if(range, eq(value));
+			}
+		};
+
+
+	template <typename R, typename T>
+		struct find_neq_equiv
+		{
+			bool operator()(const R& range, const T& value) const
+			{
+				return find_not_equal(range, value) == find_if_not(range, eq(value));
 			}
 		};
 
@@ -78,12 +93,36 @@ namespace testing
 
 	// Count if not (property)
 	template <typename R, typename P>
-	  struct count_if_not_equiv
+	  struct count_ifnt_equiv
 	  {
 	    bool operator()(const R& range, P pred) const
 	    {
 	      return count_if_not(range, pred) == count_if(range, negation(pred));
 	    }
+	  };
+
+
+
+  // Count equal (property)
+	template <typename R, typename T>
+	  struct count_eq_equiv
+	  {
+	  	bool operator()(const R& range, const T& value) const
+	  	{
+	  		return count(range, value) == count_if(range, eq(value));
+	  	}
+	  };
+
+
+
+  // Count not equal (property)
+	template <typename R, typename T>
+	  struct count_neq_equiv
+	  {
+	  	bool operator()(const R& range, const T& value) const
+	  	{
+	  		return count_not_equal(range, value) == count_if_not(range, eq(value));
+	  	}
 	  };
 
 
@@ -193,24 +232,78 @@ namespace testing
 	    static_assert(Range_query<R, P>(), "");
 
 	    find_if_results<R, P> find_if;
-	    find_if_not_equiv<R, P> find_if_not;
+	    find_ifnt_equiv<R, P> find_ifnt;
+
+	    // The default predicate.
+	    P pred;
+
+	    find_if_specs(P p = {}) : pred(p) { }
 	    
-	    // Check with specific values.
+	    // Value checking.
 	    template <typename Env>
 	      void operator()(Env& env, const R& range, P pred) const
 	      {
 	      	check(env, find_if, range, pred);
-	        check(env, find_if_not, range, pred);
+	        check(env, find_ifnt, range, pred);
 	      }
 
-	    // Check randomly.
+	    // Random checking.
 	    template <typename Env, typename Rgen, typename Pgen>
 	      auto operator()(Env& env, Rgen& range, Pgen& pred) const
 	        -> Requires<Random_variable<Rgen>() && Random_variable<Pgen>()>
 	      {
 	        operator()(env, range(), pred());
 	      }
-	  };
+	    
+	    // Default random checking.
+      template <typename Env>
+	      void operator()(Env& env) const
+	      {
+	      	auto pdist = single_value_distribution<P> {pred};
+	      	auto pgen = checkable_var(env, pdist);
+	      	auto rgen = checkable_var<R>(env);
+	      	operator()(env, rgen, pgen);
+	      }	  
+		};
+
+
+
+	// Find if (specification)
+	// Check additional algorithms and properties affiliated with the find_if 
+	// algorithm.
+	template <typename R, typename T = Value_type<R>>
+	  struct find_specs
+	  {
+	    static_assert(Range_search<R, T>(), "");
+
+	    find_eq_equiv<R, T> find_eq;
+	    find_neq_equiv<R, T> find_neq;
+
+	    // Value checking.
+	    template <typename Env>
+	      void operator()(Env& env, const R& range, const T& value) const
+	      {
+	      	check(env, find_eq, range, value);
+	        check(env, find_neq, range, value);
+	      }
+
+	    // Random checking.
+	    template <typename Env, typename Rgen, typename Tgen>
+	      auto operator()(Env& env, Rgen& range, Tgen& value) const
+	        -> Requires<Random_variable<Rgen>() && Random_variable<Tgen>()>
+	      {
+	        operator()(env, range(), value());
+	      }
+	    
+	    // Default random checking.
+      template <typename Env>
+	      void operator()(Env& env) const
+	      {
+	      	auto rgen = checkable_var<R>(env);
+	      	auto tgen = checkable_var<T>(env);
+	      	operator()(env, rgen, tgen);
+	      }
+		};
 
 
 
@@ -223,23 +316,78 @@ namespace testing
 	    static_assert(Range_query<R, P>(), "");
 
 	    count_if_equiv<R, P> count_if;
-	    count_if_not_equiv<R, P> count_if_not;
+	    count_ifnt_equiv<R, P> count_ifnt;
+
+	    // The default predicate.
+	    P pred;
+
+	    count_if_specs(P p = {}) : pred(p) { }
 	    
-	    // Check with specific values.
-	    // Note that the same value will be used for each check.
+	    // Value checking.
 	    template <typename Env>
 	      void operator()(Env& env, const R& range, P pred) const
 	      {
 	      	check(env, count_if, range, pred);
-	        check(env, count_if_not, range, pred);
+	        check(env, count_ifnt, range, pred);
 	      }
 
-	    // Check randomly.
+	    // Random checking.
 	    template <typename Env, typename Rgen, typename Pgen>
 	      auto operator()(Env& env, Rgen& range, Pgen& pred) const
 	        -> Requires<Random_variable<Rgen>() && Random_variable<Pgen>()>
 	      {
 	        operator()(env, range(), pred());
+	      }
+
+
+	    // Default random checking.
+      template <typename Env>
+	      void operator()(Env& env) const
+	      {
+	      	auto pdist = single_value_distribution<P> {pred};
+	      	auto pgen = checkable_var(env, pdist);
+	      	auto rgen = checkable_var<R>(env);
+	      	operator()(env, rgen, pgen);
+	      }
+	  };
+
+
+
+	// Count if (specification)
+	// Check additional algorithms and properties affiliated with the count_if 
+	// algorithm.
+	template <typename R, typename T = Value_type<R>>
+	  struct count_specs
+	  {
+	    static_assert(Range_search<R, T>(), "");
+
+	    count_eq_equiv<R, T> count_eq;
+	    count_neq_equiv<R, T> count_neq;
+
+	    // Value checking.
+	    template <typename Env>
+	      void operator()(Env& env, const R& range, const T& value) const
+	      {
+	      	check(env, count_eq, range, value);
+	        check(env, count_neq, range, value);
+	      }
+
+	    // Random checking.
+	    template <typename Env, typename Rgen, typename Tgen>
+	      auto operator()(Env& env, Rgen& range, Tgen& value) const
+	        -> Requires<Random_variable<Rgen>() && Random_variable<Tgen>()>
+	      {
+	        operator()(env, range(), value());
+	      }
+
+
+	    // Default random checking.
+      template <typename Env>
+	      void operator()(Env& env) const
+	      {
+	      	auto rgen = checkable_var<R>(env);
+	      	auto tgen = checkable_var<T>(env);
+	      	operator()(env, rgen, tgen);
 	      }
 	  };
 
@@ -265,6 +413,11 @@ namespace testing
 			nall_equiv_count<R, P> nall_count;
 			none_equiv_count<R, P> none_count;
 
+			// The default predicate.
+			P pred;
+
+			quant_of_specs(P p = {}) : pred(p) { }
+
 			template <typename Env>
 				void operator()(Env& env, const R& range, P pred) const
 				{
@@ -284,96 +437,18 @@ namespace testing
 				{
 					operator()(env, range(), pred());
 				}
+
+			template <typename Env>
+				void operator()(Env& env) const
+				{
+					auto pdist = single_value_distribution<P> {pred};
+					auto pgen = checkable_var(env, pdist);
+					auto rgen = checkable_var<R>(env);
+					operator()(env, rgen, pgen);
+				}
 		};
 
 
-
-	// Find if (check)
-	// Check find_if against prototypical inputs: boolean sequences.
-	struct find_if_check
-	{
-	  using V = vector<bool>;
-	  using P = to_bool_function;
-
-	  P pred;
-	  V v0;
-	  V v1;
-	  V v2;
-
-	  find_if_check() 
-	    : pred()
-	    , v0 {}     // Empty sequence
-	    , v1 {0}    // No such element
-	    , v2 {1, 1} // Returns the first such element
-	  { }
-
-	  // Check the default property
-	  template <typename Env>
-	    void operator()(Env& env) const
-	    {
-	      // An empty sequence has no such element.
-	      check(env, eq(), find_if(v0, pred), end(v0));
-
-	      // No such element exists in the sequence.
-	      check(env, eq(), find_if(v1, pred), end(v1));
-
-	      // Returns the first such element.
-	      check(env, eq(), find_if(v2, pred), begin(v2));
-	    }
-
-	  // Test the given specification using these inputs.
-	  template <typename Env, typename Spec>
-	    void operator()(Env& env, const Spec& spec) const
-	    {
-	      spec(env, v0, pred);
-	      spec(env, v1, pred);
-	      spec(env, v2, pred);
-	    }
-	};
-
-
-	// Check count_if against prototypical inputs: boolean sequences. This in
-	// turn checks against the derived specifiations of find_if_not.
-	struct count_if_check
-	{
-	  using V = vector<bool>;
-	  using P = to_bool_function;
-
-	  P pred;
-	  V v0;
-	  V v1;
-	  V v2;
-
-	  count_if_check() 
-	    : pred()
-	    , v0 {}     // Empty sequence
-	    , v1 {0}    // No such element
-	    , v2 {0, 1} // At least one element.
-	  { }
-
-	  // Check the default property
-	  template <typename Env>
-	    void operator()(Env& env) const
-	    {
-	      // An empty list has no matching elements.
-	      check(env, eq(), count_if(v0, pred), 0);
-
-	      // There are no matching elements.
-	      check(env, eq(), count_if(v1, pred), 0);
-
-	      // Returns the number of matching elements.
-	      check(env, eq(), count_if(v2, pred), 1);
-	    }
-
-	  // Test the given specification using these inputs.
-	  template <typename Env, typename Spec>
-	    void operator()(Env& env, const Spec& spec) const
-	    {
-	      spec(env, v0, pred);
-	      spec(env, v1, pred);
-	      spec(env, v2, pred);
-	    }
-	};
 
 } // namespace origin
 

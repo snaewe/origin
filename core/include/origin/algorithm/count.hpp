@@ -93,7 +93,7 @@ namespace origin
   template <typename R, typename T>
     inline Distance_type<R> count(const R& range, const T& value)
     {
-      static_assert(Range_search<R>(), "");
+      static_assert(Range_search<R, T>(), "");
 
       return count(o_begin(range), o_end(range), value, eq());
     }

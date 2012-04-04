@@ -13,6 +13,54 @@ using namespace std;
 using namespace origin;
 using namespace testing;
 
+
+// FIXME: I don't care for this.
+
+// Find if (check)
+// Check find_if against prototypical inputs: boolean sequences.
+struct find_if_check
+{
+  using V = vector<bool>;
+  using P = to_bool_function;
+
+  P pred;
+  V v0;
+  V v1;
+  V v2;
+
+  find_if_check() 
+    : pred()
+    , v0 {}     // Empty sequence
+    , v1 {0}    // No such element
+    , v2 {1, 1} // Returns the first such element
+  { }
+
+  // Check the default property
+  template <typename Env>
+    void operator()(Env& env) const
+    {
+      // An empty sequence has no such element.
+      check(env, eq(), find_if(v0, pred), end(v0));
+
+      // No such element exists in the sequence.
+      check(env, eq(), find_if(v1, pred), end(v1));
+
+      // Returns the first such element.
+      check(env, eq(), find_if(v2, pred), begin(v2));
+    }
+
+  // Test the given specification using these inputs.
+  template <typename Env, typename Spec>
+    void operator()(Env& env, const Spec& spec) const
+    {
+      spec(env, v0, pred);
+      spec(env, v1, pred);
+      spec(env, v2, pred);
+    }
+};
+
+
+
 int main()
 {
   assert_checker<> env;
@@ -28,12 +76,8 @@ int main()
   find_if_specs<V, P> specs;
   find_if(env, specs);
 
-  // Test randomly for good measure.
-  auto& eng = env.random_engine();
-  auto pdist = single_value_distribution<P> {};
-  auto pvar = make_random(eng, pdist);
-  auto rvar = make_random<V>(eng);
-  quick_check(env, specs, rvar, pvar, 1000);
+  // 
+  quick_check(env, specs, 1000);
 }
 
 

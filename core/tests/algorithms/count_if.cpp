@@ -13,6 +13,54 @@ using namespace std;
 using namespace origin;
 using namespace testing;
 
+
+// FIXME: I don't care for this. Why isn't this just a function that has
+// some fixed values that we test against?
+
+// Check count_if against prototypical inputs: boolean sequences. This in
+// turn checks against the derived specifiations of find_if_not.
+struct count_if_check
+{
+  using V = vector<bool>;
+  using P = to_bool_function;
+
+  P pred;
+  V v0;
+  V v1;
+  V v2;
+
+  count_if_check() 
+    : pred()
+    , v0 {}     // Empty sequence
+    , v1 {0}    // No such element
+    , v2 {0, 1} // At least one element.
+  { }
+
+  // Check the default property
+  template <typename Env>
+    void operator()(Env& env) const
+    {
+      // An empty list has no matching elements.
+      check(env, eq(), count_if(v0, pred), 0);
+
+      // There are no matching elements.
+      check(env, eq(), count_if(v1, pred), 0);
+
+      // Returns the number of matching elements.
+      check(env, eq(), count_if(v2, pred), 1);
+    }
+
+  // Test the given specification using these inputs.
+  template <typename Env, typename Spec>
+    void operator()(Env& env, const Spec& spec) const
+    {
+      spec(env, v0, pred);
+      spec(env, v1, pred);
+      spec(env, v2, pred);
+    }
+};
+
+
 int main()
 {
   assert_checker<> env;

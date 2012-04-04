@@ -48,7 +48,7 @@ namespace origin
     bool is_sortable_range(I first, I last, R comp) 
     { 
       static_assert(Relational_query<R>(), "");
-      return is_permutable_range(first, last) && is_strict_weak_ordering(comp);
+      return is_permutable_range(first, last) && is_strict_weak_order(comp);
     }
 
     
@@ -74,9 +74,9 @@ namespace origin
     {
       static_assert(Relational_query<I, R>(), "");
       assert(is_readable_range(first, last));
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
-      return relation_preserving(first, last, comp);
+      return is_relation_preserving(first, last, comp);
     }
     
     
@@ -99,7 +99,7 @@ namespace origin
     bool is_sorted(const R& range, Rel comp)
     {
       static_assert(Range_relational_query<R, Rel>(), "");
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
       return o_is_sorted(o_begin(range), o_end(range), comp);
     }
@@ -124,7 +124,7 @@ namespace origin
     {
       static_assert(Relational_query<I, R>(), "");
       assert(is_readable_range(first, last));
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
       return find_not_adjacent(first, last, comp);
     }
@@ -147,7 +147,7 @@ namespace origin
     auto is_sorted_until(const R& range, Rel comp) -> decltype(o_begin(range))
     {
       static_assert(Range_relational_query<R, Rel>(), "");
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
       return o_is_sorted_until(o_begin(range), o_end(range), comp);
     }
@@ -194,7 +194,7 @@ namespace origin
     void sort(R&& range, Rel comp)
     {
       static_assert(Range_sort<Forwarded<R>, Rel>(), "");
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
       return o_sort(o_begin(range), o_end(range), comp);
     }
@@ -219,7 +219,7 @@ namespace origin
     {
       static_assert(Sort<I, R>(), "");
       assert(is_permutable_range(first, last));
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
 
       return std::stable_sort(first, last, comp);
     }
@@ -242,7 +242,7 @@ namespace origin
     void stable_sort(R&& range, Rel comp)
     {
       static_assert(Range_sort<Forwarded<R>, Rel>(), "");
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
       
       return o_stable_sort(o_begin(range), o_end(range), comp);
     }
@@ -277,7 +277,7 @@ namespace origin
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Sort<I, R>(), "");
       assert(is_permutable_range(first, last));
-      assert(is_strict_weak_ordering(comp));
+      assert(is_strict_weak_order(comp));
 
       return std::partial_sort(first, last, comp);
     }

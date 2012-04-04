@@ -22,10 +22,6 @@ int main()
   using V = vector<bool>;
   using P = to_bool_function;
 
-  find_if_check find_if;
-  count_if_check count_if;
-
-  quant_of_specs<V, P> quant_of;
-  find_if(env, quant_of);
-  count_if(env, quant_of);
+  quant_of_specs<V, P> specs;
+  quick_check(env, specs);
 }

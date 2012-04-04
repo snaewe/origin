@@ -19,30 +19,36 @@ namespace origin
   //
   //    find(first, last, value)
   //    find(first, last, value, comp)
-  //    find(range, value)
-  //    find(range, vaule, comp)
   //    find_not_equal(first, last, value)
   //    find_not_equal(first, last, value, comp)
-  //    find_not_equal(range, value)
-  //    find_not_equal(range, value, comp)
   //    find_next(first, last, value)
   //    find_next(first, last, value, comp)
   //    find_nth(first, last, value)
   //    find_nth(first, last, value, comp)
-  //    find_nth(range, value)
-  //    find_nth(range, value, comp)
   //
   // These algorithms search for an element in a range of elements that 
   // satisfies a unary predicate.
   //
   //    find_if(first, last, pred)
-  //    find_if(range, pred)
   //    find_if_not(first, last, pred)
-  //    find_if_not(range, pred)
   //    find_next_if(first, last, value)
   //    find_nth_if(first, last, pred)
-  //    find_nth_if(range, pred)
   //
+  // There are range-based overloads for each of these funtions also. Note that
+  // there are no range-based overloads for find_next.
+  //
+  //    find(range, value)
+  //    find(range, vaule, comp)
+  //    find_not_equal(range, value)
+  //    find_not_equal(range, value, comp)
+  //    find_nth(range, value)
+  //    find_nth(range, value, comp)
+  //
+  //    find_if(range, pred)
+  //    find_if_not(range, pred)
+  //    find_nth_if(range, pred)
+
+
   // Algorithms for finding the first match in range of possible values. This
   // is the same as find_first_of in the standard library.
   //
@@ -66,7 +72,12 @@ namespace origin
   //    find_not_adjacent(range, comp)
   //
   // TODO: Write find_next_adjacent and find_nth_adjacent
-
+  //
+  // Ancilliary find algorithms include:
+  //
+  //    is_relation_preserving(first, last, comp)
+  //    is_relation_preserving(range, comp)
+  //
   
   // Find algorithms
   // These algorithms search a range of elements for an element that satisfies
@@ -104,7 +115,6 @@ namespace origin
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
-
       return find(first, last, value, eq());
     }
 
@@ -117,7 +127,6 @@ namespace origin
     inline auto find(R&& range, const T& value, Rel comp) -> decltype(o_begin(range))
     {
       static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
-      
       return find(o_begin(range), o_end(range), value, comp);
     }
 
@@ -131,7 +140,6 @@ namespace origin
       -> Requires<!Has_member_find<Forwarded<R>, T>(), decltype(o_begin(range))>
     {
       static_assert(Range_search<Forwarded<R>, T>(), "");
-      
       return find(o_begin(range), o_end(range), value, eq());
     }
 
@@ -393,10 +401,35 @@ namespace origin
   // equal and mismatch -- even though they're find algorithms.
   
   
+  // Find first in (relation)
+  // Returns the first iterator i in [first1, last1) such that comp(*i, *j) is 
+  // true where j is any iterator in [first2, last2).
+  template <typename I1, typename I2, typename R>
+    inline I1 find_first_in(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    {
+      static_assert(Comparison<I1, I2, R>(), "");
+      static_assert(Forward_iterator<I2>(), "");
+      assert(is_readable_range(first1, last1));
+      assert(is_readable_range(first2, last2));
+      
+      auto pred = [&first1](const Value_type<I1>& x) { return *first1 == x; };
+
+      while (first1 != last1) {
+        if (some_of(first2, last2, pred))
+          return first1;
+        ++first1;
+      }
+      return last1;
+    }
+
+
     
   // Find first in
-  // Returns an iterator i in [first1, last1) where any_equal(first2, last, *i)
+  // Returns an iterator i in [first1, last1) where some_equal(first2, last, *i)
   // is true.
+  //
+  // Note that this is re-implemented from the generalized algorithm to avoid 
+  // any incidental overhead from the use of a lambda expression.
   template <typename I1, typename I2>
     inline I1 find_first_in(I1 first1, I1 last1, I2 first2, I2 last2)
     {
@@ -406,7 +439,7 @@ namespace origin
       assert(is_readable_range(first2, last2));
 
       while (first1 != last1) {
-        if (any_equal(first2, last2, *first1))
+        if (some_equal(first2, last2, *first1))
           return first1;
         ++first1;
       }
@@ -416,7 +449,7 @@ namespace origin
 
 
   // Find first in (range)
-  // Returns the first iterator i in r1 where any_equal(r2, *i) is true.
+  // Returns the first iterator i in r1 where some_equal(r2, *i) is true.
   template <typename R1, typename R2>
     inline auto find_first_in(R1&& range1, const R2& range2) -> decltype(o_begin(range1))
     {
@@ -429,26 +462,6 @@ namespace origin
   
   
   
-  // Find first in (relation)
-  // Returns the first iterator i in [first1, last1) such that comp(*i, *j) is 
-  // true where j is any iterator in [first2, last2).
-  template <typename I1, typename I2, typename R>
-    inline I1 find_first_in(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
-    {
-      static_assert(Comparison<I1, I2, R>(), "");
-      static_assert(Forward_iterator<I2>(), "");
-      assert(is_readable_range(first1, last1));
-      assert(is_readable_range(first2, last2));
-      
-      using namespace std::placeholders;
-
-      while (first1 != last1) {
-        if (any_of(first2, last2, std::bind(*first1, _1)))
-          return first1;
-        ++first1;
-      }
-      return last1;
-    }
 
 
 
@@ -532,7 +545,7 @@ namespace origin
     I find_not_adjacent(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
-      assert(is_readable_range(first, last, comp));
+      assert(is_readable_range(first, last));
 
       if (first != last) {
         for (I i = o_next(first); i != last; ++i) {
@@ -589,7 +602,6 @@ namespace origin
     inline bool is_relation_preserving(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
-
       return find_not_adjacent(first, last, comp) == last;
     }
     
@@ -602,7 +614,6 @@ namespace origin
     inline bool is_relation_preserving(const R& range, Rel comp)
     {
       static_assert(Relational_query<R, Rel>(), "");
-
       return is_relation_preserving(o_begin(range), o_end(range), comp);
     }
 

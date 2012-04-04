@@ -505,6 +505,28 @@ namespace origin
 
 namespace origin 
 {
+  // For each (iterator)
+  template <typename I, typename F>
+    inline F o_for_each(I first, I last, F func)
+    {
+      while (first != last) {
+        func(*first);
+        ++first;
+      }
+      return func;
+    }
+
+
+
+  // For each (range)
+  template <typename R, typename F>
+    inline F for_each(R&& range, F func)
+    {
+      return o_for_each(o_begin(range), o_end(range), func);
+    }
+
+
+
   // Equal
   // Returns true if *i == *j for each iterator i and j in [first1, last1) and
   // [first2, first2 + (last1 - first1)), pairwise.

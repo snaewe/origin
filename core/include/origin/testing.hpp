@@ -174,6 +174,15 @@ namespace origin
   // specified count off the end of the argument list.
 
 
+  // Check the nullary specification.
+  template <typename Env, typename Check>
+    void quick_check(Env& env, Check c, int n = 100)
+    {
+      quick_check_impl(n, env, c);
+    }
+
+
+
   // Check the unary property specification 100 times.
   template <typename Env, typename Check, typename Var>
     void quick_check(Env& env, Check c, Var&& var, int n = 100)
@@ -262,6 +271,15 @@ namespace origin
       -> decltype(make_random<T>(env.random_engine()))
     {
       return make_random<T>(env.random_engine());
+    }
+
+  // Return a random variable for the given type T that will be used for
+  // checking in the given environment.
+  template <typename Env, typename Dist>
+    auto checkable_var(Env& env, Dist&& dist) 
+      -> decltype(make_random(env.random_engine(), dist))
+    {
+      return make_random(env.random_engine(), dist);;
     }
 
 } // namespace origin
