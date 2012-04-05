@@ -20,58 +20,10 @@ namespace testing
 	using namespace std;
 	using namespace origin;
 
-	// Find if results (property)
-	template <typename R, typename P>
-		struct find_if_results
-		{
-			bool operator()(const R& range, P pred) const
-			{
-				auto first = begin(range);
-				auto last = end(range);
-				auto i = find_if(first, last, pred);
-				if (i != last)
-					return pred(*i) && find_if(first, i, pred) == i;
-				else
-					return true;
-			}
-		};
-
-
-
-	// Find if not (property)
-	template <typename R, typename P>
-	  struct find_ifnt_equiv
-	  {
-	    bool operator()(const R& range, P pred) const
-	    {
-	      return find_if_not(range, pred) == find_if(range, negation(pred));
-	    }
-	  };
 
 
   
   // FIXME: Write specs for find_next_if, find_nth_if.
-
-
-	// Find equivalence (property)
-	template <typename R, typename T>
-		struct find_eq_equiv
-		{
-			bool operator()(const R& range, const T& value) const
-			{
-				return find(range, value) == find_if(range, eq(value));
-			}
-		};
-
-
-	template <typename R, typename T>
-		struct find_neq_equiv
-		{
-			bool operator()(const R& range, const T& value) const
-			{
-				return find_not_equal(range, value) == find_if_not(range, eq(value));
-			}
-		};
 
 
 	// Count if (property)

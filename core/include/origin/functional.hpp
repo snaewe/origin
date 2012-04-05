@@ -339,6 +339,12 @@ namespace origin
 
 
 
+  // Equal to (alias)
+  // An alias to the type of the equality reltaion.
+  using Equal_to = equal_relation;
+
+
+
   // Distinction from (relation)
   // The not equal function denotes the expression a != b.
   struct not_equal_relation
@@ -389,6 +395,12 @@ namespace origin
     {
       return make_constant_function(a != b);
     }
+
+
+
+  // Distinct from (alias)
+  // An alias to the type of the distinction relation.
+  using Distinct_from = not_equal_relation;
 
 
 
@@ -445,6 +457,11 @@ namespace origin
 
 
 
+  // Less than (alias)
+  using Less_than = less_relation;
+
+
+
   // Greater than (relation)
   struct greater_relation
   {
@@ -492,6 +509,11 @@ namespace origin
     {
       return make_constant_function(a > b);
     }
+
+
+
+  // Greater than (alias)
+  using Greater_than = greater_relation;
 
 
 
@@ -543,6 +565,11 @@ namespace origin
 
 
 
+  // Less than or equal to (alias)
+  using Less_equal_to = less_equal_relation;
+
+
+
   // Greater than or equal to (relation)
   struct greater_equal_relation
   {
@@ -587,6 +614,11 @@ namespace origin
     }
   
   
+
+  // Greater than or equal to (alias)
+  using Greater_equal_to = greater_equal_relation;
+
+
 
   // Negation (predicate)
   // The negation of a predicate p(args...) is !p(args...)

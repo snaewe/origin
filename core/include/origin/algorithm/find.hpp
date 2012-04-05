@@ -451,7 +451,8 @@ namespace origin
   // Find first in (range)
   // Returns the first iterator i in r1 where some_equal(r2, *i) is true.
   template <typename R1, typename R2>
-    inline auto find_first_in(R1&& range1, const R2& range2) -> decltype(o_begin(range1))
+    inline auto find_first_in(R1&& range1, const R2& range2) 
+      -> decltype(o_begin(range1))
     {
       static_assert(Range_comparison<Unqualified<R1>, R2>(), "");
       static_assert(Forward_range<R2>(), "");
@@ -460,9 +461,6 @@ namespace origin
                            o_begin(range2), o_end(range2));
     }
   
-  
-  
-
 
 
   // Find first in (relation, range)
@@ -488,7 +486,7 @@ namespace origin
     I find_adjacent(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
-      assert(is_readable_range(first, last, comp));
+      assert(is_readable_range(first, last));
       
       if (first != last) {
         for (I i = o_next(first); i != last; ++i) {
@@ -509,7 +507,6 @@ namespace origin
     {
       static_assert(Equality_query<I>(), "");
       assert(is_readable_range(first, last));
-
       return find_adjacent(first, last, eq());
     }
     
@@ -521,7 +518,6 @@ namespace origin
     inline auto find_adjacent(R&& range) -> decltype(o_begin(range))
     {
       static_assert(Range_equality_query<Forwarded<R>>(), "");
-
       return find_adjacent(o_begin(range), o_end(range));
     }
   
@@ -613,7 +609,7 @@ namespace origin
   template <typename R, typename Rel>
     inline bool is_relation_preserving(const R& range, Rel comp)
     {
-      static_assert(Relational_query<R, Rel>(), "");
+      static_assert(Range_relational_query<R, Rel>(), "");
       return is_relation_preserving(o_begin(range), o_end(range), comp);
     }
 
