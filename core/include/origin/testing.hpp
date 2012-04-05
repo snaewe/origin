@@ -85,7 +85,10 @@ namespace origin
   //
   // Where pred is a predicate that can be invoked over arguments a, b, and c.
   //
-  // FIXME: Make this variadic.
+  // FIXME: Make this variadic and make it forward arguments. Right now
+  // everything is passed as const, meaning that if we want to modify an
+  // argument, we have to capture it by value. This is actually a pretty
+  // serious bug.
 
   
   // Check the nullary (constant) predicate functin.

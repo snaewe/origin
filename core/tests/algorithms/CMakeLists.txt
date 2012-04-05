@@ -10,10 +10,9 @@ origin_run_test(algo_quantifier quantifier.cpp)
 origin_run_test(algo_find find.cpp)
 origin_run_test(algo_count count.cpp)
 origin_run_test(algo_for_each for_each.cpp)
-
-# origin_run_test(algo_find_nth_if find_nth_if.cpp)
-
 origin_run_test(algo_equal equal.cpp)
+
+origin_run_test(algo_copy copy.cpp)
 
 origin_run_test(algo_extract extract.cpp)
 origin_run_test(algo_extract_if extract_if.cpp)

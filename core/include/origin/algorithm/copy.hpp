@@ -17,15 +17,20 @@ namespace origin
   // into (or over) another range. It has the following algorithms:
   //
   //    copy(first, last, result)
-  //    copy(in, out)
   //    copy_n(first, last, result)
-  //    copy_n(in, out)
   //
   //    copy_if(first, last, pred)
-  //    copy_if(in, out, pred)
   //    copy_if_not(first, last, pred)
-  //    copy_if_not(in, out, pred)
   //    ...
+  //
+  // The range-based algorithms support the following interfaces.
+  //
+  //    copy(in, out)
+  //    copy_n(in, out)
+  //    copy_if(in, out, pred)
+  //    copy_if_not(in, out, pred)
+  //
+  // Here, out can either be an output iterator or an output range.
   //
   // Move algorithms also transfer values, but invalidate the original object.
   //
@@ -46,14 +51,14 @@ namespace origin
   // FIXME: Finish documenting all of these algorithms.
   //
   // FIXME: Add overlap requirements for all of these algorithms.
-    
+
   
    
   // Copy step
   // Copy the value of *i to the object pointed at by o and increment both
   // iterators.
-  template<typename I, typename O>
-    void copy_step(I& i, O& o)
+  template <typename I, typename O>
+    inline void copy_step(I& i, O& o)
     {
       static_assert(Weak_input_iterator<I>(), "");
       static_assert(Weak_output_iterator<O, Value_type<I>>(), "");
@@ -68,31 +73,44 @@ namespace origin
   // Copy
   // Copy the elements in a range a into another range b.
   //
-  // FIXME: Implement optimizations.
-  template<typename I, typename O>
+  // FIXME: Optimize this algorithm for trivially copyable types.
+  template <typename I, typename O>
     inline O o_copy(I first, I last, O result)
     {
       static_assert(Copy<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_writable_range(result, distance(first, last), *first));
+      // FIXME: Overlapping requirements
 
-      while(first != last)
+      while (first != last)
         copy_step(first, result);
       return result;
     }
   
-  
-  
-  // Copy (range)
-  // Copy the elements from range into result where size(range) <= size(result).
-  template<typename I, typename O>
-    inline void copy(const I& range, O& result)
+
+
+  // Copy (range to iterator)
+  // Copy the elements from range into the output range [first, ...).
+  template <typename I, typename O>
+    inline auto copy(const I& range, O result)
+      -> Requires<Range_copy_out<I, O>(), O>
     {
-      static_assert(Range_copy<I, O>(), "");
+      // FIXME: Overlapping requirements
+      return o_copy(o_begin(range), o_end(range), result);
+    }
+
+
+  
+  // Copy (range to range)
+  // Copy the elements from range into result where size(range) <= size(result).
+  template <typename I, typename O>
+    inline auto copy(const I& range, O&& result)
+      -> Requires<Range_copy<I, Forwarded<O>>(), decltype(o_begin(result))>
+    {
       assume(size(range) <= size(out));
       // FIXME: Overlapping requirements
       
-      o_copy(std::begin(range), std::end(range), std::begin(result));
+     return o_copy(o_begin(range), o_end(range), o_begin(result));
     }
 
 

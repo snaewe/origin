@@ -5,7 +5,6 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <cassert>
 #include <iostream>
 #include <vector>
 
@@ -17,7 +16,7 @@ using namespace std::placeholders;
 using namespace origin;
 
 
-// Find if results (property)
+// Find if (property)
 struct find_if_check
 {
   template <typename R, typename P>

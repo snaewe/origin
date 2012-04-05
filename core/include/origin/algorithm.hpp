@@ -330,6 +330,17 @@ namespace origin
     {
       return Input_range<R>() && Output_range<O, Value_type<R>>();
     }
+
+
+
+  // Range copy out (concept)
+  // The copy out concept describes algorithms that copy from an input range
+  // into an output iterator.
+  template <typename R, typename O>
+    constexpr bool Range_copy_out()
+    {
+      return Input_range<R>() && Output_iterator<O, Value_type<R>>();
+    }
     
     
     

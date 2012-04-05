@@ -311,37 +311,61 @@ namespace origin
     class random_sequence_distribution
     {
       using this_type = random_sequence_distribution<Seq, Size, Gen>;
+      using value_type = Value_type<Seq>;
     public:
       using result_type = Seq;
 
-      random_sequence_distribution(const Size& s = Size{0, 32}, 
-                                   const Gen& d = Gen{})
-        : size{s}, gen{d}
+      random_sequence_distribution()
+        : size(0, 32), gen(default_distribution<value_type>())
+      { }
+
+      random_sequence_distribution(const Size& s)
+        : size(s), gen(default_distribution<value_type>())
+      { }
+
+      random_sequence_distribution(const Size& s, const Gen& d)
+        : size(s), gen(d)
       { }
       
       template <typename Eng>
         Seq operator()(Eng& eng)
         {
           Seq s(size(eng), Value_type<Seq>{});
-          // generate_random(s, eng, gen);
           generate(s, make_random(eng, gen));
-          return std::move(s);
+          return s;
         }
         
       // Equality comparable
       bool operator==(const this_type& x) const { return equal(x); }
       bool operator!=(const this_type& x) const { return !equal(x); }
 
+      // Returns the distribution describing the size.
+      const Size& size_distribution() const { return size; }
+
+      // Returns the distribution describing the value of elements.
+      const Gen& value_distribution() const { return gen; }
+      
     private:
       bool equal(const this_type& x) const
       {
         return size == x.size && gen == x.gen;
       }
-      
+
     private:  
       Size size;
       Gen gen;
     };
+
+  // Streamable
+  //
+  // FIXME: Implement input streaming.
+  template <typename C, typename T, typename Seq, typename Size, typename Gen>
+    inline std::basic_ostream<C, T>&
+    operator<<(std::basic_ostream<C, T>& os, 
+               const random_sequence_distribution<Seq, Size, Gen>& gen)
+    {
+      return os << gen.size_distribution() << ' ' << gen.value_distribution();
+    }
 
 
 
@@ -481,7 +505,10 @@ namespace origin
     {
       static_assert(Integral<T>(), "");
 
-      static std::uniform_int_distribution<T> get() {return {}; } 
+      static std::uniform_int_distribution<T> get() 
+      { 
+        return std::uniform_int_distribution<T> {0, 9}; 
+      } 
     };
 
 
