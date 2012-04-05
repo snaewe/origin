@@ -12,20 +12,14 @@
 
 namespace origin
 {
-  /**
-   * @defgroup except Exceptions
-   * Exceptions for the Origin libraries.
-   */
 
-  /**
-   * @ingroup except
-   * The 'not implemented' exception is a runtime error that is thrown to
-   * indicate that a function has been called that has not been implemented.
-   *
-   * @todo This is currently classified as a runtime error, but it really
-   * isn't. It's not really a logic error either. It's more of a program
-   * limitation than anything else. It might be nice to reclassify it as such.
-   */
+  // Not implemented (exception)
+  // The 'not implemented' exception is a runtime error that is thrown to
+  // indicate that a function has been called that has not been implemented.
+  //
+  // FIXME: This is currently classified as a runtime error, but it really
+  // isn't. It's not really a logic error either. It's more of a program
+  // limitation than anything else. It might be nice to reclassify it as such.
   class not_implemented : public std::runtime_error
   {
   public:
@@ -33,7 +27,6 @@ namespace origin
       : std::runtime_error(what + " is not implemented")
     { }
   };
-
 }
 
 #endif

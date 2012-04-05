@@ -506,6 +506,7 @@ namespace origin
 namespace origin 
 {
   // For each (iterator)
+  // Evaluate func(x) for each element x in [first, last), Returns func.
   template <typename I, typename F>
     inline F o_for_each(I first, I last, F func)
     {
@@ -519,10 +520,84 @@ namespace origin
 
 
   // For each (range)
+  // Evaluate func(x) for each element x in range. Returns func.
   template <typename R, typename F>
     inline F for_each(R&& range, F func)
     {
       return o_for_each(o_begin(range), o_end(range), func);
+    }
+
+
+
+  // FIXME: mismatch can collide have problems with the STL overload if the
+  // iterator arguments are defined in the standard namespace. ADL will select
+  // the wrong set of overloads. If you use the algoirthm with this syntax:
+  //
+  //    mismatch(r1, r2, comp)
+  //
+  // where r1 and r2 are Range types, then you will need to qualify the lookup
+  // of mismatch as origin::mismatch.
+
+
+
+  // Mismatch (iterator, relation)
+  template<typename I1, typename I2, typename R>
+    std::pair<I1, I2> o_mismatch(I1 first1, I1 last1, I2 first2, R comp)
+    {
+      static_assert(Comparison<I1, I2, R>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+
+      while (first1 != last1) {
+        if (!comp(*first1, *first2))
+          return {first1, first2};
+        ++first1;
+        ++first2;
+      }
+      return {first1, first2};
+    }
+
+
+
+  // Mismatch (iterator)
+  // Returns the first iterator i in [first1, last1) where *i != *j and *j is
+  // the corresponding iterator in j.
+  template<typename I1, typename I2>
+    inline auto o_mismatch(I1 first1, I1 last1, I2 first2)
+      -> Requires<Comparison<I1, I2, Equal_to>(), std::pair<I1, I2>>
+    {
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, distance(first1, last1)));
+      return o_mismatch(first1, last1, first2, eq());
+    }
+
+
+
+  // Mismatch (range, relation)
+  //
+  // FIXME: If mismatch didn't collide horribly with the STL version, would
+  // we actually need the requires clause?
+  template<typename R1, typename R2, typename C>
+    inline auto mismatch(const R1& range1, const R2& range2, C comp)-> 
+      Requires<
+        Range_comparison<R1, R2, C>(),
+        decltype(o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), comp))
+        >
+    {
+      return o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), comp);
+    }
+
+
+
+  // Mismatch (range)
+  // Returns the first iterator i in a where *i != *j and *j is the 
+  // corresponding iterator in b.
+  template<typename R1, typename R2>
+    inline auto mismatch(R1&& range1, R2&& range2)
+      -> decltype(o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), eq()))
+    {
+      static_assert(Range_comparison<R1, R2, Equal_to>(), "");
+      return o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), eq());
     }
 
 
@@ -546,6 +621,7 @@ namespace origin
       }
       return true;
     }
+
 
     
   // Equal (memcmp)
@@ -644,71 +720,6 @@ namespace origin
 
 
 
-  // Mismatch
-  // Returns the first iterator i in [first1, last1) where *i != *j and *j is
-  // the corresponding iterator in j.
-  template<typename I1, typename I2>
-    inline auto o_mismatch(I1 first1, I1 last1, I2 first2)
-      -> std::pair<I1, I2>
-    {
-      static_assert(Comparison<I1, I2>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
-
-      while(first1 != last1) {
-        if(*first1 != *first2)
-          return {first1, first2};
-        ++first1;
-        ++first2;
-      }
-      return {last1, first2};
-    }
-
-    
-    
-  // Mismatch (range)
-  // Returns the first iterator i in a where *i != *j and *j is the 
-  // corresponding iterator in b.
-  template<typename R1, typename R2>
-    inline auto mismatch(const R1& a, const R2& b)
-      -> std::pair<Iterator_type<R1>, Iterator_type<R2>> 
-    {
-      static_assert(Range_comparison<R1>(), "");
-
-      return o_mismatch(std::begin(a), std::end(a), std::begin(b));
-    }
-
-    
-    
-  // Mismatch (relation)
-  template<typename I1, typename I2, typename R>
-    inline auto o_mismatch(I1 first1, I1 last1, I2 first2, R comp)
-      -> std::pair<I1, I2> 
-    {
-      static_assert(Comparison<I1, I2, R>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
-
-      while(first1 != last1) {
-        if(!comp(*first1, *first2))
-          return {first1, first2};
-        ++first1;
-        ++first2;
-      }
-      return {first1, first2};
-    }
-    
-    
-    
-  // Mismatch (range, relation)
-  template<typename R1, typename R2, typename Rel>
-    inline auto mismatch(const R1& a, const R2& b, Rel comp)
-      -> std::pair<Iterator_type<R1>, Iterator_type<R2>>
-    {
-      static_assert(Range_comparison<R1, R2, Rel>(), "");
-
-      return o_mismatch(std::begin(a), std::end(a), std::begin(b), comp);
-    }
 
   
     

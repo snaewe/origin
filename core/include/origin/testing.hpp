@@ -84,7 +84,8 @@ namespace origin
   //    check(pred, a, b, c)
   //
   // Where pred is a predicate that can be invoked over arguments a, b, and c.
-
+  //
+  // FIXME: Make this variadic.
 
   
   // Check the nullary (constant) predicate functin.
@@ -118,6 +119,15 @@ namespace origin
       env(pred, a, b, c);
     }
 
+  // Check the given quternary property using the given arguments.
+  template <typename Env, typename P, 
+            typename T1, typename T2, typename T3, typename T4>
+    auto check(Env& env, P pred, 
+               const T1& a, const T2& b, const T3& c, const T4& d)
+      -> Requires<Property_check<Env, P, T1, T2, T3>()>
+    {
+      env(pred, a, b, c, d);
+    }
 
 
   // Randomized property checking
@@ -171,7 +181,9 @@ namespace origin
 
 
   // FIXME: Rewrite this so it's variadic, and then pull the optionally
-  // specified count off the end of the argument list.
+  // specified count off the end of the argument list. Actually, is that
+  // possible? Probably if I force the random variables into a tuple, and
+  // then expand then during invocation.
 
 
   // Check the nullary specification.
@@ -208,6 +220,15 @@ namespace origin
       quick_check_impl(n, env, c, var1, var2, var3);
     }
 
+  // Check the quaternary property specification 100 times.
+  template <typename Env, typename Check, 
+            typename Var1, typename Var2, typename Var3, typename Var4>
+    void quick_check(Env& env, Check c, 
+                     Var1&& var1, Var2&& var2, Var3&& var3, Var4&& var4,
+                     int n = 100)
+    {
+      quick_check_impl(n, env, c, var1, var2, var3, var4);
+    }
 
 
   // The basic check environment evaluates predicates and records the results.

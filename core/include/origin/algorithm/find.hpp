@@ -123,10 +123,10 @@ namespace origin
   // Find (range, relation)
   // Returns the first iterator i in r such that comp(*i, value) is true or 
   // end(r) if no such iterator exists.
-  template <typename R, typename T, typename Rel>
-    inline auto find(R&& range, const T& value, Rel comp) -> decltype(o_begin(range))
+  template <typename R, typename T, typename C>
+    inline auto find(R&& range, const T& value, C comp) -> decltype(o_begin(range))
     {
-      static_assert(Range_search<Unqualified<R>, T, Rel>(), "");
+      static_assert(Range_search<Unqualified<R>, T, C>(), "");
       return find(o_begin(range), o_end(range), value, comp);
     }
 
@@ -225,7 +225,7 @@ namespace origin
       assert(( is_readable_range(first, last) ));
       
       if (first != last)
-        return o_find(o_next(first), last, value, comp);
+        return find(o_next(first), last, value, comp);
       else
         return last;
     }
@@ -249,18 +249,21 @@ namespace origin
 
 
   
-  // Find nth
+  // Find nth (iterator, relation)
   // Return the nth iterator i in [first, last) where *i == value or last if
   // there are fewer than n elements equal to value.
   template <typename I, typename T, typename R>
-    inline I find_nth(I first, I last, Distance_type<I> n, const T& value, R comp)
+    I find_nth(I first, I last, Distance_type<I> n, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
-      assert(( is_readable_range(first, last) ));
+      assert(is_readable_range(first, last));
 
-      while (first != last && n != 0) {
-        if (comp(*first, value))
+      while (first != last) {
+        if (comp(*first, value)) {
           --n;
+          if (n == 0)
+            return first;
+        }
         ++first;
       }
       return first;
@@ -268,18 +271,39 @@ namespace origin
 
 
 
-  // Find nth (range)
+  // Find nth (iterator)
+  template <typename I, typename T>
+    inline I find_nth(I first, I last, Distance_type<I> n, const T& value)
+    {
+      static_assert(Search<I, T, Equal_to>(), "");
+      assert(is_readable_range(first, last));
+      return find_nth(first, last, n, value, eq());
+    }
+
+
+
+  // Find nth (range, relation)
   // Return an iterator to the nth element in r that is equal to value.
-  template <typename R, typename T, typename Rel>
-    inline auto find_nth(R&& range, Distance_type<R> n, const T& value, Rel comp)
+  template <typename R, typename T, typename C>
+    inline auto find_nth(R&& range, Distance_type<R> n, const T& value, C comp)
       -> decltype(o_begin(range))
     {
-      static_assert(Range_search<Forwarded<R>, T, Rel>(), "");
-      
+      static_assert(Range_search<Forwarded<R>, T, C>(), "");
       return find_nth(o_begin(range), o_end(range), n, value, comp);
     }
-    
+
+
+
+  // Find nth (range, equality)
+  template <typename R, typename T>
+    inline auto find_nth(R&& range, Distance_type<R> n, const T& value)
+      -> decltype(o_begin(range))
+    {
+      static_assert(Range_search<Forwarded<R>, T, Equal_to>(), "");
+      return find_nth(o_begin(range), o_end(range), n, value, eq());
+    }
       
+
         
   // Find if
   // Returns the first iterator i in [first, last) where pred(*i) is true or
@@ -373,9 +397,12 @@ namespace origin
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
       
-      while (first != last && n != 0) {
-        if (pred(*first))
+      while (first != last) {
+        if (pred(*first)) {
           --n;
+          if (n == 0)
+            return first;
+        }
         ++first;
       }
       return first;

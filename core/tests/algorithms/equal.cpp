@@ -5,46 +5,79 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include <cassert>
 #include <iostream>
 #include <vector>
-#include <list>
 
 #include <origin/algorithm.hpp>
+#include <origin/testing.hpp>
 
 using namespace std;
 using namespace origin;
 
-struct my_pair
+template <typename R>
+  void print(const R& range)
+  {
+    for(const auto& x : range)
+      cout << x << ' ';
+    cout << '\n';
+  }
+
+
+
+// Mismatch (property)
+//
+// NOTE: We have to enforce the preconditions of the algorithm here, because
+// they cannot be effectively enforced by the algorithm.
+struct mismatch_check
 {
-  int m;
-  char n;
-  
-  bool operator==(const my_pair& x) { return m == x.m && n == x.n; }
-  bool operator!=(const my_pair& x) { return !(*this == x); }
+  template <typename R1, typename R2>
+    auto operator()(const R1& range1, const R2& range2) const
+      -> Requires<Range_comparison<R1, R2, Equal_to>(), bool>
+    {
+      if (size(range2) < size(range1))
+        return true;
+
+      auto first1 = begin(range1);
+      auto last1 = end(range1);
+      auto p = mismatch(range1, range2);
+      if (p.first != last1)
+        return (*p.first != *p.second)
+            && (mismatch(first1, p.first, begin(range2)) == p);
+      else
+        return true;
+    }
+
+  // NOTE: Mismatch collides with the std namespace.
+  template <typename R1, typename R2, typename C>
+    auto operator()(const R1& range1, const R2& range2, C comp) const
+      -> Requires<Range_comparison<R1, R2, C>(), bool>
+    {
+      if (size(range2) < size(range1))
+        return true;
+
+      auto first1 = begin(range1);
+      auto last1 = end(range1);
+      auto p = origin::mismatch(range1, range2, comp);
+      if (p.first != last1)
+        return (*p.first != *p.second)
+            && (mismatch(first1, p.first, begin(range2), comp) == p);
+      else
+        return true;
+    }
 };
+
+
 
 int main()
 {
-  vector<int> v = {1, 2, 3, 4};
-  list<int> l = {1, 2, 3, 4};
-  vector<int> x = {1, 2, 3};
-  int a[] = {1, 2, 3, 4, 5};
-  
-  assert(( equal(v, l) ));
-  assert(( !equal(v, x) ));
+  assert_checker<> env;
 
-  // These should use the optimized version.
-  // Is there some way to test this?
-  assert(o_equal(a, a + 5, a)); 
-  assert(o_equal(v.begin(), v.end(), v.begin()));
-  
-  // These should use the optimized version also.
-  assert(equal(a, a));
-  assert(equal(v, v));
-  
-  // This should not use the optimized version.
-  vector<my_pair> p = { {0, 'a'}, {1, 'b'} };
-  assert(o_equal(&p[0], &p[2], &p[0]));
-  
+  using V = vector<int>;
+  using Less_dist = single_value_distribution<Less_than>;
+
+  auto range = checkable_var<V>(env);
+  auto less = checkable_var(env, Less_dist {});
+
+  quick_check(env, mismatch_check {}, range, range);
+  quick_check(env, mismatch_check {}, range, range, less);
 }

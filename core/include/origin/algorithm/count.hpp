@@ -109,14 +109,14 @@ namespace origin
       assert(is_readable_range(first, last));
       
       Distance_type<I> n = 0;
-      while (comp(first, last)) {
-        if (*first != value)
+      while (first != last) {
+        if (!comp(*first, value))
           ++n;
         ++first;
       }
       return n;
     }
-    
+
       
   
   // Count not equal (iterator, equality)
@@ -126,7 +126,6 @@ namespace origin
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
-
       return count_not_equal(first, last, value, eq());
     }
 
@@ -138,7 +137,6 @@ namespace origin
     inline Distance_type<R> count_not_equal(const R& range, const T& value, Rel comp)
     {
       static_assert(Range_search<R, T, Rel>(), "");
-      
       return count_not_equal(o_begin(range), o_end(range), value, comp);
     }
 
@@ -150,8 +148,7 @@ namespace origin
     inline Distance_type<R> count_not_equal(const R& range, const T& value)
     {
       static_assert(Range_search<R, T>(), "");
-      
-      return count_not_equal(o_begin(range), o_end(range), value);
+      return count_not_equal(o_begin(range), o_end(range), value, eq());
     }
     
       
