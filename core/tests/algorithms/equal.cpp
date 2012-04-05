@@ -14,14 +14,6 @@
 using namespace std;
 using namespace origin;
 
-template <typename R>
-  void print(const R& range)
-  {
-    for(const auto& x : range)
-      cout << x << ' ';
-    cout << '\n';
-  }
-
 
 
 // Mismatch (property)
@@ -68,6 +60,33 @@ struct mismatch_check
 
 
 
+// Equal (property)
+struct equal_check
+{
+  template <typename R1, typename R2>
+    auto operator()(const R1& range1, const R2& range2) const
+      -> Requires<Range_comparison<R1, R2, Equal_to>(), bool>
+    {
+      if (size(range2) < size(range1))
+        return true;
+
+      return equal(range1, range2) 
+          == (mismatch(range1, range2).first == end(range1));
+    }
+
+  template <typename R1, typename R2, typename C>
+    auto operator()(const R1& range1, const R2& range2, C comp) const
+      -> Requires<Range_comparison<R1, R2, C>(), bool>
+    {
+      if (size(range2) < size(range1))
+        return true;
+
+      return origin::equal(range1, range2, comp) 
+          == (origin::mismatch(range1, range2, comp).first == end(range1));
+    }
+};
+
+
 int main()
 {
   assert_checker<> env;
@@ -80,4 +99,7 @@ int main()
 
   quick_check(env, mismatch_check {}, range, range);
   quick_check(env, mismatch_check {}, range, range, less);
+
+  quick_check(env, equal_check {}, range, range);
+  quick_check(env, equal_check {}, range, range, less);
 }

@@ -529,14 +529,16 @@ namespace origin
 
 
 
-  // FIXME: mismatch can collide have problems with the STL overload if the
-  // iterator arguments are defined in the standard namespace. ADL will select
-  // the wrong set of overloads. If you use the algoirthm with this syntax:
+  // FIXME: The mismatch and equal algorithms can collide have problems with the
+  // STL overload if the iterator arguments are defined in the standard
+  // namespace. ADL will select the wrong set of overloads. If you use the
+  // algoirthms with this syntax:
   //
   //    mismatch(r1, r2, comp)
+  //    equal(r1, r2, comp)
   //
   // where r1 and r2 are Range types, then you will need to qualify the lookup
-  // of mismatch as origin::mismatch.
+  // within the origin namespace.
 
 
 
