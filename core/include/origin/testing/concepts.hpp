@@ -15,338 +15,220 @@ namespace origin
   //
   // In actuality, the == operator must compare for value equality, but we have
   // no way to actually test that.
-  template <typename T, typename U = T>
-    struct equality_comparable_semantics
+  template <typename T1, typename T2 = T1>
+    struct equality_comparable_spec
     {
-      static_assert(Equality_comparable<T, U>(), "");
-      using C = Common_type<T, U>;
+      static_assert(Equality_comparable<T1, T2>(), "");
+      using C = Common_type<T1, T2>;
 
-      // Randomly test the specification using values of type T varerated from
-      // var1 and values of type U varerated from var2.
-      template <typename Env, typename Var1, typename Var2>
-        void operator()(Env& env, Var1&& var1, Var2&& var2) const
+      template <typename Env, typename T1gen, typename T2gen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          auto var3 = make_random<C>(var1.engine());
-          (*this)(env, var1, var2, var3);
+          auto c = checkable_var<C>(env);
+          (*this)(env, a, b, c);
         }
-
         
-      // Randomly test the specification using values of type T varerated
-      // from var1, values of type U varerated from var2, and values of type
-      // C (the common type) varerated from var3.
-      template <typename Env, typename Var1, typename Var2, typename Var3>
-        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
+      template <typename Env, typename T1gen, typename T2gen, typename Cgen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b, Cgen&& c) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
+          auto equal = checkable_func(env, eq());
+          auto not_equal = checkable_func(env, neq());
 
-          check(env, equality_comparable_semantics<T>{}, var1);
-          check(env, equality_comparable_semantics<U>{}, var2);
-          check(env, equality_comparable_semantics<C>{}, var3);
+          // T1, T2, and C must be euqality comparable.
+          check(env, equality_comparable_spec<T1>{}, a);
+          check(env, equality_comparable_spec<T2>{}, b);
+          check(env, equality_comparable_spec<C>{}, c);
 
-          check(env, eq, var1, var2);  // a == b <=> C(a) == C(b)
-          check(env, neq, var1, var2); // a != b <=> C(a) != C(b)
+          // Expressions involving both types are equivalent to expressions
+          // involving the common type.
+          check(env, common_type_equivalence {}, equal, a, b);
+          check(env, common_type_equivalence {}, not_equal, a, b);
         }
-
-      common_type_equivalence<equal_relation> eq;
-      common_type_equivalence<not_equal_relation> neq;
     };
     
   // Specialization when testing for a single type.
   template <typename T>
-    struct equality_comparable_semantics<T, T>
+    struct equality_comparable_spec<T, T>
     {
       static_assert(Equality_comparable<T>(), "");
       
-      template <typename Env, typename Var>
-        void operator()(Env& env, Var&& var) const
+      template <typename Env, typename Tgen>
+        void operator()(Env& env, Tgen&& value) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
-          check(env, eq, var);
-          check(env, neq, var, var);
+          auto equal = checkable_func(env, eq());
+          auto not_equal = checkable_func(env, neq());
+          auto comp_equal = checkable_func(env, complement(eq()));
+
+          check(env, equivalence_relation_spec {}, equal, value);
+          check(env, logical_equivalence {}, not_equal, comp_equal, value, value);
         }
-
-      equivalence_relation_spec<equal_relation> eq;
-      
-      logical_equivalence<
-        not_equal_relation, 
-        complement_relation<equal_relation>
-      > neq;
     };
-
-
-
-  // Check if the quantified variable is equality comparable.
-  template <typename Env, typename Var>
-    void check_equality_comparable(Env& env, Var&& var)
-    {
-      using T = Result_type<Forwarded<Var>>;
-      equality_comparable_semantics<T> spec;
-      check(env, spec, var);
-    }
-
-
-
-  // Check if quantified variables satisfy the requirements of cross-type 
-  // equality comparability.
-  template <typename Env, typename Var1, typename Var2>
-    void check_equality_comparable(Env& env, Var1&& var1, Var2&& var2)
-    {
-      using T = Result_type<Forwarded<Var1>>;
-      using U = Result_type<Forwarded<Var2>>;
-      equality_comparable_semantics<T, U> spec;
-      check(env, spec, var1, var2);
-    }
-
-
 
   // Check if T is equality comparable.
   template <typename T, typename Env>
     void check_equality_comparable(Env& env)
     {
-      auto var = checkable_var<T>(env);
-      check_equality_comparable(env, var);
+      auto value = checkable_var<T>(env);
+      check(env, equality_comparable_spec<T> {}, value);
     }
-
-
 
   // Check if T and U are cross-type equality comparable.
-  template <typename T, typename U, typename Env>
+  template <typename T1, typename T2, typename Env>
     void check_equality_comparable(Env& env)
     {
-      auto var1 = checkable_var<T>(env);
-      auto var2 = checkable_var<U>(env);
-      check_equality_comparable(env, var1, var2);
+      auto a = checkable_var<T1>(env);
+      auto b = checkable_var<T2>(env);
+      check(env, equality_comparable_spec<T1, T2> {}, a, b);
     }
-
 
 
 
   // Weakly ordered semantics (specification)
   // The weak ordering specification defines the semantics for weakly ordered
   // types.
-  template <typename T, typename U = T>
-    struct weakly_ordered_semantics
+  template <typename T1, typename T2 = T1>
+    struct weakly_ordered_spec
     {
-      static_assert(Weakly_ordered<T, U>(), "");
-      using C = Common_type<T, U>;
+      static_assert(Weakly_ordered<T1, T2>(), "");
+      using C = Common_type<T1, T2>;
 
-      template <typename Env, typename Var1, typename Var2>
-        void operator()(Env& env, Var1&& var1, Var2&& var2) const
+      template <typename Env, typename T1gen, typename T2gen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          auto var3 = make_random<C>(var1.engine());
-          (*this)(env, var1, var2, var3);
+          auto c = checkable_var<C>(env);
+          (*this)(env, a, b, c);
         }
       
-      template <typename Env, typename Var1, typename Var2, typename Var3>
-        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
+      template <typename Env, typename T1gen, typename T2gen, typename Cgen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b, Cgen&& c) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
+          // Each of T1, T2, and C must be weakly ordered.
+          check(env, weakly_ordered_spec<T1> {}, a);
+          check(env, weakly_ordered_spec<T2> {}, b);
+          check(env, weakly_ordered_spec<C> {}, c);
           
-          check(env, weakly_ordered_semantics<T>{}, var1);
-          check(env, weakly_ordered_semantics<U>{}, var2);
-          check(env, weakly_ordered_semantics<C>{}, var3);
-          
-          check(env, lt, var1, var2);  // a < b <=> C(a) < C(b)
-          check(env, gt, var1, var2);  // a > b <=> C(a) > C(b)
-          check(env, leq, var1, var2); // a <= b <=> C(a) <= C(b)
-          check(env, geq, var1, var2); // b >= a <=> C(a) >= C(b)
+
+          auto less = checkable_func(env, lt());
+          auto greater = checkable_func(env, gt());
+          auto less_equal = checkable_func(env, lte());
+          auto greater_equal = checkable_func(env, gte());
+
+          // Expressions in both types are equivalent to expressions in the
+          // common type.
+          check(env, common_type_equivalence {}, less, a, b);
+          check(env, common_type_equivalence {}, greater, a, b);
+          check(env, common_type_equivalence {}, less_equal, a, b);
+          check(env, common_type_equivalence {}, greater_equal, a, b);
         }
-        
-      common_type_equivalence<less_relation> lt;
-      common_type_equivalence<greater_relation> gt;
-      common_type_equivalence<less_equal_relation> leq;
-      common_type_equivalence<greater_equal_relation> geq;
     };
     
   // Specialization for the unary type.
   template <typename T>
-    struct weakly_ordered_semantics<T, T>
+    struct weakly_ordered_spec<T, T>
     {
       static_assert(Weakly_ordered<T>(), "");
 
-      template <typename Env, typename Var>
-        void operator()(Env& env, Var&& var) const
+      template <typename Env, typename Tgen>
+        void operator()(Env& env, Tgen&& value) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
-          check(env, lt, var);
-          check(env, gt, var, var);
-          check(env, leq, var, var);
-          check(env, geq, var, var);
+          auto less = checkable_func(env, lt());
+          auto greater = checkable_func(env, gt());
+          auto less_eq = checkable_func(env, lte());
+          auto greater_eq = checkable_func(env, gte());
+
+          auto conv_less = checkable_func(env, converse(lt()));
+          auto comp_conv_less = checkable_func(env, complement_of_converse(lt()));
+          auto comp_less = checkable_func(env, complement(lt()));
+
+          check(env, strict_weak_order_spec {}, less, value);
+          check(env, logical_equivalence {}, greater, conv_less, value, value);
+          check(env, logical_equivalence {}, less_eq, comp_conv_less, value, value);
+          check(env, logical_equivalence {}, greater_eq, comp_less, value, value);
         }
-        
-      strict_weak_order_spec<less_relation> lt;
-      
-      logical_equivalence<
-        greater_relation, converse_relation<less_relation>
-      > gt;
-      
-      logical_equivalence<
-        less_equal_relation, complement_of_converse_relation<less_relation>
-      > leq;
-      
-      logical_equivalence<
-        greater_equal_relation, complement_relation<less_relation>
-      > geq;
     };
-
-
-
-  // Check if the quantified variable is weakly ordered.
-  template <typename Env, typename Var>
-    void check_weakly_ordered(Env& env, Var&& var)
-    {
-      using T = Result_type<Forwarded<Var>>;
-      weakly_ordered_semantics<T> spec;
-      check(env, spec, var);
-    }
-
-
-
-  // Check if the quantified variables satisfy the requirements of cross-type
-  // weak ordering.
-  template <typename Env, typename Var1, typename Var2>
-    void check_weakly_ordered(Env& env, Var1&& var1, Var2&& var2)
-    {
-      using T = Result_type<Forwarded<Var1>>;
-      using U = Result_type<Forwarded<Var2>>;
-      weakly_ordered_semantics<T, U> spec;
-      check(env, spec, var1, var2);
-    }
-
 
 
   // Check if T is weakly ordered.
   template <typename T, typename Env>
     void check_weakly_ordered(Env& env)
     {
-      auto var = checkable_var<T>(env);
-      check_weakly_ordered(env, var);
+      auto value = checkable_var<T>(env);
+      check(env, weakly_ordered_spec<T> {}, value);
     }
-
-
 
   // Check if T and U satisfy the requirements of cross-type weak ordering.
-  template <typename T, typename U, typename Env>
+  template <typename T1, typename T2, typename Env>
     void check_weakly_ordered(Env& env)
     {
-      auto var1 = checkable_var<T>(env);
-      auto var2 = checkable_var<U>(env);
-      check_weakly_ordered(env, var1, var2);
+      auto a = checkable_var<T1>(env);
+      auto b = checkable_var<T2>(env);
+      check(env, weakly_ordered_spec<T1, T2>{}, a, b);
     }
-
 
 
   // Totally ordered (specification)
   // The total ordering specification defines the semantics for totally ordered
   // types. When used with heterovareous types, the semantics are defined in
   // terms of the common type.
-  template <typename T, typename U = T>
-    struct totally_ordered_semantics
+  template <typename T1, typename T2 = T1>
+    struct totally_ordered_spec
     {
-      static_assert(Totally_ordered<T, U>(), "");
-      using C = Common_type<T, U>;
+      static_assert(Totally_ordered<T1, T2>(), "");
+      using C = Common_type<T1, T2>;
 
-      template <typename Env, typename Var1, typename Var2>
-        void operator()(Env& env, Var1&& var1, Var2&& var2) const
+      template <typename Env, typename T1gen, typename T2gen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          auto var3 = make_random<C>(var1.engine());
-          (*this)(env, var1, var2, var3);
+          auto c = checkable_var<C>(env);
+          (*this)(env, a, b, c);
         }
       
-      template <typename Env, typename Var1, typename Var2, typename Var3>
-        void operator()(Env& env, Var1&& var1, Var2&& var2, Var3&& var3) const
+      template <typename Env, typename T1gen, typename T2gen, typename T3gen>
+        void operator()(Env& env, T1gen&& a, T2gen&& b, T3gen&& c) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var1>>>(), "");
-          static_assert(Same<U, Result_type<Forwarded<Var2>>>(), "");
-          static_assert(Same<C, Result_type<Forwarded<Var3>>>(), "");
-          
-          check(env, totally_ordered_semantics<T>{}, var1);
-          check(env, totally_ordered_semantics<U>{}, var2);
-          check(env, totally_ordered_semantics<C>{}, var3);
+          // Each of T1, T2, and C must be totally ordered.
+          check(env, totally_ordered_spec<T1> {}, a);
+          check(env, totally_ordered_spec<T2> {}, b);
+          check(env, totally_ordered_spec<C> {}, c);
 
-          check(env, weak, var1, var2, var3);
-          check(env, equiv, var1, var2);
+          // Note that the semantics of weak ordering cover the common type
+          // equivalences required by this cross-type concept.
         }
-        
-      weakly_ordered_semantics<T, U> weak;
-      logical_equivalence<
-        equal_relation, symmetric_complement_relation<less_relation>
-      > equiv;
     };
     
   // Specialization for the unary type.
   template <typename T>
-    struct totally_ordered_semantics<T, T>
+    struct totally_ordered_spec<T, T>
     {
       static_assert(Totally_ordered<T>(), "");
 
-      template <typename Env, typename Var>
-        void operator()(Env& env, Var&& var) const
+      template <typename Env, typename Tgen>
+        void operator()(Env& env, Tgen&& value) const
         {
-          static_assert(Same<T, Result_type<Forwarded<Var>>>(), "");
-          check(env, weak, var);
-          check(env, equiv, var, var);
+          check(env, weakly_ordered_spec<T> {}, value);
+          
+          // Incomparability is the same as equality.
+          auto equal = checkable_func(env, eq());
+          auto incomp = checkable_func(env, symmetric_complement(lt()));
+          check(env, logical_equivalence {}, equal, incomp, value, value);
         }
-        
-      weakly_ordered_semantics<T> weak;
-      logical_equivalence<
-        equal_relation, symmetric_complement_relation<less_relation>
-      > equiv;
     };
     
-
-
-  // Check if the quantified variable is totally ordered.
-  template <typename Env, typename Var>
-    void check_totally_ordered(Env& env, Var&& var)
-    {
-      using T = Result_type<Forwarded<Var>>;
-      totally_ordered_semantics<T> spec;
-      check(env, spec, var);
-    }
-
-    
-
-  // Check if the quantified variables satisfy the requirements of cross-type
-  // total ordering.
-  template <typename Env, typename Var1, typename Var2>
-    void check_totally_ordered(Env& env, Var1&& var1, Var2&& var2)
-    {
-      using T = Result_type<Forwarded<Var1>>;
-      using U = Result_type<Forwarded<Var2>>;
-      totally_ordered_semantics<T, U> spec;
-      check(env, spec, var1, var2);
-    }
-
-
-
   // Check if T is totally ordered.
   template <typename T, typename Env>
     void check_totally_ordered(Env& env)
     {
-      auto var = checkable_var<T>(env);
-      check_totally_ordered(env, var);
+      auto value = checkable_var<T>(env);
+      check(env, totally_ordered_spec<T> {}, value);
     }
 
-
-
   // Check if T and U satisfy the requirements for cross-type ordering.
-  template <typename T, typename U, typename Env>
+  template <typename T1, typename T2, typename Env>
     void check_totally_ordered(Env& env)
     {
-      auto var1 = checkable_var<T>(env);
-      auto var2 = checkable_var<U>(env);
-      check_totally_ordered(env, var1, var2);
+      auto a = checkable_var<T1>(env);
+      auto b = checkable_var<T2>(env);
+      check(env, totally_ordered_spec<T1, T2> {}, a, b);
     }
 
 
@@ -366,16 +248,14 @@ namespace origin
   // Copy construction preservation (property)
   // The result of a copy construction is a new value that is equal to the
   // unmodified original.
-  template <typename T>
     struct copy_construction_preservation
     {
-      static_assert(Equality_comparable<T>(), "");
-
-      bool operator()(const T& a) const
-      {
-        static_assert(Copy_constructible<T>(), "");
-        return T{a} == a;
-      }
+      template <typename T>
+        auto operator()(const T& a) const 
+          -> Requires<Copy_constructible<T>() && Equality_comparable<T>(), bool>
+        {
+          return T{a} == a;
+        }
     };
     
     
@@ -383,18 +263,16 @@ namespace origin
   // Copy assignment preservation (property)
   // The result of copy-assigning a value is that the assigned variable is
   // equal to the unmodified original.
-  template <typename T>
-    struct copy_assignment_preservation
-    {
-      static_assert(Equality_comparable<T>(), "");
-      
-      bool operator()(const T& a)
+  struct copy_assignment_preservation
+  {
+    template <typename T>
+      auto operator()(const T& a)
+        -> Requires<Copy_constructible<T>() && Equality_comparable<T>(), bool>
       {
-        static_assert(Copy_assignable<T>(), "");
         T b = a;
         return b == a;
       }
-    };
+  };
 
     
     
@@ -404,38 +282,21 @@ namespace origin
   template <typename T>
     struct copy_semantics
     {
-      template <typename Env, typename Var>
-        void operator()(Env& env, Var&& var)
+      template <typename Env, typename Tgen>
+        void operator()(Env& env, Tgen&& value)
         {
-          check(env, move, var);
-          check(env, construct, var);
-          check(env, assign, var);
+          check(env, move_semantics<T> {}, value);
+          check(env, copy_construction_preservation {}, value);
+          check(env, copy_assignment_preservation {}, value);
         }
-
-      move_semantics<T> move;
-      copy_construction_preservation<T> construct;
-      copy_assignment_preservation<T> assign;
     };
 
-
-
   // Check if the quantified variable is copyable.
-  template <typename Env, typename Var>
-    void check_copyable(Env& env, Var&& var)
-    {
-      using T = Result_type<Forwarded<Var>>;
-      copy_semantics<T> spec;
-      check(env, spec, var);
-    }
-
-
-
-  // Check if T is regular.
   template <typename T, typename Env>
     void check_copyable(Env& env)
     {
-      auto var = checkable_var<T>(env);
-      check_copyable(env, var);
+      auto value = checkable_var<T>(env);
+      check(env, copy_semantics<T> {}, value);
     }
 
 
@@ -443,14 +304,19 @@ namespace origin
   // Default value (property)
   // The default value property is true when T has a unique default value, that
   // is initialized by expression T{}.
-  template <typename T>
-    struct default_value_property
-    {
-      bool operator()() const
-      {
-        return T{} == T{};
+  //
+  // NOTE: Unfortunately, we have to parameterize the algorithm over a dummy
+  // argument so we can constrain the overload, and avoid ambiguous lookups.
+  // If only I had real constraints...
+  struct default_value_property
+  {
+    template <typename T>
+      auto operator()(const T&) const 
+        -> Requires<Default_constructible<T>() && Equality_comparable<T>(), bool>
+      { 
+        return T{} == T{}; 
       }
-    };
+  };
 
 
 
@@ -463,19 +329,17 @@ namespace origin
       template <typename Env>
         void operator()(Env&& env) const
         {
-          check(env, init);
+          check(env, default_value_property {}, fake<T>());
         }
-        
-      default_value_property<T> init;
     };
-    
+
     
 
   // Check if T is default constructible.
   template <typename Env, typename T>
     void check_default_constructible(Env& env)
     {
-      check(env, default_semantics<T>{});
+      check(env, default_semantics<T> {});
     }
 
 
@@ -484,44 +348,28 @@ namespace origin
   // A regular type is required to implement default initializtaion, copy,
   // and 
   template <typename T>
-    struct regular_semantics
+    struct regular_spec
     {
-      template <typename Env, typename Var>
-        void operator()(Env&& env, Var&& var) const
+      template <typename Env, typename Tgen>
+        void operator()(Env&& env, Tgen&& value) const
         {
-          check(env, def);
-          check(env, copy, var);
-          check(env, equal, var);
+          check(env, default_semantics<T> {});
+          check(env, copy_semantics<T> {}, value);
+          check(env, equality_comparable_spec<T> {}, value);
         }
-      
-      default_semantics<T> def;
-      copy_semantics<T> copy;
-      equality_comparable_semantics<T> equal;
     };
     
-
-
-  // Check if the quantified variable is regular.
-  template <typename Env, typename Var>
-    void check_regular(Env& env, Var&& var)
-    {
-      using T = Result_type<Forwarded<Var>>;
-      regular_semantics<T> spec;
-      check(env, spec, var);
-    }
-
-
   // Check if T is regular.
   template <typename T, typename Env>
     void check_regular(Env& env)
     {
-      auto var = checkable_var<T>(env);
-      check_regular(env, var);
+      auto value = checkable_var<T>(env);
+      check(env, regular_spec<T> {}, value);
     }
 
 
 
-  // TODO: We do not have semantics for functions because most functions are
+  // FIXME: We do not have semantics for functions because most functions are
   // not equality comparable -- and they're kind of weird besides. I can't
   // really generate random function objects. It would be nice to assert
   // these properties, but I'm not entirely sure how yet.
@@ -535,21 +383,17 @@ namespace origin
   // gives the same results.
   //
   // Note that arguments to this test must be given as tuples.
-  template <typename F>
-    struct equality_preserving
-    {
-      equality_preserving(F f = {}) : fn(f) { }
-
-      template <typename... Args>
-        auto operator()(const std::tuple<Args...>& args1, 
-                        const std::tuple<Args...>& args2) const
-          -> Requires<Regular_function<F, Args...>(), bool>
-        {
-          return tuple_invoke(fn, args1) == tuple_invoke(fn, args2);
-        }
-
-      F fn;
-    };
+  struct equality_preserving
+  {
+    template <typename F, typename... Args>
+      auto operator()(F f, 
+                      const std::tuple<Args...>& args1, 
+                      const std::tuple<Args...>& args2) const
+        -> Requires<Regular_function<F, Args...>(), bool>
+      {
+        return tuple_invoke(f, args1) == tuple_invoke(f, args2);
+      }
+  };
 
 
 
@@ -564,21 +408,18 @@ namespace origin
   // functions are not generally equality comparable (i.e., we can't check
   // the property.
   template <typename F>
-    struct regular_function_semantics
+    struct regular_function_spec
     {
-      regular_function_semantics(F f = {}) : regular(f) { }
-
-      template <typename Env, typename Var>
-        void operator()(Env& env, Var&& var) const
+      // Note that Args_gen must generate a tuple of function arguments.
+      template <typename Env, typename Func_gen, typename Arg_gen>
+        void operator()(Env& env, Func_gen&& f, Arg_gen&& args) const
         {
-          check(env, regular, var, var);
+          check(env, equality_preserving {}, f, args, args);
         }
-
-      equality_preserving<F> regular;
     };
 
 
-
+    /*
   // The signature for checking the semantics of regular functions is a bit 
   // different than the usual approach.
   //
@@ -617,6 +458,6 @@ namespace origin
       static_assert(Tuple_callable<R, Argument_types<Sig>>(), "");
       check_regular_function<Sig>(env, comp);
     }
-
-
+  */
 } // namespace origin
+

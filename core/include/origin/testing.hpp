@@ -75,72 +75,51 @@ namespace origin
 
 
 
-  // Property checking algorithms
-  // The following algorithms evaluate a property over a set of values. The
-  // following syntax is supported:
+  // Check (algorithm)
+  // The check algorithm evaluates a property or specification (a testable
+  // type) over some arguments. The syntax is:
   //
-  //    check(pred, a)
-  //    check(pred, a, b)
-  //    check(pred, a, b, c)
+  //    check(env, test, args...)
   //
-  // Where pred is a predicate that can be invoked over arguments a, b, and c.
+  // The env is a a checking environment that is ultimately responsible for 
+  // test evaluation. It should be one of the checker objects defined below
+  // or a custom checker.
   //
-  // FIXME: Make this variadic and make it forward arguments. Right now
-  // everything is passed as const, meaning that if we want to modify an
-  // argument, we have to capture it by value. This is actually a pretty
-  // serious bug.
+  // In essence, test is a function object that can be alled with args... as
+  // arguments. There are several kinds of testable types:
+  //
+  // A property is a predicate that can be called with some specific inputs.
+  // For example, a property that evaluates the semnatics of copy construction 
+  // may take a specific kind of value to be copied. A property can also be
+  // randomly tested by providing random variables that generate arguments of
+  // the required types.
+  //
+  // A specification is also a function object that takes a sequence of random
+  // variables as input, which are then used to generate inputs to a sequence
+  // of properties.
+  //
+  // NOTE: if a property's functional call operator(s) are templates, then the
+  // template must be constrained using Requires (or enable_if). The reason for
+  // this is that the different constraints on the overloads of check  evaluate
+  // whether or not the testable type can be called with different input kinds.
+  // If the template is unconstrained, then the compiler will find ambiguous
+  // overloads for check().
 
   
-  // Check the nullary (constant) predicate functin.
-  template <typename Env, typename P>
-    auto check(Env& env, P pred) -> Requires<Property_check<Env, P>()>
-    {
-      env(pred);
-    }
 
-  // Check the given unary property for the specified value.
-  template <typename Env, typename P, typename T>
-    auto check(Env& env, P pred, const T& a) 
-      -> Requires<Property_check<Env, P, T>()>
-    {
-      env(pred, a);
-    }
 
-  // Check the given binary property using the given arguments.
-  template <typename Env, typename P, typename T1, typename T2>
-    auto check(Env& env, P pred, const T1& a, const T2& b) 
-      -> Requires<Property_check<Env, P, T1, T2>()>
+  // Basic property check
+  // Evaluate pred against the given args.
+  template <typename Env, typename P, typename... Args>
+    auto check(Env& env, P pred, Args&&... args) 
+      -> Requires<Property_check<Env, P, Args...>()>
     {
-      env(pred, a, b);
-    }
-
-  // Check the given ternary property using the given arguments.
-  template <typename Env, typename P, typename T1, typename T2, typename T3>
-    auto check(Env& env, P pred, const T1& a, const T2& b, const T3& c)
-      -> Requires<Property_check<Env, P, T1, T2, T3>()>
-    {
-      env(pred, a, b, c);
-    }
-
-  // Check the given quternary property using the given arguments.
-  template <typename Env, typename P, 
-            typename T1, typename T2, typename T3, typename T4>
-    auto check(Env& env, P pred, 
-               const T1& a, const T2& b, const T3& c, const T4& d)
-      -> Requires<Property_check<Env, P, T1, T2, T3>()>
-    {
-      env(pred, a, b, c, d);
+      env(pred, std::forward<Args>(args)...);
     }
 
 
-  // Randomized property checking
-  // The following algoirthms evaluate a property over a set of randomly
-  // generated values. It supports the following syntax:
-  //
-  //    check(env, pred, vars...)
-  //
-  // Vars is a sequence of random variables. There must be the same number of
-  // random variables as the arity of the pred function.
+  // Randomized property check
+  // Evalutae pred by checking it against a smple of the random variables.
   template <typename Env, typename P, typename... Vars>
     auto check(Env& env, P pred, Vars&&... vars)
       -> Requires<Randomized_property_check<Env, P, Vars...>()>
@@ -150,14 +129,8 @@ namespace origin
 
 
 
-  // Randomized specification checking
-  // The following algorithms evaluate a specification over a sequence of 
-  // randomly generated values. The following syntax is supported.
-  //
-  //    check(env, spec, vars...)
-  //
-  // Vars is a sequence of random variables. There must be the same number of
-  // random variables as the arity of the spcification function.
+  // Randomized specification check
+  // Evaluate spec using the given random vars.
   template <typename Env, typename Spec, typename... Vars>
     auto check(Env& env, Spec spec, Vars&&... vars)
       -> Requires<Randomized_specification_check<Env, Spec, Vars...>()>
@@ -172,7 +145,9 @@ namespace origin
   // inputs. The value of n is given as the last argument and is taken as 100
   // by default.
   
-  // Evaluate the checkable type Check over the given arguments n times.
+
+
+  // Evaluate the checkable type over the given arguments n times.
   template <typename Env, typename Check, typename... Args>
     void quick_check_impl(int n, Env& env, Check c, Args&&... args)
     {
@@ -288,6 +263,12 @@ namespace origin
 
 
 
+  // FIXME: These have the wrong names. The objects being created aren't
+  // checkable, their used for checking. Should I call them testing_var and
+  // testing_func?
+
+
+
   // Return a random variable for the given type T that will be used for
   // checking in the given environment.
   template <typename T, typename Env>
@@ -303,8 +284,68 @@ namespace origin
     auto checkable_var(Env& env, Dist&& dist) 
       -> decltype(make_random(env.random_engine(), dist))
     {
-      return make_random(env.random_engine(), dist);;
+      return make_random(env.random_engine(), dist);
     }
+
+  // Return a random variable that always returns the given function object.
+  // This is an alias for creating a random variable that returns a function
+  // from a single-value distribution.
+  template <typename Env, typename F>
+    auto checkable_func(Env& env, F f)
+      -> decltype(checkable_var(env, single_value_distribution<F> {f}))
+    {
+      return checkable_var(env, single_value_distribution<F> {f});
+    }
+
+
+
+  // Fake value
+  // The fake value facility is used to create fake values. It is similar to
+  // except that it can be evaluated -- sort of. A program that actually reads
+  // from a fake object invokes undefined behavior.
+  //
+  // Fake objects are created through the fake() facility.
+
+
+  // Fake type
+  // The fake type class is specialized to return appropriately cv-qualified
+  // fake objects.
+  //
+  // FIXME: In order to be complete, I probably need specializations for
+  // volatile types.
+  template <typename T>
+    struct fake_type
+    {
+      static T& get() 
+      { 
+        static char object[sizeof(T)];
+        return *reinterpret_cast<T*>(object);
+      }
+    };
+
+  template <typename T>
+    struct fake_type<const T>
+    {
+      const T& get() 
+      { 
+        static char object[sizeof(T)];
+        return *reinterpret_cast<T*>(object);
+      }
+    };
+
+
+
+  // Fake (constructor)
+  // Return a fake object of the specified type.
+  template <typename T>
+    auto fake() -> decltype(fake_type<T>::get())
+    {
+      return fake_type<T>::get();
+    }
+
+
+
+
 
 } // namespace origin
 

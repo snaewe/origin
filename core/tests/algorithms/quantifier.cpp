@@ -18,7 +18,8 @@ using namespace origin;
 struct all_of_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return all_of(range, pred) == (find_if_not(range, pred) == end(range));
     }
@@ -30,7 +31,8 @@ struct all_of_check
 struct all_of_count_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return all_of(range, pred) == (count_if(range, pred) == distance(range));
     }
@@ -43,7 +45,8 @@ struct all_of_count_check
 struct some_of_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return some_of(range, pred) == (find_if(range, pred) != end(range));
     }
@@ -55,7 +58,8 @@ struct some_of_check
 struct some_of_count_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return some_of(range, pred) == (count_if(range, pred) != 0);
     }
@@ -67,7 +71,8 @@ struct some_of_count_check
 struct not_all_of_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return not_all_of(range, pred) == !all_of(range, pred);
     }
@@ -79,7 +84,8 @@ struct not_all_of_check
 struct not_all_of_count_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return not_all_of(range, pred) == (count_if(range, pred) != distance(range));
     }
@@ -92,7 +98,8 @@ struct not_all_of_count_check
 struct none_of_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return none_of(range, pred) == !some_of(range, pred);
     }
@@ -104,7 +111,8 @@ struct none_of_check
 struct none_of_count_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return none_of(range, pred) == (count_if(range, pred) == 0);
     }

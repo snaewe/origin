@@ -665,11 +665,15 @@ namespace origin
       R r;
     };
 
+  // An alias for for the complement relation.
+  template <typename R>
+    using Complement_of = complement_relation<R>;
+
   // Return the complement of the relation r.
   template <typename R>
     inline complement_relation<R> complement(R r) { return {r}; }
   
-  
+
   
   // Converse (relation)
   // For a and b, the converse of r(a, b) is r(b, a).
@@ -687,6 +691,10 @@ namespace origin
 
       R r;
     };
+
+  // An alias for the converse relation.
+  template <typename R>
+    using Converse_of = converse_relation<R>;
 
   // Returns the converse of the relation r.
   template <typename R>
@@ -711,13 +719,17 @@ namespace origin
       R r;
     };
 
+  // An alias for the complement of converse relation
+  template <typename R>
+    using Complement_of_converse_of = complement_of_converse_relation<R>;
+
   // Returns the complement of the converse of the relation r.
   template <typename R>
     inline complement_of_converse_relation<R> complement_of_converse(R r) 
     { 
       return {r}; 
     }
-    
+
 
 
   // Symmetric complement (relation)
@@ -736,6 +748,10 @@ namespace origin
         
       R r;
     };
+
+  // An alias for the symmetric complement relation.
+  template <typename R>
+    using Symmetric_complement_of = symmetric_complement_relation<R>;
 
   // Returns the symmetric complement of the relation r.
   template <typename R>

@@ -234,36 +234,73 @@ namespace origin
     {
       using this_type = single_value_distribution<T>;
     public:
-      static_assert(Equality_comparable<T>(), "");
-
       using result_type = T;
 
-      single_value_distribution(const T& x = {}) : value(x) { }
+      single_value_distribution(const T& x = {}) : val(x) { }
 
       template <typename Eng>
         const result_type& operator()(Eng& eng) const
         {
-          return value;
+          return val;
         }
 
       // Equality comparable
-      bool operator==(const this_type& x) const { return value == x.value; }
-      bool operator!=(const this_type & x) const {return value == x.value; }
+      // Equality is typically defined over the underlying value type. Because
+      // we use function objects with this distribution so frequently, we
+      // define equality for non-equality comparable types as simply true. This
+      // is not a particularly good definition of equality.
+      bool operator==(const this_type& x) const { return equal(*this, x); }
+      bool operator!=(const this_type & x) const {return equal(*this, x); }
+
+
+      // Returns the underlying value.
+      const T& value() const { return val; }
 
     private:
-      T value;
+      // Compute euqality for objects of this type.
+      template <typename This>
+        static auto equal(const This& a, const This& b)
+          -> Requires<Equality_comparable<This>(), bool>
+          {
+            return a.val == b.val;
+          }
+
+      template <typename This>
+        static auto equal(const This& a, const This& b)
+          -> Requires<!Equality_comparable<This>(), bool>
+          {
+            return true;
+          }
+
+    private:
+      T val;
     };
+
+  // Streamable
+  //
+  // FIXME: Implement input streamable.
+  //
+  // FIXME: What do we do if the value type isn't serializable? For example,
+  // what if it holds a function object?
+  template <typename C, typename Traits, typename T>
+    inline std::basic_ostream<C, Traits>& 
+    operator<<(std::basic_ostream<C, Traits>& os, 
+               const single_value_distribution<T>& dist)
+    {
+      return os << dist.value();
+    }
+
 
 
 
   // Adapated distribution
   // The adapted generator type is a random value generator that wraps randomly
-  // generated values of Dist into the Result type. Note that Result type must 
-  // be constructible over the result of Dist.
+  // generated values of Dist into the Result type. Note that Result must be 
+  // constructible over the result of Dist.
   template <typename Dist, typename Result>
     class adapted_distribution
     {
-      static_assert(Constructible<Result, Result_type<Dist>>(), "");
+      // static_assert(Constructible<Result, Result_type<Dist>>(), "");
 
       using this_type = adapted_distribution<Dist, Result>;
       using wrapped_type = Result_type<Dist>;
@@ -274,17 +311,35 @@ namespace origin
       adapted_distribution(const Dist& dist) : dist(dist) { }
 
       template <typename Eng>
-        result_type operator()(Eng& eng)
-        {
-          return result_type(dist(eng));
-        }
+        result_type operator()(Eng& eng) { return result_type {dist(eng)}; }
 
       bool operator==(const this_type& x) const { return dist == x.dist; }
       bool operator!=(const this_type& x) const { return dist != x.dist; }
 
+      // Returns the underlying distribution.
+      const Dist& distribution() const { return dist; }
+
   private:
       Dist dist;
     };
+
+  // Returns an adapted distribution.
+  template <typename Result, typename Dist>
+    inline adapted_distribution<Dist, Result> 
+    adapt_distribution(const Dist& dist)
+    {
+      return {dist};
+    }
+
+  // Streamable
+  // FIXME: Implement input streaming.
+  template <typename C, typename Traits, typename Dist, typename Result>
+    inline std::basic_ostream<C, Traits>& 
+    operator<<(std::basic_ostream<C, Traits>& os, 
+               const adapted_distribution<Dist, Result>& dist)
+    {
+      return os << dist;
+    }
 
 
 

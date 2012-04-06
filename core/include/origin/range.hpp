@@ -113,6 +113,14 @@ namespace origin
           && Has_end<R>()
           && Same<Begin_result<R>, End_result<R>>();
     }
+
+
+
+  // Strict range (concept)
+  // A strict range is a range that is not also a container. The two are
+  // differentiated by the presence of the size and empty member functions.
+  template <typename R>
+    constexpr bool Strict_range() { return Range<R>() && !Has_member_size<R>(); }
     
 
     
@@ -219,8 +227,8 @@ namespace origin
   //
   // FIXME: This should be available in the range module.
   template<typename R>
-    inline auto size(R const& r)
-      -> Requires<Range<R>() && !Has_member_size<R>(), Make_unsigned<Distance_type<R>>>
+    inline auto size(R const& r) 
+      -> Requires<Strict_range<R>, Make_unsigned<Distance_type<R>>>
     {
       return std::distance(std::begin(r), std::end(r));
     }

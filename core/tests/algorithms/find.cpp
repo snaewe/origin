@@ -20,7 +20,8 @@ using namespace origin;
 struct find_if_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       auto first = begin(range);
       auto last = end(range);
@@ -38,7 +39,8 @@ struct find_if_check
 struct find_if_not_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return find_if_not(range, pred) == find_if(range, negation(pred));
     }
@@ -50,7 +52,8 @@ struct find_if_not_check
 struct find_next_if_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       auto first = begin(range);
       auto last = end(range);
@@ -68,7 +71,8 @@ struct find_next_if_check
 struct find_nth_if_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, Distance_type<R> n, P pred) const
+    auto operator()(const R& range, Distance_type<R> n, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       auto first = begin(range);
       auto last = end(range);
@@ -290,7 +294,8 @@ struct find_not_adjacent_check
 struct is_relation_preserving_check
 {
   template <typename R, typename C>
-    bool operator()(const R& range, C comp) const
+    auto operator()(const R& range, C comp) const
+      -> Requires<Range_relational_query<R, C>(), bool>
     {
       return is_relation_preserving(range, comp) 
           == (find_not_adjacent(range, comp) == end(range));

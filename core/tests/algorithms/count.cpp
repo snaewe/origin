@@ -23,7 +23,8 @@ using namespace origin;
 struct count_if_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       auto f = [pred](const Value_type<R>& x, Distance_type<R> n)
       {
@@ -39,7 +40,8 @@ struct count_if_check
 struct count_if_not_check
 {
   template <typename R, typename P>
-    bool operator()(const R& range, P pred) const
+    auto operator()(const R& range, P pred) const
+      -> Requires<Range_query<R, P>(), bool>
     {
       return count_if_not(range, pred) == count_if(range, negation(pred));
     }

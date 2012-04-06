@@ -74,7 +74,6 @@ namespace origin
     }
     
     
-
   // Laze false (trait)
   // The lazy false function always evaluates to false. However, being a
   // template, any calls to this function are inherently dependent on the
