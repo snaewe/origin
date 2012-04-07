@@ -5,16 +5,12 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-
-#ifndef __SSE__
-#error "Didn't correctly enable SIMD flags"
-#endif
-#ifndef __SSE2__
-#error "Didn't correctly enable SIMD flags"
-#endif
 #include <origin/blas/detail/matrix/matrix_alloc_base.hpp>
 #include <cassert>
+using namespace origin::blas::detail;
+
 int main() {
+    matrix_alloc_base<float, std::allocator<float>> temp;
     return 0;
     
 }

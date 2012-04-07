@@ -23,18 +23,27 @@ public:
     typedef typename std::allocator_traits<rebound_alloc_type>::allocator_type allocator_type;
     typedef typename std::allocator_traits<rebound_alloc_type>::value_type value_type;
     typedef typename std::allocator_traits<rebound_alloc_type>::pointer pointer;
-    typedef typename std::allocator_traits<rebound_alloc_type>::reference reference;
     typedef typename std::allocator_traits<rebound_alloc_type>::const_pointer const_pointer;
-    typedef typename std::allocator_traits<rebound_alloc_type>::const_reference const_reference;
+    typedef value_type& reference;
+    typedef value_type const& const_reference;
     typedef typename std::allocator_traits<rebound_alloc_type>::difference_type difference_type;
     typedef typename std::allocator_traits<rebound_alloc_type>::size_type size_type;
     
 private:
+    
     struct matrix_alloc_impl_base {
+        matrix_alloc_impl_base()
+            :start(0), finish(0)
+        { }
         
-        
+        size_type size() {
+            return finish - start;
+        }
+        pointer start;
+        pointer finish;
     };
-
+protected:
+    
 };
     
     
