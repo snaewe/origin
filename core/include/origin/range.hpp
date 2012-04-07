@@ -108,10 +108,10 @@ namespace origin
   template<typename R>
     constexpr bool Range()
     {
-      return Has_begin<R>() 
-          && Iterator<Begin_result<R>>()
-          && Has_end<R>()
-          && Same<Begin_result<R>, End_result<R>>();
+      return Has_begin<R>()   // begin(r)
+          && Has_end<R>()     // end(r)
+          && Same<Begin_result<R>, End_result<R>>()
+          && Iterator<Begin_result<R>>();
     }
 
 
@@ -123,8 +123,8 @@ namespace origin
     constexpr bool Strict_range() { return Range<R>() && !Has_member_size<R>(); }
     
 
-    
-  // Range concepts
+
+  // Iterator range concepts
     
   // NOTE: The meaning of saying "is fooable everywhere except its limit" is
   // analogous to asserting the corresponding property for all ranges r of 
@@ -134,6 +134,9 @@ namespace origin
   //
   // as an invariant of the type.
     
+
+
+  // Input range (concept)
   // Returns true if R is an input range. An input range is a range of input
   // iterators. An input range is readable everywhere except its limit.
   template<typename R>

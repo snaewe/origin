@@ -100,12 +100,31 @@ namespace origin
 
   // Incrementable types
   //
-  // TODO: Rethink the incrementable concepts so that equality comparison is
-  // always required. Weakly_incrementable should be Semi_incrementable and
-  // Incrementable should be as it is. This will let me get rid of
-  // Weak_input_iterator.
-  
-  
+  // FIXME: The current iterator design accommodates some weirdness in the
+  // C++ standard library (i.e., that some iterator types may not be
+  // Equality_comparable.). Ultimately, I'd like the design to include the
+  // following concepts:
+  //
+  //  - Weakly_incrementable - Equality_comparable and pre-increment
+  //  - Incrementable - Weakly_incrementable and post-increment
+  //  - Decrementable - Incrementable and decrement operators
+  //
+  // Is there a better name for Decrementable that emphasizes that it is both
+  // incrementable and decrementable?
+  //
+  // From the iterator side, we should have the following:
+  //
+  //  - Iterator - Weakly_incrementable and dereference
+  //  - Input_iterator -Iterator and Readable
+  //  - Output_iterator - Iterator and Writable
+  //  - Forward_iterator - Incrementable and Input_iterator
+  //  - Bidirectional_iterator - Decrementable and Forward_iterator
+  //  - Random_access_iterator - Bidirectional and ...
+  //
+  // If I want to make this design active, then I'm basically going to have
+  // to make Origin supplant the entire standard library.
+
+
 
   // Weakly incrementable (concept)
   // A weakly incrementable type is a semiregular type that can be pre- and
@@ -440,6 +459,16 @@ namespace origin
   
   
 
+  // Non-random access iterator (concept)
+  // Returns true if I is an iterator, but not a random access iterator.
+  template <typename I>
+    constexpr bool Non_random_access_iterator()
+    {
+      return Weakly_incrementable<I>() && !Random_access_iterator<I>();
+    }
+
+
+
   // Incrementable properties  
   // These traits help unify some aspects of incrementable types and iterators.
   // If an abstraction can be adapted to incrementable but not necessarily
@@ -636,8 +665,131 @@ namespace origin
       return std::prev(i, n);
     }
   
+
+
+  // Iterative bounded next
+  // Returns the nth iterator past first. If first + n exceeds last, the
+  // operation returns last. This operation increments first exactly
+  // min(n, distance(first, last) times.
+  template <typename I>
+    I iterative_bounded_next(I first, Distance_type<I> n, I last)
+    {
+      while (n != 0 && first != last) {
+        ++first;
+        --n;
+      }
+      return first;
+    }
+
+
+
+  // Bounded next (operation)
+  // Returns the nth iterator past first. If first + n exceeds last, the
+  // operation returns last. This operation is specialized for random accesss
+  // iterators, returning in constant time.
+  template <typename I>
+    auto bounded_next(I first, Distance_type<I> n, I last)
+      -> Requires<Non_random_access_iterator<I>(), I>
+    {
+      return iterative_bounded_next(first, n, last);
+    }
+
+  template <typename I>
+    auto bonded_next(I first, Distance_type<I> n, I last)
+      -> Requires<Random_access_iterator<I>(), I>
+    {
+      // NOTE: We can't use min() because that would introduce a cyclic
+      // dependency.
+      Distance_type<I> d = o_distance(first, last);
+      return first += (n < d ? n : d);
+    }
+
+
   
+  // Iterative bounded prev
+  // Returns the nth iterator before last. If last - n exceeds first, the
+  // operation returns first. This operation decrements last exactly
+  // min(n, distance(first, last) times.
+  template <typename I>
+    I iterative_bounded_prev(I last, Distance_type<I> n, I first)
+    {
+      while (n != 0 && first != last) {
+        --last;
+        --n;
+      }
+    }
+
+
+
+  // Bounded prev (operation)
+  // Returns the nth iterator before last. If last - n exceeds first, the
+  // operation returns first. This operation is specialized for random access
+  // iterators, returning in constant time.
+  template <typename I>
+    auto bounded_prev(I last, Distance_type<I> n, I first)
+      -> Requires<Non_random_access_iterator<I>(), I>
+    {
+      return iterative_bounded_prev(last, n, first);
+    }
+
+  template <typename I>
+    auto bounded_prev(I last, Distance_type<I> n, I first)
+      -> Requires<Random_access_iterator<I>(), I>
+    {
+      Distance_type<I> d = distance(first, last);
+      return last -= (n < d) ? n : d;
+    }
+
+
+
+  // Exceeds upper limit
+  // Returns true if first + n will refer to a position past last.
+  template <typename I>
+    bool exceeds_upper_limit(I first, Distance_type<I> n, I last)
+    {
+      while (n != 0 && first != last) {
+        ++first;
+        --n;
+      }
+
+      // Returns true if we've reached the limit, but would have continued 
+      // decrementing.
+      return first == last && n != 0;
+    }
+
+
+
+  // Exceeds lower limit
+  // Returns true if last - n will refer to a position before first.
+  template <typename I>
+    bool exceeds_lower_limit(I last, Distance_type<I> n, I first)
+    {
+      while (n != 0 && first != last) {
+        --last;
+        --n;
+      }
+
+      // Returns true if we've reached the limit, but would have continued 
+      // decrementing.
+      return first == last && n != 0;
+    }
+
+
   
+  // Exceeds limits
+  // Returns true if first + n is a valid range. Note that n may be postiive
+  // or negative.
+  template <typename I>
+    bool exceeds_limits(I first, Distance_type<I> n, I last)
+    {
+      if (n >= 0)
+        return exceeds_upper_limit(first, n, last);
+      else
+        return exceeds_lower_limit(last, n, first);
+    }
+
+
+
   // Iterator distance
   // Return the distance between i and j.
   //
@@ -648,8 +800,9 @@ namespace origin
     {
       static_assert(Weakly_incrementable<Iter>(), "");
       assert(( is_bounded_range(first, last) ));
-      
-      return std::distance(first, last);
+
+      using std::distance;
+      return distance(first, last);
     }
     
   

@@ -449,34 +449,44 @@ namespace origin
     
 
 
-  // Random iterator distribution
-  // The random iterator distribution generates iterators at random positions 
-  // in a given container. Positions are uniformly generated.
+  // Random range distribution
+  // The random iterator range distribution returns a valid iterator range
+  // (a pair of iterators) for the given container.
   //
-  // TODO: Should we parameterize over the distribution of positions? That
-  // would let us test operations close to the front or back.
+  // Note that there is no single iterator range because it is unsafe to test
+  // iterators in isolation. It is practically impossible to tell when an
+  // arbitrary iterator is valid.
   template <typename Cont>
-    class random_iterator_distribution
+    class random_range_distribution
     {
-      using this_type = random_iterator_distribution<Cont>;
+      using this_type = random_range_distribution<Cont>;
       using Dist = std::uniform_int_distribution<Size_type<Cont>>;
     public:
-      using result_type = Iterator_type<Cont>;
+      using result_type = bounded_range<Iterator_type<Cont>>;
 
-      random_iterator_distribution(Cont& c) 
-        : cont(c), dist(0, c.size() - 1)
+      random_range_distribution(Cont& c) 
+        : cont(c), dist()
         { }
 
       template <typename Eng>
         result_type operator()(Eng& eng)
         {
-          return o_next(cont.begin(), dist(eng));
+          // Choose the position of first iterator anywhere in the range.
+          typename Dist::param_type p1 {0, cont.size()};
+          auto n1 = dist(eng, p1);
+
+          // Choose the offset from the first position of the second iterator
+          // anywhere beyond the first range.
+          typename Dist::param_type p2 {0, cont.size() - n1};
+          auto n2 = dist(eng, p2);
+
+          // Return a range constructed over those values.
+          auto first = o_next(cont.begin(), n1);
+          auto last = o_next(first, n2);
+          return {first, last};
         }
 
       // Equality comparable
-      // Two random iterator generators are equal if they generate iterators
-      // into the same container with their positions having the same
-      // distribution (currently, that's uniform).
       bool operator==(const this_type& x) const { return &cont == &x.cont; }
       bool operator!=(const this_type & x) const { return &cont != &x.cont; }
 
@@ -485,6 +495,8 @@ namespace origin
       Dist dist;
     };
 
+  // FIXME: Can we implement streaming for these kinds of iterators? Not unless
+  // we can stream the underlying container.
 
 
   // Random tuple generator

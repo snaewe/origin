@@ -8,3 +8,4 @@
 # origin_run_test(test_archetypes archetypes.cpp)
 origin_run_test(test_check check.cpp)
 origin_run_test(test_concepts concepts.cpp)
+origin_run_test(test_iterators iterators.cpp)

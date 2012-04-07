@@ -1062,23 +1062,72 @@ namespace origin
     
     
   
-  // Safely deduce the result of ++t;
-  template <typename T>
-    struct pre_increment_result
-    {
-    private:
-      template <typename X>
-        static auto check(X& x) -> decltype(++x);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T&>()));
-    };
-    
-  // An alias for the result of ++t.
-  template <typename T>
-    using Pre_increment_result = typename pre_increment_result<T>::type;
+  // Infrastructure for deducing the results of pre- and post- increment and
+  // decrement.
+  namespace traits
+  {
+    // Safely deduce the result of ++t;
+    template <typename T>
+      struct pre_increment_result
+      {
+      private:
+        template <typename X>
+          static auto check(X& x) -> decltype(++x);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T&>()));
+      };
 
-  // Return true if the expression ++t is valid.
+    // Safely deduce the result of t++;
+    template <typename T>
+      struct post_increment_result
+      {
+      private:
+        template <typename X>
+          static auto check(X& x) -> decltype(x++);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T&>()));
+      };
+
+    // Safely deduce the result of --t;
+    template <typename T>
+      struct pre_decrement_result
+      {
+      private:
+        template <typename X>
+          static auto check(X& x) -> decltype(--x);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T&>()));
+      };
+      
+    
+    // Safely deduce the result of t--;
+    template <typename T>
+      struct post_decrement_result
+      {
+      private:
+        template <typename X>
+          static auto check(X& x) -> decltype(x--);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T&>()));
+      };
+  } // namespace traits
+
+
+    
+  // Post-increment result (alias)
+  // An alias for the result of ++t or subst_failure if the expression is
+  // not valid.
+  template <typename T>
+    using Pre_increment_result = typename traits::pre_increment_result<T>::type;
+
+
+
+  // Has pre-increment (trait)
+  // Returns true if the expression ++t is valid.
   template <typename T>
     constexpr bool Has_pre_increment()
     {
@@ -1087,23 +1136,16 @@ namespace origin
 
 
 
-  // Safely deduce the result of t++;
+  // Post-increment result (alias)
+  // An alias for the result of t++ or subt_failure if the expression is
+  // not valid.
   template <typename T>
-    struct post_increment_result
-    {
-    private:
-      template <typename X>
-        static auto check(X& x) -> decltype(x++);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T&>()));
-    };
-    
-  // An alias for the result of t++.
-  template <typename T>
-    using Post_increment_result = typename post_increment_result<T>::type;
+    using Post_increment_result = typename traits::post_increment_result<T>::type;
 
-  // Return true if the expostssion t++ is valid.
+  
+
+  // Has post-increment (trait)
+  // Returns true if the expostssion t++ is valid.
   template <typename T>
     constexpr bool Has_post_increment()
     {
@@ -1112,23 +1154,16 @@ namespace origin
 
     
     
-  // Safely deduce the result of --t;
+  // Pre-decrement result (alias)
+  // An alias for the result of --t or subst_failure if the expression is
+  // invalid.
   template <typename T>
-    struct pre_decrement_result
-    {
-    private:
-      template <typename X>
-        static auto check(X& x) -> decltype(--x);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T&>()));
-    };
-    
-  // An alias for the result of --t.
-  template <typename T>
-    using Pre_decrement_result = typename pre_decrement_result<T>::type;
+    using Pre_decrement_result = typename traits::pre_decrement_result<T>::type;
 
-  // Return true if the expression --t is valid.
+
+
+  // Has pre-decrement (trait)
+  // Returns true if the expression --t is valid.
   template <typename T>
     constexpr bool Has_pre_decrement()
     {
@@ -1137,23 +1172,16 @@ namespace origin
 
 
 
-  // Safely deduce the result of t--;
+  // Post-decrement result
+  // An alias for the result of t-- or subst_failure if the expression is
+  // not valid.
   template <typename T>
-    struct post_decrement_result
-    {
-    private:
-      template <typename X>
-        static auto check(X& x) -> decltype(x--);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T&>()));
-    };
-    
-  // An alias for the result of t--.
-  template <typename T>
-    using Post_decrement_result = typename post_decrement_result<T>::type;
+    using Post_decrement_result = typename traits::post_decrement_result<T>::type;
 
-  // Return true if the expostssion t-- is valid.
+
+
+  // Has post-decrement
+  // Returns true if the expostssion t-- is valid.
   template <typename T>
     constexpr bool Has_post_decrement()
     {
@@ -1162,7 +1190,7 @@ namespace origin
     
     
     
-    // Logical operators
+  // Logical operators
   
   // Safely deduce the result type of the expression t && u.
   template <typename T, typename U>

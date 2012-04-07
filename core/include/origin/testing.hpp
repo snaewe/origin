@@ -343,10 +343,6 @@ namespace origin
       return fake_type<T>::get();
     }
 
-
-
-
-
 } // namespace origin
 
 #include <origin/testing/relations.hpp>
