@@ -102,7 +102,7 @@ public:
 
 // Testing Type.
 template<typename T, typename Alloc>
-struct matrix_alloc_base_allocator_test
+struct matrix_alloc_base_impl_test
     :matrix_alloc_base<T, Alloc>
 {
     typedef matrix_alloc_base<T, Alloc> base;
@@ -156,15 +156,26 @@ struct matrix_alloc_base_allocator_test
         assert(temp2.start == (T*)0xdeadbeef);
         assert(temp2.finish == (T*)0xdeadb0de);
     }
+};
+
+template<typename T, typename Alloc>
+struct matrix_alloc_base_test
+    :matrix_alloc_base<T, Alloc>
+{
+    typedef matrix_alloc_base<T, Alloc> base;
+    typedef typename base::matrix_alloc_impl_base base_impl_type;
+    typedef typename base::rebound_alloc_type allocator_test_type;
     
-    
+    static void run_tests() {
+  
+    }
 };
 
 int main() {
     // matrix_alloc_base<float, std::allocator<float>> temp;
     
     {
-        typedef matrix_alloc_base_allocator_test<float, fake_allocator<float>> allocator_test_type;
+        typedef matrix_alloc_base_impl_test<float, fake_allocator<float>> allocator_test_type;
         allocator_test_type::run_tests();
     }
     return 0;

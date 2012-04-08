@@ -32,7 +32,8 @@ public:
     typedef typename std::allocator_traits<rebound_alloc_type>::difference_type difference_type;
     typedef typename std::allocator_traits<rebound_alloc_type>::size_type size_type;
     
-protected:    
+protected:
+    
     /** @name matrix_alloc_impl_base 
      *  @brief The matrix_alloc_impl_base is responsible for inheirting the allocator 
      *  and managing the instance variables. This class is NOT responsible for actually
@@ -74,18 +75,49 @@ protected:
          *  @brief The swap function used for exchanging two different
          *  matrix_alloc_impl_base's instance variables.
          */
-        void swap(matrix_alloc_impl_base& rhs) {
+        void swap(matrix_alloc_impl_base& rhs) noexcept {
             using std::swap;
             swap(start, rhs.start);
             swap(finish, rhs.finish);
         }
-        
         pointer start;
         pointer finish;
     };
     
     matrix_alloc_impl_base base_impl;
+
+    rebound_alloc_type& get_rebound_allocator() noexcept {
+        return *static_cast<rebound_alloc_type*>(&base_impl);
+    }
+
+    rebound_alloc_type const& get_rebound_allocator() const noexcept{
+        return *static_cast<rebound_alloc_type*>(&base_impl);
+    }
+
+public:
+    /** @name get_allocator
+     *  @brief Returns the allocator.
+     */
+    allocator_type const& get_allocator() const noexcept {
+        return allocator_type(get_rebound_allocator);
+    }
     
+    
+    /** @name Default Constructor
+     *  @brief Default construct an instance of the matrix_alloc_base.
+     */
+    matrix_alloc_base()
+    {}
+    /*
+    _Vector_base()
+    _Vector_base(const allocator_type& __a)
+    _Vector_base(size_t __n)
+    _Vector_base(size_t __n, const allocator_type& __a)
+    _Vector_base(_Tp_alloc_type&& __a)
+    _Vector_base(_Vector_base&& __x)
+    _Vector_base(_Vector_base&& __x, const allocator_type& __a)
+    ~_Vector_base()     
+     */
 };
     
     
