@@ -21,7 +21,7 @@ int main()
 {
   // Check adaptation for some arithmetic types
   static_assert(Has_distance_type<int>(), "");
-  static_assert(Same<Distance_type<int>, ptrdiff_t>(), "");
+  static_assert(Same<Distance_type<int>, int>(), "");
 
   // Check adaptation for pointers.
   static_assert(Has_distance_type<int*>(), "");

@@ -12,8 +12,6 @@
 
 namespace origin
 {
-
-
   // A counter is an iterator that traverses a counted sequence of 
   // incrementable objects, usually integers. It can also be used to count over 
   // other iterator types.

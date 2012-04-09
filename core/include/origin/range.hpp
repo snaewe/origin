@@ -14,6 +14,25 @@
 
 namespace origin
 {
+  // Begin and end
+  // These functions wrap the calls to std::begin() and std::end() and are
+  // essentially only provided for convenience.
+    
+  // Return the begin iterator of a range
+  template<typename R>
+    auto o_begin(R&& range) -> decltype(std::begin(range))
+    {
+      return std::begin(range);
+    }
+
+  // Return the end iterator of a range.
+  template<typename R>
+    auto o_end(R&& range) -> decltype(std::end(range))
+    {
+      return std::end(range);
+    }
+
+
   // The Range concept
   //
   // A range is simply a class that exposes a pair of iterators called begin(r)
@@ -39,7 +58,7 @@ namespace origin
     {
     private:
       template<typename X>
-        static auto check(X&& x) -> decltype(std::begin(x));
+        static auto check(X&& x) -> decltype(o_begin(x));
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>()));
@@ -68,7 +87,7 @@ namespace origin
     {
     private:
       template<typename X>
-        static auto check(X&& x) -> decltype(std::end(x));
+        static auto check(X&& x) -> decltype(o_end(x));
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>()));
@@ -191,14 +210,14 @@ namespace origin
       return Range<R>() && Random_access_iterator<Iterator_type<R>>();
     }
   
-  
 
-  // The following type traits and type predicates establish the notion of
-  // sized type, some type for which size(x) is valid query. Size is defined
-  // in 3 ways:
-  //    - For user-defined containers, it is x.size().
-  //    - For ranges, it is distance(begin(x), end(x))
-  //    - For statically sized arrays of type T[N], it is N.
+  
+  // Value type (deduction)
+  // The value type of a range is deduced from the expressio *begin(range) for
+  // all Range types.
+  template <typename R>
+    auto deduce_value_type(default_t, const R& range) 
+    -> Unqualified<decltype(*o_begin(range))>;
 
 
   
@@ -227,44 +246,51 @@ namespace origin
   
   // Size (range)
   // Specialize for size for Ranges that are not containers.
-  //
-  // FIXME: This should be available in the range module.
-  template<typename R>
-    inline auto size(R const& r) 
-      -> Requires<Strict_range<R>, Make_unsigned<Distance_type<R>>>
+  template <typename R>
+    inline auto size(R const& range) 
+      -> Requires<Strict_range<R>(), Make_unsigned<Distance_type<R>>>
     {
-      return std::distance(std::begin(r), std::end(r));
+      return std::distance(std::begin(range), std::end(range));
     }
   
-  
-  
-  // Safely get the result type of the expression size(r).
-  template<typename T>
-    struct size_result
-    {
-    private:
-      template<typename X>
-        static auto check(X const& x) -> decltype(size(x));
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
-    };
-  
-  // An alias for the result of the size(t) expression. Every type for which
-  // size(t) is valid has an associated size type. This includes ranges,
-  // containers, matrices, and graphs.
-  template<typename T>
-    using Size_type = typename size_result<T>::type;
 
-  // Returns true if size(t) is a valid expression.
-  template<typename T>
+
+  // Size type (deduction)
+  // The size type of a range is deduced from the expression size(range) for
+  // any Range range.
+  template <typename R>
+    auto deduce_size_type(default_t, const R& range) -> decltype(size(range));
+
+
+
+  // Infrastructure for deducing the validity of the expression size(x). Note
+  // that this cannot be implemented by simply checking the validity of
+  // Size_type<T> since there could be other expressions used to deduce that 
+  // type for different concepts.
+  namespace traits
+  {
+    template <typename T>
+      struct get_size_result
+      {
+      private:
+        template <typename X>
+          static auto check(const X& x) -> decltype(size(x));
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  }
+
+  // Has size (trait)
+  // Returns true if the expression size(t) is valid.
+  template <typename T>
     constexpr bool Has_size()
     {
-      return Subst_succeeded<Size_type<T>>();
+      return Subst_succeeded<typename traits::get_size_result<T>::type>();
     }
 
 
-    
+
   // Empty
   // A type may support empty queries as in empty(x). Like size(), empty is
   // defined in 3 ways:
@@ -332,26 +358,6 @@ namespace origin
 
 
     
-  // Begin and end
-  // These functions wrap the calls to std::begin() and std::end() and are
-  // essentially only provided for convenience.
-    
-  // Return the begin iterator of a range
-  template<typename R>
-    auto o_begin(R&& range) -> decltype(std::begin(range))
-    {
-      return std::begin(range);
-    }
-
-  // Return the end iterator of a range.
-  template<typename R>
-    auto o_end(R&& range) -> decltype(std::end(range))
-    {
-      return std::end(range);
-    }
-    
-    
-
   // Distance (range)
   // Return the distance between the first and last elements of the range.
   // Note that the result type of distance may be different than that of the
@@ -632,7 +638,8 @@ namespace origin
       assume(( is_bounded_range(first, o_next(last)) ));
       return {first, ++last};
     }
-    
+
 } // namespace origin
+
 
 #endif

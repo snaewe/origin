@@ -171,21 +171,53 @@ namespace origin
   // Integral types
   // Predicates describing standard (language-defined) integral types.
 
+
+
+  // Integral (trait)
   // Returns true if T is a signed or unsigned, possibly cv-qualified, bool,
   // char, short, int, long or long long.
+  //
+  // FIXME: The latest standard renamed "integral" to "integer".
   template <typename T>
     constexpr bool Integral() { return std::is_integral<T>::value; }
-    
-  // Returns true if T is a signed integral type.
+
+  
+
+  // Signed (trait)
+  // Returns true if T is a signed type. Note that floating point values
+  // are signed.
   template <typename T>
     constexpr bool Signed() { return std::is_signed<T>::value; }
     
-  // Returns true if T is an unsigned integral type.
+
+
+  // Unsigned (trait)
+  // Returns true if T is an unsigned type.
   template <typename T>
     constexpr bool Unsigned() { return std::is_unsigned<T>::value; }
 
   
   
+  // Signed integer (trait)
+  // Returns true if T is a signed integral type.
+  template <typename T>
+    constexpr bool Signed_integer()
+    {
+      return Integral<T>() && Signed<T>();
+    }
+
+
+
+  // Unsigned integer (trait)
+  // Returns true if T is an signed integer type.
+  template <typename T>
+    constexpr bool Unsigned_integer()
+    {
+      return Integral<T>() && Unsigned<T>();
+    }
+
+
+
   // Extend the make_unsigned trait to work for bool types also. Note that
   // using this trait with non-integral types will result in compilation errors.
   template <typename T>
@@ -1445,23 +1477,33 @@ namespace origin
     }   
     
     
-   // Safely deduce the result of *t.
-  template <typename T>
-    struct dereference_result
-    {
-    private:
-      template <typename X>
-        static auto check(X&& a) -> decltype(*a);
-      
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
-    };
 
+  // Infrastructure for safely deducing the result of *t.
+  namespace traits
+  {
+    template <typename T>
+      struct dereference_result
+      {
+      private:
+        template <typename X>
+          static auto check(X&& a) -> decltype(*a);
+        
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  } // namespace traits
+
+  
+
+  // Dereference result (alias)
   // An alias for the result of *t.
   template <typename T>
-    using Dereference_result = typename dereference_result<T>::type;
+    using Dereference_result = typename traits::dereference_result<T>::type;
     
+
+
+  // Dereference (trait)
   // Return true if the expression *t is valid.
   template <typename T>
     constexpr bool Has_dereference()
@@ -1469,6 +1511,7 @@ namespace origin
       return Subst_succeeded<Dereference_result<T>>();
     }
     
+
 
   // Safely deduce the result type of the expression t[u].
   template <typename T, typename U>
@@ -1848,26 +1891,152 @@ namespace origin
 
 
 
+  // Associated value type
+  // A type T has an associated value type if T::value_type is a valid 
+  // expression. 
+
+  // Infrastructure for accessing an associated size type.
+  namespace traits
+  {
+    // Safely deduce the type expression T::size_type.
+    template <typename T>
+      struct get_associated_value_type
+      {
+      private:
+        template <typename X>
+          static typename X::value_type check(const X&);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  } // namespace traits
+
+
+
+  // Associated value type (alias)
+  // An alias to the associated value type.
+  template <typename T>
+    using Associated_value_type = 
+      typename traits::get_associated_value_type<T>::type;
+
+
+
+  // Associated value type (trait)
+  // Returns true if T has an associated value type.
+  template <typename T>
+    constexpr bool Has_associated_value_type()
+    {
+      return Subst_succeeded<Associated_value_type<T>>();
+    }
+
+
+
+  // Associated difference type
+  // A type T has an associated difference type if T::difference_type is a
+  // valid expression. Note that the name "difference" is a hold-over from the
+  // standard library. The abstraction more closely associated with this
+  // associated type is "distance".
+
+  // Infrastructure for accessing an associated size type.
+  namespace traits
+  {
+    // Safely deduce the type expression T::size_type.
+    template <typename T>
+      struct get_associated_difference_type
+      {
+      private:
+        template <typename X>
+          static typename X::difference_type check(const X&);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  } // namespace traits
+
+
+
+  // Associated difference type (alias)
+  // An alias to the associated difference type.
+  template <typename T>
+    using Associated_difference_type = 
+      typename traits::get_associated_difference_type<T>::type;
+
+
+
+  // Associated difference type (trait)
+  // Returns true if T has an associated difference type.
+  template <typename T>
+    constexpr bool Has_associated_difference_type()
+    {
+      return Subst_succeeded<Associated_difference_type<T>>();
+    }
+
+
+
+  // Associated size type
+  // A type T has an associated size type if T::size_type is a valid 
+  // expression.
+
+  // Infrastructure for accessing an associated size type.
+  namespace traits
+  {
+    // Safely deduce the type expression T::size_type.
+    template <typename T>
+      struct get_associated_size_type
+      {
+      private:
+        template <typename X>
+          static typename X::size_type check(const X&);
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  } // namespace traits
+
+  
+
+  // Associated size type (alias)
+  // An alias to the associated size type or subst failure if the expression
+  // T::size_type is invalid.
+  template <typename T>
+    using Associated_size_type = typename traits::get_associated_size_type<T>::type;
+
+  
+
+  // Associated size type (trait)
+  // Returns true if T has an associated size type.
+  template <typename T>
+    constexpr bool Has_associated_size_type()
+    {
+      return Subst_succeeded<Associated_size_type<T>>();
+    }
+
+
+
   // Member size
   // These traits determine if x.size() is a valid expression. Classes 
   // implementing this member typically cache their size rather than compute
   // it (e.g., Containers).
 
-  // Safely get the type returned by the member function x.size().
-  template <typename T>
-    struct member_size_result
-    {
-    private:
-      template <typename X>
-        static auto check(X const& x) -> decltype(x.size());
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
-    };
+  // Infrastructure for deducing an associated size type.
+  namespace traits
+  {
+    // Safely get the type returned by the member function x.size().
+    template <typename T>
+      struct member_size_result
+      {
+      private:
+        template <typename X>
+          static auto check(X const& x) -> decltype(x.size());
+        static subst_failure check(...);
+      public:
+        using type = decltype(check(std::declval<T>()));
+      };
+  } // namespace traits
     
   // An alias to the result of the expression empty(x).
   template <typename T>
-    using Member_size_result = typename member_size_result<T>::type;
+    using Member_size_result = typename traits::member_size_result<T>::type;
     
   // Return true if empty(t) is a valid expression.
   template <typename T>

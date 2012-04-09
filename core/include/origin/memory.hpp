@@ -9,11 +9,28 @@
 #define ORIGIN_MEMORY_HPP
 
 #include <algorithm>
+#include <memory>
 
 #include <origin/concepts.hpp>
 
 namespace origin
 {
+  // Allocators
+  // An allocator is an interface for separate allocation and initialization.
+  //
+  // FIXME: Finish writing this module.
+
+
+  // Allocator (concept)
+  // Returns true if A is an allocator.
+  template <typename A>
+    constexpr bool Allocator()
+    {
+      return true;
+    }
+
+
+
   // Forward declarations
   template<typename I, typename O> O o_copy(I, I, O);
   template<typename I, typename O> O o_copy_n(I, Distance_type<I>, O);

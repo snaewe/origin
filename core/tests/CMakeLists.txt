@@ -9,6 +9,7 @@
 origin_run_test(tuple tuple.cpp)
 origin_run_test(optional optional.cpp)
 origin_run_test(functional functional.cpp)
+origin_run_test(memory memory.cpp)
 
 add_subdirectory(testing)
 add_subdirectory(utils)

@@ -329,35 +329,77 @@ namespace origin {
   // it contains. The value type of an iterator is the type of object it
   // refers to.
   //
-  // Note that value types are never references or cv-qualified.
+  // Note that a value type is never just the result type of an accessor
+  // function -- it is never a cv-qualified or reference type.
   //
-  // User-defined types model this concept by providing a nested value_type
-  // declaration (i.e., T::value_type must be a valid type name). The concept
-  // is implicitly satisfied for pointer and array types.
+  // In general 
+
+  namespace traits
+  {
+    // Type deduction hook.
+    subst_failure deduce_value_type(...);
+
+    // If T can be dereferenced, then the value type is the result of that
+    // operation minus reference and const-qualifiers.
+    template <typename T>
+      auto deduce_value_type(default_t, const T&) 
+        -> Requires<Has_dereference<T>(), Unqualified<Dereference_result<T>>>;
+
+
+    // Deduce the value type associated with T. We first look for an 
+    // associated member type, then default to the deduction overloads.
+    template <typename T, bool = Has_associated_value_type<T>()>
+      struct get_value_type;
+
+    template <typename T>
+      struct get_value_type<T, true>
+      {
+        using type = typename T::value_type;
+      };
+
+    template <typename T>
+      struct get_value_type<T, false>
+      {
+        using type = decltype(deduce_value_type(default_t {}, std::declval<T>()));
+      };
+
+  } // namespace traits
   
-  // Safely deduce the associated value type, returning the associated value
-  // type if it exists, or subst_failure if it doesn't.
-  //
-  // NOTE: This *must* be specialized for externally adapted types (e.g.,
-  // pointers). We handle pointer types internally as a special case.
+
+
+  // Value traits (traits class)
+  // The value traits class can be used to specialize the associated value type
+  // of T. This overrides the usual deduction protocol for specific sets of
+  // types.
   template <typename T>
-    struct get_value_type
+    struct value_traits
     {
-    private:
-      template <typename X> static typename X::value_type check(X&&);
-      template <typename X> static X check(X*);
-      template <typename X> static X check(X const*);
-      template <typename X, std::size_t N> X check(X(&)[N]);
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
+      using type = typename traits::get_value_type<T>::type;
     };
 
+  template <typename T>
+    struct value_traits<T&> : value_traits<T> { };
+
+  template <typename T>
+    struct value_traits<T&&> : value_traits<T> { };
+
+  template <typename T, std::size_t N>
+    struct value_traits<T[N]>
+    {
+      using type = T;
+    };
+
+
+
+  // Value type (alias)
   // The Value_type alias associates a value type with another type, usually
   // the type of a sub-object or contained object.
   template <typename T>
-    using Value_type = typename get_value_type<T>::type;
-  
+    using Value_type = typename value_traits<T>::type;
+
+
+
+  // Value type (trait)
   // Return true if T has an associated value type.
   template <typename T>
     constexpr bool Has_value_type()
@@ -368,10 +410,8 @@ namespace origin {
     
 
   // Distance Type
-  //
-  // The distance type is an integral type that can express the distance
-  // between two positions (e.g., iterators, pointers, and integral types
-  // in general).
+  // The distance type is a type that encodes the distance between two 
+  // objects (e.g., iterators, pointers, and integral types in general).
   //
   // This is called difference type in the standard library. We rename it
   // to be an accordance with the Palo Alto TR. Distance is also easier to
@@ -381,41 +421,166 @@ namespace origin {
   // called the difference_type (i.e., T::difference_type must be a valid
   // type name). The distance type is implicitly defined for integral types
   // pointers, and statically sized arrays.
+  //
+  // The notion of "distance" as used in most concept designs is somewhat
+  // artificial in that it generally required to be explicitly specified. A
+  // more natural approach would be to deduce the distance type as a result
+  // of the distance() function as if it were required by all differentiable
+  // values.
+
+  namespace traits {
+    // Type deduction hook. 
+    subst_failure deduce_distance_type(...);
+
+    template <typename T>
+      auto deduce_distance_type(T) -> Requires<Arithmetic<T>(), T>;
+
+    // We can provide a reasonable guess for all other incrementable 
+    // user-defined types as ptrdiff_t. This is basically a default guess for
+    // all iterator-like types.
+    template <typename T>
+      auto deduce_distance_type(T) 
+        -> Requires<Class<T>() && Has_pre_increment<T>(), std::ptrdiff_t>;
 
 
-  // Safely deduce the distance type.
+    // Get the distance type associated with T.
+    template <typename T, bool = Has_associated_difference_type<T>()>
+      struct get_distance_type;
+
+    template <typename T>
+      struct get_distance_type<T, true>
+      {
+        using type = typename T::difference_type;
+      };
+
+    template <typename T>
+      struct get_distance_type<T, false>
+      {
+        using type = decltype(deduce_distance_type(std::declval<T>()));
+      };
+  } // namespace traits
+
+
+
+  // Distance traits (traits class)
+  // The distance traits class can be specialized to associated a distance
+  // type with a specific set of types. This traits class is specialized for
+  // pointers, arrays, and initializer lists, by default.
   template <typename T>
-    struct get_distance_type
+    struct distance_traits
     {
-    private:
-      template <typename X> 
-        static auto check(const X&, Requires<!(Integral<X>() || Pointer<X>())>* = {})
-          -> typename X::difference_type;
-      
-      template <typename X> 
-        static auto check(const X&, Requires<Integral<X>() || Pointer<X>()>* = {})
-          -> std::ptrdiff_t;
-          
-      template <typename X, std::size_t N>
-        static std::ptrdiff_t check(const X(&)[N]);
-        
-      template <typename X>
-        static std::ptrdiff_t check(std::initializer_list<X>);
+      using type = typename traits::get_distance_type<T>::type;
+    };
 
-      static subst_failure check(...);
-    public:
-      using type = decltype(check(std::declval<T>()));
+  template <typename T>
+    struct distance_traits<T&> : distance_traits<T> { };
+
+  template <typename T>
+    struct distance_traits<T&&> : distance_traits<T> { };
+
+  template <typename T>
+    struct distance_traits<T*>
+    {
+      using type = std::ptrdiff_t;
     };
   
+  template <typename T, std::size_t N>
+    struct distance_traits<T[N]>
+    {
+      using type = std::ptrdiff_t;
+    };
+
+  template <typename T>
+    struct distance_traits<std::initializer_list<T>>
+    {
+      using type = std::ptrdiff_t;
+    };
+
+
+
+  // Distance type (alias)
   // An alias to the associated distance type, if supported.
   template <typename T>
-    using Distance_type = typename get_distance_type<T>::type;
+    using Distance_type = typename distance_traits<T>::type;
     
+
+
+  // Has distance type (trait)
   // Returns true if T has an associated difference type.
   template <typename T>
     constexpr bool Has_distance_type()
     {
       return Subst_succeeded<Distance_type<T>>();
+    }
+
+
+
+  // Size type
+  // An associated size type encodes the largest possible size of a data
+  // structure. For example, the number of elemnts in a container, or the
+  // number of rows and columns in a matrix. 
+
+
+  // Infrastructrue for deducing a size type.
+  namespace traits
+  {
+    // This function is called to deduce the size type within some conceptual
+    // domain. This declaration depends on ADL to find overloads for differnt
+    // conceptual domains.
+    subst_failure deduce_size_type(...);
+
+    // Deduce the associate size type of T. If T has an explicitly associated
+    // size type, then that is taken to be T's size type. Otherwise, we expect
+    // the associated size type be deduced from the member function size().
+    template <typename T, bool = Has_associated_size_type<T>()>
+      struct get_size_type;
+
+    template <typename T>
+      struct get_size_type<T, true>
+      {
+        using type = typename T::size_type;
+      };
+
+    template <typename T>
+      struct get_size_type<T, false> 
+      { 
+        using type = decltype(deduce_size_type(default_t {}, std::declval<T>()));
+      };
+  } // namespace traits
+
+
+
+  // Size traits (traits class)
+  // The size_traits class can be used to specialize the associated size type 
+  // for a specific type or set of types. Traits class specialization should
+  // only be used when T is not a mode of a "sized" concept.
+  template <typename T>
+    struct size_traits
+    {
+      using type = typename traits::get_size_type<T>::type;
+    };
+
+  template <typename T>
+    struct size_traits<T&> : size_traits<T> { };
+
+  template <typename T>
+    struct size_traits<T&&> : size_traits<T> { };
+
+
+
+  // Size type (alias)
+  // Refers to the associated size type of T.
+  template <typename T>
+    using Size_type = typename size_traits<T>::type;
+
+
+
+  // Has size type (trait)
+  // Returns true if T hwas an associated size type.
+  template<typename T>
+    constexpr bool Has_size_type()
+    {
+      return Subst_succeeded<Size_type<T>>();
     }
 
 
