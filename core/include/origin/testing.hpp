@@ -9,6 +9,7 @@
 #define ORIGIN_TESTING_HPP
 
 #include <origin/concepts.hpp>
+#include <origin/exception.hpp>
 #include <origin/random.hpp>
 
 namespace origin
@@ -237,6 +238,9 @@ namespace origin
   // Assert checker (checking environment)
   // The assert checker simply asserts the validity of a specification. This
   // is useful for debugging.
+  //
+  // FIXME: Obviously this doesn't assert any more. This is going to replace
+  // the basic checker because it's going to do a lot of interesting reporting.
   template <typename Eng = std::minstd_rand>
     class assert_checker
     {
@@ -249,7 +253,17 @@ namespace origin
       template <typename P, typename... Args>
         void operator()(P pred, Args&&... args) const
         {
-          assert(pred(std::forward<Args>(args)...));
+          if (!pred(std::forward<Args>(args)...)) {
+            // FIXME: Build a string describing the failure. Be sure to
+            // include information about the arguments. It might be useful
+            // to wrap the actual evaluation of the arguments in a separate
+            // function, in order to wrap it with a try/catch block.
+            //
+            // NOTE: If we can't Stream an argument, then we can at least
+            // stream out its type name.
+            std::string msg = "test failed: " + typestr<P>();
+            throw std::logic_error(msg);
+          }
         }
 
 
@@ -258,6 +272,8 @@ namespace origin
       Eng  random_engine() const { return eng; }
 
     private:
+
+
       Eng eng; // Random number engine
     };
 

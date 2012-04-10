@@ -213,12 +213,19 @@ namespace origin
 
   
   // Value type (deduction)
-  // The value type of a range is deduced from the expressio *begin(range) for
+  // The value type of a range is deduced from the expression *begin(range) for
   // all Range types.
   template <typename R>
     auto deduce_value_type(default_t, const R& range) 
     -> Unqualified<decltype(*o_begin(range))>;
 
+
+
+  // Distance type (deduction)
+  // The distance type of a range is the same as that of its iterator type.
+  template <typename R>
+    auto deduce_distance_type(default_t, const R& range)
+      -> Distance_type<decltype(o_begin(range))>;
 
   
   // Size (member)

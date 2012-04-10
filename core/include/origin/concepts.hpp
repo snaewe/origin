@@ -433,13 +433,13 @@ namespace origin {
     subst_failure deduce_distance_type(...);
 
     template <typename T>
-      auto deduce_distance_type(T) -> Requires<Arithmetic<T>(), T>;
+      auto deduce_distance_type(default_t, T) -> Requires<Arithmetic<T>(), T>;
 
     // We can provide a reasonable guess for all other incrementable 
     // user-defined types as ptrdiff_t. This is basically a default guess for
     // all iterator-like types.
     template <typename T>
-      auto deduce_distance_type(T) 
+      auto deduce_distance_type(default_t, T) 
         -> Requires<Class<T>() && Has_pre_increment<T>(), std::ptrdiff_t>;
 
 
@@ -456,7 +456,7 @@ namespace origin {
     template <typename T>
       struct get_distance_type<T, false>
       {
-        using type = decltype(deduce_distance_type(std::declval<T>()));
+        using type = decltype(deduce_distance_type(default_t {}, std::declval<T>()));
       };
   } // namespace traits
 

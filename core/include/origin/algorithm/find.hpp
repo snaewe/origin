@@ -439,10 +439,8 @@ namespace origin
       assert(is_readable_range(first1, last1));
       assert(is_readable_range(first2, last2));
       
-      auto pred = [&first1](const Value_type<I1>& x) { return *first1 == x; };
-
       while (first1 != last1) {
-        if (some_of(first2, last2, pred))
+        if (some_equal(first2, last2, *first1, comp))
           return first1;
         ++first1;
       }

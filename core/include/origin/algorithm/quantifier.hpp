@@ -613,7 +613,7 @@ namespace origin
 
 
 
-  // Some equal (relation)
+  // Some equal (iterator, relation)
   // Returns true if comp(x, value) is true for some element x in [first, last).
   template<typename I, typename T, typename R>
     bool some_equal(I first, I last, const T& value, R comp)
@@ -628,7 +628,7 @@ namespace origin
 
     
 
-  // Some equal
+  // Some equal (iterator, equal)
   // Returns true if x == value for some element x in [first, last).
   template<typename I, typename T>
     bool some_equal(I first, I last, const T& value)
@@ -640,9 +640,10 @@ namespace origin
 
   // Some equal (range, relation)
   // Returns true if comp(x, value) for some element x in range.
-  template<typename R, typename T, typename Rel>
-    inline bool some_equal(const R& range, const T& value, Rel comp)
+  template<typename R, typename T, typename C>
+    inline bool some_equal(const R& range, const T& value, C comp)
     {
+      static_assert(Range_search<R, T, C>(), "");
       return some_equal(o_begin(range), o_end(range), value, comp);
     }
 
@@ -653,8 +654,8 @@ namespace origin
   template<typename R, typename T>
     inline bool some_equal(const R& range, const T& value)
     {
-      static_assert(Range_search<R, T>(), "");
-      return some_equal(o_begin(range), o_end(range), value);
+      static_assert(Range_search<R, T, Equal_to>(), "");
+      return some_equal(o_begin(range), o_end(range), value, eq());
     }
 
 

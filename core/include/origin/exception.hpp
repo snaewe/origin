@@ -12,7 +12,6 @@
 
 namespace origin
 {
-
   // Not implemented (exception)
   // The 'not implemented' exception is a runtime error that is thrown to
   // indicate that a function has been called that has not been implemented.
@@ -27,6 +26,10 @@ namespace origin
       : std::runtime_error(what + " is not implemented")
     { }
   };
+
+
+
+
 }
 
 #endif

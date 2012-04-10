@@ -540,6 +540,19 @@ namespace origin
 
 
 
+  // Repeat
+  // Call f() n times.
+  template <typename Int, typename F>
+    inline F repeat(Int n, F f)
+    {
+      while (n != 0) {
+        f();
+        --n;
+      }
+      return f;
+    }
+
+
   // FIXME: The mismatch and equal algorithms can collide have problems with the
   // STL overload if the iterator arguments are defined in the standard
   // namespace. ADL will select the wrong set of overloads. If you use the

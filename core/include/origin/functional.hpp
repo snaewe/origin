@@ -278,6 +278,9 @@ namespace origin
       }
   };
 
+  // An alias for the to_bool_function type.
+  using To_bool = to_bool_function;
+
   // Returns a function that converts values to bool.
   inline to_bool_function make_to_bool() { return {}; }
 

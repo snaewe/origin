@@ -15,8 +15,22 @@
 using namespace std;
 using namespace origin;
 
+template <typename R>
+  void print(const R& range)
+  {
+    for (auto x : range)
+      cout << x << ' ';
+    cout << '\n';
+  }
+
 int main()
 {
-  
+  assert_checker<> env;
+
+  predicate_sequence_distribution<> dist;
+  auto var = checkable_var(env, dist);
+
+  for (auto i : range(0, 10))
+    print(var());
 }
 
