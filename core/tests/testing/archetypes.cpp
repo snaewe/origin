@@ -145,16 +145,19 @@ int main()
   }
 
   {
-    using T = 
-      archetype< int, equality_comparable_type<>, equality_comparable_type<int>>;
+    using T = archetype< int, equality_comparable_type<>>;
     test_equality_comparable<T>();
-    test_equality_comparable<T>(5);
+    
+    using U = archetype< int, equality_comparable_type<int>>;
+    test_equality_comparable<U>(5);
   }
 
   {
-    using T = archetype<int, weakly_ordered_type<>, weakly_ordered_type<int>>;
+    using T = archetype<int, weakly_ordered_type<>>;
     test_weakly_ordered<T>();
-    test_weakly_ordered<T>(5);
+
+    using U = archetype<int, weakly_ordered_type<int>>;
+    test_weakly_ordered<U>(5);
   }
 
   {
@@ -166,6 +169,13 @@ int main()
   {
     using T = archetype<int, regular_type>;
     test_regular<T>();
+  }
+
+  {
+    using F = archetype<Equal_to, function_type<int, int>>;
+    F f {dummy_t {}, eq()};
+    assert(f(0, 0));
+    assert(!f(0, 1));
   }
 }
 

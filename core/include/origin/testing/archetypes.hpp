@@ -12,7 +12,9 @@ namespace origin
 
 
   // Archetype declarations
-  struct default_type;
+  struct default_constructible_type;
+  struct move_constructible_type;
+  struct copy_constructible_type;
   struct movable_type;
   struct copyable_type;
 
@@ -78,21 +80,29 @@ namespace origin
   // Archetype
   // The archetype class wraps a given value, and exposes a specified set
   // of interface.
+  //
+  // Note that T must be a complete type.
   template <typename T, typename... Archs>
-    struct archetype : Archs::template impl<archetype<T, Archs...>>...
+    struct archetype : Archs::template impl<T, archetype<T, Archs...>>...
     {
-      using This = archetype<T, Archs...>;
-      using Value = T;
+      using This_type = archetype<T, Archs...>;
+      using Value_type = T;
 
       // FIXME: I could make this more effecient by aggregating flags instead
-      // of recursing over sequences.
-      static constexpr bool Has_default = Has_archetype<default_type, Archs...>();
-      static constexpr bool Has_movable = Has_archetype<movable_type, Archs...>();
-      static constexpr bool Has_copyable = Has_archetype<copyable_type, Archs...>();
+      // of recursing over sequences. Basically, this is deducing the set of
+      // properties that will be enforced by the various constructors and
+      // assignment operators.
+      static constexpr bool Is_default_constructible = 
+        Has_archetype<default_constructible_type, Archs...>();
+      
+      static constexpr bool Is_move_constructible = 
+        Has_archetype<move_constructible_type, Archs...>();
+      
+      static constexpr bool Is_copy_constructible = 
+        Has_archetype<copy_constructible_type, Archs...>();
 
-      static constexpr bool Is_default = Has_default;
-      static constexpr bool Is_movable = Has_movable || Has_copyable;
-      static constexpr bool Is_copyable = Has_copyable;
+      static constexpr bool Is_movable = Has_archetype<movable_type, Archs...>();
+      static constexpr bool Is_copyable = Has_archetype<copyable_type, Archs...>();
 
       // This construct is used to explicitly initialize archetype values
       // over the underlying value type. It's a pain, but it virtually
@@ -103,28 +113,32 @@ namespace origin
       archetype()
         : value()
       {
-        static_assert(Is_default, "");
+        static_assert(Is_default_constructible, "");
       }
 
       // Movable
       archetype(archetype&& x)
         : value(std::move(x.value))
       { 
-        static_assert(Is_movable, "");
+        // We allow this to be used for move and copy constructible types just
+        // in case we found copy but not move.
+        static_assert(Is_move_constructible || Is_copy_constructible, "");
       }
 
       archetype& operator=(archetype&& x)
       {
+        // Copyable refines movable so we don't also need to check for Copyable.
         static_assert(Is_movable, "");
         value = std::move(x.value);
         return *this;
       }
 
+
       // Copyable
       archetype(const archetype& x)
         : value(x.value)
       {
-        static_assert(Is_copyable, "");
+        static_assert(Is_copy_constructible, "");
       }
 
       archetype& operator=(const archetype& x)
@@ -145,248 +159,332 @@ namespace origin
   // very much internal. I should wait until there's a more standard method.
 
 
-  // Default type (archetype)
+
+  // NOTE: Within the _*archtype classes, the derived archetype class T
+  // is an incomplete type. It would be great to statically assert properties
+  // of the T (or rather T::Value_type) at class level, but it's not possible
+  // using this design.
+
+
+
+  // Default constructible (archetype)
+  // Implements features related to default initialization.
+  //
+  // TODO: I could store additional metadata about default initialization
+  // about the derived class.
+  template <typename T, typename Arch>
+    struct default_constructible_archetype
+    {
+      static_assert(Default_constructible<T>(), "");
+    };
+
+
+  // Default constructible (archetype selector)
   // The default archetype is a placeholder for default initialization 
   // semantics.
-  struct default_type
+  struct default_constructible_type
   {
     using refines = std::tuple<>;
 
-    template <typename Derived>
-      struct impl { };
+    template <typename T, typename Arch>
+      using impl = default_constructible_archetype<T, Arch>;
   };
 
+
+
+  // Move constructible (archetype)
+  template <typename T, typename Arch>
+    struct move_constructible_archetype
+    {
+      static_assert(Move_constructible<T>(), "");
+    };
+
+
+
+  // Move constructible (archetype selector)
+  // The default archetype is a placeholder for default initialization 
+  // semantics.
+  struct move_constructible_type
+  {
+    using refines = std::tuple<>;
+
+    template <typename T, typename Arch>
+      using impl = move_constructible_archetype<T, Arch>;
+  };
+
+
+
+  // Copy constructible (archetype)
+  // Implements functionality related to move construction. Note thta while all
+  // copy constructible types are move constructible, this does not explicitly
+  // refine the move constructible archetype. This helps prevent multiple
+  // inheritances from sneaking into the archetype hierarchy.
+  template <typename T, typename Arch>
+    struct copy_constructible_archetype
+    {
+      static_assert(Copy_constructible<T>(), "");
+    };
+
+
+
+  // Copy constructible (archetype selector)
+  // The default archetype is a placeholder for default initialization 
+  // semantics.
+  struct copy_constructible_type
+  {
+    using refines = std::tuple<>;
+
+    template <typename T, typename Arch>
+      using impl = copy_constructible_archetype<T, Arch>;
+  };
+
+
+
+  // Movable (archetype)
+  // Implements features related to move semantics.
+  //
+  // TODO: Store additional information about data flow.
+  template <typename T, typename Arch>
+    struct movable_archetype : move_constructible_archetype<T, Arch>
+    {
+      static_assert(Movable<T>(), "");
+    };
   
-  // Movable type (archetype)
+
+
+  // Movable (archetype selector)
   // The movable archetype is a placeholder for copy semantics.
   struct movable_type
   { 
-    using refines = std::tuple<>;
+    using refines = std::tuple<move_constructible_type>;
 
-    template <typename Derived>
-      struct impl { };
+    template <typename T, typename Arch>
+      using impl = movable_archetype<T, Arch>;
   };
 
 
 
-  // Copyable type (archetype)
+  // Copyable (archetype)
+  // Implements features related to copy semantics. A copyable type is also
+  // movable.
+  //
+  // TODO: I could use this to store and query data flow information about
+  // the derived objects.
+  template <typename T, typename Arch>
+    struct copyable_archetype : movable_archetype<T, Arch>
+                              , copy_constructible_archetype<T, Arch>
+    {
+      static_assert(Copyable<T>(), "");
+    };
+
+
+
+  // Copyable (archetype selector)
   // The copyable archetype is a placeholder for copy semantics
   struct copyable_type
   { 
-    using refines = std::tuple<>;
+    using refines = std::tuple<movable_type, copy_constructible_type>;
 
-    template <typename Derived>
-      struct impl : movable_type::template impl<Derived> { };
+    template <typename T, typename Arch>
+      using impl = copyable_archetype<T, Arch>;
   };
 
 
-  // Equality comparable type.
+
+  // Equality comparable (archetype)
+  // Implemnts the equality comparison facade for the derived archetype T.
+  template <typename T, typename Arch, typename Other = default_t>
+    struct equality_comparable_archetype;
+
+  template <typename T, typename Arch>
+    struct equality_comparable_archetype<T, Arch, default_t>
+    {
+      static_assert(Equality_comparable<T>(), "");
+      friend bool operator==(const Arch& a, const Arch& b) { return a.value == b.value; }
+      friend bool operator!=(const Arch& a, const Arch& b) { return a.value != b.value; }
+    };
+
+  template <typename T, typename Arch, typename Other>
+    struct equality_comparable_archetype
+    {
+      static_assert(Equality_comparable<T, Other>(), "");
+      friend bool operator==(const Arch& a, const Other& b) { return a.value == b; }
+      friend bool operator==(const Other& a, const Arch& b) { return a == b.value; }
+      friend bool operator!=(const Arch& a, const Other& b) { return a.value != b; }
+      friend bool operator!=(const Other& a, const Arch& b) { return a != b.value; }
+    };
+
+
+
+  // Equality comparable (archetype selector)
   // An explicit argument may be given to define cross-type equality 
   // comparaison.
-  template <typename T = default_t>
-    struct equality_comparable_type;
+  template <typename Other = default_t>
+    struct equality_comparable_type
+    {
+      using refines = std::tuple<>;
 
-  // The default version of equality comparble is defined in terms of the
-  // derived type.
+      template <typename T, typename Arch>
+        using impl = equality_comparable_archetype<T, Arch, Other>;
+    };
+
+  // FIXME: This should be merged with the primary template, but GCC was
+  // giving an ICE when that happened.
   template <>
     struct equality_comparable_type<default_t>
     {
       using refines = std::tuple<>;
 
-      template <typename Derived>
-        struct impl
-        {
-          friend bool operator==(const Derived& a, const Derived& b) { return a.value == b.value; }
-          friend bool operator!=(const Derived& a, const Derived& b) { return a.value != b.value; }
-        };
+      template <typename T, typename Arch>
+        using impl = equality_comparable_archetype<T, Arch>;
     };
 
-  // Cross-type equality generates all of the relational interfaces that would
-  // normally be expected.
-  template <typename Other>
-    struct equality_comparable_type
+
+
+  // Equality comparable (archetype)
+  // Implements the weak ordering facade for the derived archetype T.
+  template <typename T, typename Arch, typename Other = default_t>
+    struct weakly_ordered_archetype;
+
+  template <typename T, typename Arch>
+    struct weakly_ordered_archetype<T, Arch, default_t>
+    {
+      static_assert(Equality_comparable<T>(), "");
+      friend bool operator<(const Arch& a, const Arch& b) { return a.value < b.value; }
+      friend bool operator>(const Arch& a, const Arch& b) { return a.value > b.value; }
+      friend bool operator<=(const Arch& a, const Arch& b) { return a.value <= b.value; }
+      friend bool operator>=(const Arch& a, const Arch& b) { return a.value >= b.value; }
+    };
+
+  template <typename T, typename Arch, typename Other>
+    struct weakly_ordered_archetype
+    {
+      static_assert(Equality_comparable<T, Other>(), "");
+      friend bool operator<(const Arch& a, const Other& b) { return a.value < b; }
+      friend bool operator<(const Other& a, const Arch& b) { return a < b.value; }
+      friend bool operator>(const Arch& a, const Other& b) { return a.value > b; }
+      friend bool operator>(const Other& a, const Arch& b) { return a > b.value; }
+      friend bool operator<=(const Arch& a, const Other& b) { return a.value <= b; }
+      friend bool operator<=(const Other& a, const Arch& b) { return a <= b.value; }
+      friend bool operator>=(const Arch& a, const Other& b) { return a.value >= b; }
+      friend bool operator>=(const Other& a, const Arch& b) { return a >= b.value; }
+    };
+
+
+
+  // Weakly ordered (archetype selector)
+  template <typename Other = default_t>
+    struct weakly_ordered_type
     {
       using refines = std::tuple<>;
 
-      template <typename Derived>
-        struct impl
-        {
-          friend bool operator==(const Derived& a, const Other& b) { return a.value == b; }
-          friend bool operator==(const Other& a, const Derived& b) { return a == b.value; }
-          friend bool operator!=(const Derived& a, const Other& b) { return a.value != b; }
-          friend bool operator!=(const Other& a, const Derived& b) { return a != b.value; }
-        };
+      template <typename T, typename Arch>
+        using impl = weakly_ordered_archetype<T, Arch, Other>;
     };
 
-
-
-  // Weakly ordered (archetype)
-  template <typename T = default_t>
-    struct weakly_ordered_type;
-
+  // FIXME: See the comments above about ICEs.
   template <>
     struct weakly_ordered_type<default_t>
     {
       using refines = std::tuple<>;
 
-      template <typename Derived>
-        struct impl
-        {
-          friend bool operator<(const Derived& a, const Derived& b) { return a.value < b.value; }
-          friend bool operator>(const Derived& a, const Derived& b) { return a.value > b.value; }
-          friend bool operator<=(const Derived& a, const Derived& b) { return a.value <= b.value; }
-          friend bool operator>=(const Derived& a, const Derived& b) { return a.value >= b.value; }
-        };
-    };
-
-  // Cross-type equality generates all of the relational interfaces that would
-  // normally be expected.
-  template <typename Other>
-    struct weakly_ordered_type
-    {
-      using refines = std::tuple<>;
-
-      template <typename Derived>
-        struct impl
-        {
-          friend bool operator<(const Derived& a, const Other& b) { return a.value < b; }
-          friend bool operator<(const Other& a, const Derived& b) { return a < b.value; }
-
-          friend bool operator>(const Derived& a, const Other& b) { return a.value > b; }
-          friend bool operator>(const Other& a, const Derived& b) { return a > b.value; }
-
-          friend bool operator<=(const Derived& a, const Other& b) { return a.value <= b; }
-          friend bool operator<=(const Other& a, const Derived& b) { return a <= b.value; }
-
-          friend bool operator>=(const Derived& a, const Other& b) { return a.value >= b; }
-          friend bool operator>=(const Other& a, const Derived& b) { return a >= b.value; }
-        };
+      template <typename T, typename Arch>
+        using impl = weakly_ordered_archetype<T, Arch>;
     };
 
 
 
   // Totally ordered (archetype)
-  template <typename T = default_t>
-    struct totally_ordered_type;
+  // Implements the total ordering facade for the derived archetype T.
+  //
+  // FIXME": Secialize the archetype so I can constrain it correctly.
+  template <typename T, typename Arch, typename Other = default_t>
+    struct totally_ordered_archetype
+      : equality_comparable_archetype<T, Arch, Other>
+      , weakly_ordered_archetype<T, Arch, Other>
+    { 
+    };
 
+
+
+  // Totally ordered (archetype selector)
+  template <typename Other = default_t>
+    struct totally_ordered_type
+    {
+      using refines = 
+        std::tuple<equality_comparable_type<Other>, weakly_ordered_type<Other>>;
+      
+      template <typename T, typename Arch>
+        using impl = totally_ordered_archetype<T, Arch, Other>;
+    };
+
+  // FIXME: See the comment above about ICEs.
   template <>
     struct totally_ordered_type<default_t>
     {
       using refines = 
         std::tuple<equality_comparable_type<>, weakly_ordered_type<>>;
-
-      template <typename Derived>
-        struct impl : equality_comparable_type<>::template impl<Derived>
-                    , weakly_ordered_type<>::template impl<Derived>
-        { };
-    };
-
-  // Cross-type equality generates all of the relational interfaces that would
-  // normally be expected.
-  template <typename Other>
-    struct totally_ordered_type
-    {
-      using refines = 
-        std::tuple<equality_comparable_type<Other>, weakly_ordered_type<Other>>;
-
-      template <typename Derived>
-        struct impl : equality_comparable_type<Other>::template impl<Derived>
-                    , weakly_ordered_type<Other>::template impl<Derived>
-        { };
+      
+      template <typename T, typename Arch>
+        using impl = totally_ordered_archetype<T, Arch>;
     };
 
 
 
-  // Regular type (archetype)
+  // Regular (archetype)
+  // Exposes the regular type facade for the Derived class.
+  template <typename T, typename Arch>
+    struct regular_archetype : default_constructible_archetype<T, Arch>
+                             , copyable_archetype<T, Arch>
+                             , equality_comparable_archetype<T, Arch>
+    { 
+      static_assert(Regular<T>(), "");
+    };
+
+
+
+  // Regular type (archetype selector)
   // The regular type archetype default constructible, copy constructible, and
   // equality comparable.
   struct regular_type
   {
-    using refines = 
-      std::tuple<default_type, copyable_type, equality_comparable_type<>>;
+    using refines = std::tuple<default_constructible_type, 
+                               copyable_type, 
+                               equality_comparable_type<>>;
 
-    template <typename Derived>
-      struct impl : default_type::template impl<Derived>
-                  , copyable_type::template impl<Derived>
-                  , equality_comparable_type<>::template impl<Derived>
-      { };
+    template <typename T, typename Arch>
+      using impl = regular_archetype<T, Arch>;
   };
 
 
 
-/*
-  // Input iterator type (archetype)
-  // The input iterator archetype provides an input-only iterator for a given
-  // container type, C. An input iterator is copyable, equality comparable,
-  // and pre-incrementable. A limited form of post-increment is also supported.
-  //
-  // TODO: Implement a system for tracking 'live' input iterators. A live
-  // input iterator is the most recent copy of an input iterator. When the
-  // a live iterator is destroyed, control passes back to the original.
-  //
-  // Note that end iterators are not live in the same sense and are not
-  // subject to this kind of control mechanism.
-  template <typename I>
-    class input_iterator_type
+
+  template <typename F, typename Arch, typename... Args>
+    struct function_archetype : copy_constructible_archetype<F, Arch>
     {
-      I iter;
+    private:
+      Arch*       self_()       { return static_cast<Arch*>(this); }
+      const Arch* self_() const { return static_cast<const Arch*>(this); }
     public:
-      using value_type = Value_type<I>;
-      using reference = Iterator_reference<I>;
-      using pointer = Iterator_pointer<I>;
-      using difference_type = Distance_type<I>;
-      using iterator_category = std::input_iterator_tag;
 
-      // When initialized over 
-      input_iterator_type(I i)
-        : iter(i)
-      { }
-
-      // Movable
-      input_iterator_type(input_iterator_type&& x)
-        : iter(std::move(x.iter))
-      { }
-
-      input_iterator_type& operator==(input_iterator_type&& x)
+      auto operator()(Args... args) -> Result_of<F(Args...)>
       {
-        iter = std::move(x.iter);
-        return *this;
+        return self_()->value(args...);
       }
 
-      // Copyable
-      input_iterator_type(const input_iterator_type& x) 
-        : iter(x.iter) 
-      { }
-      
-      input_iterator_type& operator=(input_iterator_type x)
+      auto operator()(Args... args) const -> Result_of<F(Args...)>
       {
-        o_swap(iter, x);
-        return *this;
+        return self_()->value(args...);
       }
-
-      // Equality_comparable
-      // Two input iterators are equal only when they refer to the same
-      // position in the same stream. Comparing iterators into different
-      // streams is a conceptual error.
-      bool operator==(const input_iterator_type& x) const { return iter == x.iter; }
-      bool operator!=(const input_iterator_type& x) const { return !(*this == x); }
-
-      // Readable
-      reference operator*() const { return *iter; }
-      pointer operator->() const { return &*iter; }
-
-      // Incrementable
-      input_iterator_type& operator++()
-      {
-        ++iter;
-        return *this;
-      }
-
-      auto operator++(int) -> decltype(++iter) { return ++iter; }
     };
 
+  template <typename... Args>
+    struct function_type
+    {
+      using refines = std::tuple<copy_constructible_type>;
 
-  template <typename I>
-    input_iterator_type<I> as_input_iterator(I i) { return i; }
-*/
+      template <typename F, typename Arch>
+        using impl = function_archetype<F, Arch, Args...>;
+    };
+
 } // namespace origin
