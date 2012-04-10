@@ -80,6 +80,20 @@ namespace origin
     
   // Type relations
 
+
+  // Identity (alias)
+  // The identity alias refers to its type argument. One use of the identity
+  // alias is preventing perfect forwarding for rvalue parameters. For example:
+  //
+  //    template <typename T>
+  //      void f(Identity<T>&& x) { ... }
+  //
+  // Now the compiler will deduce T as the actual type of X, and not use the
+  // forwarding mechanism to change the deduced type.
+  template <typename T>
+    using Identity = T;
+
+
   // Common Type
   //
   // We only define common type in terms of two types. It can be generalized
