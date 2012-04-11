@@ -130,52 +130,176 @@ template <typename T>
   }
 
 
+template <typename I>
+  void test_input_iterator()
+  {
+    int n = 0;
+    I i {dummy_t {}, &n};
+    
+    // Reading
+    assert(*i == 0);
+    
+    // Pre-increment
+    assert((++i).value == &n + 1);
+
+    // Can't write to input iterators!
+    // *i = 5;
+  }
+
+template <typename I>
+  void test_forward_iterator()
+  {
+    test_input_iterator<I>();
+    
+    int n = 0;
+    I i {dummy_t {}, &n};
+
+    // Post-increment
+    assert((i++).value == &n);
+    assert(i.value == &n + 1);
+
+    // Can't decrement
+    // --i;
+  }
+
+template <typename I>
+  void test_bidirectional_iterator()
+  {
+    test_forward_iterator<I>();
+
+    int n = 0;
+    I i {dummy_t {}, &n + 1};
+
+    // Pre-decrement
+    assert((--i).value == &n);
+    
+    // Post-decrement
+    i.value = &n + 1;
+    assert((i--).value == &n + 1);
+    assert(i.value == &n);
+  }
+
 int main()
 {
-  assert_checker<> env;
-
+  // Movable
   {
-    using T = archetype<int, movable_type>;
+    using T = Movable_archetype<int>;
     test_movable<T>();
   }
 
+  // Copyable
   {
-    using T = archetype<int, copyable_type>;
+    using T = Copyable_archetype<int>;
     test_copyable<T>();
   }
 
+  // Equality comparable
   {
-    using T = archetype< int, equality_comparable_type<>>;
+    using T = Equality_comparable_archetype<int>;
     test_equality_comparable<T>();
     
-    using U = archetype< int, equality_comparable_type<int>>;
+    using U = Equality_comparable_archetype<int, int>;
     test_equality_comparable<U>(5);
+
+    using V = Equality_comparable_archetype<int, long>;
+    test_equality_comparable<V>(5l);
   }
 
+  // Weakly ordered
   {
-    using T = archetype<int, weakly_ordered_type<>>;
+    using T = Weakly_ordered_archetype<int>;
     test_weakly_ordered<T>();
 
-    using U = archetype<int, weakly_ordered_type<int>>;
+    using U = Weakly_ordered_archetype<int, int>;
     test_weakly_ordered<U>(5);
+
+    using V = Weakly_ordered_archetype<int, long>;
+    test_weakly_ordered<V>(5l);
   }
 
+  // Totally ordered
   {
-    using T = archetype<int, totally_ordered_type<>, totally_ordered_type<int>>;
+    using T = Totally_ordered_archetype<int>;
     test_totally_ordered<T>();
-    test_totally_ordered<T>(5);
+
+    using U = Totally_ordered_archetype<int, int>;
+    test_totally_ordered<U>(5);
+
+    using V = Totally_ordered_archetype<int, long>;
+    test_totally_ordered<V>(5l);
   }
 
+  // Regular
   {
-    using T = archetype<int, regular_type>;
+    using T = Regular_archetype<int>;
     test_regular<T>();
   }
 
+  // Function
   {
-    using F = archetype<Equal_to, function_type<int, int>>;
+    using F = Function_archetype<Equal_to, int, int>;
     F f {dummy_t {}, eq()};
     assert(f(0, 0));
     assert(!f(0, 1));
   }
+
+  // Predicate
+  {
+    using P = Predicate_archetype<To_bool, int>;
+    P p {dummy_t {}, To_bool {}};
+    assert(p(1));
+    assert(!p(0));
+  }
+
+  // Relation
+  {
+    using R1 = Relation_archetype<Equal_to, int>;
+    R1 r1 {dummy_t {}, eq()};
+    assert(r1(1, 1));
+    assert(!r1(1, 0));
+
+
+    using R2 = Relation_archetype<Equal_to, int, long>;
+    R2 r2 {dummy_t {}, eq()};
+    assert(r1(1, 1l));
+    assert(r1(1l, 1));
+    assert(!r1(0l, 1));
+    assert(!r1(1, 0l));
+  }
+
+  // FIXME: Operation archetypes
+
+  // Input iterator
+  {
+    using I = Input_iterator_archetype<int*>;
+    test_input_iterator<I>();
+  }
+
+  // Output iterator
+  {
+    int n = 0;
+
+    using I = Output_iterator_archetype<int*, int>;
+    I i {dummy_t {}, &n};
+    *i = 3;
+    assert(*i.value == 3);
+    assert((++i).value == &n + 1);
+
+    // Look! No reads
+    // const int& x = *i;
+  }
+
+  // Forward iterator
+  {
+    using I = Forward_iterator_archetype<int*>;
+    test_forward_iterator<I>();
+  }
+
+  // Bidirectional iterator
+  {
+    using I = Bidirectional_iterator_archetype<int*>;
+    test_bidirectional_iterator<I>();
+  }
+
 }
 
