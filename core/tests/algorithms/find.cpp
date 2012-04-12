@@ -389,13 +389,14 @@ int main()
     using Seq = predicate_sequence;
 
     // NOTE: These could be equivalently written using function objects.    
+
     auto test_find_if = [](const Seq& seq) -> bool
     {
       auto i = find_if(seq, To_bool {});
       if (i != end(seq))
         return i == seq.first_true();
       else
-        return true;
+        return seq.none_true();
     };
 
     auto test_find_if_not = [](const Seq& seq) -> bool
@@ -404,20 +405,26 @@ int main()
       if (i != end(seq))
         return i == seq.first_false();
       else
-        return true;
+        return seq.all_true();
     };
 
     auto test_find_next_if = [](const Seq& seq) -> bool
     {
-      if (empty(seq))
-        return true;
-      
-      auto p = seq.predicate();
-      auto i = find_next_if(find_if(seq, p), end(seq), p);
-      if (i != end(seq))
+      auto pred = seq.predicate();
+      auto first = begin(seq);
+      auto last = end(seq);
+      auto i = find_next_if(first, last, pred);
+
+      if (first == last)
+        return i == last;
+      else if (pred(*first) && i != last)
         return i == seq.nth_true(1);
+      else if (pred(*first) && i == last)
+        return first == seq.first_true() && seq.num_true() == 1;
+      else if (!pred(*first) && i != last)
+        return i == seq.first_true();
       else
-        return true;
+        return seq.none_true();
     };
 
     auto test_find_nth_if = [](const Seq& seq, Size_type<Seq> n) -> bool
