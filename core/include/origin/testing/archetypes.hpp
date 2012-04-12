@@ -13,7 +13,7 @@ namespace origin
 
 
 
-  // Default constructible (archetype)
+  // Default constructible (facade)
   // Implements features related to default initialization.
   //
   // TODO: I could store additional metadata about default initialization
@@ -26,7 +26,7 @@ namespace origin
 
 
 
-  // Move constructible (archetype)
+  // Move constructible (facade)
   template <typename Arch, typename T>
     struct move_constructible_archetype
     {
@@ -35,7 +35,7 @@ namespace origin
 
 
 
-  // Copy constructible (archetype)
+  // Copy constructible (facade)
   // Implements functionality related to move construction. Note thta while all
   // copy constructible types are move constructible, this does not explicitly
   // refine the move constructible archetype. This helps prevent multiple
@@ -48,7 +48,7 @@ namespace origin
 
 
 
-  // Movable (archetype)
+  // Movable (facade)
   // Implements features related to move semantics.
   //
   // TODO: Store additional information about data flow.
@@ -60,7 +60,7 @@ namespace origin
   
 
 
-  // Copyable (archetype)
+  // Copyable (facade)
   // Implements features related to copy semantics. A copyable type is also
   // movable.
   //
@@ -75,7 +75,7 @@ namespace origin
 
 
 
-  // Equality comparable (archetype)
+  // Equality comparable (facade)
   // Implemnts the equality comparison facade for the derived archetype T.
   //
   // Note that explicitly providing a non-default argument for U will cause the
@@ -100,7 +100,7 @@ namespace origin
 
 
 
-  // Weakly ordered (archetype)
+  // Weakly ordered (facade)
   // Implements the weak ordering facade for the derived archetype T.
   template <typename Arch, typename T, typename U = default_t>
     struct weakly_ordered_archetype
@@ -128,7 +128,7 @@ namespace origin
 
 
 
-  // Totally ordered (archetype)
+  // Totally ordered (facade)
   // Implements the total ordering facade for the derived archetype T.
   template <typename Arch, typename T, typename U = default_t>
     struct totally_ordered_archetype : equality_comparable_archetype<Arch, T, U> 
@@ -147,7 +147,7 @@ namespace origin
 
 
 
-  // Regular (archetype)
+  // Regular (facade)
   // Exposes the regular type facade for the Derived class. A regular type is
   // default constructible, copy constructible, and equality comparable.
   template <typename Arch, typename T>
@@ -166,7 +166,7 @@ namespace origin
 
 
 
-  // Function (archetype)
+  // Function (facade)
   template <typename Arch, typename F, typename... Args>
     class function_archetype : public copy_constructible_archetype<Arch, F>
     {
@@ -194,7 +194,7 @@ namespace origin
 
 
 
-  // Predicate (archetype)
+  // Predicate (facade)
   //
   // Note that this does not refine function, only copy constructible. The
   // purpose for doing this is to not inherit hide function's operator() 
@@ -216,7 +216,7 @@ namespace origin
 
 
 
-  // Relation (archetype)
+  // Relation (facade)
   //
   // Note that this does not refine any other function concepts in order to
   // avoid inhereting thir function call operators.
@@ -284,7 +284,14 @@ namespace origin
 
 
 
-  // Input iterator (archetype)
+  // Const iterator reference (alias)
+  // Returns a const-qualified version of the iterator reference type.
+  template <typename I>
+    using Const_iterator_reference = Make_const_reference<Iterator_reference<I>>;
+
+
+
+  // Input iterator (facade)
   // An input iterator is copyable, weakly incrementable and equality 
   // comparable. It's result can be bound to a const reference, but not written.
   template <typename Arch, typename I>
@@ -297,7 +304,7 @@ namespace origin
       const Arch& self() const { return *static_cast<const Arch*>(this); }
 
     public:
-      Make_const_reference<Dereference_result<I>> operator*() const
+      Const_iterator_reference<I> operator*() const
       {
         return *(self().value);
       }
@@ -312,7 +319,7 @@ namespace origin
 
 
 
-  // Output iteator (archetype)
+  // Output iteator (facade)
   // The output iterator allows writing through the dereferenced result. An
   // output iterator is copyable, but not equality comparable (although it
   // should be).
@@ -343,7 +350,7 @@ namespace origin
 
 
 
-  // Forward iterator (archetype)
+  // Forward iterator (facade)
   template <typename Arch, typename I>
     class forward_iterator_archetype : public input_iterator_archetype<Arch, I>
     {
@@ -367,11 +374,12 @@ namespace origin
 
 
 
-  // Bidirectional iterator (archetype)
+  // Bidirectional iterator (facade)
   template <typename Arch, typename I>
-    class bidirectional_iterator_archetype : public forward_iterator_archetype<Arch, I>
+    class bidirectional_iterator_archetype 
+      : public forward_iterator_archetype<Arch, I>
     {
-      static_assert(Forward_iterator<I>(), "");
+      static_assert(Bidirectional_iterator<I>(), "");
 
       Arch&       self()       { return *static_cast<Arch*>(this); }
       const Arch& self() const { return *static_cast<const Arch*>(this); }
@@ -388,6 +396,60 @@ namespace origin
         Arch tmp {self()};
         this->operator--();
         return tmp;
+      }
+    };
+
+
+
+  // Random access iterator (facade)
+  template <typename Arch, typename I>
+    class random_access_iterator_archetype 
+      : public bidirectional_iterator_archetype<Arch, I>
+    {
+      static_assert(Random_access_iterator<I>(), "");
+
+      Arch&       self()       { return *static_cast<Arch*>(this); }
+      const Arch& self() const { return *static_cast<const Arch*>(this); }
+
+    public:
+      Arch& operator+=(Distance_type<I> n)
+      {
+        self().value += n;
+        return self();
+      }
+
+      friend Arch operator+(Arch i, Distance_type<I> n)
+      {
+        i += n;
+        return i;
+      }
+
+      friend Arch operator+(Distance_type<I> n, Arch i)
+      {
+        i += n;
+        return i;
+      }
+
+      Arch& operator-=(Distance_type<I> n)
+      {
+        self().value -= n;
+        return self();
+      }
+
+      friend Arch operator-(Arch i, Distance_type<I> n)
+      {
+        i -= n;
+        return i;
+      }
+
+      friend Distance_type<I> operator-(const Arch& i, const Arch& j)
+      {
+        return i.value - j.value;
+      }
+
+      Const_iterator_reference<I> operator[](Distance_type<I> n) const
+      {
+        return self().value[n];
       }
     };
 
@@ -627,6 +689,17 @@ namespace origin
 
 
 
+  // Random access iterator (selector)
+  struct use_random_access_iterator
+  {
+    using refines = std::tuple<use_bidirectional_iterator>;
+
+    template <typename Arch, typename I>
+      using impl = random_access_iterator_archetype<Arch, I>;
+  };
+
+
+
   // Archetype framework
   // The archetype framework is a single class that constructs a single type
   // based on a number of selectors.
@@ -709,6 +782,10 @@ namespace origin
       using This_type = archetype<T, Sels...>;
       using Value_type = T;
 
+      // The archetype owns the interface-constrained value. Note that the
+      // value can be moved into the archetype.
+      T value;
+
       // FIXME: I could make this more effecient by aggregating flags instead
       // of recursing over sequences. Basically, this is deducing the set of
       // properties that will be enforced by the various constructors and
@@ -725,10 +802,23 @@ namespace origin
       static constexpr bool Is_movable = Has_selector<use_movable, Sels...>();
       static constexpr bool Is_copyable = Has_selector<use_copyable, Sels...>();
 
-      // This construct is used to explicitly initialize archetype values
-      // over the underlying value type. It's a pain, but it virtually
-      // guarantees that this won't overlap with real constructor requirements.
-      explicit archetype(dummy_t, const T& value = {}) : value(value) { }
+      // Initialization
+      // This forwarding constructor allows the underlying value to be 
+      // initialized over the given arguments. The dummy argument makes it
+      // unlikely that this will be called by any algorithms.
+      template <typename... Args>
+        explicit archetype(dummy_t, Args&&... args)
+          : value(std::forward<Args>(args)...)
+        { }
+
+      // Factory
+      // This factory provides an interface for creating archetype values that
+      // deprecates the need to use the dummy_t argument.
+      template <typename... Args>
+        static archetype create(Args&&... args)
+        {
+          return archetype(dummy_t {}, std::forward<Args>(args)...);
+        }
 
       // Default initialization
       archetype()
@@ -768,9 +858,6 @@ namespace origin
         value = x.value;
         return *this;
       }
-
-
-      T value;
     };
 
 
@@ -778,26 +865,61 @@ namespace origin
     // Archetype constructors
     // These aliases make it easier to create basic archetypes.
 
+
+
+    // Unconstrained archetype (archetype)
+    // The unconstrained archetype creates types that are immovable, 
+    // non-copyable, and not default constructible.
+    template <typename T>
+      using Unconstrained_archetype = archetype<T>;
+
+
+
+    // Default constructible (archetype)
+    // The default constructible archetype creates types that can only be
+    // default constructed. They cannot be moved or copied.
     template <typename T>
       using Default_constructible_archetype = archetype<T, use_default_constructible>;
 
+
+
+    // Move constructible (archetype)
+    // The move constructible archetype creates types that are only move
+    // move constructible.
     template <typename T>
       using Move_constructible_archetype = archetype<T, use_move_constructible>;
 
+
+
+    // Copy constructible (archetype)
+    // The copy constructible archetype creates types that are move
+    // constructible and copy constructible.
     template <typename T>
       using Copy_constructible_archtype = archetype<T, use_copy_constructible>;
 
+
+
+    // Movable (archetype)
+    // The movable archetpye creates types that are move constructible and 
+    // assignable type.
     template <typename T>
       using Movable_archetype = archetype<T, use_movable>;
 
+
+
+    // Copyable (archetype)
+    // The copyable archetype creates types that are movable, copy 
+    //constructible, and copy assignable.
     template <typename T>
       using Copyable_archetype = archetype<T, use_copyable>;
+
+
 
     // FIXME: For the comparison archetypes, it might be useful to accept a
     // sequence of "other" types in order to construct a number of common
     // type relational operators in one shot. The ideal is:
     //
-    //    Equality_comparable_archetype<Base, int, T*>
+    //    Equality_comparable_archetype<Base, {int, T*}>
     //
     // where Base is the type being wrapped, and int and T* will eventually be
     // cross-type comparable with Base. Note that Base should be comparable
@@ -828,17 +950,73 @@ namespace origin
     template <typename R, typename T, typename U = default_t>
       using Relation_archetype = archetype<R, use_relation<T, U>>;
 
+
+
+    // Input iterator (archetype)
+    // The input iterator archetype creates types that satsify the requirements
+    // of the input iterator concept.
     template <typename I>
       using Input_iterator_archetype = archetype<I, use_input_iterator>;
 
+    // Returns an archetype constrained input iterator.
+    template <typename I>
+      Input_iterator_archetype<I> as_input_iterator(I i)
+      {
+        return Input_iterator_archetype<I>(dummy_t {}, i);
+      }
+
+
+
+    // Output iterator (archetype)
+    // The output iterator archetype creates types that only satisfy the 
+    // requirements of the output iterator concept, writing values of type T.
+    //
+    // FIXME: Write an accessor for creating output iterators.
     template <typename I, typename T>
       using Output_iterator_archetype = archetype<I, use_output_iterator<T>>;
 
+    
+
+    // Forward iterator (archetype)
+    // The forward iterator archetype creates types that only satisfy the
+    // requirements of the forward iterator concept.
     template <typename I>
       using Forward_iterator_archetype = archetype<I, use_forward_iterator>;
 
+    // Returns an archetype constrained forward iterator.
+    template <typename I>
+      Forward_iterator_archetype<I> as_forward_iterator(I i)
+      {
+        return Forward_iterator_archetype<I> {dummy_t {}, i};
+      }
+
+
+
+    // Bidirectional iterator (archetype)
+    // The bidirectional iterator archetype creates types that only satisfy the
+    // requirements of the bidirectional iterator concept.
     template <typename I>
       using Bidirectional_iterator_archetype = archetype<I, use_bidirectional_iterator>;
 
+    // Returns an archetype constrained bidirectional iterator.
+    template <typename I>
+      Bidirectional_iterator_archetype<I> as_bidirectional_iterator(I i)
+      {
+        return Bidirectional_iterator_archetype<I> { dummy_t {}, i};
+      }
 
+
+
+    // Random access iterator (archetype)
+    // The random access iterator archetype creates types that only satisfy the
+    // requirements of the random access iterator concept.
+    template <typename I>
+      using Random_access_iterator_archetype = archetype<I, use_random_access_iterator>;
+
+    // Returns an archetype constrained random access iterator.
+    template <typename I>
+      Random_access_iterator_archetype<I> as_random_access_iterator(I i)
+      {
+        return Random_access_iterator_archetype<I> {dummy_t {}, i};
+      }
 } // namespace origin

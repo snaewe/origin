@@ -179,6 +179,26 @@ template <typename I>
     assert(i.value == &n);
   }
 
+template <typename I>
+  void test_random_access_iterator()
+  {
+    test_bidirectional_iterator<I>();
+
+    int n[] {0, 1};
+
+    I i {dummy_t {}, &n[0]};
+    I j {dummy_t {}, &n[2]};
+    
+    assert((i + 1).value == &n[1]);
+    assert((1 + i).value == &n[1]);
+    assert((i += 1).value == &n[1]);
+
+    assert((i - 1).value ==&n[0]);
+    assert((i -= 1).value == &n[0]);
+
+    assert(j - i == 2);
+  }
+
 int main()
 {
   // Movable
@@ -301,5 +321,10 @@ int main()
     test_bidirectional_iterator<I>();
   }
 
+  // Random access iterator
+  {
+    using I = Random_access_iterator_archetype<int*>;
+    test_random_access_iterator<I>();
+  }
 }
 
