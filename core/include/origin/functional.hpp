@@ -346,6 +346,10 @@ namespace origin
   // An alias to the type of the equality reltaion.
   using Equal_to = equal_relation;
 
+  // Equal to value (alias)
+  // An alias to the type of the value equality predicate.
+  template <typename T>
+    using Equal_to_value = equal_value_predicate<T>;
 
 
   // Distinction from (relation)
@@ -405,6 +409,11 @@ namespace origin
   // An alias to the type of the distinction relation.
   using Distinct_from = not_equal_relation;
 
+  // Distinct from value (alias)
+  // An alias to the type of the value distinction predicate
+  template <typename T>
+    using Distinct_from_value = not_equal_value_predicate<T>;
+
 
 
   // Less than (relation)
@@ -463,6 +472,10 @@ namespace origin
   // Less than (alias)
   using Less_than = less_relation;
 
+  // Less than value (alias)
+  template <typename T>
+    using Less_than_value = less_value_predicate<T>;
+
 
 
   // Greater than (relation)
@@ -518,6 +531,10 @@ namespace origin
   // Greater than (alias)
   using Greater_than = greater_relation;
 
+  // Greater than value (alias)
+  template <typename T>
+    using Greater_than_value = greater_value_predicate<T>;
+
 
 
   // Less than or equal to (relation)
@@ -571,6 +588,10 @@ namespace origin
   // Less than or equal to (alias)
   using Less_equal_to = less_equal_relation;
 
+  // Less than or equal to value (alias)
+  template <typename T>
+    using Less_equal_to_value = less_equal_value_predicate<T>;
+
 
 
   // Greater than or equal to (relation)
@@ -620,6 +641,10 @@ namespace origin
 
   // Greater than or equal to (alias)
   using Greater_equal_to = greater_equal_relation;
+
+  // Greater than or equal to (alias)
+  template <typename T>
+    using Greater_equal_to_value = greater_equal_value_predicate<T>;
 
 
 
