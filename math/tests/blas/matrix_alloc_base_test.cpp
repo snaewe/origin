@@ -8,8 +8,9 @@
 #include <origin/blas/detail/matrix/matrix_alloc_base.hpp>
 #include <cassert>
 #include <memory>
+#include <iostream>
 using namespace origin;
-// matrix_alloc_base
+
 
 
 
@@ -98,8 +99,6 @@ public:
     void destroy(pointer p);
 };
 
-
-
 // Testing Type.
 template<typename T, typename Alloc>
 struct matrix_alloc_base_impl_test
@@ -162,21 +161,113 @@ template<typename T, typename Alloc>
 struct matrix_alloc_base_test
     :matrix_alloc_base<T, Alloc>
 {
-    typedef matrix_alloc_base<T, Alloc> base;
-    typedef typename base::matrix_alloc_impl_base base_impl_type;
-    typedef typename base::rebound_alloc_type allocator_test_type;
+    typedef matrix_alloc_base<T, Alloc> testing_type;
+    using pointer = typename testing_type::pointer;
+    
+    // typedef typename base::matrix_alloc_impl_base base_impl_type;
+    // typedef typename base::rebound_alloc_type allocator_test_type;
     
     static void run_tests() {
-  
+        reset_allocator_test_variables();
+        alloc_base__default_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__alloc_copy_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__n_items_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__n_items_alloc_copy_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__move_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__copy_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__move_copy_alloc_ctor();
+        
+        reset_allocator_test_variables();
+        alloc_base__allocate();
+        
+        reset_allocator_test_variables();
+        alloc_base__deallocate();
+    }
+    
+    static void alloc_base__default_ctor() {
+        testing_type temp;
+        assert(fake_allocator__default_constructor_called);
+        assert(temp.base_impl.start == 0);
+        assert(temp.base_impl.finish == 0);
+    }
+    
+    static void alloc_base__alloc_copy_ctor() {
+        testing_type temp;
+        std::size_t allocation_size = 4;
+        typename testing_type::pointer startValue = (typename testing_type::pointer)0x5550000;
+        typename testing_type::pointer finishValue = startValue + allocation_size ;
+        temp.base_impl.start = startValue;
+        temp.base_impl.finish = finishValue;
+        reset_allocator_test_variables();
+        
+        // Create copy instance
+        testing_type temp2(temp);
+        assert(fake_allocator__allocator_copy_called);
+        assert(fake_allocator__allocate_called);
+        assert(fake_allocator__allocation_size == allocation_size);
+        assert(temp2.base_impl.start != 0);
+        assert(temp2.base_impl.finish != 0);
+        assert(std::size_t(temp2.base_impl.finish - temp2.base_impl.start) == allocation_size);
+    }
+    
+    static void alloc_base__n_items_ctor() {
+        std::size_t allocation_size = 4;
+        testing_type temp(allocation_size);
+        assert(fake_allocator__default_constructor_called);
+        assert(fake_allocator__allocate_called);
+        assert(fake_allocator__allocation_size == allocation_size);
+        assert(temp.base_impl.start == (pointer)0xdeadbeef);
+        assert(temp.base_impl.finish == ((pointer)0xdeadbeef) + allocation_size);
+    }
+    
+    static void alloc_base__n_items_alloc_copy_ctor() {
+        std::size_t allocation_size = 4;
+        testing_type temp(allocation_size);
+        assert(fake_allocator__default_constructor_called);
+        assert(fake_allocator__allocate_called);
+        assert(fake_allocator__allocation_size == allocation_size);
+        assert(temp.base_impl.start == (pointer)0xdeadbeef);
+        assert(temp.base_impl.finish == ((pointer)0xdeadbeef) + allocation_size);
+    }
+    
+    static void alloc_base__move_ctor() {
+    }
+    
+    static void alloc_base__copy_ctor() {
+    }
+    
+    static void alloc_base__move_copy_alloc_ctor() {
+    }
+    
+    static void alloc_base__allocate() {
+    }
+    
+    static void alloc_base__deallocate() {
     }
 };
 
 int main() {
-    // matrix_alloc_base<float, std::allocator<float>> temp;
     
     {
         typedef matrix_alloc_base_impl_test<float, fake_allocator<float>> allocator_test_type;
         allocator_test_type::run_tests();
+    }
+    
+    {
+        typedef matrix_alloc_base_test<float, fake_allocator<float>> test_type;
+        test_type::run_tests();
     }
     return 0;
     

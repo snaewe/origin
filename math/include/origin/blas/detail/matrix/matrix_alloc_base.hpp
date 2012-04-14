@@ -10,6 +10,7 @@
 #include <cassert>
 #include <memory>
 #include <algorithm>
+#include <origin/memory.hpp>
 
 namespace origin {
 
@@ -21,17 +22,20 @@ template<typename T, typename Alloc>
 class matrix_alloc_base
 {
 protected:
-    typedef typename Alloc::template rebind<T>::other rebound_alloc_type;
+    using rebound_alloc_type = typename Alloc::template rebind<T>::other;
 public:
-    typedef Alloc allocator_type;
+    using allocator_type = Alloc;
+    using pointer = typename std::allocator_traits<rebound_alloc_type>::pointer;
+    
+    /*
+    TODO Move to deriving class.
     typedef T value_type;
-    typedef typename std::allocator_traits<rebound_alloc_type>::pointer pointer;
     typedef typename std::allocator_traits<rebound_alloc_type>::const_pointer const_pointer;
     typedef value_type& reference;
     typedef value_type const& const_reference;
     typedef typename std::allocator_traits<rebound_alloc_type>::difference_type difference_type;
     typedef typename std::allocator_traits<rebound_alloc_type>::size_type size_type;
-    
+    */
 protected:
     
     /** @name matrix_alloc_impl_base 
@@ -84,7 +88,6 @@ protected:
         pointer finish;
     };
     
-    matrix_alloc_impl_base base_impl;
 
     rebound_alloc_type& get_rebound_allocator() noexcept {
         return *static_cast<rebound_alloc_type*>(&base_impl);
@@ -95,32 +98,122 @@ protected:
     }
 
 public:
+    
     /** @name get_allocator
      *  @brief Returns the allocator.
      */
     allocator_type const& get_allocator() const noexcept {
         return allocator_type(get_rebound_allocator);
     }
-    
-    
-    /** @name Default Constructor
+        
+    /** @name Default constructor
      *  @brief Default construct an instance of the matrix_alloc_base.
      */
-    matrix_alloc_base()
-    {}
-    /*
-    _Vector_base()
-    _Vector_base(const allocator_type& __a)
-    _Vector_base(size_t __n)
-    _Vector_base(size_t __n, const allocator_type& __a)
-    _Vector_base(_Tp_alloc_type&& __a)
-    _Vector_base(_Vector_base&& __x)
-    _Vector_base(_Vector_base&& __x, const allocator_type& __a)
-    ~_Vector_base()     
+    matrix_alloc_base() { }
+    
+    
+    /** @name Allocator copy constructor
+     *  @brief Creates a copy of the allocator a.
+     *  @param a The allocator to copy.
      */
+    matrix_alloc_base(allocator_type const& a)
+        :base_impl(a)
+    { }
+
+    /** @name Allocate n items constructor
+     *  @brief Allocates n items.
+     *  @param n The numebr of items to allocate.
+     */
+    matrix_alloc_base(std::size_t n)
+        :base_impl()
+    {
+        create_storage(n);
+    }
+    
+    /** @name Allocate n items and copy allocatr constructor
+     *  @brief Allocates n items.
+     *  @param n The numebr of items to allocate.
+     *  @param a The allocator to copy.
+     */
+    matrix_alloc_base(std::size_t n, allocator_type const& a)
+        :base_impl(a)
+    {
+        create_storage(n);
+    }
+    
+
+    /** @name Move Constructor
+     *  @brief Moves data from other into this object.
+     *  @param other The class whose memory this class is to gain owner ship of.
+     */
+    matrix_alloc_base(matrix_alloc_base&& other)
+        :base_impl(std::move(other.get_rebound_allocator()))
+    { }
+    
+    /** @name Copy Constructor
+     *  @brief Creates a copy of the other object.
+     *  @param other The class to create a copy of.
+     */
+    matrix_alloc_base(matrix_alloc_base const& other)
+        :base_impl(other.base_impl)
+    {
+        create_storage(other.base_impl.finish - other.base_impl.start);
+    }
+    
+    /** @name Move with specific allocator
+     *  @brief Moves data from other class into owner ship of this object and 
+     *  @param other The class whose memory to gain ownership of.
+     *  @param a The allocator to copy.
+     *  @TODO Implement ME 
+     */
+    matrix_alloc_base(matrix_alloc_base&& other, allocator_type const& a)
+        :base_impl(a)
+    {
+        // create_storage(n);
+    }
+    
+    /** @name Destructor
+     *  @brief Free memory that is currenlty allocated.
+     */
+    ~matrix_alloc_base() noexcept {
+        deallocate(base_impl.start, base_impl.finish - base_impl.start);
+    }
+
+    
+    /** @name Allocate
+     *  @brief Allocates n instances of value type.
+     */
+    pointer allocate(std::size_t n) {
+        return n != 0 ? base_impl.allocate(n) : 0;
+    }
+    
+    /** @name deallocate
+     *  @brief Deallocates memory at location p of size n.
+     *  @param p The memory to deallocate.
+     *  @param n The number of instances of value_type to deallocate.
+     */
+    void deallocate(pointer p, std::size_t n){
+        if (p)
+            base_impl.deallocate(p, n);
+    }
+    
+    /// @name Member Variable
+    ///{
+    matrix_alloc_impl_base base_impl;
+    ///}
+private:
+    
+    /** @name create_storage
+     *  @brief Private function which helps encapsulate a the allocation
+     *  process of the constructors of this class.
+     *  @param n is the number of elements to allocate.
+     */
+    void create_storage(std::size_t n) {
+        base_impl.start = allocate(n);
+        base_impl.finish = base_impl.start + n;
+    }
 };
-    
-    
-} // end origin::blas::detail
+
+} // end origin
 
 #endif
