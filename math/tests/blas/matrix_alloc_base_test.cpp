@@ -356,7 +356,8 @@ template<typename T, typename Alloc>
         }
     };
 
-int main() {
+int main()
+{
     
     {
         typedef matrix_alloc_base_impl_test<float, fake_allocator<float>> allocator_test_type;
