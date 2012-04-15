@@ -23,4 +23,5 @@ endmacro(origin_blas_run_test)
 #)
 
 origin_blas_run_test(matrix_alloc_base matrix_alloc_base_test.cpp)
+origin_blas_run_test(matrix_impl_base matrix_impl_base_test.cpp)
 

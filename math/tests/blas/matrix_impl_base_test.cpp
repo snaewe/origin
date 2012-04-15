@@ -5,15 +5,11 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include "matrix_alloc_base.hpp"
+#include <origin/blas/detail/matrix/matrix_impl_base.hpp>
+#include <cassert>
+#include <iostream>
 
-namespace origin
+int main()
 {
-    template<typename T, std::size_t Dimension, typename Alloc>
-    struct matrix_impl_base
-        :public matrix_alloc_base<T, Alloc>
-    {
-        
-    };
-    
-} // end origin
+    return 0;
+}
