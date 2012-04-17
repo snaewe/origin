@@ -12,6 +12,7 @@ origin_run_test(range_filter filter_range.cpp)
 origin_run_test(range_tranform transform_range.cpp)
 origin_run_test(range_stride stride_range.cpp)
 origin_run_test(range_zip zip_range.cpp)
+origin_run_test(range_terminating terminating_range.cpp)
 
 origin_run_test(range_permutation permutation.cpp)
 origin_run_test(range_combination combination.cpp)

@@ -16,10 +16,18 @@ namespace origin
   template <typename I, typename P>
     class terminating_iterator
     {
-      terminating_iterator(I first, I last, P pred)
-        : data {first, last, pred}
-      { }
+      std::tuple<I, I, P> data;
+    public:
+      using value_type = Value_type<I>;
+      using reference = Iterator_reference<I>;
+      using pointer = Iterator_pointer<I>;
+      using difference_type = Distance_type<I>;
+      using iterator_category = std::input_iterator_tag;
 
+
+      terminating_iterator(I first, I last, P pred)
+        : data {check(first, last, pred), last, pred}
+      { }
 
       // Equality comparable
       // Two terminating iterators are equal when their first iterators are
@@ -31,27 +39,36 @@ namespace origin
       
       bool operator!=(const terminating_iterator& x) const 
       { 
-        return first() == x.first();
+        return first() != x.first();
       }
 
       // Readable
-      auto operator*() const -> decltype(*iter) { return *iter; }
+      auto operator*() const -> Dereference_result<I> { return *first(); }
 
       // Incrementable
-      terminating_iterator& operator++() { next(); return *this; }
+      terminating_iterator& operator++() 
+      { 
+        next(); return *this; 
+      }
 
     private:
       // Advance to the next iterator
       void next()
       {
-        if (first() != last)
-          first() = check(o_next(first()));
+        if (first() != last())
+          first() = check(o_next(first()), last(), pred());
       }
 
-      // Return last if pred(*i) is true or i if it is not.
-      I check(I i) { return pred()(*i) ? last : i; }
+      // Return last if pred(*first) is true or first if it is not. If
+      // first == last, then return last, obviously.
+      static I check(I first, I last, P pred) 
+      { 
+        if (first != last)
+          return pred(*first) ? last : first; 
+        else
+          return last;
+      }
 
-    private:
       // Returns the first (current) iterator
       I&       first()       { return std::get<0>(data); }
       const I& first() const { return std::get<0>(data); }
@@ -61,8 +78,6 @@ namespace origin
       
       // Returns the predicate function
       const P& pred() const  { return std::get<2>(data); }
-
-      std::tuple<I, I, P> data;
     };
 
 
@@ -82,16 +97,16 @@ namespace origin
       using value_type = Value_type<I>;
       using iterator = terminating_iterator<I, P>;
       
-      terminating_range(I first, I last, F func)
-        : data {first, last, func}
+      terminating_range(I first, I last, P pred)
+        : data {first, last, pred}
       { }
       
       // Returns the transformation function
       P terminating_pred() const { return pred(); }
       
       // Range operations
-      iterator begin() const { return {first(), func(), pred()}; }
-      iterator end() const   { return {last(), func(), pred()}; }
+      iterator begin() const { return {first(), last(), pred()}; }
+      iterator end() const   { return {last(), last(), pred()}; }
       
     private:
       const I& first() const { return std::get<0>(data); }
@@ -99,7 +114,7 @@ namespace origin
       const P& pred() const  { return std::get<2>(data); }
 
     private:
-      std::tuple<I, I, F> data;
+      std::tuple<I, I, P> data;
     };
     
     
@@ -121,34 +136,37 @@ namespace origin
   // underlying range.
 
   template <typename I, typename P>
-    inline auto transformed(I first, I last, P pred)
+    inline auto terminated(I first, I last, P pred)
       -> Requires<Predicate<P, Value_type<I>>(), terminating_range<I, P>>
     {
       return {first, last, pred};
     }
     
   template <typename I, typename T>
-    inline auto transformed(I first, I last, const T& value)
+    inline auto terminated(I first, I last, const T& value)
       -> Requires<Equality_comparable<Value_type<I>, T>(), 
-                  terminating_range<I, Equal_to_value<T>>
+                  terminating_range<I, Equal_to_value<T>>>
     {
       return {first, last, eq(value)};
     }
     
   template <typename R, typename P>
-    inline auto transforemd(R&& range, P pred)
-      -> Requires<Predicate<P, Value_type<Unqualified<R>>(),
-                            transform_range<Remove_reference<R>, P>>
+    inline auto terminated(R&& range, P pred)
+      -> Requires<
+           Predicate<P, Value_type<Forwarded<R>>>(), 
+           terminating_range<Iterator_type<Remove_reference<R>>, P>>
     {
-      return {o_begin(range), o_end(range), func};
+      return {o_begin(range), o_end(range), pred};
     }
     
+
   template <typename R, typename T>
-    inline auto transforemd(R&& range, const T& value)
-      -> Requires<Equality_comparable<Value_type<Unqualified<R>, T>(),
-                            transform_range<Remove_reference<R>, Equal_to_value<T>>
+    inline auto terminated(R&& range, const T& value)
+      -> Requires<
+           Equality_comparable<Value_type<Forwarded<R>>, T>(), 
+           terminating_range<Iterator_type<Remove_reference<R>>, Equal_to_value<T>>>
     {
-      return {o_begin(range), o_end(range), eq(value);
+      return {o_begin(range), o_end(range), eq(value)};
     }
    
 

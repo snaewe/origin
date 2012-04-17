@@ -318,7 +318,23 @@ namespace origin {
     constexpr bool is_total_order(R r) { return true; }
 
 
+
+  // Generator (concept)
+  // a generator is a nullary function that returns values of a specified
+  // type. Generators are typically non-regular functions, since they are often
+  // used to generate different values on subsequent calls. Random value
+  // generators are examples of generating functions.
+  // 
+  // Note that a nullary regular function is called a "constant function" and
+  // is also a kind a generator.
+  template <typename F>
+    constexpr bool Generator()
+    {
+      return Function<F>();
+    }
+
     
+
   // Concepts for common associated types
 
   

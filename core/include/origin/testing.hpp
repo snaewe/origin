@@ -18,12 +18,22 @@ namespace origin
   // construct a specification-based test suite.
   //
   // Concepts:
-  //    Property_check
   //    Specification
-  //    Randomized_check
-  //    Randomized_property_check
-  //    Randomized_specification_check
+  //    Property_check
+  //    Generated_property_check
+  //    Generated_specification_check
+
+
   
+  // Specification (concept)
+  // A specification is a function object that can be checked using a
+  // checking environment (Env) over the given argument types.
+  template <typename Spec, typename Env, typename... Args>
+    constexpr bool Specification()
+    {
+      return Function<Spec, Env&, Args...>();
+    }
+
 
 
   // Property check (concept)
@@ -37,41 +47,29 @@ namespace origin
     }
   
     
-  
-  // Specification (concept)
-  // A specification is a function object that can be checked using a
-  // checking environment (Env) over the given argument types.
-  template <typename Spec, typename Env, typename... Args>
-    constexpr bool Specification()
+
+  // Generative property check (concept)
+  // An generative property check is the evaluation of a predicate (P) over 
+  // values obtained from a sequence of generating functions (Gens), within a
+  // testing environment (Env).
+  template <typename Env, typename P, typename... Gens>
+    constexpr bool Generative_property_check()
     {
-      return Function<Spec, Env&, Args...>();
+      return All(Generator<Forwarded<Gens>>()...)
+          && Property_check<Env, P, Result_of<Forwarded<Gens>()>...>();
     }
 
   
 
-  // Randomized property check (concept)
-  // A randomized property check is an algorithm that invokes some predicate
-  // over randomly generated data. A pseudorandom bit generator (Eng) is 
-  // required along with random value generators (Gens...) for each predicate 
-  // argument.
-  template <typename Env, typename P, typename... Vars>
-    constexpr bool Randomized_property_check()
+  // Generative specification check (algorithm concept)
+  // A generative specification check is forwards a sequence of generating
+  // functions (Gens) to a specification (Spec) for testing within a
+  // testing environment (Env).
+  template <typename Env, typename Spec, typename... Gens>
+    constexpr bool Generative_specification_check()
     {
-      return All(Random_variable<Forwarded<Vars>>()...)
-          && Property_check<Env, P, Result_type<Forwarded<Vars>>...>();
-    }
-
-  
-
-  // Randomized specification check (algorithm concept)
-  // A randomized specification check is an algorithm that invokes a 
-  // specification testing function using a psuedorandom value generator and a
-  // random value geenrator for each specification argument (Gens...)
-  template <typename Env, typename Spec, typename... Vars>
-    constexpr bool Randomized_specification_check()
-    {
-      return All(Random_variable<Forwarded<Vars>>()...)
-          && Specification<Spec, Env, Forwarded<Vars>&...>();
+      return All(Generator<Forwarded<Gens>>()...)
+          && Specification<Spec, Env, Forwarded<Gens>&...>();
     }
 
 
@@ -123,7 +121,7 @@ namespace origin
   // Evalutae pred by checking it against a smple of the random variables.
   template <typename Env, typename P, typename... Vars>
     auto check(Env& env, P pred, Vars&&... vars)
-      -> Requires<Randomized_property_check<Env, P, Vars...>()>
+      -> Requires<Generative_property_check<Env, P, Vars...>()>
     {
       check(env, pred, vars()...);
     }
@@ -134,7 +132,7 @@ namespace origin
   // Evaluate spec using the given random vars.
   template <typename Env, typename Spec, typename... Vars>
     auto check(Env& env, Spec spec, Vars&&... vars)
-      -> Requires<Randomized_specification_check<Env, Spec, Vars...>()>
+      -> Requires<Generative_specification_check<Env, Spec, Vars...>()>
     {
       spec(env, std::forward<Vars>(vars)...);
     }

@@ -50,6 +50,9 @@ namespace origin
     
   // Result type (trait)
   // The result type of a type is an associated type named result_type.
+  //
+  // FIXME: Why do we have both a Result_type and a Result_of? Should we
+  // deprecate all uses of Result_type with Result_of? 
 
   // Safely deduce the argument of the callable type F.
   template <typename F>
@@ -283,6 +286,18 @@ namespace origin
 
   // Returns a function that converts values to bool.
   inline to_bool_function make_to_bool() { return {}; }
+
+
+
+  // Relations
+  // The following function objects abstract relations and relational operators.
+  //
+  // FIXME: It would be nice to push type information into the relational
+  // operators so that they are fully checked at the point of declaration
+  // instead of use. I've been bit by the lazyness of checking before. To do
+  // this correctly, I'll need to re-create the set of specializations that I
+  // had in the previous incarnation of the library. The downside is that  each
+  // function object is no longer a little 3-line class.
 
 
 
