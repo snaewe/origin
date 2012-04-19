@@ -10,6 +10,7 @@
 
 #include <origin/algorithm.hpp>
 #include <origin/testing.hpp>
+#include <origin/testing/prototypes.hpp>
 
 using namespace std;
 using namespace std::placeholders;
@@ -34,6 +35,7 @@ struct count_if_check
       return count_if(range, pred) == reduce(range, 0, f);
     }
 };
+
 
 
 // Count if not (property)
@@ -90,6 +92,29 @@ struct count_not_equal_check
 
 
 
+// Specification testing
+
+using Seq = predicate_sequence;
+
+struct test_count_if
+{
+  bool operator()(const Seq& seq) const
+  {
+    Size_type<Seq> n = count_if(seq.begin(), seq.end(), seq.predicate());
+    return n == seq.num_true();
+  }
+};
+
+struct test_count_if_not
+{
+  bool operator()(const Seq& seq) const
+  {
+    Size_type<Seq> n = count_if_not(seq.begin(), seq.end(), seq.predicate());
+    return n == seq.num_false();
+  }
+};
+
+
 int main()
 {
   assert_checker<> env;
@@ -121,5 +146,18 @@ int main()
     quick_check(env, count_check {}, range, value, less);
     quick_check(env, count_not_equal_check {}, range, value);
     quick_check(env, count_not_equal_check {}, range, value, less);
+  }
+
+  {
+    using Seq_dist = predicate_sequence_distribution<>;
+    Seq_dist seq_dist;
+    auto seq = checkable_var(env, seq_dist);
+
+    // using Value_dist = bernoulli_distribution;
+    // Value_dist value_dist;
+    // auto value = checkable_var(env, value_dist);
+
+    quick_check(env, test_count_if {}, seq);
+    quick_check(env, test_count_if_not {}, seq);
   }
 }

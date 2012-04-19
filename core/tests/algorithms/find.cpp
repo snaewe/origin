@@ -17,16 +17,8 @@ using namespace std::placeholders;
 using namespace origin;
 
 
-
-template <typename R>
-  void print(const R& range)
-  {
-    for (auto x : range)
-      cout << x << ' ';
-    cout << '\n';
-  }
-
-
+// FIXME: These tests are reusable and should be made available for testing
+// purposes. We need to lib-ift the test suites.
 
 // Find if (property)
 struct find_if_check
@@ -45,7 +37,6 @@ struct find_if_check
         return true;
     }
 };
-
 
 
 // Find if not (property)
@@ -317,6 +308,93 @@ struct is_relation_preserving_check
 };
 
 
+// Specification testing
+
+using Seq = predicate_sequence;
+
+struct test_find_if
+{
+  bool operator()(const Seq& seq) const
+  {
+    auto i = find_if(seq, seq.predicate());
+    if (i != end(seq))
+      return i == seq.first_true();
+    else
+      return seq.none_true();
+  }
+};
+
+struct test_find_if_not
+{
+  bool operator()(const Seq& seq) const
+  {
+    auto i = find_if_not(seq, seq.predicate());
+    if (i != end(seq))
+      return i == seq.first_false();
+    else
+      return seq.all_true();
+  }
+};
+
+struct test_find_next_if
+{
+  bool operator()(const Seq& seq) const
+  {
+    auto pred = seq.predicate();
+    auto first = begin(seq);
+    auto last = end(seq);
+    auto i = find_next_if(first, last, pred);
+
+    if (first == last)
+      return i == last;
+    else if (pred(*first) && i != last)
+      return i == seq.nth_true(1);
+    else if (pred(*first) && i == last)
+      return first == seq.first_true() && seq.num_true() == 1;
+    else if (!pred(*first) && i != last)
+      return i == seq.first_true();
+    else
+      return seq.none_true();
+  }
+};
+
+struct test_find_nth_if
+{
+  bool operator()(const Seq& seq, Size_type<Seq> n) const
+  {
+    if (n >= seq.num_true())
+      return true;
+    else if (n == 0)
+      return find_nth_if(seq, n, seq.predicate()) == end(seq);
+    else
+      return find_nth_if(seq, n, seq.predicate()) == seq.nth_true(n - 1);
+  }
+};
+
+struct test_find
+{
+  bool operator()(const Seq& seq, bool value) const
+  {
+    auto i = find(seq, value);
+    if (i != end(seq))
+      return i == (value ? seq.first_true() : seq.first_false());
+    else
+      return value ? seq.none_true() : seq.none_false();
+  }
+};
+
+struct test_find_not_equal
+{
+  bool operator()(const Seq& seq, bool value) const
+  {
+    auto i = find_not_equal(seq, value);
+    if (i != end(seq))
+      return i == (value ? seq.first_false() : seq.first_true());
+    else
+      return value ? seq.none_false() : seq.none_true();
+  }
+};
+
 
 int main()
 {
@@ -386,58 +464,6 @@ int main()
   }
 
   {
-    using Seq = predicate_sequence;
-
-    // NOTE: These could be equivalently written using function objects.    
-
-    auto test_find_if = [](const Seq& seq) -> bool
-    {
-      auto i = find_if(seq, To_bool {});
-      if (i != end(seq))
-        return i == seq.first_true();
-      else
-        return seq.none_true();
-    };
-
-    auto test_find_if_not = [](const Seq& seq) -> bool
-    {
-      auto i = find_if_not(seq, To_bool {});
-      if (i != end(seq))
-        return i == seq.first_false();
-      else
-        return seq.all_true();
-    };
-
-    auto test_find_next_if = [](const Seq& seq) -> bool
-    {
-      auto pred = seq.predicate();
-      auto first = begin(seq);
-      auto last = end(seq);
-      auto i = find_next_if(first, last, pred);
-
-      if (first == last)
-        return i == last;
-      else if (pred(*first) && i != last)
-        return i == seq.nth_true(1);
-      else if (pred(*first) && i == last)
-        return first == seq.first_true() && seq.num_true() == 1;
-      else if (!pred(*first) && i != last)
-        return i == seq.first_true();
-      else
-        return seq.none_true();
-    };
-
-    auto test_find_nth_if = [](const Seq& seq, Size_type<Seq> n) -> bool
-    {
-      if (n >= seq.num_true())
-        return true;
-      else if (n == 0)
-        return find_nth_if(seq, n, seq.predicate()) == end(seq);
-      else
-        return find_nth_if(seq, n, seq.predicate()) == seq.nth_true(n - 1);
-    };
-
-
     using Small_dist = uniform_int_distribution<Size_type<Seq>>;
     Small_dist small_dist {0, 5};
     auto small = checkable_var(env, small_dist);
@@ -446,9 +472,15 @@ int main()
     Seq_dist seq_dist;
     auto seq = checkable_var(env, seq_dist);
 
-    quick_check(env, test_find_if, seq);
-    quick_check(env, test_find_if_not, seq);
-    quick_check(env, test_find_next_if, seq);
-    quick_check(env, test_find_nth_if, seq, small);
+    using Value_dist = bernoulli_distribution;
+    Value_dist value_dist;
+    auto value = checkable_var(env, value_dist);
+
+    quick_check(env, test_find_if {}, seq);
+    quick_check(env, test_find_if_not {}, seq);
+    quick_check(env, test_find_next_if {}, seq);
+    quick_check(env, test_find_nth_if {}, seq, small);
+    quick_check(env, test_find {}, seq, value);
+    quick_check(env, test_find_not_equal {}, seq, value);
   }
 }
