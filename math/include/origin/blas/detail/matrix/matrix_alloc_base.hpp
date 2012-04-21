@@ -35,7 +35,7 @@ namespace origin {
         public:
             using allocator_type = Alloc;
             using pointer = typename std::allocator_traits<rebound_alloc_type>::pointer;
-            
+            using size_type = typename std::allocator_traits<rebound_alloc_type>::size_type;
         protected:
             
             // matrix_alloc_impl_base 
@@ -121,7 +121,7 @@ namespace origin {
             // Allocate n items constructor
             // Allocates n items.
             // n The numebr of items to allocate.
-            matrix_alloc_base(std::size_t n)
+            matrix_alloc_base(size_type n)
                 :base_impl()
             {
                 create_storage(n);
@@ -131,7 +131,7 @@ namespace origin {
             // Allocates n items.
             // n The numebr of items to allocate.
             // a The allocator to copy.
-            matrix_alloc_base(std::size_t n, allocator_type const& a)
+            matrix_alloc_base(size_type n, allocator_type const& a)
                 :base_impl(a)
             {
                 create_storage(n);
