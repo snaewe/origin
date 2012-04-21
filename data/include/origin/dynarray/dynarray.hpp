@@ -133,7 +133,7 @@ namespace origin
     // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2648.html
     template<typename T, typename Alloc = std::allocator<T>>
         class dynarray
-            : dynarray_base<T, Alloc>
+            :protected dynarray_base<T, Alloc>
         {
             using base_type = dynarray_base<T, Alloc>;
         public:
