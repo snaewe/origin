@@ -8,25 +8,47 @@
 #include <cassert>
 #include <string>
 #include <origin/dynarray/dynarray.hpp>
+#include "fake_allocator.hpp"
 
-
+using namespace origin;
+using namespace std;
 
 int main()
 {
-
-    
+    // dynarray test suite.
+    {
+        using dynarray_t = dynarray<float>;
+        
+        // default constrcutor. dynarray()
+        {
+            dynarray_t x;
+            assert(x.size() == 0);
+            assert(x.empty());
+            assert(x.begin() == x.end());
+        }
+        
+        // Allocator constructor. dynarray(allocator_type const& alloc)
+        {
+        }
+        
+        // n item constructor. explicit dynarray(size_type n)
+        {
+            dynarray<string> x(5);
+            assert(( x.size() == 5 ));
+        }
+    }
     /*
     // class dynarray
     // Constructors & destructors.
-    dynarray()
-    dynarray(allocator_type const& alloc)
+    
+    
     dynarray(dynarray const& x)
     dynarray(dynarray&& x)
     template<typename Iter> dynarray(Iter first, Iter last)
     template<typename Iter> dynarray(Iter first, Iter last, allocator_type const& alloc)
     dynarray(std::initializer_list<value_type> list)
     dynarray(std::initializer_list<value_type> list, allocator_type const& alloc = allocator_type{})
-    explicit dynarray(size_type n)
+    
     explicit dynarray(size_type n, value_type const& x = value_type{})
     explicit dynarray(size_type n, value_type const& x = value_type{}, allocator_type const& alloc = allocator_type{})
     ~dynarray()
