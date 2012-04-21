@@ -7,144 +7,15 @@
 
 #include <cassert>
 #include <string>
-#include <stdexcept>
-
 #include <origin/dynarray/dynarray.hpp>
 
-using namespace std;
-using namespace origin;
 
-// Global variables associated with the fake
-// allocator.
-void* fake_allocator__ptr_allocation_requested;
-bool fake_allocator__allocate_called = false;
-bool fake_allocator__allocator_copy_called = false;
-bool fake_allocator__default_constructor_called = false;
-bool fake_allocator__copy_other_allocator_called = false;
-std::size_t fake_allocator__allocation_size = 0;
-void* fake_allocator__ptr_deallocation_address = 0;
-std::size_t fake_allocator__deallocation_size = 0;
-bool fake_allocator__destructor_called = false;
-bool fake_allocator__deallocate_called = false;
-bool fake_allocator__allocator_move_called = false;
-
-void reset_allocator_test_variables()
-{
-    fake_allocator__ptr_allocation_requested = (void*)0xdeadbeef;
-    fake_allocator__allocator_move_called = false;
-    fake_allocator__allocator_copy_called = false;
-    fake_allocator__default_constructor_called = false;
-    fake_allocator__copy_other_allocator_called = false;
-    fake_allocator__allocation_size = 0;
-    fake_allocator__ptr_deallocation_address = (void*)0;
-    fake_allocator__deallocation_size = 0;
-    fake_allocator__destructor_called = false;
-    fake_allocator__allocate_called = false;
-    fake_allocator__deallocate_called = false;
-}
-
-template <class T>
-    class fake_allocator
-    {
-    public:
-        typedef std::size_t    size_type;
-        typedef std::ptrdiff_t difference_type;
-        typedef T*        pointer;
-        typedef const T*  const_pointer;
-        typedef T&        reference;
-        typedef const T&  const_reference;
-        typedef T         value_type;
-
-        template <class U>
-        struct rebind
-        {
-            typedef fake_allocator<U> other;
-        };
-
-        fake_allocator() throw()
-        {
-            fake_allocator__default_constructor_called = true;
-        }
-
-        fake_allocator(fake_allocator&&) throw()
-        {
-            fake_allocator__allocator_move_called = true;
-        }
-        
-        fake_allocator(const fake_allocator&) throw()
-        {
-            fake_allocator__allocator_copy_called = true;
-        }
-
-        template <class U>
-        fake_allocator(fake_allocator<U> const&) throw()
-        {
-            fake_allocator__copy_other_allocator_called = true;
-        }
-
-        ~fake_allocator() throw()
-        {
-            fake_allocator__destructor_called = true;
-        }
-        
-        pointer allocate(size_type n, void* = 0)
-        {
-            fake_allocator__allocate_called = true;
-            fake_allocator__allocation_size = n;
-            return reinterpret_cast<pointer>(fake_allocator__ptr_allocation_requested);
-        }
-
-        void deallocate(pointer p, size_type n)
-        {
-            fake_allocator__deallocation_size = n;
-            fake_allocator__deallocate_called = true;
-            fake_allocator__ptr_deallocation_address = reinterpret_cast<void*>(p);
-        }
-        
-        size_type max_size() const throw();
-        pointer address(reference x) const;
-        const_pointer address(const_reference x) const;
-        void construct(pointer p, T const& val);
-        void destroy(pointer p);
-    };
-    
-    /*
-void fake_allocator_assert__called_default_ctor(string const& msg) {
-    if(!fake_allocator__default_constructor_called) {
-        throw std::runtime_error(msg);
-    }
-}
-*/
 
 int main()
 {
-    {
-        dynarray<int> x;
-        assert(( x.empty() ));
-    }
 
-    {
-        dynarray<string> x(5);
-        assert(( x.size() == 5 ));
-    }
+    
     /*
-    
-    // dynarray_base
-    dynarray_base(dynarray_base const& x)
-    dynarray_base(dynarray_base&& x)
-    dynarray_base(allocator_type const& alloc)
-    dynarray_base(dynarray_base&& x, allocator_type const& alloc)
-    dynarray_base(size_type n, allocator_type const& alloc)
-    ~dynarray_base()
-    rebound_alloc_type const& get_rebound_allocator() const
-    rebound_alloc_type& get_rebound_allocator()
-    size_type size() const
-    allocator_type get_alloc() const
-    pointer allocate(size_type n)
-    void deallocate(pointer p)
-    
-    
-    
     // class dynarray
     // Constructors & destructors.
     dynarray()

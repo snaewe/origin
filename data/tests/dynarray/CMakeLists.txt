@@ -5,6 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
+origin_run_test(dynarray_base dynarray_base.cpp)
 origin_run_test(dynarray dynarray.cpp)
 #origin_run_test(square_dynarray square_dynarray.cpp)
 #origin_run_test(rectangular_dynarray rectangular_dynarray.cpp)

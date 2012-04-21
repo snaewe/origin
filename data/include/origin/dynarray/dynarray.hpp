@@ -31,22 +31,30 @@ namespace origin
             using size_type =typename rebound_alloc_type::size_type ;
             using difference_type = typename rebound_alloc_type::difference_type;
             
+            // Default constructor
+            dynarray_base()
+                : Alloc{},
+                first{},
+                last{}
+            { }
+            
             // Copy semantics
             dynarray_base(dynarray_base const& x)
-                : Alloc{x.get_alloc()},
+                : Alloc{x.get_allocator()},
                 first{allocate(x.size())},
                 last{first + x.size()}
             { }
 
             // Move semantics
             dynarray_base(dynarray_base&& x)
-                : Alloc{std::move(x.get_alloc())},
+                : Alloc{std::move(x.get_rebound_allocator())},
                 first{x.first},
                 last{x.last}
             {
                 x.first = x.last = nullptr;
             }
 
+            // Move ctor.
             dynarray_base(dynarray_base&& x, allocator_type const& alloc)
                 : Alloc{alloc},
                 first{x.first},
@@ -61,6 +69,12 @@ namespace origin
                 last{nullptr}
             { }
 
+            dynarray_base(size_type n)
+                : Alloc{},
+                first{allocate(n)},
+                last{first + n}
+            { }
+            
             dynarray_base(size_type n, allocator_type const& alloc)
                 : Alloc{alloc},
                 first{allocate(n)},
@@ -87,7 +101,7 @@ namespace origin
                 return last - first;
             }
             
-            allocator_type get_alloc() const
+            allocator_type get_allocator() const
             {
                 return allocator_type(*this);
             }
