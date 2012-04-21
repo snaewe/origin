@@ -5,7 +5,7 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-# add_subdirectory(dynarray)
+add_subdirectory(dynarray)
 # add_subdirectory(heap)
 
 # origin_run_test(stack stack.cpp)
