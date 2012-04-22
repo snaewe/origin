@@ -16,76 +16,91 @@ using namespace std;
 
 
 template <typename T>
-    struct dynarray_allocator_test_type
-        :public dynarray<T, fake_allocator<T>>
+    struct dynarray_test_type
+        :public dynarray<T, allocator_wrapper<T>>
     {
-        using fake_alloc_t = fake_allocator<T>;
-        using dynarray_t = dynarray<T, fake_alloc_t>;
-        using dynarray_base_t = dynarray_base<T, fake_alloc_t>;
-        using typename dynarray_t::pointer;
-        using typename dynarray_t::const_pointer;
+        using self = dynarray_test_type<T>;
+        using alloc_type = allocator_wrapper<T>;
+        using base = dynarray<T, alloc_type>;
+        using typename base::pointer;
+        using typename base::const_pointer;
         
-        static pointer get_first(dynarray_t& x)
-        {
-            return static_cast<dynarray_base_t&>(x).first;
-        }
-        
-        static pointer get_last(dynarray_t& x)
-        {
-            return static_cast<dynarray_base_t&>(x).last;
-        }
-        
-        static const_pointer get_first(dynarray_t const& x)
-        {
-            return static_cast<dynarray_base_t const&>(x).first;
-        }
-        
-        static const_pointer get_last(dynarray_t const& x)
-        {
-            return static_cast<dynarray_base_t const&>(x).last;
-        }
-        
-        
+        // forwarding constructor for testing.
+        template<typename... Args>
+            explicit dynarray_test_type(Args...  args)
+                :base(std::forward<Args>(args)...)
+            { }
+
         static void run_tests()
         {
             default_constructor();
-            reset_allocator_test_variables();
+            reset_static_alloc_helper();
             allocator_constructor();
-            reset_allocator_test_variables();
+            reset_static_alloc_helper();
+            n_item_constructor();
+            reset_static_alloc_helper();
         }
         
         // dynarray()
         static void default_constructor()
         {
-            dynarray_t subject;
-            assert(fake_allocator__default_constructor_called);
-            assert(get_first(subject) == nullptr);
-            assert(get_last(subject) == nullptr);
-            assert(subject.size() == 0);
-            assert(subject.empty());
+            self subject;
+            subject.default_constructor_test();
         }
-        
+
+        void default_constructor_test()
+        {
+            assert(static_alloc_helper::default_ctor_called);
+            assert(static_alloc_helper::static_alloc_helper::allocated_memory_ptr == nullptr);
+            assert(this->first == nullptr);
+            assert(this->last == nullptr);
+            assert(this->size() == 0);
+            assert(this->empty());
+        }
+
         // dynarray(allocator_type const& alloc)
         static void allocator_constructor()
         {
-            fake_alloc_t testAlloc;
-            reset_allocator_test_variables();
-            dynarray_t subject(testAlloc);
-            assert(!fake_allocator__default_constructor_called);
-            assert(fake_allocator__copy_constructor_called);
-            assert(get_first(subject) == nullptr);
-            assert(get_last(subject) == nullptr);
-            assert(subject.size() == 0);
-            assert(subject.empty());
+            alloc_type testAlloc;
+            reset_static_alloc_helper();
+            self subject(testAlloc);
+            subject.allocator_constructor_test();
         }
         
-        // n item constructor. explicit dynarray(size_type n)
+        void allocator_constructor_test()
+        {
+            assert(static_alloc_helper::copy_ctor_called);
+            assert(!static_alloc_helper::copy_other_ctor_called);
+            assert(this->first == nullptr);
+            assert(this->last == nullptr);
+            assert(this->size() == 0);
+            assert(this->empty());
+        }
+        
+        // explicit dynarray(size_type n)
+        static void n_item_constructor()
+        {
+            {
+                self subject(5);
+                subject.n_item_constructor_test();
+            }
+            assert(static_alloc_helper::dtor_called);
+        }
+        
+        void n_item_constructor_test()
+        {
+            assert(static_alloc_helper::default_ctor_called);
+            assert(this->first != nullptr);
+            assert(this->last != nullptr);
+            assert(this->size() == 5);
+            assert(!this->empty());
+        }
         
     };
 
 int main()
 {
-    dynarray_allocator_test_type<float>::run_tests();
+    dynarray_test_type<float>::run_tests();
     
     /*
     // dynarray test suite.
