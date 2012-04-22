@@ -24,7 +24,7 @@ template <typename T>
         using base = dynarray<T, alloc_type>;
         using typename base::pointer;
         using typename base::const_pointer;
-        
+        using typename base::value_type;
         // forwarding constructor for testing.
         template<typename... Args>
             explicit dynarray_test_type(Args...  args)
@@ -35,8 +35,10 @@ template <typename T>
         {
             default_constructor();
             reset_static_alloc_helper();
+            
             allocator_constructor();
             reset_static_alloc_helper();
+            
             n_item_constructor();
             reset_static_alloc_helper();
         }
@@ -84,6 +86,8 @@ template <typename T>
                 self subject(5);
                 subject.n_item_constructor_test();
             }
+            assert(static_alloc_helper::destroy_called);
+            assert(static_alloc_helper::destroy_call_count == 5);
             assert(static_alloc_helper::dtor_called);
         }
         
@@ -92,6 +96,10 @@ template <typename T>
             assert(static_alloc_helper::default_ctor_called);
             assert(this->first != nullptr);
             assert(this->last != nullptr);
+            for(pointer p = this->first; p != this->last;++p)
+                assert(*p == value_type());
+            assert(static_alloc_helper::construct_called);
+            assert(static_alloc_helper::construct_call_count == 5);
             assert(this->size() == 5);
             assert(!this->empty());
         }
@@ -101,36 +109,9 @@ template <typename T>
 int main()
 {
     dynarray_test_type<float>::run_tests();
-    
-    /*
-    // dynarray test suite.
-    {
-        
-        // default constrcutor. 
-        {
-            dynarray_t x;
-            assert(x.size() == 0);
-            assert(x.empty());
-            assert(x.begin() == x.end());
-        }
-        
-        // Allocator constructor. 
-        {
-        }
-        
-        
-        {
-            dynarray<string> x(5);
-            assert(( x.size() == 5 ));
-        }
-        
-    }
-    */
     /*
     // class dynarray
     // Constructors & destructors.
-    
-    
     dynarray(dynarray const& x)
     dynarray(dynarray&& x)
     template<typename Iter> dynarray(Iter first, Iter last)
