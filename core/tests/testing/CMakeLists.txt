@@ -11,3 +11,6 @@ origin_run_test(test_concepts concepts.cpp)
 origin_run_test(test_iterators iterators.cpp)
 origin_run_test(test_archetypes archetypes.cpp)
 origin_run_test(test_prototypes prototypes.cpp)
+origin_run_test(test_stability stability.cpp)
+
+origin_executable(test_performance performance.cpp)

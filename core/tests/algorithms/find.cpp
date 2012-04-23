@@ -20,6 +20,9 @@ using namespace origin;
 // FIXME: These tests are reusable and should be made available for testing
 // purposes. We need to lib-ift the test suites.
 
+// FIXME: Rename all of the generic tests to check_*. This differentiates
+// them from the test_* functions which are non-generic.
+
 // Find if (property)
 struct find_if_check
 {
@@ -310,13 +313,13 @@ struct is_relation_preserving_check
 
 // Specification testing
 
-using Seq = predicate_sequence;
+using Seq = predicate_sequence<>;
 
 struct test_find_if
 {
   bool operator()(const Seq& seq) const
   {
-    auto i = find_if(seq, seq.predicate());
+    auto i = find_if(seq, seq.predicate_func());
     if (i != end(seq))
       return i == seq.first_true();
     else
@@ -328,7 +331,7 @@ struct test_find_if_not
 {
   bool operator()(const Seq& seq) const
   {
-    auto i = find_if_not(seq, seq.predicate());
+    auto i = find_if_not(seq, seq.predicate_func());
     if (i != end(seq))
       return i == seq.first_false();
     else
@@ -340,7 +343,7 @@ struct test_find_next_if
 {
   bool operator()(const Seq& seq) const
   {
-    auto pred = seq.predicate();
+    auto pred = seq.predicate_func();
     auto first = begin(seq);
     auto last = end(seq);
     auto i = find_next_if(first, last, pred);
@@ -365,9 +368,9 @@ struct test_find_nth_if
     if (n >= seq.num_true())
       return true;
     else if (n == 0)
-      return find_nth_if(seq, n, seq.predicate()) == end(seq);
+      return find_nth_if(seq, n, seq.predicate_func()) == end(seq);
     else
-      return find_nth_if(seq, n, seq.predicate()) == seq.nth_true(n - 1);
+      return find_nth_if(seq, n, seq.predicate_func()) == seq.nth_true(n - 1);
   }
 };
 

@@ -106,6 +106,10 @@ namespace origin
 
   
 
+  // FIXME: Technically, these do not need to be predicates. That requirement
+  // exists only because the traditional checker was asserting the predicate.
+  // The timing environment should accept void functions here.
+
 
   // Basic property check
   // Evaluate pred against the given args.

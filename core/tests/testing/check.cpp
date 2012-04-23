@@ -40,6 +40,13 @@ struct gen_prop
 };
 
 
+template <typename T, typename U>
+  void f(T&& t, U&& b)
+  {
+    cout << typestr<T>() << '\n';
+    cout << typestr<U>() << '\n';
+  }
+
 int main()
 {
   assert_checker<> env;
@@ -54,5 +61,8 @@ int main()
 
   check(env, gen_prop {}, num, num, num);
   quick_check(env, gen_prop {}, num, num, num);
+
+  int x = 0;
+  f(0, x);
 }
 

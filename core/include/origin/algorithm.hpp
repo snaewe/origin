@@ -1183,7 +1183,7 @@ namespace origin
     
   // Generate n
   template<typename O, typename F>
-    inline std::pair<O, F> o_generate_n(O first, Distance_type<O> n, F gen)
+    std::pair<O, F> o_generate_n(O first, Distance_type<O> n, F gen)
     {
       static_assert(Function<F>(), "");
       static_assert(Output_iterator<O, Result_of<F()>>(), "");
@@ -1196,7 +1196,7 @@ namespace origin
       }
       return {first, gen};
     }
-  
+
   
 
   // Reverse and Rotate Permutations

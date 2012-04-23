@@ -239,7 +239,7 @@ namespace origin
 
   // Identity (function)
   // The identity function object returns its argument as is.
-  struct identity
+  struct identity_function
   {
     template <typename T>
       const T& operator()(const T& x) const { return x; }
