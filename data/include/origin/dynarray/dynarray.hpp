@@ -164,9 +164,15 @@ namespace origin
             // Construct a copy of the dynarray x.
             // 
             // x   A dynarray
-            dynarray(dynarray const& x)
+            explicit dynarray(dynarray const& x)
                 : base_type{x}
-            { std::copy(x.begin(), x.end(), begin()); }
+            {
+                pointer copy_loc = this->first;
+                for(pointer current_pos = x.first; current_pos != x.last;++current_pos) {
+                    this->get_rebound_allocator().construct(copy_loc, *current_pos);
+                }
+                ++copy_loc;
+            }
 
             
             // Copy assignment

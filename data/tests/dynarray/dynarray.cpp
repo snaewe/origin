@@ -41,6 +41,9 @@ template <typename T>
             
             n_item_constructor();
             reset_static_alloc_helper();
+            
+            copy_constructor();
+            reset_static_alloc_helper();
         }
         
         // dynarray()
@@ -104,6 +107,28 @@ template <typename T>
             assert(!this->empty());
         }
         
+        // copy constructor.
+        // dynarray(dynarray const& x)
+        static void copy_constructor()
+        {
+            self subject1(5);
+            for(size_t i = 0; i < subject1.size(); ++i) {
+                subject1[i] = i;
+            }
+            reset_static_alloc_helper();
+            self subject2(subject1);
+            subject2.copy_constructor_test(subject1);
+        }
+        
+        void copy_constructor_test(self const& copyOf)
+        {
+            assert(this->first != nullptr);
+            assert(this->last != nullptr);
+            assert(static_alloc_helper::construct_called);
+            assert(static_alloc_helper::construct_call_count == 5);
+            assert(this->size() == 5);
+            assert(!this->empty());
+        }
     };
 
 int main()
