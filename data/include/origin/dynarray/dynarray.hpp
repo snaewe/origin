@@ -191,7 +191,7 @@ namespace origin
             dynarray(dynarray&& x)
                 : base_type{std::move(x)}
             { }
-
+            
             // Move assignment
             // Move the state of the dynarray x into this object. After assignment
             // x is left in a moved-from state.
@@ -202,11 +202,14 @@ namespace origin
 
             
             template<typename Iter>
-                dynarray(Iter first, Iter last, allocator_type const& alloc = allocator_type{})
-                    : base_type(std::distance(first, last), alloc)
+                dynarray(Iter first_iter, Iter last_iter, allocator_type const& alloc = allocator_type{})
+                    : base_type(std::distance(first_iter, last_iter), alloc)
                 {
-                    using std::copy;
-                    copy(first, last, begin()); 
+                    pointer current_local_item = this->first;
+                    for(pointer current = first_iter; current != last_iter; ++current) {
+                        this->get_rebound_allocator().construct(current_local_item, *current);
+                        ++current_local_item;
+                    }
                 }
 
             // Initializer list constructor
@@ -218,7 +221,11 @@ namespace origin
                         allocator_type const& alloc = allocator_type{})
                 : base_type{list.size(), alloc}
             { 
-                std::copy(list.begin(), list.end(), begin()); 
+                pointer current_local_item = this->first;
+                for(auto current = list.begin(); current != list.end(); ++current) {
+                    this->get_rebound_allocator().construct(current_local_item, *current);
+                    ++current_local_item;
+                }
             }
 
             // Fill constructor
