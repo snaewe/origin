@@ -154,7 +154,7 @@ namespace origin
             // Construct an empty dynarray.
             //
             // alloc   An allocator object
-            explicit dynarray(allocator_type const& alloc = allocator_type{})
+            explicit dynarray(allocator_type const& alloc = allocator_type{}) noexcept
                 : base_type{alloc}
             { }
 
@@ -187,7 +187,7 @@ namespace origin
             // construction x is left in a moved-from state.
             // 
             // x   A dynarray
-            explicit dynarray(dynarray&& x)
+            explicit dynarray(dynarray&& x) noexcept
                 : base_type{std::move(x)}
             { }
             
@@ -196,7 +196,7 @@ namespace origin
             // x is left in a moved-from state.
             // 
             // x   A dynarray
-            dynarray& operator=(dynarray&& x)
+            dynarray& operator=(dynarray&& x) noexcept
             { dynarray tmp{std::move(x)}; swap(tmp); return *this; }
 
             
@@ -261,7 +261,7 @@ namespace origin
             size_type size() const noexcept
             { return base_type::size(); }
 
-            constexpr size_type max_size() const 
+            constexpr size_type max_size() const noexcept
             { return this->get_rebound_allocator().max_size(); }
 
             bool empty() const noexcept
