@@ -72,7 +72,31 @@ namespace origin
             
             
             // Member Functions.
-            // 
+            
+            // clear
+            // Removes all memory and elements from the current 
+            // matrix.
+            void clear() noexcept
+            {
+                matrix_data.clear();
+            }
+            
+            // size
+            // Returns the number of elements within the matrix.
+            size_type size() const noexcept
+            {
+                return matrix_data.size();
+            }
+            
+            // resize
+            // Simple resize function which changes the number of elements within
+            // the matrix. The behavior of this function is as follows.
+            //
+            // new_size - The new number of elements to allocate.
+            void resize(size_type new_size)
+            {
+                swap(matrix_data, matrix_storage(new_size));
+            }
             
         };
     

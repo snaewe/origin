@@ -244,12 +244,12 @@ namespace origin
                 }
             }
 
-            ~dynarray()
+            ~dynarray() noexcept
             {
                 clear();
             }
 
-            void clear()
+            void clear() noexcept
             {
                 for(pointer current = this->first; current != this->last; ++current) {
                     this->get_rebound_allocator().destroy(current);
@@ -258,17 +258,17 @@ namespace origin
                 this->first = this->last = nullptr;
             }
             
-            size_type size() const
+            size_type size() const noexcept
             { return base_type::size(); }
 
-            constexpr size_type max_size() const
+            constexpr size_type max_size() const 
             { return this->get_rebound_allocator().max_size(); }
 
-            bool empty() const
+            bool empty() const noexcept
             { return base_type::size() == 0; }
 
             // EqualityComparable
-            bool operator==(dynarray const& x) const
+            bool operator==(dynarray const& x) const noexcept
             {
                 if(size() != x.size())
                 {
@@ -277,34 +277,34 @@ namespace origin
                 return std::equal(begin(), end(), x.begin());
             }
 
-            bool operator!=(dynarray const& x) const { return !(*this == x); }
+            bool operator!=(dynarray const& x) const noexcept { return !(*this == x); }
 
             // TotallyOrdered
-            bool operator<(dynarray const& x) const
+            bool operator<(dynarray const& x) const noexcept
             {
                 return std::lexicographical_compare(begin(), end(), x.begin(), x.end());
             }
 
-            bool operator>(dynarray const& x) const { return x < *this; }
-            bool operator<=(dynarray const& x) const { return !(x < *this); }
-            bool operator>=(dynarray const& x) const { return !(*this < x); }
+            bool operator>(dynarray const& x) const noexcept { return x < *this; }
+            bool operator<=(dynarray const& x) const noexcept { return !(x < *this); }
+            bool operator>=(dynarray const& x) const noexcept { return !(*this < x); }
 
-            reference operator[](size_type n)
+            reference operator[](size_type n) noexcept
             { return *(this->first + n); }
 
-            const_reference operator[](size_type n) const
+            const_reference operator[](size_type n) const noexcept
             { return *(this->first + n); }
 
-            reference front()
+            reference front() noexcept
             { return *this->first; }
 
-            const_reference front() const
+            const_reference front() const noexcept
             { return *this->first; }
 
-            reference back()
+            reference back() noexcept
             { return *(this->last - 1); }
 
-            const_reference back() const
+            const_reference back() const noexcept
             { return *(this->last - 1); }
 
             reference at(size_type n)
@@ -313,49 +313,49 @@ namespace origin
             const_reference at(size_type n) const
             { range_check(n); return *(this->first + n); }
 
-            T* data()
+            T* data() noexcept
             { return this->first; }
 
-            const T* data() const
+            const T* data() const noexcept
             { return this->first; }
 
-            iterator begin()
+            iterator begin() noexcept
             { return this->first; }
 
-            iterator end()
+            iterator end() noexcept
             { return this->last; }
 
-            const_iterator begin() const
+            const_iterator begin() const noexcept
             { return this->first; }
 
-            const_iterator end() const
+            const_iterator end() const noexcept
             { return this->last; }
 
-            const_iterator cbegin() const
+            const_iterator cbegin() const noexcept
             { return this->first; }
 
-            const_iterator cend() const
+            const_iterator cend() const noexcept
             { return this->last; }
 
-            reverse_iterator rbegin()
+            reverse_iterator rbegin() noexcept
             { return reverse_iterator(end()); }
 
-            reverse_iterator rend()
+            reverse_iterator rend() noexcept
             { return reverse_iterator(begin()); }
 
-            const_reverse_iterator rbegin() const
+            const_reverse_iterator rbegin() const noexcept
             { return const_reverse_iterator(cend()); }
 
-            const_reverse_iterator rend() const
+            const_reverse_iterator rend() const noexcept
             { return const_reverse_iterator(cbegin()); }
 
-            const_reverse_iterator crbegin() const
+            const_reverse_iterator crbegin() const noexcept
             { return const_reverse_iterator(cend()); }
 
-            const_reverse_iterator crend() const
+            const_reverse_iterator crend() const noexcept
             { return const_reverse_iterator(cbegin()); }
 
-            void swap(dynarray & x)
+            void swap(dynarray & x) noexcept
             {
                 std::swap(this->first, x.first);
                 std::swap(this->last, x.last);
@@ -363,12 +363,12 @@ namespace origin
 
         private:
             // Helper function for bounds checking
-            void range_check(size_type n) const
+            void range_check(size_type n) const 
             { if(n >= size()) throw std::out_of_range("dynarray: out of range"); }
         };
 
     template<typename T, typename Alloc>
-        void swap(dynarray<T, Alloc>& a, dynarray<T, Alloc>& b)
+        void swap(dynarray<T, Alloc>& a, dynarray<T, Alloc>& b) noexcept
         { a.swap(b); }
 
 } // namespace origin
