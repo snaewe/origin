@@ -27,13 +27,10 @@ template <typename T>
         using typename base::value_type;
         using typename base::size_type;
         using typename base::allocator_type;
-        
-        // forwarding constructor for testing.
-        /*template<typename... Args>
-            explicit dynarray_test_type(Args...  args)
-                :base(std::forward<Args>(args)...)
-            { }
-        */
+        using typename base::iterator;
+        using typename base::const_iterator;
+        using typename base::reverse_iterator;
+        using typename base::const_reverse_iterator;
         
         self& operator=(self const& rhs)
         {
@@ -138,6 +135,9 @@ template <typename T>
             
             // Comparison operator tests.
             run_comparison_tests();
+            
+            // Utility functions and free functions.
+            run_utility_tests();
         }
 
         // =================================================================
@@ -671,11 +671,36 @@ template <typename T>
             crend_function();
         }
         
+        // Helper functions to help test the iterator functions.
+        pointer get_first()
+        {
+            return this->first;
+        }
+        
+        const_pointer get_cfirst() const
+        {
+            return this->first;
+        }
+        
+        pointer get_last()
+        {
+            return this->last;
+        }
+        
+        const_pointer get_clast() const
+        {
+            return this->last;
+        }
+        
         // -----------------------------------------------------------------
         // begin function
         // iterator begin()
         static void begin_function()
         {
+            self subject({1,2,3,4});
+            iterator subject_iter = subject.begin();
+            assert(subject_iter == subject.get_first());
+            assert(*subject_iter == 1);
         }
 
         // -----------------------------------------------------------------
@@ -683,6 +708,10 @@ template <typename T>
         // iterator end()
         static void end_function()
         {
+            self subject({1,2,3,4});
+            iterator subject_iter = subject.end();
+            assert(subject_iter == subject.get_last());
+            assert(*(--subject_iter) == 4);
         }
         
         // -----------------------------------------------------------------
@@ -690,6 +719,10 @@ template <typename T>
         // const_iterator begin() const
         static void const_begin_function()
         {
+            const self subject({1,2,3,4});
+            const_iterator subject_iter = subject.begin();
+            assert(subject_iter == subject.get_cfirst());
+            assert(*subject_iter == 1);
         }
         
         // -----------------------------------------------------------------
@@ -697,6 +730,10 @@ template <typename T>
         // const_iterator end() const
         static void const_end_function()
         {
+            const self subject({1,2,3,4});
+            const_iterator subject_iter = subject.end();
+            assert(subject_iter == subject.get_clast());
+            assert(*(--subject_iter) == 4);
         }
         
         // -----------------------------------------------------------------
@@ -704,6 +741,10 @@ template <typename T>
         // const_iterator cbegin() const
         static void cbegin_function()
         {
+            self subject({1,2,3,4});
+            const_iterator subject_iter = subject.cbegin();
+            assert(subject_iter == subject.get_cfirst());
+            assert(*subject_iter == 1);
         }
 
         // -----------------------------------------------------------------
@@ -711,6 +752,10 @@ template <typename T>
         // const_iterator cend() const
         static void cend_function()
         {
+            self subject({1,2,3,4});
+            const_iterator subject_iter = subject.cend();
+            assert(subject_iter == subject.get_clast());
+            assert(*(--subject_iter) == 4);
         }
         
         // -----------------------------------------------------------------
@@ -718,6 +763,10 @@ template <typename T>
         // reverse_iterator rbegin()
         static void rbegin_function()
         {
+            self subject({1,2,3,4});
+            reverse_iterator subject_iter = subject.rbegin();
+            assert(subject_iter.base() == subject.get_last());
+            assert(*subject_iter == 4);
         }
         
         // -----------------------------------------------------------------
@@ -725,6 +774,10 @@ template <typename T>
         // reverse_iterator rend()
         static void rend_function()
         {
+            self subject({1,2,3,4});
+            reverse_iterator subject_iter = subject.rend();
+            assert(subject_iter.base() == subject.get_first());
+            assert(*(--subject_iter) == 1);
         }
         
         // -----------------------------------------------------------------
@@ -732,6 +785,10 @@ template <typename T>
         // const_reverse_iterator rbegin() const
         static void const_rbegin_function()
         {
+            const self subject({1,2,3,4});
+            const_reverse_iterator subject_iter = subject.rbegin();
+            assert(subject_iter.base() == subject.get_clast());
+            assert(*subject_iter == 4);
         }
         
         // -----------------------------------------------------------------
@@ -739,6 +796,10 @@ template <typename T>
         // const_reverse_iterator rend() const
         static void const_rend_function()
         {
+            const self subject({1,2,3,4});
+            const_reverse_iterator subject_iter = subject.rend();
+            assert(subject_iter.base() == subject.get_cfirst());
+            assert(*(--subject_iter) == 1);
         }
         
         // -----------------------------------------------------------------
@@ -746,6 +807,10 @@ template <typename T>
         // const_reverse_iterator crbegin() const
         static void crbegin_function()
         {
+            self subject({1,2,3,4});
+            const_reverse_iterator subject_iter = subject.crbegin();
+            assert(subject_iter.base() == subject.get_clast());
+            assert(*subject_iter == 4);
         }
         
         // -----------------------------------------------------------------
@@ -753,6 +818,10 @@ template <typename T>
         // const_reverse_iterator crend() const
         static void crend_function()
         {
+            self subject({1,2,3,4});
+            const_reverse_iterator subject_iter = subject.crend();
+            assert(subject_iter.base() == subject.get_cfirst());
+            assert(*(--subject_iter) == 1);
         }
 
         // =================================================================
@@ -773,6 +842,40 @@ template <typename T>
         // bool operator==(dynarray const& x) const
         static void equality_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(!(subject_a == subject_b));
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a == subject_b));
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(subject_a == subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(!(subject_a == subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(!(subject_a == subject_b));
+            }
         }
         
         // -----------------------------------------------------------------
@@ -780,6 +883,40 @@ template <typename T>
         // bool operator!=(dynarray const& x) const
         static void inequality_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(subject_a != subject_b);
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(subject_a != subject_b);
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a != subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(subject_a != subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(subject_a != subject_b);
+            }
         }
 
         // -----------------------------------------------------------------
@@ -787,6 +924,40 @@ template <typename T>
         // bool operator<(dynarray const& x) const
         static void less_than_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(!(subject_a < subject_b));
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(subject_a < subject_b);
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a < subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(!(subject_a < subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(subject_a < subject_b);
+            }
         }
 
         // -----------------------------------------------------------------
@@ -794,6 +965,40 @@ template <typename T>
         // bool operator>(dynarray const& x) const
         static void greater_than_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(subject_a > subject_b);
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a > subject_b));
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a > subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(subject_a > subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(!(subject_a > subject_b));
+            }
         }
         
         // -----------------------------------------------------------------
@@ -801,6 +1006,40 @@ template <typename T>
         // bool operator<=(dynarray const& x) const
         static void less_than_or_equal_to_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(!(subject_a <= subject_b));
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(subject_a <= subject_b);
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(subject_a <= subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(!(subject_a <= subject_b));
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(subject_a < subject_b);
+            }
         }
         
         // -----------------------------------------------------------------
@@ -808,6 +1047,40 @@ template <typename T>
         // bool operator>=(dynarray const& x) const
         static void greater_than_or_equal_to_comparison()
         {
+            // a > b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,1,3});
+                assert(subject_a >= subject_b);
+            }
+            
+            // a < b
+            {
+                self subject_a({1,1,3});
+                self subject_b({1,2,3});
+                assert(!(subject_a >= subject_b));
+            }
+            
+            // a == b
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3});
+                assert(subject_a >= subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3,4});
+                self subject_b({1,2,3});
+                assert(subject_a >= subject_b);
+            }
+            
+            // Different size tests
+            {
+                self subject_a({1,2,3});
+                self subject_b({1,2,3,4});
+                assert(!(subject_a >= subject_b));
+            }
         }
         
         
@@ -826,6 +1099,12 @@ template <typename T>
         // void swap(dynarray & x)
         static void member_function_swap()
         {
+            self subject_x({1,2,3});
+            self subject_y({3,2,1});
+            
+            subject_x.swap(subject_y);
+            assert(subject_x == self({3,2,1}));
+            assert(subject_y == self({1,2,3}));
         }
         
         // -----------------------------------------------------------------
@@ -833,11 +1112,14 @@ template <typename T>
         // template<typename T> void swap(dynarray<T>& a, dynarray<T>& b)
         static void free_function_swap()
         {
+            base subject_x({1,2,3});
+            base subject_y({3,2,1});
+            
+            swap(subject_x, subject_y);
+            assert(subject_x == base({3,2,1}));
+            assert(subject_y == base({1,2,3}));
         }
-        
     };
-    
-    
 template<typename T>
     std::ostream& operator<<(std::ostream& out, dynarray_test_type<T> const& toprint)
     {

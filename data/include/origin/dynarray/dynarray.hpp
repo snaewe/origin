@@ -263,6 +263,10 @@ namespace origin
             // EqualityComparable
             bool operator==(dynarray const& x) const
             {
+                if(size() != x.size())
+                {
+                    return false;
+                }
                 return std::equal(begin(), end(), x.begin());
             }
 
@@ -327,22 +331,22 @@ namespace origin
             { return this->last; }
 
             reverse_iterator rbegin()
-            { return {end()}; }
+            { return reverse_iterator(end()); }
 
             reverse_iterator rend()
-            { return {begin()}; }
+            { return reverse_iterator(begin()); }
 
             const_reverse_iterator rbegin() const
-            { return {cend()}; }
+            { return const_reverse_iterator(cend()); }
 
             const_reverse_iterator rend() const
-            { return {cbegin()}; }
+            { return const_reverse_iterator(cbegin()); }
 
             const_reverse_iterator crbegin() const
-            { return {cend()}; }
+            { return const_reverse_iterator(cend()); }
 
             const_reverse_iterator crend() const
-            { return {cbegin()}; }
+            { return const_reverse_iterator(cbegin()); }
 
             void swap(dynarray & x)
             {
@@ -356,8 +360,8 @@ namespace origin
             { if(n >= size()) throw std::out_of_range("dynarray: out of range"); }
         };
 
-    template<typename T>
-        void swap(dynarray<T>& a, dynarray<T>& b)
+    template<typename T, typename Alloc>
+        void swap(dynarray<T, Alloc>& a, dynarray<T, Alloc>& b)
         { a.swap(b); }
 
 } // namespace origin
