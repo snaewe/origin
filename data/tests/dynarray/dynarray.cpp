@@ -25,14 +25,58 @@ template <typename T>
         using typename base::pointer;
         using typename base::const_pointer;
         using typename base::value_type;
+        using typename base::size_type;
+        using typename base::allocator_type;
+        
         // forwarding constructor for testing.
-        template<typename... Args>
+        /*template<typename... Args>
             explicit dynarray_test_type(Args...  args)
                 :base(std::forward<Args>(args)...)
             { }
+        */
+        
+        self& operator=(self const& rhs)
+        {
+            *static_cast<base*>(this) = static_cast<base const&>(rhs);
+            return *this;
+        }
+        
+                
+        self& operator=(self&& rhs)
+        {
+            *static_cast<base*>(this) = static_cast<base&&>(rhs);
+            return *this;
+        }
+        
+        explicit dynarray_test_type(alloc_type const& alloc = allocator_type{})
+            : base{alloc}
+        { }
 
+        explicit dynarray_test_type(self const& x)
+            : base{x}
+        { }
+
+        explicit dynarray_test_type(self&& x)
+            : base{std::move(x)}
+        { }
+
+        template<typename Iter>
+            dynarray_test_type(Iter first_iter, Iter last_iter, alloc_type const& alloc = alloc_type{})
+                : base(first_iter, last_iter, alloc)
+            { }
+            
+        explicit dynarray_test_type(std::initializer_list<value_type> list, alloc_type const& alloc = alloc_type{})
+            : base{list, alloc}
+        { }
+        
+        explicit dynarray_test_type(size_type n, value_type const& x = value_type{},alloc_type const& alloc = alloc_type{})
+            : base{n, x, alloc}
+        { }
+        
         static void run_tests()
         {
+            
+            // Constrcutor/Destructor tests
             default_constructor();
             reset_static_alloc_helper();
             
@@ -59,8 +103,46 @@ template <typename T>
             
             initializer_list_alloc_constructor();
             reset_static_alloc_helper();
+            
+            n_item_of_value_constructor();
+            reset_static_alloc_helper();
+            
+            n_item_of_value_alloc_constructor();
+            reset_static_alloc_helper();
+            
+            
+            // Member Function Tests.
+            copy_assignment();
+            reset_static_alloc_helper();
+            
+            move_assignment();
+            reset_static_alloc_helper();
+            
+            // More general member function tests.
+            size_test();
+            max_size_test();
+            empty_test();
+            indexing_operator();
+            const_indexing_operator();
+            at_index_function();
+            const_at_index_function();
+            front_function();
+            const_front_function();
+            back_function();
+            const_back_function();
+            data_function();
+            const_data_function();
+            
+            // Iterator member function tests.
+            run_iterator_functions();
+            
+            // Comparison operator tests.
+            run_comparison_tests();
         }
-        
+
+        // =================================================================
+        //                     Constructor/Destructor
+        // =================================================================
         // -----------------------------------------------------------------
         // dynarray()
         static void default_constructor()
@@ -247,7 +329,7 @@ template <typename T>
         // dynarray(std::initializer_list<value_type> list)
         static void initializer_list_constructor()
         {
-            std::initializer_list<T> temp_init_list({1.0, 6.0, 29.1,94.93});
+            std::initializer_list<T> temp_init_list({1, 6, 29,94});
             {
                 self subject(temp_init_list);
                 subject.initializer_list_constructor_test(temp_init_list);
@@ -275,7 +357,7 @@ template <typename T>
         // dynarray(std::initializer_list<value_type> list, allocator_type const& alloc)
         static void initializer_list_alloc_constructor()
         {
-            std::initializer_list<T> temp_init_list({1.0, 6.0, 29.1,94.93});
+            std::initializer_list<T> temp_init_list({1, 6, 29,94});
             {
                 self subject(temp_init_list, alloc_type());
                 subject.initializer_list_constructor_test(temp_init_list);
@@ -296,66 +378,486 @@ template <typename T>
         static void n_item_of_value_constructor()
         {
             {
-                self subject(n_item_count, 28.6);
+                self subject(n_item_count, 28);
                 subject.n_item_of_value_constructor_test();
             }
+            assert(static_alloc_helper::destroy_called);
+            assert(static_alloc_helper::destroy_call_count == n_item_count);
+            assert(static_alloc_helper::deallocate_called);
         }
         
         void n_item_of_value_constructor_test()
         {
-            // assert(static_alloc_helper::copy_ctor_called);
-        }        
+            assert(this->size() == n_item_count);
+            for(pointer p = this->first; p != this->last; ++p) {
+                assert(*p == 28);
+            }
+            assert(static_alloc_helper::allocate_called);
+            assert(static_alloc_helper::allocated_memory_ptr != nullptr);
+            assert(static_alloc_helper::construct_called);
+            assert(static_alloc_helper::construct_call_count = n_item_count);
+        }
+        
+        // -----------------------------------------------------------------
+        // n item of value alloc constructor
+        // explicit dynarray(size_type n, value_type const& x, allocator_type const& alloc)
+        static void n_item_of_value_alloc_constructor()
+        {
+            {
+                alloc_type a;
+                self subject(n_item_count, 28, a);
+                subject.n_item_of_value_constructor_test();
+                subject.n_item_of_value_alloc_constructor_test();
+            }
+        }
+        
+        void n_item_of_value_alloc_constructor_test()
+        {
+            assert(static_alloc_helper::copy_ctor_called);
+        }
+        
+        // =================================================================
+        //                         Member Functions
+        // =================================================================
+        
+        // -----------------------------------------------------------------
+        // copy assignment
+        // dynarray& operator=(dynarray const& x)    
+        static void copy_assignment()
+        {
+            {
+                self subject_to_copy({1, 2, 3, 4, 5});
+                self copy_of_subject;
+                copy_of_subject = subject_to_copy;
+                copy_of_subject.copy_assignment_test(subject_to_copy);
+            }
+        }
+        
+        void copy_assignment_test(self const& copied_subject)
+        {
+            assert(this->size() == copied_subject.size());
+            const_pointer current_item = this->first;
+            const_pointer copied_item = copied_subject.first;
+            for(;current_item != this->last; ++current_item, ++copied_item)
+            {
+                assert(*current_item == *copied_item);
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // move assignment
+        // dynarray& operator=(dynarray&& x)
+        static void move_assignment()
+        {
+            {
+                self subject_to_move({1, 2, 3, 4, 5});
+                self test_subject;
+                reset_static_alloc_helper();
+                test_subject = std::move(subject_to_move);
+                assert(subject_to_move.size() == 0);
+                assert(subject_to_move.empty());
+                test_subject.move_assignment_test();
+            }
+        }
+        
+        void move_assignment_test()
+        {
+            assert(this->size() == 5);
+            float someNumebr = 0;
+            const_pointer current_item = this->first;
+            for(;current_item != this->last; ++current_item)
+            {
+                assert(*current_item == (someNumebr += 1));
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // size
+        // size_type size() const
+        static void size_test()
+        {
+            self subject({1,2,3});
+            assert(subject.size() == 3);
+        }
+           
+        // -----------------------------------------------------------------
+        // max_size
+        // constexpr size_type max_size() const
+        static void max_size_test()
+        {
+            allocator_type alloc;
+            self subject;
+            assert(alloc.max_size() == subject.max_size());
+        }
+        
+        // -----------------------------------------------------------------
+        // empty
+        // bool empty() const
+        static void empty_test()
+        {
+            {
+                self subject({1,2,3});
+                assert(!subject.empty());
+            }
+            {
+                self subject;
+                assert(subject.empty());
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // index operator
+        // reference operator[](size_type n)
+        static void indexing_operator()
+        {
+            std::initializer_list<T> init_list = {1,2,3,5};
+            self subject(init_list);
+            auto init_list_iter = init_list.begin();
+            for(size_type index = 0; index < subject.size(); ++index)
+            {
+                assert(subject[index] == *init_list_iter);
+                ++init_list_iter;
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // const index operator
+        // const_reference operator[](size_type n) const
+        static void const_indexing_operator()
+        {
+            std::initializer_list<T> init_list = {1,2,3,5};
+            self subject(init_list);
+            const_indexing_operator_test(subject, init_list);
+        }
+        
+        static void const_indexing_operator_test(self const& subject, initializer_list<T> const& init_list)
+        {
+            auto init_list_iter = init_list.begin();
+            for(size_type index = 0; index < subject.size(); ++index)
+            {
+                assert(subject[index] == *init_list_iter);
+                ++init_list_iter;
+            }            
+        }
+        
+        // -----------------------------------------------------------------
+        // at index function
+        // reference at(size_type n)
+        static void at_index_function()
+        {
+            // two test cases for the at function
+            // throws an exception and doesnt throw.
+            self subject({1,2,3,4,5});
+            
+            // Regular access non-throwing.
+            assert(subject.at(0) == 1);
+            // invalid access.
+            try{
+                subject.at(7);
+            }catch(std::out_of_range const& e){
+            }catch(...) {
+                assert(false && "Invalid exception throw");
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // const at index function
+        // const_reference at(size_type n) const
+        static void const_at_index_function()
+        {
+            // two test cases for the at function
+            // throws an exception and doesnt throw.
+            const self subject({1,2,3,4,5});
+            
+            // Regular access non-throwing.
+            assert(subject.at(0) == 1);
+            // invalid access.
+            try{
+                subject.at(7);
+            }catch(std::out_of_range const& e){
+            }catch(...) {
+                assert(false && "Invalid exception throw");
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // front function
+        // reference front()
+        static void front_function()
+        {
+            self subject({1,2,3,4,5});
+            assert(subject.front()==1);
+            subject.front() =7;
+            assert(subject.front() == 7);
+        }
+        
+        // -----------------------------------------------------------------
+        // const front function
+        // const_reference front() const
+        static void const_front_function()
+        {
+            const self subject({1,2,3,4,5});
+            assert(subject.front()==1);
+        }
+        
+        // -----------------------------------------------------------------
+        // back function
+        // reference back()
+        static void back_function()
+        {
+            self subject({1,2,3,4,5});
+            assert(subject.back()==5);
+            subject.back() = 7;
+            assert(subject.back() == 7);
+        }
+        
+        // -----------------------------------------------------------------
+        // const back function
+        // const_reference back() const
+        static void const_back_function()
+        {
+            const self subject({1,2,3,4,5});
+            assert(subject.back() == 5);
+        }
+        
+        // -----------------------------------------------------------------
+        // data function
+        // T* data()
+        static void data_function()
+        {
+            {
+                self subject;
+                assert(subject.data() == nullptr);
+            }
+            {
+                self subject({2});
+                assert(subject.data() != 0);
+                assert(*subject.data() == 2);
+            }
+        }
+        
+        // -----------------------------------------------------------------
+        // const data function
+        // const T* data() const
+        static void const_data_function()
+        {
+            {
+                const self subject;
+                assert(subject.data() == nullptr);
+            }
+            {
+                const self subject({2});
+                assert(subject.data() != 0);
+                assert(*subject.data() == 2);
+            }
+        }
+        
+        // =================================================================
+        //                     Iterator test functions
+        // =================================================================
+        static void run_iterator_functions()
+        {
+            begin_function();
+            end_function();
+            const_begin_function();
+            const_end_function();
+            cbegin_function();
+            cend_function();
+            rbegin_function();
+            rend_function();
+            const_rbegin_function();
+            const_rend_function();
+            crbegin_function();
+            crend_function();
+        }
+        
+        // -----------------------------------------------------------------
+        // begin function
+        // iterator begin()
+        static void begin_function()
+        {
+        }
+
+        // -----------------------------------------------------------------
+        // end function
+        // iterator end()
+        static void end_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // const begin function
+        // const_iterator begin() const
+        static void const_begin_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // const end function
+        // const_iterator end() const
+        static void const_end_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // cbegin function
+        // const_iterator cbegin() const
+        static void cbegin_function()
+        {
+        }
+
+        // -----------------------------------------------------------------
+        // cend function
+        // const_iterator cend() const
+        static void cend_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // reverse begin function
+        // reverse_iterator rbegin()
+        static void rbegin_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // reverse end function
+        // reverse_iterator rend()
+        static void rend_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // const reverse begin function
+        // const_reverse_iterator rbegin() const
+        static void const_rbegin_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // const reverse end function
+        // const_reverse_iterator rend() const
+        static void const_rend_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // crbegin function
+        // const_reverse_iterator crbegin() const
+        static void crbegin_function()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // crend function
+        // const_reverse_iterator crend() const
+        static void crend_function()
+        {
+        }
+
+        // =================================================================
+        //                     Comparison Operator tests
+        // =================================================================
+        static void run_comparison_tests()
+        {
+            equality_comparison();
+            inequality_comparison();
+            less_than_comparison();
+            greater_than_comparison();
+            less_than_or_equal_to_comparison();
+            greater_than_or_equal_to_comparison();
+        }
+        
+        // -----------------------------------------------------------------
+        // equality comparison
+        // bool operator==(dynarray const& x) const
+        static void equality_comparison()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // inequality comparison
+        // bool operator!=(dynarray const& x) const
+        static void inequality_comparison()
+        {
+        }
+
+        // -----------------------------------------------------------------
+        // less than comparison
+        // bool operator<(dynarray const& x) const
+        static void less_than_comparison()
+        {
+        }
+
+        // -----------------------------------------------------------------
+        // greater than comparison
+        // bool operator>(dynarray const& x) const
+        static void greater_than_comparison()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // less than or equal to comparison
+        // bool operator<=(dynarray const& x) const
+        static void less_than_or_equal_to_comparison()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // greater than or equal to comparison
+        // bool operator>=(dynarray const& x) const
+        static void greater_than_or_equal_to_comparison()
+        {
+        }
+        
+        
+        // =================================================================
+        //               Utility and free function tests
+        // =================================================================
+        static void run_utility_tests()
+        {
+            member_function_swap();
+            free_function_swap();
+        }
+
+        
+        // -----------------------------------------------------------------
+        // member function swap
+        // void swap(dynarray & x)
+        static void member_function_swap()
+        {
+        }
+        
+        // -----------------------------------------------------------------
+        // free function swap
+        // template<typename T> void swap(dynarray<T>& a, dynarray<T>& b)
+        static void free_function_swap()
+        {
+        }
         
     };
-
+    
+    
+template<typename T>
+    std::ostream& operator<<(std::ostream& out, dynarray_test_type<T> const& toprint)
+    {
+        out << "dynarray {";
+        using const_pointer = typename dynarray_test_type<T>::const_pointer;
+        for(const_pointer p = toprint.begin();p != toprint.end();)
+        {
+            out << *p;
+            ++p;
+            if(p == toprint.end())
+            {
+                break;
+            }else{
+                out << ", ";
+            }
+        }
+        out << "}";
+        return out;
+    }
 int main()
 {
     dynarray_test_type<float>::run_tests();
-    /*
-    // class dynarray
-    // Constructors & destructors.
-    
-    explicit dynarray(size_type n, value_type const& x, allocator_type const& alloc)
-    ~dynarray()
-    
-    // Member functions + operators.
-    dynarray& operator=(dynarray const& x)
-    dynarray& operator=(dynarray&& x)
-    
-    size_type size() const
-    constexpr size_type max_size() const
-    bool empty() const
-    bool operator==(dynarray const& x) const
-    bool operator!=(dynarray const& x) const
-    bool operator<(dynarray const& x) const
-    bool operator>(dynarray const& x) const
-    bool operator<=(dynarray const& x) const
-    bool operator>=(dynarray const& x) const
-    reference operator[](size_type n)
-    const_reference operator[](size_type n) const
-    reference front()
-    const_reference front() const
-    reference back()
-    const_reference back() const
-    reference at(size_type n)
-    const_reference at(size_type n) const
-    T* data()
-    const T* data() const
-    iterator begin()
-    iterator end()
-    const_iterator begin() const
-    const_iterator end() const
-    const_iterator cbegin() const
-    const_iterator cend() const
-    reverse_iterator rbegin()
-    reverse_iterator rend()
-    const_reverse_iterator rbegin() const
-    const_reverse_iterator rend() const
-    const_reverse_iterator crbegin() const
-    const_reverse_iterator crend() const
-    void swap(dynarray & x)
-    
-    // Free Functions.
-    template<typename T> void swap(dynarray<T>& a, dynarray<T>& b)
-    */
 }

@@ -7,8 +7,6 @@
 
 #ifndef ORIGIN_DATA_DYNARRAY_HPP
 #define ORIGIN_DATA_DYNARRAY_HPP
-
-
 #include <origin/exception.hpp>
 #include <origin/memory.hpp>
 
@@ -156,7 +154,7 @@ namespace origin
             // Construct an empty dynarray.
             //
             // alloc   An allocator object
-            dynarray(allocator_type const& alloc = allocator_type{})
+            explicit dynarray(allocator_type const& alloc = allocator_type{})
                 : base_type{alloc}
             { }
 
@@ -170,8 +168,9 @@ namespace origin
                 pointer copy_loc = this->first;
                 for(pointer current_pos = x.first; current_pos != x.last;++current_pos) {
                     this->get_rebound_allocator().construct(copy_loc, *current_pos);
+                    ++copy_loc;
                 }
-                ++copy_loc;
+                
             }
 
             
@@ -188,7 +187,7 @@ namespace origin
             // construction x is left in a moved-from state.
             // 
             // x   A dynarray
-            dynarray(dynarray&& x)
+            explicit dynarray(dynarray&& x)
                 : base_type{std::move(x)}
             { }
             
@@ -217,7 +216,7 @@ namespace origin
             //
             // list    An initializer list
             // alloc   An allocator object
-            dynarray(std::initializer_list<value_type> list,
+            explicit dynarray(std::initializer_list<value_type> list,
                         allocator_type const& alloc = allocator_type{})
                 : base_type{list.size(), alloc}
             { 
