@@ -246,9 +246,16 @@ namespace origin
 
             ~dynarray()
             {
+                clear();
+            }
+
+            void clear()
+            {
                 for(pointer current = this->first; current != this->last; ++current) {
                     this->get_rebound_allocator().destroy(current);
                 }
+                this->get_rebound_allocator().deallocate(this->first, size());
+                this->first = this->last = nullptr;
             }
             
             size_type size() const

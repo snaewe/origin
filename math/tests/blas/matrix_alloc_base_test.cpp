@@ -11,7 +11,7 @@
 #include <iostream>
 
 using namespace origin;
-
+#if 0
 // Global variables associated with the fake
 // allocator.
 void* fake_allocator__ptr_allocation_requested;
@@ -371,3 +371,9 @@ int main()
     return 0;
     
 }
+#else
+int main()
+{
+    return 0;
+}
+#endif

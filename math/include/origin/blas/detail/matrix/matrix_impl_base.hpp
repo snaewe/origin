@@ -5,94 +5,75 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#include "matrix_alloc_base.hpp"
+#include <origin/dynarray.hpp>
 
 namespace origin
 {
     template<typename T, typename Alloc>
         struct matrix_impl_base
-            :public matrix_alloc_base<T, Alloc>
         {
+        protected:
             
-            using alloc_base = matrix_alloc_base<T, Alloc>;
-            using value_type = T;
-            using typename alloc_base::size_type;
-            using typename alloc_base::allocator_type;
-            using typename alloc_base::pointer;
+            using matrix_storage = origin::dynarray<T, Alloc>;
+            
+            // Member variable.
+            matrix_storage matrix_data;
+            
+            // Array iterator types.
+            using array_iterator = typename matrix_storage::iterator;
+            using const_array_iterator = typename matrix_storage::const_iterator;
+            using reverse_array_iterator = typename matrix_storage::reverse_iterator;
+            using const_reverse_array_iterator = typename matrix_storage::const_reverse_iterator;
+
         public:
+            // typical types to interface with.
+            using typename matrix_storage::value_type;
+            using typename matrix_storage::size_type;
+            using typename matrix_storage::allocator_type;
+            using typename matrix_storage::pointer;
+            using typename matrix_storage::const_pointer;
+            using typename matrix_storage::reference;
+            using typename matrix_storage::const_reference;
             
-            // Default Constructor
+            // Default/Allocator Constructor
             // Default construct an empty matrix.
-            matrix_impl_base()
-                :alloc_base()
+            matrix_impl_base(allocator_type const& alloc = allocator_type())
+                :matrix_data(alloc)
             { }
             
             // Copy Constructor
             // Creates a copy of other.
             explicit matrix_impl_base(matrix_impl_base const& other)
-                :alloc_base(other)
-            {
-                pointer current_pos = this.base_impl.start;
-                std::for_each(other.base_impl.start, other.base_impl.finish,
-                    [&](pointer p) {
-                        new (current_pos) value_type(*p);
-                        ++current_pos;
-                    });
-            }
+                :matrix_data(other.matrix_data)
+            { }
 
-            // Copy Constructor + Copy Allocator
+            // Copy + Copy Allocator Constructor 
             // Creates a copy of other and a copy of the allocator alloc.
             matrix_impl_base(matrix_impl_base const& other, allocator_type const& alloc)
-                :alloc_base(other, alloc)
-            {
-                std::copy(other.base_impl.start, other.base_impl.finish, this.base_impl.start);
-            }
+                :matrix_data(other.matrix_data, alloc)
+            { }
             
             // Move constructor.
             // Moves owner ship of memory from other to the new instance.
             explicit matrix_impl_base(matrix_impl_base&& other)
-                :alloc_base(std::move(other))
-            { }
-
-            // Move constructor + Copy Allocator.
-            // Moves owner ship of memory from other to the new instance and creates a copy of allocator alloc.
-            matrix_impl_base(matrix_impl_base&& other, allocator_type const& alloc)
-                :alloc_base(std::move(other), alloc)
+                :matrix_data(std::move(other.matrix_data))
             { }
             
             // N size Constructor.
             // Creates a matrix of size N filled with value val.
-            explicit matrix_impl_base(size_type n, value_type const& val = value_type())
-                :alloc_base()
+            explicit matrix_impl_base(size_type n, value_type const& val = value_type(), allocator_type const& alloc = allocator_type())
+                :matrix_data(n, val, alloc)
             { }
             
+            // Destructor
+            // Simple default implementation because all this has to do
+            // is destruct the ONLY member variable matrix_data.
+            ~matrix_impl_base() = default;
             
-            /*
-            matrix_base()
-            : first(nullptr), last(first)
-            { }
             
-            matrix_base(size_type n)
-            : first(n > 0 ? new value_type[n] : nullptr), last(first + n)
-            { }
+            // Member Functions.
+            // 
             
-            // CopyConstructible
-            matrix_base(matrix_base const& x)
-            : first(new value_type[x.size()]), last(first + x.size())
-            { 
-            std::copy(x.first, x.last, first); 
-            }
-            
-            // Move Constructible
-            matrix_base(matrix_base&& x)
-            : first(x.first), last(x.last)
-            { 
-            x.first = x.last = nullptr; 
-            }
-            
-            // Destructible
-            ~matrix_base() { delete [] first; }
-                */
         };
     
 } // end origin

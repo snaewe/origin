@@ -8,19 +8,11 @@
 #ifndef ORIGIN_MATH_BLAS_MATRIX_ALLOC_BASE_HPP
 #define ORIGIN_MATH_BLAS_MATRIX_ALLOC_BASE_HPP
 #include <cassert>
-#include <memory>
-#include <algorithm>
-#include <origin/memory.hpp>
+#include <origin/dynarray.hpp>
+// #include <memory>
+// #include <algorithm>
+// #include <origin/memory.hpp>
 
-/*
-TODO Move to deriving class.
-typedef T value_type;
-typedef typename std::allocator_traits<rebound_alloc_type>::const_pointer const_pointer;
-typedef value_type& reference;
-typedef value_type const& const_reference;
-typedef typename std::allocator_traits<rebound_alloc_type>::difference_type difference_type;
-typedef typename std::allocator_traits<rebound_alloc_type>::size_type size_type;
-*/
 
 namespace origin {
 
