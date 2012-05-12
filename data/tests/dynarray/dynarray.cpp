@@ -35,6 +35,12 @@ template<typename T>
       
       size_t default_size = 0;
       size_t n_items = 5;
+      value_type n_items_value = 4;
+      initializer_list<value_type> init_list({1, 6, 29, 94});
+      size_t range_size = 6;
+      value_type value_range[] = {0, 2, 56, 32, 55, 3};
+      pointer range_start = value_range;
+      pointer range_end = range_start + range_size;
       
       // Default constructor.
       {
@@ -48,9 +54,9 @@ template<typename T>
       
       // Allocator Constructor.
       {
-        alloc_type testAlloc;
+        alloc_type test_alloc;
         reset_static_alloc_helper();
-        dynarray_test_type subject(testAlloc);
+        dynarray_test_type subject(test_alloc);
         
         assert(static_alloc_helper::copy_ctor_called);
         assert(!static_alloc_helper::copy_other_ctor_called);
@@ -76,224 +82,177 @@ template<typename T>
         }
         // Destruction tests.
         assert(static_alloc_helper::destroy_called);
-        assert(static_alloc_helper::destroy_call_count == 5);
+        assert(static_alloc_helper::destroy_call_count == n_items);
         assert(static_alloc_helper::dtor_called);
       }
+      reset_static_alloc_helper();
       
       
-      /*
-
-    // -----------------------------------------------------------------
-    // n item of value constructor
-    // explicit dynarray(size_type n, value_type const& x = value_type{})
-    static const size_t n_item_count = 3;
-    
-    static void n_item_of_value_constructor()
-    {
+      // n item of value constructor  
+      {
         {
-            self subject(n_item_count, 28);
-            subject.n_item_of_value_constructor_test();
+          dynarray_test_type subject(n_items, n_items_value);
+          assert(subject.size() == n_items);
+          assert(!subject.empty());
+          for(iterator p = subject.begin(); p != subject.end(); ++p)
+            assert(*p == n_items_value);
+          
+          // Allocator related assertions.
+          assert(static_alloc_helper::default_ctor_called);
+          // assert(static_alloc_helper::construct_called);
+          // assert(static_alloc_helper::construct_call_count == 5);
+          
+        }
+        // Destruction tests.
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == n_items);
+        assert(static_alloc_helper::dtor_called);
+      }
+      reset_static_alloc_helper();
+      
+      // n item of value alloc + constructor
+      {
+        {
+          alloc_type test_alloc;
+          reset_static_alloc_helper();
+          dynarray_test_type subject(n_items, n_items_value, test_alloc);
+          assert(subject.size() == n_items);
+          assert(!subject.empty());
+          for(iterator p = subject.begin(); p != subject.end(); ++p)
+            assert(*p == n_items_value);
+          
+          // Allocator related assertions.
+          assert(!static_alloc_helper::default_ctor_called);
+          assert(static_alloc_helper::copy_ctor_called);  
+          // assert(static_alloc_helper::construct_called);
+          // assert(static_alloc_helper::construct_call_count == 5);
+          
+        }
+        // Destruction tests.
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == n_items);
+        assert(static_alloc_helper::dtor_called);
+      }
+      reset_static_alloc_helper();
+      
+      // initializer list constructor
+      {
+        // init_list
+        {
+          dynarray_test_type subject(init_list);
+          assert(subject.size() == init_list.size());
+          assert(!subject.empty());
+          assert(equal(init_list.begin(), init_list.end(), subject.begin()));
+          assert(static_alloc_helper::default_ctor_called);
+          assert(static_alloc_helper::allocate_called);
+          // assert(static_alloc_helper::construct_called);
+          // assert(static_alloc_helper::construct_call_count = init_list.size());
         }
         assert(static_alloc_helper::destroy_called);
-        assert(static_alloc_helper::destroy_call_count == n_item_count);
+        assert(static_alloc_helper::destroy_call_count == init_list.size());
         assert(static_alloc_helper::deallocate_called);
-    }
-    
-    void n_item_of_value_constructor_test()
-    {
-        assert(this->size() == n_item_count);
-        // for(pointer p = this->first; p != this->last; ++p) {
-        //     assert(*p == 28);
-        // }
-        assert(static_alloc_helper::allocate_called);
-        assert(static_alloc_helper::allocated_memory_ptr != nullptr);
-        assert(static_alloc_helper::construct_called);
-        assert(static_alloc_helper::construct_call_count = n_item_count);
-    }
-        
-    // -----------------------------------------------------------------
-    // n item of value alloc constructor
-    // explicit dynarray(size_type n, value_type const& x, allocator_type const& alloc)
-    static void n_item_of_value_alloc_constructor()
-    {
-        {
-            alloc_type a;
-            self subject(n_item_count, 28, a);
-            subject.n_item_of_value_constructor_test();
-            subject.n_item_of_value_alloc_constructor_test();
-        }
-    }
-    
-    void n_item_of_value_alloc_constructor_test()
-    {
-        assert(static_alloc_helper::copy_ctor_called);
-    }
-      
-    
-    // -----------------------------------------------------------------
-    // copy constructor.
-    // dynarray(dynarray const& x)
-    static void copy_constructor()
-    {
-        self subject1(5);
-        for(size_t i = 0; i < subject1.size(); ++i) {
-            subject1.data()[i] = i;
-        }
-        reset_static_alloc_helper();
-        self subject2(subject1);
-        subject2.copy_constructor_test(subject1);
-    }
-        
-    void copy_constructor_test(self const& copyOf)
-    {
-      assert(this->first != nullptr);
-      assert(this->last != nullptr);
-      assert(static_alloc_helper::construct_called);
-      assert(static_alloc_helper::construct_call_count == 5);
-      assert(this->size() == 5);
-      assert(!this->empty());
-    }
-        
-    // -----------------------------------------------------------------
-    // move constructor.
-    // dynarray(dynarray&& x)
-    static void move_constructor()
-    {
-      {
-          self subject1(5);
-          
-          for(size_t i = 0; i < subject1.size(); ++i) {
-              subject1.first[i] = i;
-          }
-          assert(static_alloc_helper::allocate_called);
-          reset_static_alloc_helper();
-          self subject2(std::move(subject1));
-          subject2.move_constructor_test();
       }
-      assert(static_alloc_helper::deallocate_called);
-    }
-    
-    void move_constructor_test()
-    {
-        assert(static_alloc_helper::move_ctor_called);
-        assert(!static_alloc_helper::allocate_called);
-        assert(this->first != nullptr);
-        assert(this->last != nullptr);
-        assert(!static_alloc_helper::construct_called);
-        assert(static_alloc_helper::construct_call_count == 0);
-        assert(this->size() == 5);
-        assert(!this->empty());
-        for(size_t i = 0; i < this->size(); ++i) {
-            assert(this->first[i] == i);
-        }
-    }
-    
-    // -----------------------------------------------------------------
-    // range constructor.
-    // template<typename Iter> dynarray(Iter first, Iter last)
-    static const size_t range_size = 6;
-    
-    static void range_constructor()
-    {
-        value_type val[range_size];
-        pointer start_pos = val;
-        pointer end_pos = val + range_size;
-        for(pointer val_pos = start_pos; val_pos != end_pos; ++val_pos) {
-            *val_pos = 100 - (end_pos - val_pos);
-        }
+      reset_static_alloc_helper();
+      
+      // initializer list + alloc constructor
+      {
+        // init_list
         {
-            self subject(start_pos, end_pos);
-            subject.range_constructor_test();
+          alloc_type test_alloc;
+          reset_static_alloc_helper();
+          dynarray_test_type subject(init_list, test_alloc);
+          assert(subject.size() == init_list.size());
+          assert(!subject.empty());
+          assert(equal(init_list.begin(), init_list.end(), subject.begin()));
+          
+          assert(!static_alloc_helper::default_ctor_called);
+          assert(static_alloc_helper::copy_ctor_called);
+          assert(static_alloc_helper::allocate_called);
+          
+          // assert(static_alloc_helper::construct_called);
+          // assert(static_alloc_helper::construct_call_count = init_list.size());
+        }
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == init_list.size());
+        assert(static_alloc_helper::deallocate_called);
+      }
+      reset_static_alloc_helper();
+      
+      // range constructor.
+      {
+        {
+          dynarray_test_type subject(range_start, range_end);
+          assert(subject.size() == range_size);
+          assert(!subject.empty());
+          assert(static_alloc_helper::default_ctor_called);
+          assert(static_alloc_helper::allocate_called);
+          assert(equal(range_start, range_end, subject.begin()));
         }
         assert(static_alloc_helper::destroy_called);
         assert(static_alloc_helper::destroy_call_count == range_size);
         assert(static_alloc_helper::deallocate_called);
-    }
-    
-    void range_constructor_test()
-    {
-        assert(static_alloc_helper::allocate_called);
-        assert(this->first != nullptr);
-        assert(this->last != nullptr);
-        assert(static_alloc_helper::construct_called);
-        assert(static_alloc_helper::construct_call_count == range_size);
-        assert(this->size() == range_size);
-        assert(!this->empty());
-        for(pointer val_pos = this->first; val_pos != this->last; ++val_pos) {
-            assert((*val_pos == 100 - (this->last - val_pos)));
-        }
-    }
-
-    // -----------------------------------------------------------------
-    // range + allocator constructor.
-    // template<typename Iter> dynarray(Iter first, Iter last, allocator_type const& alloc)
-    static void range_alloc_constructor()
-    {
-        value_type val[range_size];
-        pointer start_pos = val;
-        pointer end_pos = val + range_size;
-        for(pointer val_pos = start_pos; val_pos != end_pos; ++val_pos) {
-          *val_pos = 100 - (end_pos - val_pos);
-        }
-        {
-          self subject(start_pos, end_pos, alloc_type());
-          subject.range_constructor_test();
-          subject.range_alloc_constructor_test();
-        }
-    }
-    
-    void range_alloc_constructor_test()
-    {
-        assert(static_alloc_helper::copy_ctor_called);
-    }
-    
-    // -----------------------------------------------------------------
-    // initializer list constructor
-    // dynarray(std::initializer_list<value_type> list)
-    static void initializer_list_constructor()
-    {
-      std::initializer_list<T> temp_init_list({1, 6, 29,94});
-      {
-        self subject(temp_init_list);
-        subject.initializer_list_constructor_test(temp_init_list);
       }
-      assert(static_alloc_helper::destroy_called);
-      assert(static_alloc_helper::destroy_call_count == temp_init_list.size());
-      assert(static_alloc_helper::deallocate_called);
-    }
-        
-    void initializer_list_constructor_test(std::initializer_list<T> const& init_list)
-    {
-        assert(static_alloc_helper::allocate_called);
-        assert(static_alloc_helper::construct_called);
-        assert(static_alloc_helper::construct_call_count = init_list.size());
-        auto current_init_list_item = init_list.begin();
-        // for(pointer p = this->first; p != this->last; ++p) {
-        //     assert(*p == *current_init_list_item);
-        //     ++current_init_list_item;
-        // }
-    }
-    
-    // -----------------------------------------------------------------
-    // initializer list + alloc constructor
-    // dynarray(std::initializer_list<value_type> list, allocator_type const& alloc)
-    static void initializer_list_alloc_constructor()
-    {
-        std::initializer_list<T> temp_init_list({1, 6, 29,94});
+      reset_static_alloc_helper();
+      
+      // range + allocator constructor.
+      {
         {
-            self subject(temp_init_list, alloc_type());
-            subject.initializer_list_constructor_test(temp_init_list);
-            subject.initializer_list_alloc_constructor_test();
+          alloc_type test_alloc;
+          reset_static_alloc_helper();
+          dynarray_test_type subject(range_start, range_end, test_alloc);
+          assert(subject.size() == range_size);
+          assert(!subject.empty());
+          assert(static_alloc_helper::copy_ctor_called);
+          assert(!static_alloc_helper::default_ctor_called);
+          assert(static_alloc_helper::allocate_called);
+          assert(equal(range_start, range_end, subject.begin()));
         }
-    }
-    
-    void initializer_list_alloc_constructor_test()
-    {
-        assert(static_alloc_helper::copy_ctor_called);
-    }
-    
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == range_size);
+        assert(static_alloc_helper::deallocate_called);
+      }
+      reset_static_alloc_helper();
+      
+      // copy constructor.
+      {
+        {
+          dynarray_test_type first_subject(range_start, range_end);
+          reset_static_alloc_helper();
+          dynarray_test_type second_subject(first_subject);
+          assert(second_subject.size() == range_size);
+          assert(!second_subject.empty());
+          assert(first_subject == second_subject);
+          
+          assert(static_alloc_helper::copy_ctor_called);
+          assert(static_alloc_helper::allocate_called);
+          assert(equal(range_start, range_end, second_subject.begin()));
+        }
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == range_size*2);
+        assert(static_alloc_helper::deallocate_called);
+      }
+      reset_static_alloc_helper();
+      
+      // Move Constructor.
+      {
+        {
+          dynarray_test_type first_subject(range_start, range_end);
+          reset_static_alloc_helper();
+          dynarray_test_type second_subject(move(first_subject));
+          assert(second_subject.size() == range_size);
+          assert(!second_subject.empty());
+          
+          assert(static_alloc_helper::move_ctor_called);
+          assert(!static_alloc_helper::allocate_called);
+          assert(equal(range_start, range_end, second_subject.begin()));
+        }
+        assert(static_alloc_helper::destroy_called);
+        assert(static_alloc_helper::destroy_call_count == range_size);
+        assert(static_alloc_helper::deallocate_called);
+      }
+      reset_static_alloc_helper();
+      
 
-       */
       /*
       // Constrcutor/Destructor tests
       default_constructor();
@@ -536,9 +495,9 @@ template <typename T>
     // dynarray(allocator_type const& alloc)
     static void allocator_constructor()
     {
-      alloc_type testAlloc;
+      alloc_type test_alloc;
       reset_static_alloc_helper();
-      self subject(testAlloc);
+      self subject(test_alloc);
       subject.allocator_constructor_test();
     }
     

@@ -169,7 +169,7 @@ namespace origin
       explicit dynarray(dynarray const& x)
         : base_type{x}
       {
-        std::copy(x.begin(), x.end(), this->begin());
+        std::uninitialized_copy(x.begin(), x.end(), this->begin());
       }
 
 
@@ -208,7 +208,7 @@ namespace origin
         dynarray(I first, I last, const allocator_type& alloc = {})
           : base_type (std::distance(first, last), alloc)
         {
-          std::copy(first, last, begin());
+          std::uninitialized_copy(first, last, begin());
         }
 
 
@@ -216,7 +216,7 @@ namespace origin
       explicit dynarray(std::initializer_list<T> list, const allocator_type& alloc = {})
         : base_type (list.size(), alloc)
       { 
-        std::copy(list.begin(), list.end(), begin());
+        std::uninitialized_copy(list.begin(), list.end(), begin());
       }
 
 
@@ -231,7 +231,7 @@ namespace origin
       explicit dynarray(size_type n, const T& value = {}, const allocator_type& alloc = {})
         : base_type (n, alloc)
       {
-        std::fill(this->begin(), this->end(), value);
+        std::uninitialized_fill(this->begin(), this->end(), value);
       }
 
 
