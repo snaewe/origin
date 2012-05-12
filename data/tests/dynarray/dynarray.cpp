@@ -390,14 +390,52 @@ template<typename T>
         }
       }
       
-      /*
-      front_function();
-      const_front_function();
-      back_function();
-      const_back_function();
-      data_function();
-      const_data_function();
-      */
+      // front Function
+      {
+        // Non-Const
+        {
+          dynarray_test_type subject(init_list);
+          assert(subject.front() == *init_list.begin());
+        }
+        
+        // Const
+        {
+          const dynarray_test_type subject(init_list);
+          assert(subject.front() == *init_list.begin());
+        }
+      }
+      
+      // back Function
+      {
+        // Non-Const
+        {
+          dynarray_test_type subject(range_start, range_end);
+          assert(subject.back() == *--range_end );
+        }
+        
+        // Const
+        {
+          const dynarray_test_type subject(range_start, range_end);
+          assert(subject.back() == *--range_end );
+        }
+      }
+      
+      // data Function
+      {
+        // Non-Const
+        {
+          dynarray_test_type subject(range_start, range_end);
+          assert(subject.data() != 0 );
+          assert(subject.data()[0] == *subject.begin());
+        }
+        
+        // Const
+        {
+          const dynarray_test_type subject(range_start, range_end);
+          assert(subject.data() != 0 );
+          assert(subject.data()[0] == *subject.begin());
+        }
+      }
       
       /*
       // Iterator member function tests.
