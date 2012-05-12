@@ -146,7 +146,7 @@ namespace origin
       using const_pointer   = typename base_type::const_pointer;
       using size_type       = typename base_type::size_type;
       using difference_type = typename base_type::difference_type;
-
+      
       using iterator = pointer;
       using const_iterator = const_pointer;
 
