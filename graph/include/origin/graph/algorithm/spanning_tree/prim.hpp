@@ -69,6 +69,8 @@ namespace origin
         weight_compare(v_w, std::less<weight_type>())
         );
       q.push(s);
+      v_w(s) = 0;
+      pred(s) = s;
       color(s) = tri_color::gray;
 
       while (!q.empty()) {
