@@ -6,13 +6,17 @@
 // and conditions.
 
 // FIXMEs
-//  - add vertex and edge map types
 //  - create a make_undirected_adjacency_vector function
 //  - add_edges convienience function
 //  - remove STL algorithm dependency (use origin)
 //  - put in concept support
 //  - make iterators random access
 //  - add utility operations like degree
+//  - add move, copy and assignable semantics
+//  - should vertex{0} be the invalid vertex?
+//  - replace all occurances of value() with ord()
+//  - Apparently it needs its own vertex iterator type. Vertex iterator is broken
+//  - neighbor lists only need to carry the edge to which they point
 
 #ifndef ORIGIN_GRAPH_ADJACECNY_VECTOR_UNDIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACECNY_VECTOR_UNDIRECTED_HPP
@@ -24,8 +28,7 @@
 #include <origin/graph/vertex.hpp>
 #include <origin/graph/edge.hpp>
 #include <origin/iterator.hpp>
-
-//#include <origin/graph/adjacency_vector/impl.hpp>
+#include <origin/ordinal.hpp>
 
 namespace origin {
 
@@ -39,7 +42,58 @@ namespace origin {
   } // namespace
 
   namespace uav {
+    template <typename T>
+      class vertex_labeling
+      {
+        using size_type = std::size_t;
+        using vertex = vertex_handle<size_type>;
+        using map_type = std::vector<T>;
+        using ref = typename map_type::reference;
+        using const_ref = typename map_type::const_reference;
+      public:
+        // Types
+        using value_type = T;
 
+
+        // Initializers
+        vertex_labeling(size_type n, const_ref x = T()) : map_(n, x) { }
+        template <typename Iterator>
+        vertex_labeling(Iterator f, Iterator l) : map_(f, l) { }
+        template<typename Range>
+        vertex_labeling(Range rng) : map_(rng.begin(), rng.end()) { }
+        vertex_labeling(vertex_labeling const& l) : map_(l.map_) { }
+
+        // Accessors
+        ref operator() (vertex v) { return map_[v.value()]; }
+        const_ref operator() (vertex v) const { return map_[v.value()]; }
+
+      private:
+        map_type map_;
+      };
+    template <typename T>
+      class edge_labeling
+      {
+        using size_type = std::size_t;
+        using edge = undirected_edge_handle<size_type>;
+        using map_type = std::vector<T>;
+        using ref = typename map_type::reference;
+        using const_ref = typename map_type::const_reference;
+      public:
+        // Initializers
+        edge_labeling(size_type n, const_ref x = T()) : map_(n, x) { }
+        template <typename Iterator>
+        edge_labeling(Iterator f, Iterator l) : map_(f, l) { }
+        template<typename Range>
+        edge_labeling(Range rng) : map_(rng.begin(), rng.end()) { }
+        edge_labeling(edge_labeling const& l) : map_(l.map_) { }
+
+        // Accessors
+        ref operator() (edge e) { return map_[e.edge.value()]; }
+        const_ref operator() (edge e) const { return map_[e.edge.value()]; }
+
+      private:
+        map_type map_;
+      };
   } // namespace uav
 
 
@@ -115,7 +169,85 @@ namespace origin {
       // Helpers
       // wraps the iterator position into an edge
       edge make_edge() const
-      { return edge(i_, std::get<0>(*first_), std::get<1>(*first_)); }
+      { return edge(i_, std::get<0>(*(first_ + i_)), std::get<1>(*(first_ + i_))); }
+    };
+
+        // Undirected adjacency vector edge iterator
+    class incident_edge_iterator {
+      using size_type     = std::size_t;
+      using internal_edge = std::tuple<size_type,size_type>;
+      using edge_vec_iter = std::vector<internal_edge>::const_iterator;
+      using edge          = undirected_edge_handle<size_type>;
+    public:
+      using value_type        = edge;
+      using reference         = edge;
+      using pointer           = edge;
+      using difference_type   = std::ptrdiff_t;
+      using iterator_category = std::bidirectional_iterator_tag;
+
+      // Initializers
+      incident_edge_iterator(edge_vec_iter neighbors, edge_vec_iter edges)
+        : adj_(neighbors), edges_(edges)
+      { }
+
+      incident_edge_iterator(incident_edge_iterator const& ei)
+        : adj_(ei.adj_), edges_(ei.edges_)
+      { }
+
+      incident_edge_iterator(incident_edge_iterator && ei)
+        : adj_(ei.adj_), edges_(ei.edges_)
+      { }
+
+      incident_edge_iterator& operator= (incident_edge_iterator ei)
+      { adj_ = ei.adj_; edges_ = ei.edges_; return *this; }
+
+      // Readable
+      reference operator* () const { return make_edge(); }
+      //pointer operator-> () const;
+
+      // Equality comparable
+      bool operator== (incident_edge_iterator ei) const
+      { return adj_ == ei.adj_; }
+      bool operator!= (incident_edge_iterator ei) const
+      { return adj_ != ei.adj_; }
+
+      // Totally ordered
+      bool operator<(incident_edge_iterator ei) const
+      { return adj_ < ei.adj_; }
+      bool operator>(incident_edge_iterator ei) const
+      { return adj_ > ei.adj_; }
+      bool operator<=(incident_edge_iterator ei) const
+      { return adj_ <= ei.adj_; }
+      bool operator>=(incident_edge_iterator ei) const
+      { return adj_ >= ei.adj_; }
+
+      // Incrementable
+      incident_edge_iterator& operator++ () { ++adj_; return *this; }
+      incident_edge_iterator operator++ (int) {
+        incident_edge_iterator t(*this);
+        ++adj_;
+        return t;
+      }
+
+      // Decrementable
+      incident_edge_iterator& operator-- () { --adj_; return *this; }
+      incident_edge_iterator operator-- (int) {
+        incident_edge_iterator t(*this);
+        --adj_;
+        return t;
+      }
+
+    private:
+      edge_vec_iter adj_;
+      edge_vec_iter edges_;
+
+      // Helpers
+      // wraps the iterator position into an edge
+      edge make_edge() const
+      {
+        size_type n = std::get<1>(*adj_);
+        return edge(n, std::get<0>(*(edges_ + n)), std::get<1>(*(edges_ + n)));
+      }
     };
 
   } // namespace uav
@@ -162,11 +294,14 @@ namespace origin {
 
       using vertex_range        = iterator_range<vertex_iterator<size_type>>;
       using edge_range          = iterator_range<uav::edge_iterator>;
-      using incident_edge_range = iterator_range<uav::edge_iterator>;
+      using incident_edge_range = iterator_range<uav::incident_edge_iterator>;
 
 
       // Initializers
       undirected_adjacency_vector (size_type n = 0) : neighbors_(n), edges_() {}
+      undirected_adjacency_vector (undirected_adjacency_vector const& g)
+        : neighbors_(g.neighbors_), edges_(g.edges_)
+      { }
 
 
       // Graph Metrics
@@ -262,14 +397,27 @@ namespace origin {
     -> incident_edge_range
   {
     return incident_edge_range(
-      uav::edge_iterator(
-        neighbors_[v.value()].begin(), 0),
-      uav::edge_iterator(
-        neighbors_[v.value()].begin(), neighbors_[v.value()].size())
+      uav::incident_edge_iterator(
+        neighbors_[v.value()].begin(), edges_.begin()),
+      uav::incident_edge_iterator(
+        neighbors_[v.value()].end(), edges_.begin())
     );
   }
 
 
+
+
+/*============================================================================*/
+  // Support for ...
+
+
+  template <typename Edge, typename Vertex>
+    Vertex opposite(Edge e, Vertex v)
+    {
+      if (v == e.source)
+        return e.target;
+      else return e.source;
+    }
 
 
 /*============================================================================*/

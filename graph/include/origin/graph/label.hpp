@@ -13,6 +13,8 @@
 
 #include <origin/ordinal_map.hpp>
 #include <origin/graph/traits.hpp>
+#include <origin/graph/vertex.hpp>
+#include <origin/graph/edge.hpp>
 
 /**
  * @defgroup graph_label
@@ -270,6 +272,73 @@ namespace origin
       return map_label<Map const>{m};
     }
 
+/*============================================================================*/
+  template <typename T>
+    class vertex_labeling
+    {
+      using size_type = std::size_t;
+      using vertex = vertex_handle<size_type>;
+      using map_type = std::vector<T>;
+      using ref = typename map_type::reference;
+      using const_ref = typename map_type::const_reference;
+    public:
+      // Types
+      using value_type = T;
+
+
+      // Initializers
+      vertex_labeling(size_type n, const_ref x = T()) : map_(n, x) { }
+      template <typename Iterator>
+      vertex_labeling(Iterator f, Iterator l) : map_(f, l) { }
+      /*template<typename Range>
+      vertex_labeling(Range rng) : map_(begin(rng), rng.end()) { }*/
+      vertex_labeling(vertex_labeling const& l) : map_(l.map_) { }
+
+      // Accessors
+      ref operator() (vertex v) { return map_[v.value()]; }
+      const_ref operator() (vertex v) const { return map_[v.value()]; }
+
+    private:
+      map_type map_;
+    };
+  template <typename T>
+    class edge_labeling
+    {
+      using size_type = std::size_t;
+      using edge = undirected_edge_handle<size_type>;
+      using map_type = std::vector<T>;
+      using ref = typename map_type::reference;
+      using const_ref = typename map_type::const_reference;
+    public:
+      // Types
+      using value_type = T;
+
+
+      // Initializers
+      edge_labeling(size_type n, const_ref x = T()) : map_(n, x) { }
+      template <typename Iterator>
+      edge_labeling(Iterator f, Iterator l) : map_(f, l) { }
+      /*template<typename Range>
+      edge_labeling(Range rng) : map_(rng.begin(), rng.end()) { }*/
+      edge_labeling(edge_labeling const& l) : map_(l.map_) { }
+
+      // Accessors
+      ref operator() (edge e) { return map_[e.edge.value()]; }
+      const_ref operator() (edge e) const { return map_[e.edge.value()]; }
+
+    private:
+      map_type map_;
+    };
+
+  template <typename G, typename T>
+    vertex_labeling <T>
+    make_vertex_labeling(const G & g, const T& x = T())
+    { return vertex_labeling<T>(g.order(), x); }
+
+  template <typename G, typename T>
+    edge_labeling <T>
+    make_edge_labeling(const G & g, const T& x = T())
+    { return edge_labeling<T>(g.size(), x); }
 
 } // namespace origin
 

@@ -29,6 +29,8 @@ namespace origin
       vertex_handle() : impl{} { }
       vertex_handle(value_type n) : impl{n} { }
 
+      vertex_handle& operator= (const vertex_handle &) = default;
+
       // Equality_comparable
       bool operator==(vertex_handle v) const { return impl == v.impl; }
       bool operator!=(vertex_handle v) const { return impl != v.impl; }

@@ -16,6 +16,42 @@ using namespace std;
 using G = undirected_adjacency_vector;
 using V = G::vertex;
 
+template <typename G>
+void print_vertices(G const& g)
+{
+  cout << "Vertices:";
+  for (auto v : g.vertices())
+    cout << ' ' << (*v).value();
+  cout << "\n";
+}
+
+template <typename G>
+void print_edges(G const& g)
+{
+  cout << "Edges:";
+  for (auto e : g.edges())
+    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+  cout << "\n";
+}
+
+template <typename G, typename Vertex>
+void print_incident_edges(G const& g, Vertex v)
+{
+  cout << "Incident to " << v.value() << ":";
+  for (auto e : g.incident_edges(v))
+    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+  cout << "\n";
+}
+
+template <typename G>
+void print_graph(G const& g)
+{
+  print_vertices(g);
+  print_edges(g);
+  for (auto v : g.vertices())
+    print_incident_edges(g,*v);
+}
+
 int main ()
 {
   G g(3);
@@ -52,7 +88,7 @@ int main ()
   
   assert(( i == j ));
 
-
+ print_graph(g);
 
   return 0;
 }
