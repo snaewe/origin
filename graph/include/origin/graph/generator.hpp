@@ -22,15 +22,15 @@ namespace origin
   // ensure that each vertex is uniquely labeled. If the given value is already
   // in the graph, the associated vertex is added.
   //
-  // requires Unique_map<Vertex_type<G>, T> && Convertible<T, Vertex_value_type<G>>
+  // requires Unique_map<Vertex<G>, T> && Convertible<T, Vertex_value_type<G>>
   //
   // TODO: Move to traits?
   template<typename G, typename Map>
-    Vertex_type<G> add_labeled_vertex(G& g, Map& map, const Vertex_value_type<G>& value)
+    Vertex<G> add_labeled_vertex(G& g, Map& map, const Vertex_value_type<G>& value)
     {
       static_assert(Graph<G>(), "");
       
-      auto x = map.insert({value, Vertex_type<G>()});
+      auto x = map.insert({value, Vertex<G>()});
       if(x.second)
         x.first->second = g.add_vertex(value);
       return x.first->second;
@@ -51,7 +51,7 @@ namespace origin
   // Return the default edge label when given an edge pair. 
   template<typename G>
     inline Edge_value_type<G>
-    edge_from_tuple(const G& g, std::pair<Vertex_type<const G>, Vertex_type<const G>> const& p)
+    edge_from_tuple(const G& g, std::pair<Vertex<const G>, Vertex<const G>> const& p)
     {
       static_assert(Graph<G>(), "");
       static_assert(Default_constructible<Edge_value_type<G>>(), "");
@@ -71,8 +71,8 @@ namespace origin
 
       while(first != last) {
         const auto& t = *first;
-        Vertex_type<G> u = add_labeled_vertex(g, map, std::get<0>(t));
-        Vertex_type<G> v = add_labeled_vertex(g, map, std::get<1>(t));
+        Vertex<G> u = add_labeled_vertex(g, map, std::get<0>(t));
+        Vertex<G> v = add_labeled_vertex(g, map, std::get<1>(t));
         add_edge(g, u, v, edge_from_tuple(g, t));
         ++first;
       }
@@ -86,7 +86,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
 
-      std::unordered_map<Vertex_value_type<G>, Vertex_type<G>> map;
+      std::unordered_map<Vertex_value_type<G>, Vertex<G>> map;
       build_edge_graph(g, map, first, last);
     }
   
@@ -97,7 +97,7 @@ namespace origin
     {
       static_assert(Graph<G>(), "");
 
-      void operator()(G& g, Vertex_type<G> u, Vertex_type<G> v) const
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v);
       }
@@ -115,7 +115,7 @@ namespace origin
         : iter(i) 
       { }
       
-      void operator()(G& g, Vertex_type<G> u, Vertex_type<G> v)
+      void operator()(G& g, Vertex<G> u, Vertex<G> v)
       {
         add_edge(g, u, v, *iter);
         iter++;
@@ -135,7 +135,7 @@ namespace origin
         : value(x) 
       { }
       
-      void operator()(G& g, Vertex_type<G> u, Vertex_type<G> v) const
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v, value);
       }
@@ -155,7 +155,7 @@ namespace origin
         : gen(g)
       { }
       
-      void operator()(G& g, Vertex_type<G> u, Vertex_type<G> v) const
+      void operator()(G& g, Vertex<G> u, Vertex<G> v) const
       {
         add_edge(g, u, v, gen(g, u, v));
       }
@@ -176,7 +176,7 @@ namespace origin
         : num(n)
       { }
       
-      void operator()(G& g, Vertex_type<G> u, Vertex_type<G> v)
+      void operator()(G& g, Vertex<G> u, Vertex<G> v)
       {
         add_edge(g, u, v, num++);
       }
@@ -248,9 +248,9 @@ namespace origin
       // static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
-      Vertex_type<G> u = *first++;
+      Vertex<G> u = *first++;
       while(first != last) {
-        Vertex_type<G> v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
         u = v;
       }
@@ -441,10 +441,10 @@ namespace origin
       // static_assert(Edge_function<F, G&>(), "");
       assert(( first != last ));
 
-      Vertex_type<G> u = *first++;
-      Vertex_type<G> h = u;
+      Vertex<G> u = *first++;
+      Vertex<G> h = u;
       while(first != last) {
-        Vertex_type<G> v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
         u = v;
       }
@@ -834,9 +834,9 @@ namespace origin
       assert(( readable_range(first, last) ));
       assert(( first != last ));
       
-      Vertex_type<G> u = *first++;
+      Vertex<G> u = *first++;
       while(first != last) {
-        Vertex_type<G> v = *first++;
+        Vertex<G> v = *first++;
         f(g, u, v);
       }
       return f;

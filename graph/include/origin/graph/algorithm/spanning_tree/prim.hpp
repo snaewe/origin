@@ -10,6 +10,7 @@
 
 // FIXMEs
 //  - need to fix vertex.hpp, or just make own iterator
+//  - note that greater should be greater_equal
 
 #include <limits>
 #include <functional>
@@ -40,7 +41,7 @@ namespace origin
           : l_(l), r_(r)
         { }
 
-        bool operator()(Vertex a, Vertex b) const {return r_(l_(b),l_(a)); }
+        bool operator()(Vertex a, Vertex b) const {return r_(l_(a),l_(b)); }
 
         const Labeling & l_;
         Relation r_;
@@ -51,55 +52,87 @@ namespace origin
 /*============================================================================*/
 
   template <typename G, typename Edge_weight>
-    vertex_labeling<typename G::vertex>
+    labeling <typename G::vertex,typename G::vertex>
+    prim(const G& g, typename G::vertex s, Edge_weight & w)
+    {
+      auto pred = label_vertices (g, Vertex<G>(99999));
+      auto color = label_vertices (g, tri_color::white);
+      auto v_w = label_vertices (g,max_val<Value_type<Edge_weight>>());
+
+      auto q = make_weight_queue(v_w);
+      q.push(s);
+      pred(s) = s;
+      color(s) = tri_color::gray;
+
+      while (!q.empty()) {
+        Vertex<G> u = q.top();
+        q.pop();
+        for (auto e : g.incident_edges(u)) {
+          Vertex<G> v = opposite(e,u);
+          if ((color(v) != tri_color::black) && (w(e) < v_w(v))) {
+            v_w(v) = w(e);
+            pred(v) = u;
+            if (color(v) == tri_color::white) {
+              q.push(v);
+              color(v) = tri_color::gray;
+            } else if (color(v) == tri_color::gray) {
+              q.update(v);
+            }
+          }
+        }
+        color(u) = tri_color::black;
+      }
+      return pred;
+    }
+
+
+// depricated code
+#if 0
+  template <typename G, typename Edge_weight>
+    labeling <typename G::vertex,typename G::vertex>
     prim(const G& g, typename G::vertex s, Edge_weight & w)
     {
       using Vertex = typename G::vertex;
       using Edge = typename G::edge;
-      using weight_type = typename Edge_weight::value_type;
+      /*using weight_type = typename Edge_weight::value_type;
       using weight_compare = label_compare<
-        Vertex, vertex_labeling<weight_type>, std::less<weight_type>>;
+        Vertex, labeling<Vertex, weight_type>, std::greater<weight_type>>;*/
       // make pred map, color map, vertex weight
-      auto pred = make_vertex_labeling<G, Vertex>(g, Vertex(99999));
-      auto color = make_vertex_labeling(g, tri_color::white);
-      auto v_w = make_vertex_labeling(g,max_val<weight_type>());
+      auto pred = label_vertices (g, Vertex(99999));
+      auto color = label_vertices (g, tri_color::white);
+      auto v_w = label_vertices (g,max_val<Value_type<Edge_weight>>());
       
       // Prepare the queue and start with the source vertex s
-      mutable_binary_heap<Vertex, weight_compare> q (
-        weight_compare(v_w, std::less<weight_type>())
-        );
+      /*mutable_binary_heap<Vertex, weight_compare> q (
+        weight_compare(v_w, std::greater<weight_type>())
+        );*/
+      auto q = make_weight_queue(v_w);
       q.push(s);
-      v_w(s) = 0;
       pred(s) = s;
       color(s) = tri_color::gray;
 
       while (!q.empty()) {
         Vertex u = q.top();
-        std::cerr << "popped " << u.value() << '\n';
         q.pop();
         for (auto e_ : g.incident_edges(u)) {
           Edge e =*e_;
           Vertex v = opposite(e,u);
-          if (w(e) < v_w(v)) {
-            std::cerr << "Working on " << v.value() << '\n';
-            std::cerr << w(e) << " < " << v_w(v) << '\n';
+          if ((color(v) != tri_color::black) && (w(e) < v_w(v))) {
             v_w(v) = w(e);
             pred(v) = u;
             if (color(v) == tri_color::white) {
-              std::cerr << v.value() << " is new" << '\n';
               q.push(v);
               color(v) = tri_color::gray;
             } else if (color(v) == tri_color::gray) {
-              std::cerr << v.value() << " is already queued" << '\n';
-              q.decrease(v);
+              q.update(v);
             }
           }
         }
-        std::cerr << u.value() << " is finished" << '\n';
         color(u) = tri_color::black;
       }
       return pred;
     }
+#endif
 
 } // namespace origin
 

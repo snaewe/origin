@@ -6,7 +6,6 @@
 // and conditions.
 
 // FIXMEs
-//  - create a make_undirected_adjacency_vector function
 //  - add_edges convienience function
 //  - remove STL algorithm dependency (use origin)
 //  - put in concept support
@@ -17,6 +16,7 @@
 //  - replace all occurances of value() with ord()
 //  - Apparently it needs its own vertex iterator type. Vertex iterator is broken
 //  - neighbor lists only need to carry the edge to which they point
+//  - finish initializers
 
 #ifndef ORIGIN_GRAPH_ADJACECNY_VECTOR_UNDIRECTED_HPP
 #define ORIGIN_GRAPH_ADJACECNY_VECTOR_UNDIRECTED_HPP
@@ -64,8 +64,8 @@ namespace origin {
         vertex_labeling(vertex_labeling const& l) : map_(l.map_) { }
 
         // Accessors
-        ref operator() (vertex v) { return map_[v.value()]; }
-        const_ref operator() (vertex v) const { return map_[v.value()]; }
+        ref operator() (vertex v) { return map_[ord(v)]; }
+        const_ref operator() (vertex v) const { return map_[ord(v)]; }
 
       private:
         map_type map_;
@@ -88,8 +88,8 @@ namespace origin {
         edge_labeling(edge_labeling const& l) : map_(l.map_) { }
 
         // Accessors
-        ref operator() (edge e) { return map_[e.edge.value()]; }
-        const_ref operator() (edge e) const { return map_[e.edge.value()]; }
+        ref operator() (edge e) { return map_[ord(e)]; }
+        const_ref operator() (edge e) const { return map_[ord(e)]; }
 
       private:
         map_type map_;
@@ -292,16 +292,28 @@ namespace origin {
       using vertex = vertex_handle<size_type>;
       using edge   = undirected_edge_handle<size_type>;
 
-      using vertex_range        = iterator_range<vertex_iterator<size_type>>;
-      using edge_range          = iterator_range<uav::edge_iterator>;
-      using incident_edge_range = iterator_range<uav::incident_edge_iterator>;
+      using vertex_range        = bounded_range<vertex_iterator<size_type>>;
+      using edge_range          = bounded_range<uav::edge_iterator>;
+      using incident_edge_range = bounded_range<uav::incident_edge_iterator>;
 
 
       // Initializers
-      undirected_adjacency_vector (size_type n = 0) : neighbors_(n), edges_() {}
+      // default
+      undirected_adjacency_vector (size_type n) : neighbors_(n), edges_() {}
       undirected_adjacency_vector (undirected_adjacency_vector const& g)
         : neighbors_(g.neighbors_), edges_(g.edges_)
       { }
+      // move
+      // iterator range
+      // range
+      // init list - vertices
+      // default with edge pairs             // make allocator versions
+      // order with edge pairs
+      // iterator range with edge pair
+      // range with edge pair
+      // initializer list with edge pairs
+
+
 
 
       // Graph Metrics
@@ -343,21 +355,21 @@ namespace origin {
   auto undirected_adjacency_vector::add_edge(vertex u, vertex v) -> edge
   {
     // add an edge to the edge list
-    edges_.push_back(std::make_tuple(u.value(), v.value()));
+    edges_.push_back(std::make_tuple(ord(u), ord(v)));
     // add v to u's adjacent stuff
-    neighbors_[u.value()].push_back(std::make_tuple(v.value(), size() - 1));
+    neighbors_[ord(u)].push_back(std::make_tuple(ord(v), size() - 1));
     // add u to v's adjacent stuff, unless it is a loop
-    if (v.value() != u.value())
-      neighbors_[v.value()].push_back(std::make_tuple(u.value(), size() - 1));
+    if (ord(v) != ord(u))
+      neighbors_[ord(v)].push_back(std::make_tuple(ord(u), size() - 1));
 
     // return edge
-    return edge(size() - 1, u.value(), v.value());
+    return edge(size() - 1, ord(u), ord(v));
   }
 
   void undirected_adjacency_vector::remove_edge(edge e)
   {
     // remove from edges
-    edges_.erase(edges_.begin() + e.edge.value());
+    edges_.erase(edges_.begin() + ord(e));
     // remove adjacent stuff
     remove_adjacent_vertex_by_edge(e.source, e);
     if (e.source.value() != e.target.value()) // if e is not a loop
@@ -368,13 +380,13 @@ namespace origin {
   undirected_adjacency_vector::remove_adjacent_vertex_by_edge(vertex v, edge e)
   {
     // find vertex
-    size_type e_index = e.edge.value();
+    size_type e_index = ord(e);
     auto pos = std::find_if(
-      neighbors_[v.value()].begin(),
-      neighbors_[v.value()].end(),
+      neighbors_[ord(v)].begin(),
+      neighbors_[ord(v)].end(),
       incident_to_edge(e_index));
     // remove edge
-    neighbors_[v.value()].erase(pos);
+    neighbors_[ord(v)].erase(pos);
   }
 
   auto undirected_adjacency_vector::vertices() const -> vertex_range
@@ -398,9 +410,9 @@ namespace origin {
   {
     return incident_edge_range(
       uav::incident_edge_iterator(
-        neighbors_[v.value()].begin(), edges_.begin()),
+        neighbors_[ord(v)].begin(), edges_.begin()),
       uav::incident_edge_iterator(
-        neighbors_[v.value()].end(), edges_.begin())
+        neighbors_[ord(v)].end(), edges_.begin())
     );
   }
 

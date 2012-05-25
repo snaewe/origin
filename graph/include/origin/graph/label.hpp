@@ -8,23 +8,114 @@
 #ifndef ORIGIN_GRAPH_LABEL_HPP
 #define ORIGIN_GRAPH_LABEL_HPP
 
-#include <unordered_map>
 
+
+#include <vector>
 
 #include <origin/ordinal_map.hpp>
 #include <origin/graph/traits.hpp>
 #include <origin/graph/vertex.hpp>
 #include <origin/graph/edge.hpp>
 
-/**
- * @defgroup graph_label
- * Types and traits related to the definition and use of labels. A label is
- * a function maps vertices and edges to a value type, supporting both reading
- * and writing.
- */
+
+
+// FIXMEs
+//  - consider other desings for label, label_wrapper and label refernce count
+//  - weight queue does not belong here
+
+// This file defines graph labels. In the origin graph library, vertices are
+// required to model ordinal. Meaning they map to integral values and the
+// mapping is an injective function (mapping is unique). This allows origin to
+// provide simple mappings of data onto vertices in the form of Labelings.
+
+// As stated above, a labeling is a unique association of vertices to data.
+// Because of function call style interface, everything from user data, weight,
+// color, and even graph metrics like vertex degree can be expressed as a
+// labeling.
 
 namespace origin
 {
+  template <typename T, typename Label_type>
+    class labeling
+    {
+      // static_assert(Ordinal<T>() , "");
+
+      using size_type = std::size_t;
+    public:
+      // Types
+      using key_type = T;
+      using value_type = Label_type;
+
+      // Initializers
+      labeling(size_type n, const Label_type & x = Label_type()) : map (n,x) { }
+      labeling(const labeling & l) : map (l.map) { }
+      labeling(labeling && l) : map (/*move*/ l.map) { }
+      template <typename Iter>
+        labeling(Iter f, Iter l) : map (f,l) { }
+      // FIXME range-based intializer
+
+      // Accessors
+      // FIXME add safe accessor support?
+      inline Label_type & operator() (T t) { return map[ord(t)]; }
+      inline const Label_type & operator() (T t) const  { return map[ord(t)]; }
+
+    private:
+      std::vector<Label_type> map;
+    };
+
+  // FIXME move this into a better position
+  template <typename T>
+    using Key_type = typename T::key_type;
+
+
+/*============================================================================*/
+  // Helper functions for labels
+
+  template <typename G, typename T>
+    labeling <typename G::vertex, T>
+    label_vertices (const G & g, const T& t = T())
+    { return labeling <typename G::vertex, T>(g.order(), t); }
+
+  template <typename G, typename T>
+    labeling <typename G::edge, T>
+    label_edges (const G & g, const T & t = T())
+    { return labeling <typename G::edge, T>(g.size(), t); }
+
+
+
+  // Helper definitions for a weight queue
+  // FIXME this really needs better treatment
+  template <typename L, typename Relation>
+    struct label_relation
+    {
+      label_relation(const L & l, Relation r)
+        : l_(l), r_(r)
+      { }
+
+      bool operator()(Key_type<L> a, Key_type<L> b) const
+      { return r_(l_(a),l_(b)); }
+
+      const L & l_;
+      Relation r_;
+    };
+
+  template <typename Weight_label>
+    mutable_binary_heap<
+      Key_type<Weight_label>,
+      label_relation <Weight_label, std::greater <Value_type <Weight_label>>>
+    >
+    make_weight_queue(const Weight_label & w)
+    {
+      using weight_compare =
+        label_relation <Weight_label, std::greater <Value_type <Weight_label>>>;
+
+      return
+        mutable_binary_heap<Key_type<Weight_label>, weight_compare>
+          (weight_compare(w, std::greater<Value_type<Weight_label>>()));
+    }
+
+
+#if 0
   /**
    * The label traits class provides access to the result type of the label
    * function and its associated value type. The value type is typically the
@@ -271,7 +362,7 @@ namespace origin
     {
       return map_label<Map const>{m};
     }
-
+#endif
 /*============================================================================*/
   template <typename T>
     class vertex_labeling

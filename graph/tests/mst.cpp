@@ -13,17 +13,20 @@
 #include <origin/graph/algorithm/spanning_tree/prim.hpp>
 #include <origin/graph/adjacency_vector/undirected.hpp>
 
+#include <origin/heap/binary_heap.hpp>
+
 
 
 using namespace::std;
 using namespace::origin;
+
 
 template <typename G>
 void print_vertices(G const& g)
 {
   cout << "Vertices:";
   for (auto v : g.vertices())
-    cout << ' ' << (*v).value();
+    cout << ' ' << v.value();
   cout << "\n";
 }
 
@@ -32,7 +35,7 @@ void print_edges(G const& g)
 {
   cout << "Edges:";
   for (auto e : g.edges())
-    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+    cout << " (" << e.source.value() << ',' << e.target.value() << ')';
   cout << "\n";
 }
 
@@ -41,7 +44,7 @@ void print_incident_edges(G const& g, Vertex v)
 {
   cout << "Incident to " << v.value() << ":";
   for (auto e : g.incident_edges(v))
-    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+    cout << " (" << e.source.value() << ',' << e.target.value() << ')';
   cout << "\n";
 }
 
@@ -51,7 +54,7 @@ void print_graph(G const& g)
   print_vertices(g);
   print_edges(g);
   for (auto v : g.vertices())
-    print_incident_edges(g,*v);
+    print_incident_edges(g,v);
 }
 
 int main()
@@ -94,12 +97,12 @@ int main()
   edge_weight(e34) = 9;
   edge_weight(e45) = 10;
 
-  vertex_labeling<V> pred = prim(g, V(0), edge_weight);
+  labeling<V,V> pred = prim(g, V(0), edge_weight);
 
   print_graph(g);
 
   for (auto v : g.vertices()) {
-    cout << (*v).value() << " - " << pred(*v).value() << '\n';
+    cout << v.value() << " - " << pred(v).value() << '\n';
   }
 
   return 0;

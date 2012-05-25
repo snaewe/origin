@@ -10,6 +10,9 @@
 
 #include <origin/container.hpp>
 
+// FIXMEs
+//  - make Vertex, Vertex
+
 namespace origin
 {
 
@@ -163,7 +166,7 @@ namespace origin
   //
   // The following types are associated with these operations:
   //
-  //    Vertex_type<G>        The type of a vertex handle for G.
+  //    Vertex<G>        The type of a vertex handle for G.
   //    Vertex_range<G>       The range type representing the vertex set
   //    Vertex_value_type<G>  The user-defined vertex data type
     
@@ -254,12 +257,12 @@ namespace origin
   // Vertex type
   // An alias for the vertex handle associated with G.
   template<typename G>
-    using Vertex_type = Value_type<Vertex_range<G>>;
+    using Vertex = Value_type<Vertex_range<G>>;
     
   // Vertex value type.
   // An alias for the vertex value type of the graph. 
   template<typename G>
-    using Vertex_value_type = Decay<typename vertex_data<G, Vertex_type<G>>::type>;
+    using Vertex_value_type = Decay<typename vertex_data<G, Vertex<G>>::type>;
     
   // An alias for the result of the expression order(g).
   template<typename G>
@@ -377,12 +380,12 @@ namespace origin
   // An alias for the vertex handle associated with G. Note that different
   // handle types may be associated with G and const G.
   template<typename G>
-    using Edge_type = Value_type<Edge_range<G>>;
+    using Edge = Value_type<Edge_range<G>>;
     
   // Edge value type
   // An alias for the edge data type of the graph.
   template<typename G>
-    using Edge_value_type = Decay<typename get_edge_data<G, Edge_type<G>>::type>;
+    using Edge_value_type = Decay<typename get_edge_data<G, Edge<G>>::type>;
     
     
 
@@ -412,7 +415,7 @@ namespace origin
   // Source vertex
   // Return the source vertex of the given edge.
   template<typename G>
-    inline auto source(const G& g, Edge_type<G> e) -> decltype(g.source(e))
+    inline auto source(const G& g, Edge<G> e) -> decltype(g.source(e))
     {
       assert(e);
       return g.source(e);
@@ -421,7 +424,7 @@ namespace origin
   // Target vertex
   // Return the target vertex of the given edge.
   template<typename G>
-    inline auto target(const G& g, Edge_type<G> e) -> decltype(g.target(e))
+    inline auto target(const G& g, Edge<G> e) -> decltype(g.target(e))
     {
       assert(e);
       return g.target(e);
@@ -457,11 +460,11 @@ namespace origin
 
   // An alias for the result of source(g, e).
   template<typename G>
-    using Source_result = typename get_source_result<G, Edge_type<G>>::type;
+    using Source_result = typename get_source_result<G, Edge<G>>::type;
     
   // An alias for the result of target(g, e).
   template<typename G>
-    using Target_result = typename get_target_result<G, Edge_type<G>>::type;
+    using Target_result = typename get_target_result<G, Edge<G>>::type;
 
     
 
@@ -538,7 +541,7 @@ namespace origin
   // Out edges
   // Return the out edges incident to the vertex v in the directed graph g.
   template<typename G>
-    inline auto out_edges(const G& g, Vertex_type<G> v) -> decltype(g.out_edges(v))
+    inline auto out_edges(const G& g, Vertex<G> v) -> decltype(g.out_edges(v))
     {
       return g.out_edges(v); 
     }
@@ -546,7 +549,7 @@ namespace origin
   // In edges
   // Return the in edges incident to the vertex v in the directed graph g.
   template<typename G>
-    inline auto in_edges(const G& g, Vertex_type<G> v) -> decltype(g.in_edges(v))
+    inline auto in_edges(const G& g, Vertex<G> v) -> decltype(g.in_edges(v))
     {
       return g.in_edges(v);
     }
@@ -555,7 +558,7 @@ namespace origin
   // Return the number of out edges that are incident to the vertex v in the 
   // directed graph g.
   template<typename G>
-    inline auto out_degree(const G& g, Vertex_type<G> v) -> decltype(g.out_degree(v))
+    inline auto out_degree(const G& g, Vertex<G> v) -> decltype(g.out_degree(v))
     {
       return g.out_degree(v);
     }    
@@ -564,7 +567,7 @@ namespace origin
   // Return the number of in edges that are incident to the vertex v in the 
   // directed graph g.
   template<typename G>
-    inline auto in_degree(const G& g, Vertex_type<G> v) -> decltype(g.in_degree(v))
+    inline auto in_degree(const G& g, Vertex<G> v) -> decltype(g.in_degree(v))
     {
       return g.in_degree(v);
     }
@@ -646,24 +649,24 @@ namespace origin
   // Out edge range
   // An alias for the result of the expression out_edges(g, v).
   template<typename G>
-    using Out_edge_range = typename out_edges_result<G, Vertex_type<G>>::type;
+    using Out_edge_range = typename out_edges_result<G, Vertex<G>>::type;
     
   // In edge range
   // An alias for the result of the expression in_edges(g, v).
   template<typename G>
-    using In_edge_range = typename in_edges_result<G, Vertex_type<G>>::type;
+    using In_edge_range = typename in_edges_result<G, Vertex<G>>::type;
     
   // An alias for the result of the expression out_degree(g, v).
   template<typename G>
-    using Out_degree_result = typename out_degree_result<G, Vertex_type<G>>::type;
+    using Out_degree_result = typename out_degree_result<G, Vertex<G>>::type;
 
   // An alias for the result of the expression in_degree(g, v).
   template<typename G>
-    using In_degree_result = typename in_degree_result<G, Vertex_type<G>>::type;
+    using In_degree_result = typename in_degree_result<G, Vertex<G>>::type;
 
   // An alias for the result of the expression degree(g, v).
   template<typename G>
-    using Degree_result = typename degree_result<G, Vertex_type<G>>::type;
+    using Degree_result = typename degree_result<G, Vertex<G>>::type;
 
 
     
@@ -736,7 +739,7 @@ namespace origin
   // Incident edges
   // Return the incident edges of the vertex v in g.
   template<typename G>
-    inline auto edges(const G& g, Vertex_type<G> v) -> decltype(g.edges(v))
+    inline auto edges(const G& g, Vertex<G> v) -> decltype(g.edges(v))
     {
       return g.edges(v);
     }
@@ -761,7 +764,7 @@ namespace origin
 
   // An alias for the result of the expression undirected_edges(g, v).
   template<typename G>
-    using Incident_edge_range = typename incident_edges_result<G, Vertex_type<G>>::type;
+    using Incident_edge_range = typename incident_edges_result<G, Vertex<G>>::type;
     
     
     
@@ -827,7 +830,7 @@ namespace origin
   //
   // The result type is expected to be void.
   template<typename G>
-    inline auto remove_vertex(G& g, Vertex_type<G> v)
+    inline auto remove_vertex(G& g, Vertex<G> v)
       -> decltype(g.remove_vertex(v))
     {
       return g.remove_vertex(v);
@@ -844,7 +847,7 @@ namespace origin
     
   // Add an edge connecting the vertices u and v.
   template<typename G>
-    inline auto add_edge(G& g, Vertex_type<G> u, Vertex_type<G> v)
+    inline auto add_edge(G& g, Vertex<G> u, Vertex<G> v)
       -> decltype(g.add_edge(u, v))
     {
       return g.add_edge(u, v);
@@ -853,8 +856,8 @@ namespace origin
   // Add an edge connecting the vertices u and v, having the specified value.
   template<typename G>
     inline auto add_edge(G& g, 
-                         Vertex_type<G> u, 
-                         Vertex_type<G> v, 
+                         Vertex<G> u, 
+                         Vertex<G> v, 
                          const Edge_value_type<G>& value)
       -> decltype(g.add_edge(u, v, value))
     {
@@ -863,14 +866,14 @@ namespace origin
 
   // Remove the edge e in g.
   template<typename G>
-    inline auto remove_edge(G& g, Edge_type<G> e) -> decltype(g.remove_edge(e))
+    inline auto remove_edge(G& g, Edge<G> e) -> decltype(g.remove_edge(e))
     {
       return g.remove_edge(e);
     }
     
   // Remove all edges connecting vertices u and v in the graph g.
   template<typename G>
-    inline auto remove_edges(G& g, Vertex_type<G> u, Vertex_type<G> v)
+    inline auto remove_edges(G& g, Vertex<G> u, Vertex<G> v)
       -> decltype(g.remove_edges(u, v))
     {
       return g.remove_edge(u, v);
@@ -910,7 +913,7 @@ namespace origin
   // Return the neighbors of v in g, the set of vertices reachable from v's
   // incident edges.
   template<typename G>
-    inline auto neighbors(const G& g, Vertex_type<G> v)
+    inline auto neighbors(const G& g, Vertex<G> v)
       -> adjacency_range<Incident_edge_range<G>>
     {
       return edges(g, v);

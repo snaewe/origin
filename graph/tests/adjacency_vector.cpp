@@ -21,7 +21,7 @@ void print_vertices(G const& g)
 {
   cout << "Vertices:";
   for (auto v : g.vertices())
-    cout << ' ' << (*v).value();
+    cout << ' ' << v.value();
   cout << "\n";
 }
 
@@ -30,7 +30,7 @@ void print_edges(G const& g)
 {
   cout << "Edges:";
   for (auto e : g.edges())
-    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+    cout << " (" << e.source.value() << ',' << e.target.value() << ')';
   cout << "\n";
 }
 
@@ -39,7 +39,7 @@ void print_incident_edges(G const& g, Vertex v)
 {
   cout << "Incident to " << v.value() << ":";
   for (auto e : g.incident_edges(v))
-    cout << " (" << (*e).source.value() << ',' << (*e).target.value() << ')';
+    cout << " (" << e.source.value() << ',' << e.target.value() << ')';
   cout << "\n";
 }
 
@@ -49,7 +49,7 @@ void print_graph(G const& g)
   print_vertices(g);
   print_edges(g);
   for (auto v : g.vertices())
-    print_incident_edges(g,*v);
+    print_incident_edges(g,v);
 }
 
 int main ()
@@ -88,7 +88,7 @@ int main ()
   
   assert(( i == j ));
 
- print_graph(g);
+  print_graph(g);
 
   return 0;
 }
