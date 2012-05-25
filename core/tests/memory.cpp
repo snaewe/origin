@@ -38,13 +38,7 @@ struct bar
 
 int main()
 {
-  using A = allocator<int>;
-  static_assert(Same<Size_type<A>, std::size_t>(), "");
-  static_assert(Same<Distance_type<A>, std::ptrdiff_t>(), "");
-
-
-  // TODO: Push these tests into the concepts directory. They're definitely
-  // not allocator tests. Same with the classes above.
+  /*
   using V = vector<int>;
   using I = V::iterator;
 
@@ -69,4 +63,5 @@ int main()
   static_assert(Same<Value_type<faux>, int>(), "");
 
   static_assert(Subst_failed<Value_type<foo>>(), "");
+  */
 }

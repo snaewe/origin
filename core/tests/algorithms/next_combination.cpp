@@ -7,11 +7,10 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
 
+#include <origin/vector.hpp>
 #include <origin/algorithm.hpp>
 
-using namespace std;
 using namespace origin;
 
 int main()
@@ -22,16 +21,16 @@ int main()
   // Check the algo version.
   do {
     for(auto i = v.begin(); i != end; ++i)
-      cout << *i << ' ';
-    cout << '\n';
+      std::cout << *i << ' ';
+    std::cout << '\n';
   } while(next_combination(v.begin(), end, v.end()));
   
-  cout << "---\n";
+  std::cout << "---\n";
   
   // Check the range-based version
   do {
     for(auto i = v.begin(); i != end; ++i)
-      cout << *i << ' ';
-    cout << '\n';
+      std::cout << *i << ' ';
+    std::cout << '\n';
   } while(next_combination(v, end));
 }

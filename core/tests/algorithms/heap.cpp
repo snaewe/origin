@@ -7,12 +7,21 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
 
+#include <origin/vector.hpp>
 #include <origin/algorithm.hpp>
 
-using namespace std;
 using namespace origin;
+
+
+template<typename R>
+  void print(const R& range)
+  {
+    for(auto x : range)
+      std::cout << x << ' ';
+    std::cout << '\n';
+  }
+
 
 template<typename S, typename T>
   void push(S& seq, const T& value)
@@ -27,14 +36,6 @@ template<typename S>
     result.push_back(seq.front());
     pop_heap(seq);
     seq.pop_back();
-  }
-
-template<typename R>
-  void print(const R& range)
-  {
-    for(auto x : range)
-      cout << x << ' ';
-    cout << '\n';
   }
 
 int main()

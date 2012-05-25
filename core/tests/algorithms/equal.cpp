@@ -14,7 +14,12 @@
 using namespace std;
 using namespace origin;
 
+int main()
+{
+  
+}
 
+/*
 
 // Mismatch (property)
 //
@@ -103,3 +108,5 @@ int main()
   quick_check(env, equal_check {}, range, range);
   quick_check(env, equal_check {}, range, range, less);
 }
+
+*/

@@ -21,9 +21,9 @@ int main()
   cout << "\n";
 
 
-  for(auto i : closed_range(-3, 3))
-    cout << i << ' ';
-  cout << '\n';
+  // for(auto i : closed_range(-3, 3))
+  //   cout << i << ' ';
+  // cout << '\n';
 
 
   vector<int> v = { 1, 2, 3 };
@@ -31,7 +31,8 @@ int main()
     cout << i << ' ';
   cout << '\n';
 
-  for(auto i : closed_range(v.begin(), --v.end()))
-    cout << i << ' ';
-  cout << '\n';
+
+  // for(auto i : closed_range(v.begin(), --v.end()))
+  //   cout << i << ' ';
+  // cout << '\n';
 }

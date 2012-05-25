@@ -9,9 +9,10 @@
 #include <vector>
 #include <list>
 #include <forward_list>
+#include <iterator>
 #include <iostream>
 
-#include <origin/iterator.hpp>
+#include <origin/iterator/core.hpp>
 
 using namespace std;
 using namespace origin;
@@ -112,8 +113,6 @@ int main()
 {
   not_an_iterator<int>();
   
-  input<istream_iterator<int>>();
-
   using Sll_int = forward_list<int>::iterator;
   using Sll_cint = forward_list<int>::iterator;
   mutable_forward<Sll_int>();

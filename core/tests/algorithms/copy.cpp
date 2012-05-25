@@ -6,12 +6,9 @@
 // and conditions.
 
 #include <iostream>
-#include <vector>
 
 #include <origin/algorithm.hpp>
-#include <origin/testing.hpp>
 
-using namespace std;
 using namespace origin;
 
 
@@ -19,10 +16,19 @@ template <typename R>
   void print(const R& range)
   {
     for(auto x : range)
-      cout << x << ' ';
-    cout << '\n';
+      std::cout << x << ' ';
+    std::cout << '\n';
   }
 
+int main()
+{
+  int a[] { 1, 2, 3, 4, 5 };
+  int b[5];
+  copy (begin(a), end(a), b);
+  assert(lexicographical_equal(a, b));
+}
+
+/*
 
 // Copy (property)
 struct copy_check
@@ -47,7 +53,7 @@ struct copy_check
 struct copy_n_check
 {
   template <typename R, typename O>
-    auto operator()(const R& range, Distance_type<R> n, O result) const
+    auto operator()(const R& range, Difference_type<R> n, O result) const
       -> Requires<Range_copy<R, O>(), bool>
     {
       if (size(range) > size(result))
@@ -79,3 +85,5 @@ int main()
   quick_check(env, copy_check {}, range, range);
   quick_check(env, copy_n_check {}, range, small, range);
 }
+
+*/

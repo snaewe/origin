@@ -18,9 +18,11 @@ int main()
 {
   using V = vector<int>;
   
+  // FIXME: This is useless. Write better tests.
+
   cout << typestr<Iterator_type<V>>() << " " 
-       << Writable<Iterator_type<V>, int>() << "\n";
+       << Copy_writable<Iterator_type<V>, int>() << "\n";
 
   cout << typestr<Iterator_type<V const>>() << " " 
-       << Writable<Iterator_type<V const>, int>() << "\n";
+       << Copy_writable<Iterator_type<V const>, int>() << "\n";
 }

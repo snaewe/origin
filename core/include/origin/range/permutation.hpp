@@ -1,5 +1,5 @@
 // Copyright (c) 2008-2010 Kent State University
-// Copyright (c) 2011 Texas A&M University
+// Copyright (c) 2011-2012 Texas A&M University
 //
 // This file is distributed under the MIT License. See the accompanying file
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
@@ -8,29 +8,16 @@
 #ifndef ORIGIN_RANGE_PERMUTATION_HPP
 #define ORIGIN_RANGE_PERMUTATION_HPP
 
-#include <origin/functional.hpp>
-#include <origin/algorithm.hpp>
 #include <origin/range.hpp>
 
 namespace origin
 {
-  // The range proxy class is the result type of the post-increment operator.
-  // for some range types. It can be dereferenced, but that's about it.
-  //
-  // Because it's Readable, it has to have a value type.
-  template<typename R>
-    class range_proxy
-    {
-      using value_type = R;
+  // FIXME: This is going change.
+  template <typename R, typename Comp>
+    bool next_partial_permutation(R& range, Iterator_type<R> mid, Comp comp);
 
-      range_proxy(R const* r)
-        : range(r)
-      { }
-      
-      R const& operator*() const { return *range; }
-      
-      R const* range;
-    };
+  template <typename R, typename Comp>
+    bool next_combination(R& range, Iterator_type<R> mid, Comp comp);
 
 
   // A function object that computes the next partial permutation on some
@@ -57,170 +44,182 @@ namespace origin
 
 
 
-  // A helper iterator for the permutation_range. Dereferncing this iterator
-  // yields a bounded range that some subset of the original range. The sub-
-  // range depends on the number of elements in the set of permutations or
-  // combinations.
-  // 
-  // Note that, despite the fact, that we could use prev_permutation to 
-  // implement bidirectional features, the iterator is only actually an input
-  // iterator. The iterator has a shared state, meaning its increment operation
-  // is not regular.
-  template<typename R>
-    class permutation_range_iterator
+  template <typename R, typename P, typename C>
+    class permutation_range;
+
+
+  // Permutation iterator
+  //
+  // The permtuation iterator is an input iterator that, when incremented,
+  // permutes the elements of an underlying range. The value returned by the
+  // iterator is a bounded range that refers to the elements of the current
+  // permutation.
+  //
+  // TODO: Can we make the value type a const range? That would ideally prevent
+  // the sequence from being modified during traversal (which could invalidate)
+  // the algorithm.
+  //
+  // TODO: It isn't actually necessary to cache the current range. We easily
+  // reconstruct it from the source range's [first, middle) configuration.
+  template <typename R, typename P, typename C>
+    class permutation_iterator
     {
     public:
-      using value_type = bounded_range<typename R::base_iterator>;
-      using reference = value_type const&;
-      using pointer = value_type const*;
-      using difference_type = std::ptrdiff_t;
-      using iterator_category = std::input_iterator_tag;
-    
-      permutation_range_iterator()
-        : range(nullptr)
-      { }
-    
-      permutation_range_iterator(R const* r)
-        : range(const_cast<R*>(r)), value(r->first(), r->middle())
-      { }
-      
-      // Equality_comparable
-      bool operator==(permutation_range_iterator const& x) const { return range == x.range; }
-      bool operator!=(permutation_range_iterator const& x) const { return range != x.range; }
+      // The source (creator) type of this iterator.
+      using Source = permutation_range<R, P, C>;
+
+      permutation_iterator(Source* src = {}) : src{src} { }
+
+      // Returns the underlying permtuation range.
+      const Source* source() const { return src; }
 
       // Readable
-      reference operator*()  const { return value; }
-      pointer   operator->() const { return &value; }
+      // Returns a bounded range delimiting the current permtuation.
+      bounded_range<Iterator_type<R>> operator*() const;
 
       // Incrementable
-      permutation_range_iterator& operator++()
-      {
-        if(!range->permute())
-          range = nullptr;
-        return *this;
-      }
+      // Moves to the next lexicographical permutation.
+      permutation_iterator& operator++();
       
-      // FIXME: I think this is totally broken, and I don't think I can get
-      // it to return the previous value. This may be a good argument against
-      // input iterators requiring post-increment.
-      range_proxy<R> operator++(int)
-      {
-        range_proxy<R> ret{range};
-        operator++();
-        return ret;
-      }
-      
-      private:
-        R* range;
-        value_type value;   // The current selection.
+    private:
+      Source* src;
     };
 
-  // A permutation range implements a traversal over a sequence of permutations
-  // on the underlying range. Each iterator in the range represents one such
-  // permutation. The actual permutation computed during traversal is determined
-  // by the Perm template parameter. Common uses of the range are iterating
-  // over lexicographical k-permuations and k-combinations.
+
+  template <typename R, typename P, typename C>
+    inline bounded_range<Iterator_type<R>> permutation_iterator<R, P, C>::operator*() const 
+    { 
+      return range(src->first(), src->middle());
+    }
+
+  template <typename R, typename P, typename C>
+    inline auto permutation_iterator<R, P, C>::operator++() -> permutation_iterator&
+    {
+      auto perm = src->permutation_func();
+      auto comp = src->value_comp();
+      if (!perm(src->base(), src->middle(), comp))
+        src = nullptr;
+      return *this;
+    }
+
+
+  // Equality_comparable
+  // Two permutation range interators are equal when they point to the same
+  // underlying range being permuted. 
+  template <typename R, typename P, typename C>
+    inline bool operator==(const permutation_iterator<R, P, C>& a, 
+                           const permutation_iterator<R, P, C>& b) 
+    { 
+      return a.source() == b.source();
+    }
+
+  template <typename R, typename P, typename C>
+    inline bool operator!=(const permutation_iterator<R, P, C>& a, 
+                           const permutation_iterator<R, P, C>& b) 
+    { 
+      return a.source() != b.source(); 
+    }
+
+
+
+  // Permutation range
   //
-  // requires: BidirectionalIterator<IteratorType<R>>
-  // requires: PermutationFunction<Perm, R>
-  // requires: Relation<Comp, ValueType<R>>
+  // The permutation range represents a traversal over the lexicographical
+  // sequence of permutations of an underlying range object (typically a
+  // container of some kind). Each element in the permutation range is a 
+  // range over the elements in that permtutation.
   //
-  // Note that R may be const.
-  template<typename R, typename Perm, typename Comp>
+  // The permutation of the underlying range is controlled by the Perm 
+  // parameter. It is generally assumed to be either next_permutation_func
+  // or next_combination_func.
+  //
+  // TODO: How do we make this work in reverse? Is it as easy as writing
+  // prev_permutation_func? Clearly, this is not a bidirectional iterator,
+  // so writing reversed(permutations(v)) would not normally be correct. 
+  // However, it is possible to adapt that syntax to its correct behavior. This
+  // is worth considering.
+  template <typename R, typename Perm, typename Comp>
     class permutation_range
     {
-      typedef permutation_range<R, Perm, Comp> this_type;
+      using This = permutation_range<R, Perm, Comp>;
     public:
-      using value_type = Value_type<R>;
-      using base_range = R;
-      using base_iterator = Iterator_type<R>;
-      using value_compare = Comp;
-      using range_permute = Perm;
-      using iterator = permutation_range_iterator<this_type>;
+      using Iter = permutation_iterator<R, Perm, Comp>;
 
-      permutation_range(base_range& range, Perm perm, Comp comp = {})
-        : range(range), mid(std::end(range)), perm(perm), comp(comp)
+      // Initialize an end iterator.
+      permutation_range(R& range, Perm perm, Comp comp = {})
+        : data{range, origin::end(range), perm, comp}
       { }
 
-      permutation_range(base_range& r, base_iterator mid, Perm perm, Comp comp = {})
-        : range(r), mid(mid), perm(perm), comp(comp)
+      // Initialize the iterator.
+      permutation_range(R& range, Iterator_type<R> mid, Perm perm, Comp comp = {})
+        : data{range, mid, perm, comp}
       { }
+
+
+      // Observers
+
+      // Returns the range's permutation function.
+      Perm permutation_func() const { return std::get<2>(data); }
+
+      // Returns the range's value comparison relation.
+      Comp value_comp() const { return std::get<3>(data); }
+      
+      // Returns a reference to the underlying range.
+      R& base() const { return std::get<0>(data); }
+
+      // Returns the first iterator of the underlying range.
+      Iterator_type<R> first() const  { return origin::begin(base()); }
+
+      // Returns the current midpoint iterator of this range
+      Iterator_type<R> middle() const { return std::get<1>(data); }
+
+      // Returns an iterator past the end of the underlying range.
+      Iterator_type<R> last() const   { return origin::end(base()); }
+
 
       // Range
-      iterator begin() const { return iterator(this); }
-      iterator end() const   { return {}; }
-
-      // Range properties
-      base_range&       base() const       { return range; }
-      
-      // Range iterators
-      base_iterator     first() const      { return range.begin(); }
-      base_iterator     middle() const     { return mid; }
-      base_iterator     last() const       { return range.end(); }
-
-      // Functions
-      range_permute     range_perm() const { return perm; }
-      value_compare     value_comp() const { return comp; }
-      
-      // Range modifiers
-      bool permute() { return perm(range, mid, comp); }
+      Iter begin() const { return Iter{const_cast<This*>(this)}; }
+      Iter end() const   { return {}; }
 
     private:
-      base_range& range;
-      base_iterator mid;
-      range_permute perm;
-      value_compare comp;
+      std::tuple<R&, Iterator_type<R>, Perm, Comp> data;
     };
 
-  // FIXME: For permutations on the entire range, should I have a different
-  // range class and iterator that uses next_permutaiton and not 
-  // next_partial_permutation?
+
+
+
+  // Permutations
   //
-  // FIXME: Can this work in reverse using prev_permutation?
-
-
   // Return a range over the lexicographically sorted permutations of a range
   // of n elements.
   //
   // The size of the returned range is given by factorial(n). This operation
   // is found in the math library.
-  template<typename R>
-    inline auto all_permutations(R& range)
-      -> permutation_range<R, next_permutation_func, std::less<Value_type<R>>>
-    {
-      return {range, next_permutation_func{}, std::less<Value_type<R>>{}};
-    }
-
-  template<typename R, typename Comp>
-    inline auto all_permutations(R& range, Comp comp)
+  template <typename R, typename Comp = less_relation>
+    inline auto permutations(R& range, Comp comp = {})
       -> permutation_range<R, next_permutation_func, Comp>
     {
       return {range, next_permutation_func{}, comp};
     }
 
 
-  // Return a range over the lexicographically sorted k-permutations of a 
+  // Partial permutations
+  // Return a range over the lexicographically sorted partial-permutations of a 
   // range of n elements.
   //
   // The size of the returned range is given by falling_factorial(n, k). This 
   // operation is in the math library.
-  template<typename R>
-    inline auto permutations(R& range, Size_type<R> k)
-      -> permutation_range<R, next_permutation_func, std::less<Value_type<R>>> 
+  template <typename R, typename Comp = less_relation>
+    inline auto partial_permutations(R& range, Size_type<R> k, Comp comp = {})
+      -> permutation_range<R, next_permutation_func, Comp> 
     {
-      assert(( std::size_t{k} < size(range) ));
-      return {range, std::next(std::begin(range), k), next_permutation_func{}};
-    }
-
-  template<typename R, typename Comp>
-    inline auto permutations(R& range, Size_type<R> k, Comp comp)
-      -> permutation_range<R, next_permutation_func, Comp>
-    {
-      assert(( std::size_t{k} < size(range) ));
-      return {range, std::next(std::begin(range), k), next_permutation_func{}, comp};
+      assert(k < size(range));
+      return {range, next(begin(range), k), next_permutation_func{}, comp};
     }
 
 
+  // Combinations
+  //
   // Return a range over the k first lexicographically sorted combinations of a 
   // range of n elements.
   //
@@ -230,23 +229,13 @@ namespace origin
   //
   // If the elements are not unique (i.e., r is a multiset), the size of the 
   // returned range is given by multinomial_coefficient(n, k).
-  template<typename R>
-    inline auto combinations(R& range, Size_type<R> k)
-      -> permutation_range<R, next_combination_func, std::less<Value_type<R>>>
+  template <typename R, typename Comp = less_relation>
+    inline auto combinations(R& range, Size_type<R> k, Comp comp = {})
+      -> permutation_range<R, next_combination_func, Comp>
     {
-      assert(( k <= size(range) ));
-      return {range, std::next(std::begin(range), k), next_combination_func{}};
+      assert(k <= size(range));
+      return {range, next(std::begin(range), k), next_combination_func{}, comp};
     }
-
-  template<typename R, typename Comp>
-    inline auto combinations(R& range, Size_type<R> k, Comp comp)
-      -> permutation_range<R, next_combination_func, Comp> 
-    {
-      assert(( k <= size(range) ));
-      return {range, std::next(std::begin(range), k), next_combination_func{}, comp};
-    }
-
-
 
 } // namespace origin
 

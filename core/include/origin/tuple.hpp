@@ -115,7 +115,7 @@ namespace origin
 
     template <typename F, typename... Args>
         struct is_tuple_callable<F, std::tuple<Args...>>
-          : bool_constant<Function<F, Args...>()>
+          : boolean_constant<Function<F, Args...>()>
         { };
   } // namespace traits
 

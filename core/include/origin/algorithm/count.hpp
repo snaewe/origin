@@ -48,12 +48,12 @@ namespace origin
   // Count (iterator, relation)
   // Returns the number of elements x in [first, last) where x == value.
   template <typename I, typename T, typename R>
-    Distance_type<I> count(I first, I last, const T& value, R comp)
+    Difference_type<I> count(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
 
-     Distance_type<I> n = 0;
+     Difference_type<I> n = 0;
       while (first != last) {
         if (comp(*first, value))
           ++n;
@@ -66,7 +66,7 @@ namespace origin
   // Count (iterator, equality)
   // Returns the number of elements x in [first, last) where x == value.
   template <typename I, typename T>
-    Distance_type<I> o_count(I first, I last, const T& value)
+    Difference_type<I> o_count(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
@@ -79,7 +79,7 @@ namespace origin
   // Count (range, relation)
   // Returns the number of elements x in range where x == value.
   template <typename R, typename T, typename Rel>
-    inline Distance_type<R> count(const R& range, const T& value, Rel comp)
+    inline Difference_type<R> count(const R& range, const T& value, Rel comp)
     {
       static_assert(Range_search<R, T, Rel>(), "");
 
@@ -91,7 +91,7 @@ namespace origin
   // Count (range, equality)
   // Returns the number of elements x in range where x == value.
   template <typename R, typename T>
-    inline Distance_type<R> count(const R& range, const T& value)
+    inline Difference_type<R> count(const R& range, const T& value)
     {
       static_assert(Range_search<R, T>(), "");
 
@@ -103,12 +103,12 @@ namespace origin
   // Count not equal (iterator, relation)
   // Returns the number of elements x in [first, last) where x != value.
   template <typename I, typename T, typename R>
-    inline Distance_type<I> count_not_equal(I first, I last, const T& value, R comp)
+    inline Difference_type<I> count_not_equal(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
       
-      Distance_type<I> n = 0;
+      Difference_type<I> n = 0;
       while (first != last) {
         if (!comp(*first, value))
           ++n;
@@ -122,7 +122,7 @@ namespace origin
   // Count not equal (iterator, equality)
   // Returns the number of elements x in [first, last) where x != value.
   template <typename I, typename T>
-    inline Distance_type<I> count_not_equal(I first, I last, const T& value)
+    inline Difference_type<I> count_not_equal(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
@@ -134,7 +134,7 @@ namespace origin
   // Count not equal (range, relation)
   // Returns the number of elements x in r where comp(x, value) is true.
   template <typename R, typename T, typename Rel>
-    inline Distance_type<R> count_not_equal(const R& range, const T& value, Rel comp)
+    inline Difference_type<R> count_not_equal(const R& range, const T& value, Rel comp)
     {
       static_assert(Range_search<R, T, Rel>(), "");
       return count_not_equal(o_begin(range), o_end(range), value, comp);
@@ -145,7 +145,7 @@ namespace origin
   // Count not equal (range, equality)
   // Returns the number of elements x in r where x != value.
   template <typename R, typename T>
-    inline Distance_type<R> count_not_equal(const R& range, const T& value)
+    inline Difference_type<R> count_not_equal(const R& range, const T& value)
     {
       static_assert(Range_search<R, T>(), "");
       return count_not_equal(o_begin(range), o_end(range), value, eq());
@@ -156,12 +156,12 @@ namespace origin
   // Count if
   // Returns the number of elements x in [first, last) where pred(x) is true.
   template <typename I, typename P>
-    inline Distance_type<I> o_count_if(I first, I last, P pred)
+    inline Difference_type<I> o_count_if(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
 
-     Distance_type<I> n = 0;
+     Difference_type<I> n = 0;
       while (first != last) {
         if (pred(*first))
           ++n;
@@ -175,7 +175,7 @@ namespace origin
   // Count if (range)
   // Returns the number of elements x in r where pred(x) is true.
   template <typename R, typename P>
-    inline Distance_type<R> count_if(R const& range, P pred)
+    inline Difference_type<R> count_if(R const& range, P pred)
     {
       static_assert(Range_query<R, P>(), "");
 
@@ -187,12 +187,12 @@ namespace origin
   // Count if not
   // Returns the number of elements x in [first, last) where !pred(x)
   template <typename I, typename P>
-    inline Distance_type<I> count_if_not(I first, I last, P pred)
+    inline Difference_type<I> count_if_not(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
       
-      Distance_type<I> n = 0;
+      Difference_type<I> n = 0;
       while (first != last) {
         if (!pred(*first))
           ++n;
@@ -206,7 +206,7 @@ namespace origin
   // Count if not (range)
   // Returns the number of elements x in r where !pred(x).
   template <typename R, typename P>
-    inline Distance_type<R> count_if_not(const R& range, P pred)
+    inline Difference_type<R> count_if_not(const R& range, P pred)
     {
       static_assert(Range_query<R, P>(), "");
       
@@ -218,12 +218,12 @@ namespace origin
   // Count n
   // Returns the number of elements x in [first, first + n) where x == value.
   template <typename I, typename T>
-    inline Distance_type<I> count_n(I first, Distance_type<I> n, const T& value)
+    inline Difference_type<I> count_n(I first, Difference_type<I> n, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert (is_readable_range(first, n));
 
-      Distance_type<I> c = 0;
+      Difference_type<I> c = 0;
       while (n != 0) {
         if (*first == value)
           ++c;
@@ -239,12 +239,12 @@ namespace origin
   // Returns the number of elements x in [first, first + n) where pred(x) is
   // true.
   template <typename I, typename P>
-    inline Distance_type<I> count_n_if(I first, Distance_type<I> n, P pred)
+    inline Difference_type<I> count_n_if(I first, Difference_type<I> n, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, n));
 
-      Distance_type<I> c = 0;
+      Difference_type<I> c = 0;
       while (n != 0) {
         if (pred(*first))
           ++c;

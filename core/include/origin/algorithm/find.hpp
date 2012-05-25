@@ -88,69 +88,40 @@ namespace origin
   
 
 
-  // Find (iterator, relation)
+  // Find 
   // Return the first iterator i in [first, last) where comp(*i, value) is true
   // or last if no such iterator exists.
+
   template <typename I, typename T, typename R>
     I find(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
 
-      while (first != last) {
-        if (comp(*first, value))
-          return first;
+      while (first != last && comp(*first, value))
         ++first;
-      }
       return last;
     }
 
-
-
-  // Find (iterator, equality)
-  // Return the first iterator i in [first, last) where *i == value or last if 
-  // no such iterator exists.
   template <typename I, typename T>
-    inline I o_find(I first, I last, const T& value)
+    inline I find(I first, I last, const T& value)
     {
-      static_assert(Search<I, T>(), "");
-      assert(is_readable_range(first, last));
       return find(first, last, value, eq());
     }
 
-
-    
-  // Find (range, relation)
-  // Returns the first iterator i in r such that comp(*i, value) is true or 
-  // end(r) if no such iterator exists.
   template <typename R, typename T, typename C>
-    inline auto find(R&& range, const T& value, C comp) -> decltype(o_begin(range))
+    inline auto find(R&& range, const T& value, C comp) -> decltype(begin(range))
     {
-      static_assert(Range_search<Unqualified<R>, T, C>(), "");
-      return find(o_begin(range), o_end(range), value, comp);
+      return find(begin(range), end(range), value, comp);
     }
 
-
-
-  // Find (range, equality)
-  // Returns the first iterator i in r such that *i == value or end(r) if no
-  // such iterator exists.
   template <typename R, typename T>
     inline auto find(R&& range, const T& value) 
-      -> Requires<!Has_member_find<Forwarded<R>, T>(), decltype(o_begin(range))>
+      -> Requires<!Has_member_find<Forwarded<R>, T>(), decltype(begin(range))>
     {
-      static_assert(Range_search<Forwarded<R>, T>(), "");
-      return find(o_begin(range), o_end(range), value, eq());
+      return find(begin(range), end(range), value, eq());
     }
 
-
-
-  // Find (associative container)
-  // Returns the first iterator i in c such that *i == value or end(c) if no
-  // such iterator exists. The result is comptued in O(log(size(c))).
-  //
-  // NOTE: This implies that Container (or Associative_container) is a 
-  // refinement of Range.
   template <typename C, typename T>
     auto find(C&& cont, const T& value) -> decltype(cont.find(value))
     {
@@ -159,58 +130,47 @@ namespace origin
 
 
 
-  // Find not equal (iterator, relation)
+  // Find not equal
   // Returns the first iterator i in [first, last) where *i != value or last
   // if no such iterator exists.
+  //
+  // FIXME: The comp versions are not finding based on equality, but they
+  // aren't equivalence relations either. Find not?
+
   template<typename I, typename T, typename R>
-    I find_not_equal(I first, I last, const T& value, R comp)
+    inline I 
+    find_not_equal(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
+      assert(is_bounded_range(first, last));
 
-      while (first != last) {
-        if (!comp(*first, value))
-          return first;
+      while (first != last && !comp(*first, value))
         ++first;
-      }
       return last;
     }
 
 
-
-  // Find not equal (iterator, equality)
-  // Returns the first iterator i in [first, last) where *i != value or last
-  // if no such iterator exists.
-  template <typename I, typename T>
-    inline I find_not_equal(I first, I last, const T& value)
+  template <typename R, typename T, typename Comp>
+    inline auto 
+    find_not_equal(R&& range, const T& value, Comp comp) -> decltype(begin(range))
     {
-      static_assert(Search<I, T>(), "");
+      return find_not_equal(begin(range), end(range), value, comp);
+    }
+    
 
+  // FIXME: These names are okay.
+  template <typename I, typename T>
+    inline I 
+    find_not_equal(I first, I last, const T& value)
+    {
       return find_not_equal(first, last, value, eq());
     }
-  
-    
-  // Find not equal (range, relation)
-  // Returns the first iterator i in r where *i != value or end(r) if no such
-  // iterator exists.
-  template <typename R, typename T, typename Rel>
-    inline auto find_not_equal(R&& range, const T& value, Rel comp) -> decltype(o_begin(range))
-    {
-      static_assert(Range_search<Forwarded<R>, T, Rel>(), "");
-  
-      return find_not_equal(o_begin(range), o_end(range), value, comp);
-    }
-    
-        
-    
-  // Find not equal (range, equality)
-  // Returns the first iterator i in r where *i != value or end(r) if no such
-  // iterator exists.
-  template <typename R, typename T>
-    inline auto find_not_equal(R&& range, const T& value) -> decltype(o_begin(range))
-    {
-      static_assert(Range_search<Forwarded<R>, T>(), "");
 
-      return find_not_equal(o_begin(range), o_end(range), value, eq());
+  template <typename R, typename T>
+    inline auto 
+    find_not_equal(R&& range, const T& value) -> decltype(begin(range))
+    {
+      return find_not_equal(begin(range), end(range), value, eq());
     }
     
     
@@ -225,7 +185,7 @@ namespace origin
       assert(( is_readable_range(first, last) ));
       
       if (first != last)
-        return find(o_next(first), last, value, comp);
+        return find(next(first), last, value, comp);
       else
         return last;
     }
@@ -253,7 +213,7 @@ namespace origin
   // Return the nth iterator i in [first, last) where *i == value or last if
   // there are fewer than n elements equal to value.
   template <typename I, typename T, typename R>
-    I find_nth(I first, I last, Distance_type<I> n, const T& value, R comp)
+    I find_nth(I first, I last, Difference_type<I> n, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
@@ -273,7 +233,7 @@ namespace origin
 
   // Find nth (iterator)
   template <typename I, typename T>
-    inline I find_nth(I first, I last, Distance_type<I> n, const T& value)
+    inline I find_nth(I first, I last, Difference_type<I> n, const T& value)
     {
       static_assert(Search<I, T, Equal_to>(), "");
       assert(is_readable_range(first, last));
@@ -285,22 +245,22 @@ namespace origin
   // Find nth (range, relation)
   // Return an iterator to the nth element in r that is equal to value.
   template <typename R, typename T, typename C>
-    inline auto find_nth(R&& range, Distance_type<R> n, const T& value, C comp)
-      -> decltype(o_begin(range))
+    inline auto find_nth(R&& range, Difference_type<R> n, const T& value, C comp)
+      -> decltype(begin(range))
     {
       static_assert(Range_search<Forwarded<R>, T, C>(), "");
-      return find_nth(o_begin(range), o_end(range), n, value, comp);
+      return find_nth(begin(range), end(range), n, value, comp);
     }
 
 
 
   // Find nth (range, equality)
   template <typename R, typename T>
-    inline auto find_nth(R&& range, Distance_type<R> n, const T& value)
-      -> decltype(o_begin(range))
+    inline auto find_nth(R&& range, Difference_type<R> n, const T& value)
+      -> decltype(begin(range))
     {
       static_assert(Range_search<Forwarded<R>, T, Equal_to>(), "");
-      return find_nth(o_begin(range), o_end(range), n, value, eq());
+      return find_nth(begin(range), end(range), n, value, eq());
     }
       
 
@@ -309,7 +269,7 @@ namespace origin
   // Returns the first iterator i in [first, last) where pred(*i) is true or
   // last if no such iterator exists.
   template <typename I, typename P>
-    inline I o_find_if(I first, I last, P pred)
+    inline I find_if(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -328,10 +288,10 @@ namespace origin
   // Returns the first iterator i in r where pred(*i) is true or end(r) if no 
   // such iterator exists.
   template<typename R, typename P>
-    inline auto find_if(R&& range, P pred) -> decltype(o_begin(range))
+    inline auto find_if(R&& range, P pred) -> decltype(begin(range))
     {
       static_assert(Range_query<Forwarded<R>, P>(), "");
-      return o_find_if(o_begin(range), o_end(range), pred);
+      return find_if(begin(range), end(range), pred);
     }
     
     
@@ -340,7 +300,7 @@ namespace origin
   // Returns the first iterator i in [first, last) where !pred(*i) is true or
   // last if no such iterator exists.
   template <typename I, typename P>
-    inline I o_find_if_not(I first, I last, P pred)
+    inline I find_if_not(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(( is_readable_range(first, last) ));
@@ -359,11 +319,11 @@ namespace origin
   // Returns the first iterator i in r where pred(*i) is true or end(r) if no 
   // such iterator exists.
   template <typename R, typename P>
-    inline auto find_if_not(R&& range, P pred) -> decltype(o_begin(range))
+    inline auto find_if_not(R&& range, P pred) -> decltype(begin(range))
     {
       static_assert(Range_query<Unqualified<R>, P>(), "");
       
-      return o_find_if_not(o_begin(range), o_end(range), pred);
+      return find_if_not(begin(range), end(range), pred);
     }
 
      
@@ -381,7 +341,7 @@ namespace origin
       assert(is_readable_range(first, last));
 
       if (first != last)
-        return o_find_if(o_next(first), last, pred);
+        return find_if(next(first), last, pred);
       else
         return last;
     }
@@ -392,7 +352,7 @@ namespace origin
   // Return the nth iterator i in [first, last) where pred(*i) is true or last 
   // if there are fewer than n elements equal to value.
   template <typename I, typename P>
-    I find_nth_if(I first, I last, Distance_type<I> n, P pred)
+    I find_nth_if(I first, I last, Difference_type<I> n, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
@@ -414,12 +374,12 @@ namespace origin
   // Return an iterator to the nth iterator in r where pred(*i) or end(r) if
   // there are fewer than n elements satisfying pred.
   template <typename R, typename P>
-    inline auto find_nth_if(R&& range, Distance_type<R> n, P pred)
-      -> decltype(o_begin(range))
+    inline auto find_nth_if(R&& range, Difference_type<R> n, P pred)
+      -> decltype(begin(range))
     {
       static_assert(Range_query<Unqualified<R>, P>(), "");
       
-      return find_nth_if(o_begin(range), o_end(range), n, pred);
+      return find_nth_if(begin(range), end(range), n, pred);
     }
     
 
@@ -477,13 +437,13 @@ namespace origin
   // Returns the first iterator i in r1 where some_equal(r2, *i) is true.
   template <typename R1, typename R2>
     inline auto find_first_in(R1&& range1, const R2& range2) 
-      -> decltype(o_begin(range1))
+      -> decltype(begin(range1))
     {
       static_assert(Range_comparison<Unqualified<R1>, R2>(), "");
       static_assert(Forward_range<R2>(), "");
       
-      return find_first_in(o_begin(range1), o_end(range1),
-                           o_begin(range2), o_end(range2));
+      return find_first_in(begin(range1), end(range1),
+                           begin(range2), end(range2));
     }
   
 
@@ -493,13 +453,13 @@ namespace origin
   // is any iterator in r2.
   template <typename R1, typename R2, typename R>
     inline auto find_first_in(R1&& range1, const R2& range2, R comp)
-      -> decltype(o_begin(range1))
+      -> decltype(begin(range1))
     {
       static_assert(Range_comparison<Unqualified<R1>, R2, R>(), "");
       static_assert(Forward_range<R2>(), "");
       
-      return find_first_in(o_begin(range1), o_end(range1),
-                           o_begin(range2), o_end(range2), comp);
+      return find_first_in(begin(range1), end(range1),
+                           begin(range2), end(range2), comp);
     }
     
     
@@ -507,6 +467,8 @@ namespace origin
   // Find adjacent (relation)
   // Returns the first iterator i in [first, last) where comp(*i, *(i + 1)) is
   // true.
+  //
+  // TODO: Write using find_mismatch?
   template <typename I, typename R>
     I find_adjacent(I first, I last, R comp)
     {
@@ -514,7 +476,7 @@ namespace origin
       assert(is_readable_range(first, last));
       
       if (first != last) {
-        for (I i = o_next(first); i != last; ++i) {
+        for (I i = next(first); i != last; ++i) {
           if (comp(*first, *i))
             return first;
           ++first;
@@ -540,10 +502,10 @@ namespace origin
   // Find adjacent (range)
   // Returns the first iterator i in range [first, last) where *i == *(i + 1).
   template <typename R>
-    inline auto find_adjacent(R&& range) -> decltype(o_begin(range))
+    inline auto find_adjacent(R&& range) -> decltype(begin(range))
     {
       static_assert(Range_equality_query<Forwarded<R>>(), "");
-      return find_adjacent(o_begin(range), o_end(range));
+      return find_adjacent(begin(range), end(range));
     }
   
 
@@ -551,11 +513,11 @@ namespace origin
   // Find adjacent (range, relation)
   // Returns the first iterator i in range wheren *i == *(i + 1).
   template <typename R, typename Rel>
-    inline auto find_adjacent(R&& range, Rel comp) -> decltype(o_begin(range))
+    inline auto find_adjacent(R&& range, Rel comp) -> decltype(begin(range))
     {
       static_assert(Range_relational_query<Forwarded<R>, Rel>(), "");
 
-      return find_adjacent(o_begin(range), o_end(range), comp);
+      return find_adjacent(begin(range), end(range), comp);
     }
 
     
@@ -569,7 +531,7 @@ namespace origin
       assert(is_readable_range(first, last));
 
       if (first != last) {
-        for (I i = o_next(first); i != last; ++i) {
+        for (I i = next(first); i != last; ++i) {
           if (!comp(*first, *i))
             return first;
           ++first;
@@ -597,21 +559,21 @@ namespace origin
     
   // Find not adjacent (range)
   template <typename R>
-    inline auto find_not_adjacent(R&& range) -> decltype(o_begin(range))
+    inline auto find_not_adjacent(R&& range) -> decltype(begin(range))
     {
       static_assert(Range_equality_query<R>(), "");
 
-      return find_not_adjacent(o_begin(range), o_end(range));
+      return find_not_adjacent(begin(range), end(range));
     }
     
     
   // Find not adjacent (range, relation)
   template <typename R, typename Rel>
-    inline auto find_not_adjacent(R&& range, Rel comp) -> decltype(o_begin(range))
+    inline auto find_not_adjacent(R&& range, Rel comp) -> decltype(begin(range))
     {
       static_assert(Range_relational_query<R, Rel>(), "");
 
-      return find_not_adjacent(o_begin(range), o_end(range), comp);
+      return find_not_adjacent(begin(range), end(range), comp);
     }
   
   
@@ -635,7 +597,7 @@ namespace origin
     inline bool is_relation_preserving(const R& range, Rel comp)
     {
       static_assert(Range_relational_query<R, Rel>(), "");
-      return is_relation_preserving(o_begin(range), o_end(range), comp);
+      return is_relation_preserving(begin(range), end(range), comp);
     }
 
 } // namespace origin

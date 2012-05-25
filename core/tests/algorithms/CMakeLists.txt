@@ -14,9 +14,6 @@ origin_run_test(algo_equal equal.cpp)
 
 origin_run_test(algo_copy copy.cpp)
 
-origin_run_test(algo_extract extract.cpp)
-origin_run_test(algo_extract_if extract_if.cpp)
-
 origin_run_test(algo_partition partition.cpp)
 
 origin_run_test(algo_heap heap.cpp)
@@ -25,3 +22,7 @@ origin_run_test(algo_is_permutation is_permutation.cpp)
 origin_run_test(algo_next_permutation next_permutation.cpp)
 origin_run_test(algo_next_combination next_combination.cpp)
 
+
+
+# origin_run_test(algo_extract extract.cpp)
+# origin_run_test(algo_extract_if extract_if.cpp)

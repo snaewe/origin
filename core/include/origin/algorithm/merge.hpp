@@ -12,9 +12,10 @@ namespace origin
 {
   // FIXME: Finish and document this module (it's small).
   
+  
   // Merge (relation)
   template<typename I1, typename I2, typename O, typename R>
-    O o_merge(I1 first1, I1 last1, I2 first2, I2 last2, O result, R comp)
+    O merge(I1 first1, I1 last1, I2 first2, I2 last2, O result, R comp)
     {
       static_assert(Merge<I1, I2, O, R>(), "");
 
@@ -24,18 +25,18 @@ namespace origin
         else
           copy_step(first1, result);
       }
-      return o_copy(first2, last2, o_copy(first1, last1, result));
+      return copy(first2, last2, copy(first1, last1, result));
     }
 
 
     
   // Merge (less)
   template<typename I1, typename I2, typename O>
-    O o_merge(I1 first1, I1 last1, I2 first2, I2 last2, O result)
+    O merge(I1 first1, I1 last1, I2 first2, I2 last2, O result)
     {
       static_assert(Merge<I1, I2, O>(), "");
       
-      return o_merge(first1, last1, first2, last2, result, lt());
+      return merge(first1, last1, first2, last2, result, lt());
     }
     
     
@@ -44,9 +45,9 @@ namespace origin
   template<typename R1, typename R2, typename O, typename Rel>
     void merge(const R1& range1, const R2& range2, O&& result, Rel comp)
     {
-      return o_merge(o_begin(range1), o_end(range1),
-                     o_begin(range2), o_end(range2),
-                     o_begin(result), comp);
+      return merge(begin(range1), end(range1),
+                     begin(range2), end(range2),
+                     begin(result), comp);
     }
 
     
@@ -55,16 +56,16 @@ namespace origin
   template<typename R1, typename R2, typename O>
     void merge(const R1& range1, const R2& range2, O&& result)
     {
-      return o_merge(o_begin(range1), o_end(range1),
-                     o_begin(range2), o_end(range2),
-                     o_begin(result));
+      return merge(begin(range1), end(range1),
+                     begin(range2), end(range2),
+                     begin(result));
     }
 
     
   
   // Inplace merge (relation)
   template<typename I, typename R>
-    void o_inplace_merge(I first, I middle, I last, R comp)
+    void inplace_merge(I first, I middle, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
 
@@ -75,7 +76,7 @@ namespace origin
     
   // Inplace merge (less)
   template<typename I>
-    void o_inplace_merge(I first, I middle, I last)
+    void inplace_merge(I first, I middle, I last)
     {
       static_assert(Sort<I>(), "");
       

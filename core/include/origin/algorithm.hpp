@@ -10,14 +10,16 @@
 
 #include <algorithm>
 
-#include <origin/memory.hpp>
 #include <origin/functional.hpp>
-#include <origin/iterator.hpp>
-#include <origin/range.hpp>
+#include <origin/iterator/core.hpp>
+#include <origin/range/core.hpp>
 
 namespace origin
 {
-  // NOTE: The o_* algorithms are so named to prevent name collisions with
+  template <typename T> class temporary_buffer;
+
+
+  // NOTE: The * algorithms are so named to prevent name collisions with
   // the std algorithms, except that they may have slightly different 
   // implementations and are fully concept checked.
   
@@ -516,10 +518,23 @@ namespace origin
 
 namespace origin 
 {
-  // For each (iterator)
-  // Evaluate func(x) for each element x in [first, last), Returns func.
+  // For each
+  // Evaluate func(x) for each element x in a range. The iterator version of
+  // has the following syntax:
+  //
+  //    for_each(first, last, func) ~> func
+  //
+  // It evaluates func(*i) for each i in [first, last) and returns func.
+  //
+  // The range version of the algorithm has the following syntax:
+  //
+  //    for_each(range, func) ~>func
+  //
+  // It is equivalent to the iterator version when called over the begin and
+  // end of range.
+
   template <typename I, typename F>
-    inline F o_for_each(I first, I last, F func)
+    inline F for_each(I first, I last, F func)
     {
       while (first != last) {
         func(*first);
@@ -528,20 +543,17 @@ namespace origin
       return func;
     }
 
-
-
-  // For each (range)
-  // Evaluate func(x) for each element x in range. Returns func.
   template <typename R, typename F>
     inline F for_each(R&& range, F func)
     {
-      return o_for_each(o_begin(range), o_end(range), func);
+      return for_each(begin(range), end(range), func);
     }
 
 
 
   // Repeat
-  // Call f() n times.
+  //
+  // Calls f n times.
   template <typename Int, typename F>
     inline F repeat(Int n, F f)
     {
@@ -553,197 +565,164 @@ namespace origin
     }
 
 
-  // FIXME: The mismatch and equal algorithms can collide have problems with the
-  // STL overload if the iterator arguments are defined in the standard
-  // namespace. ADL will select the wrong set of overloads. If you use the
-  // algoirthms with this syntax:
+
+  // Find mismatch
+  // Returns a pair of iterators denoting the position where two ranges do
+  // not match. This algorithm can be used with iterators and ranges. The
+  // iterator versions are:
   //
-  //    mismatch(r1, r2, comp)
-  //    equal(r1, r2, comp)
+  //    find_mismatch(first1, last, first2, last, comp) ~> {i, j}
+  //    find_mismatch(first1, last, first2, last) ~> {i, j}
   //
-  // where r1 and r2 are Range types, then you will need to qualify the lookup
-  // within the origin namespace.
+  // The algorithsm return a pair of iterators i and j such that i is in
+  // [first1, last], j is in [first2, last2], and the values of i and j do not
+  // match. The definition of matching is determined by the relation used to
+  // compare the those elements. The first overload compares the elements of
+  // the two ranges using a relation, comp. The second compares elements for
+  // equality.
+  //
+  // The range versions of the algorithm are:
+  //
+  //    find_mismatch(r1, r2, comp) ~> {i, }
+  //    find_mismatch(r1, r2) ~> {i, j}
+  //
+  // The behavior of these overlaods is equivalent to their corresponding
+  // overloads called over the begin and end of each range.
+  //
+  // In the standard library, the iterator versions are called mismatch and
+  // take only 3 arguments.
 
-
-
-  // Mismatch (iterator, relation)
-  template<typename I1, typename I2, typename R>
-    std::pair<I1, I2> o_mismatch(I1 first1, I1 last1, I2 first2, R comp)
+  template<typename I1, typename I2, typename Comp>
+    inline std::pair<I1, I2> 
+    find_mismatch(I1 first1, I1 last1, I2 first2, I2 last2, Comp comp)
     {
-      static_assert(Comparison<I1, I2, R>(), "");
+      static_assert(Comparison<I1, I2, Comp>(), "");
       assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
+      assume(is_readable_range(first2, last2));
 
-      while (first1 != last1) {
-        if (!comp(*first1, *first2))
-          return {first1, first2};
+      while (first1 != last1 && first2 != last2 && comp(*first1, *first2)) {
         ++first1;
         ++first2;
       }
       return {first1, first2};
     }
 
-
-
-  // Mismatch (iterator)
-  // Returns the first iterator i in [first1, last1) where *i != *j and *j is
-  // the corresponding iterator in j.
-  template<typename I1, typename I2>
-    inline auto o_mismatch(I1 first1, I1 last1, I2 first2)
-      -> Requires<Comparison<I1, I2, Equal_to>(), std::pair<I1, I2>>
+  template <typename I1, typename I2>
+    inline std::pair<I1, I2>
+    find_mismatch(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
-      return o_mismatch(first1, last1, first2, eq());
+      return find_mismatch(first1, last1, first2, last2, eq());
     }
 
-
-
-  // Mismatch (range, relation)
-  //
-  // FIXME: If mismatch didn't collide horribly with the STL version, would
-  // we actually need the requires clause?
-  template<typename R1, typename R2, typename C>
-    inline auto mismatch(const R1& range1, const R2& range2, C comp)-> 
-      Requires<
-        Range_comparison<R1, R2, C>(),
-        decltype(o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), comp))
-        >
+  template <typename R1, typename R2, typename Comp>
+    inline auto 
+    find_mismatch(R1&& range1, R2&& range2, Comp comp)
+      -> decltype(find_mismatch(begin(range1), end(range1), 
+                                begin(range2), end(range2), comp))
     {
-      return o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), comp);
+      return find_mismatch(begin(range1), end(range1), 
+                           begin(range2), end(range2), comp);
     }
 
-
-
-  // Mismatch (range)
-  // Returns the first iterator i in a where *i != *j and *j is the 
-  // corresponding iterator in b.
-  template<typename R1, typename R2>
+  template <typename R1, typename R2>
     inline auto mismatch(R1&& range1, R2&& range2)
-      -> decltype(o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), eq()))
+      -> decltype(find_mismatch(begin(range1), end(range1), 
+                                begin(range2), end(range2), lt()))
     {
-      static_assert(Range_comparison<R1, R2, Equal_to>(), "");
-      return o_mismatch(o_begin(range1), o_end(range1), o_begin(range2), eq());
+      return find_mismatch(begin(range1), end(range1), 
+                           begin(range2), end(range2), eq());
     }
 
 
 
-  // Equal
-  // Returns true if *i == *j for each iterator i and j in [first1, last1) and
-  // [first2, first2 + (last1 - first1)), pairwise.
-  template<typename I1, typename I2>
-    inline auto o_equal(I1 first1, I1 last1, I2 first2)
-      -> Requires<!Can_memcmp<I1, I2>(), bool>
-    {
-      static_assert(Comparison<I1, I2>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
-
-      while(first1 != last1) {
-        if(*first1 != *first2)
-          return false;
-        ++first1;
-        ++first2;
-      }
-      return true;
-    }
-
-
-    
-  // Equal (memcmp)
-  // Use memcmp to compare the iterator ranges, but only in the conditions
-  // determined by the Can_memcmp trait.
-  template<typename I1, typename I2>
-    inline auto o_equal(I1 first1, I1 last1, I2 first2)
-      -> Requires<Can_memcmp<I1, I2>(), bool>
-    {
-      return !__builtin_memcmp(unwrap_iterator(first1), 
-                               unwrap_iterator(first2), 
-                               sizeof(Value_type<I1>) * (last1 - first1));
-    }
-    
-    
-
-  // Equal (range)
-  // Returns true if x == y for each x and y in the ranges a and b, pairwise.
-  template<typename R1, typename R2>
-    inline auto equal(R1 const& a, R2 const& b)
-      -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
-    {
-      static_assert(Range_comparison<R1, R2>(), "");
-    
-      return o_equal(std::begin(a), std::end(a), std::begin(b));
-    }
-
-
-    
-  // Equal (random access range)
-  // This optimization for random access ranges returns true if 
-  // size(a) <= size(b) and x == y for each x and y in the ranges a and b, 
-  // pairwise.
-  template<typename R1, typename R2>
-    inline auto equal(R1 const& a, R2 const& b)
-      -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
-    {
-      static_assert(Range_comparison<R1, R2>(), "");
-    
-      return size(a) <= size(b) 
-          && o_equal(std::begin(a), std::end(a), std::begin(b));
-    }
-  
-  
-    
-  // Equal (relation)
-  // Returns true if comp(*i, *j), for each iterator i and j in [first1, last1) 
-  // and [first2, first2 + (last1 - first1)) pairwise.
+  // Lexicographical equivalent
   //
-  // Note that this algorithm cannot be optimized by memcmp.
-  template<typename I1, typename I2, typename R>
-    inline bool o_equal(I1 first1, I1 last1, I2 first2, R comp)
-    {
-      static_assert(Comparison<I1, I2>(), "");
-      assert(is_readable_range(first1, last1));
-      assume(is_readable_range(first2, distance(first1, last1)));
+  // Returns true when two ranges have the same size and corresponding values.
+  // There are variants of this algorithm for iterators and ranges. The
+  // iterator version is:
+  //
+  //    lexicographical_equivalent(first1, last1, first2, last2, comp) ~> b
+  //
+  // It returns true when no mismatch is found in the elements of 
+  // [first1, last1) and [first2, last2).
+  //
+  // The range version is:
+  //
+  //    lexicographical_equivalent(range1, range2, comp) ~> b
+  //
+  // Its behavior is equivalent to calling the iterator version using begin and
+  // end on the input ranges.
 
-      while(first1 != last1) {
-        if(!comp(*first1, *first2))
-          return false;
-        ++first1;
-        ++first2;
+  template <typename I1, typename I2, typename Comp>
+    inline auto
+    lexicographical_equivalent(I1 first1, I1 last1, I2 first2, I2 last2, Comp comp)
+      -> Requires<Non_random_access_iterator<I1>() && 
+                  Non_random_access_iterator<I2>(), 
+                  bool>
+    {
+      assert(is_bounded_range(first1, last1));
+      assert(is_bounded_range(first2, last2));
+      assume(is_equivalence_relation(comp));
+      auto p = find_mismatch(first1, last1, first2, last2, comp);
+      return p.first == last1 && p.second == last2;
+    }
+
+  // When I1 and I2 are random access iterators, we can more efficiently detect
+  // the case where the sizes differ.
+  template <typename I1, typename I2, typename Comp>
+    inline auto
+    lexicographical_equivalent(I1 first1, I1 last1, I2 first2, I2 last2, Comp comp)
+      -> Requires<Random_access_iterator<I1>() && 
+                  Random_access_iterator<I2>(), 
+                  bool>
+    {
+      assert(is_bounded_range(first1, last1));
+      assert(is_bounded_range(first2, last2));
+      assume(is_equivalence_relation(comp));
+
+      if (last1 - first1 == last2 - first2) {
+        auto p = find_mismatch(first1, last1, first2, last2, comp);
+        return p.first == last1 && p.second == last2;
+      } else {
+        return false;
       }
-      return true;
     }
-    
-    
-    
-  // Equal (range)
-  // Returns true if comp(x, y) is true for each x and y in the ranges a and b, 
-  // pairwise.
-  template<typename R1, typename R2, typename Rel>
-    inline auto equal(const R1& a, const R2& b, Rel comp)
-      -> Requires<!(Random_access_range<R1>() && Random_access_range<R2>()), bool>
+
+  template <typename R1, typename R2, typename Comp>
+    inline bool
+    lexicographical_equivalent(const R1& range1, const R2& range2, Comp comp)
     {
-      static_assert(Range_comparison<R1, R2, Rel>(), "");
-
-      return o_equal(std::begin(a), std::end(a), std::begin(b), comp);
+      return lexicographical_equivalent(begin(range1), end(range1),
+                                        begin(range2), end(range2), comp);
     }
 
-    
-    
-  // Equal (random access range)
-  // This specialization for random access ranges returns true if 
-  // size(a) <= size(b) and comp(x, y) is true for each x and y in the ranges a 
-  // and b, pairwise.
-  template<typename R1, typename R2, typename Rel>
-    inline auto equal(const R1& a, const R2& b, Rel comp)
-      -> Requires<Random_access_range<R1>() && Random_access_range<R2>(), bool>
+
+
+  // Lexicographical equal
+  //
+  // Returns true when two ranges have the same size and equal values. There
+  // are two versions of this function. The iterator version is:
+  //
+  //    lexicographical_equal(first1, last1, first2, last2) ~> b
+  //
+  // The range version is:
+  //
+  //    lexicogpraphical_equal(range1, range2) ~> b
+
+  template <typename I1, typename I2>
+    inline bool
+    lexicographical_equal(I1 first1, I1 last1, I2 first2, I2 last2)
     {
-      static_assert(Range_comparison<R1, R2, Rel>(), "");
-
-      return size(a) <= size(b)
-          && o_equal(std::begin(a), std::end(a), std::begin(b), comp);
+      return lexicographical_equivalent(first1, last1, first2, last2, eq());
     }
 
+  template <typename R1, typename R2>
+    inline bool
+    lexicographical_equal(const R1& range1, const R2& range2)
+    {
+      return lexicographical_equivalent(begin(range1), end(range1),
+                                        begin(range2), end(range2), eq());
+    }
 
 
 
@@ -767,11 +746,12 @@ namespace origin
         // needs to be the same count as [first1, last1). If not, then the
         // ranges are not permutations.
         auto c = count(first2, last2, *i);
-        if(c == 0)
+        if(c == 0) {
           return false;
-        else if(o_count(next(i), last1, *i) + 1 != c)
+        } else if(count(next(i), last1, *i) + 1 != c) {
           // Start at the next i since we already know that *i == *i.
           return false;
+        }
       }
       return true;
     }
@@ -824,7 +804,7 @@ namespace origin
       // Find where [first1, last1) and [first2, ...) differ. Then, count the 
       // number of times each element occurs in the remainder of the two 
       // ranges. Otherwise the two ranges are equal, and we're done.
-      std::tie(first1, first2) = o_mismatch(first1, last1, first2);
+      std::tie(first1, first2) = find_mismatch(first1, last1, first2, last2);
       if(first1 != last1)
         return equal_elements(first1, last1, first2, last2);
       return true;
@@ -846,7 +826,7 @@ namespace origin
       assert(is_readable_range(first2, last2));
       assume(is_equivalence_relation(comp));
 
-      std::tie(first1, first2) = o_mismatch(first1, last1, first2, comp);
+      std::tie(first1, first2) = mismatch(first1, last1, first2, comp);
       if(first1 != last1)
         return equal_elements(first1, last1, first2, last2, comp);
       return true;
@@ -856,7 +836,7 @@ namespace origin
 
   // Search
   template<typename I1, typename I2>
-    inline I1 o_search(I1 first1, I1 last1, I2 first2, I2 last2)
+    inline I1 search(I1 first1, I1 last1, I2 first2, I2 last2)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
@@ -871,7 +851,7 @@ namespace origin
     
   // Search (relation)
   template<typename I1, typename I2, typename R>
-    inline I1 o_search(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
+    inline I1 search(I1 first1, I1 last1, I2 first2, I2 last2, R comp)
     {
       static_assert(Forward_iterator<I1>(), "");
       static_assert(Forward_iterator<I2>(), "");
@@ -892,7 +872,7 @@ namespace origin
       static_assert(Forward_range<R2>(), "");
       static_assert(Comparison<R1, R2>(), "");
       
-      return o_search(std::begin(a), std::end(a), std::begin(b), std::end(b));
+      return search(std::begin(a), std::end(a), std::begin(b), std::end(b));
     }
     
     
@@ -905,7 +885,7 @@ namespace origin
       static_assert(Forward_range<R2>(), "");
       static_assert(Comparison<R1, R2, Rel>(), "");
       
-      return o_search(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
+      return search(std::begin(a), std::end(a), std::begin(b), std::end(b), comp);
     }
 
 
@@ -971,7 +951,7 @@ namespace origin
   
   // Search n
   template<typename I, typename T>
-    inline I o_search_n(I first, I last, Distance_type<I> n, const T& value)
+    inline I search_n(I first, I last, Difference_type<I> n, const T& value)
     {
       static_assert(Forward_iterator<I>(), "");
       static_assert(Search<I, T>(), "");
@@ -984,7 +964,7 @@ namespace origin
     
   // Search n (relation)
   template<typename I, typename T, typename R>
-    inline I o_search_n(I first, I last, Distance_type<I> n, const T& value, R comp)
+    inline I search_n(I first, I last, Difference_type<I> n, const T& value, R comp)
     {
       static_assert(Forward_iterator<I>(), "");
       static_assert(Search<I, T, R>(), "");
@@ -997,26 +977,26 @@ namespace origin
   
   // Search n (range)
   template<typename R, typename T>
-    inline auto search_n(R&& range, Distance_type<R> n, const T& value)
+    inline auto search_n(R&& range, Difference_type<R> n, const T& value)
       -> decltype(std::begin(range))
     {
       static_assert(Forward_range<R>(), "");
       static_assert(Range_search<R, T>(), "");
     
-      return o_search_n(std::begin(range), std::end(range), n, value);
+      return search_n(std::begin(range), std::end(range), n, value);
     }
     
     
     
   // Search n (range, relation)
   template<typename R, typename T, typename Rel>
-    inline auto search_n(R&& range, Distance_type<R> n, const T& value, Rel comp)
+    inline auto search_n(R&& range, Difference_type<R> n, const T& value, Rel comp)
       -> decltype(std::begin(range))
     {
       static_assert(Forward_range<R>(), "");
       static_assert(Range_search<R, T, Rel>(), "");
     
-      return o_search_n(std::begin(range), std::end(range), n, value, comp);
+      return search_n(std::begin(range), std::end(range), n, value, comp);
     }
 
     
@@ -1033,14 +1013,14 @@ namespace origin
   // FIXME: The combination of Input_iterator and Regular_function should be
   // called Transform. Are there other useful occurrences of this conceptf?
   template<typename I, typename O, typename F>
-    inline O o_transform(I first, I last, O result, F f)
+    inline O transform(I first, I last, O result, F f)
     {
       static_assert(Input_iterator<I>(), "");
       static_assert(Regular_function<F, Value_type<I>>(), "");
       static_assert(Weak_output_iterator<O, Result_of<F(Value_type<I>)>>(), "");
       
       assert(is_readable_range(first, last));
-      assume(is_writable_range(result, o_distance(first, last)));
+      assume(is_writable_range(result, distance(first, last)));
       
       while(first != last) {
         *result = f(*first);
@@ -1064,7 +1044,7 @@ namespace origin
       static_assert(Output_range<R2, Result_of<F(Value_type<R1>)>>(), "");
       assume(size(in) <= size(out));
 
-      o_transform(std::begin(in), std::end(in), std::begin(out), f);
+      transform(std::begin(in), std::end(in), std::begin(out), f);
     }
     
     
@@ -1072,7 +1052,7 @@ namespace origin
     
   // Transform (binary)
   template<typename I1, typename I2, typename O, typename F>
-    O o_transform(I1 first1, I1 last1, I2 first2, O result, F f)
+    O transform(I1 first1, I1 last1, I2 first2, O result, F f)
     {
       static_assert(Input_iterator<I1>(), "");
       static_assert(Input_iterator<I2>(), "");
@@ -1101,7 +1081,7 @@ namespace origin
       static_assert(Regular_function<F, Value_type<R1>(), Value_type<R2>>(), "");
       static_assert(Output_range<R3, Result_of<F(Value_type<R1>, Value_type<R2>)>>(), "");
 
-      return o_transform(std::begin(range1), std::end(range1), 
+      return transform(std::begin(range1), std::end(range1), 
                            std::begin(range2), std::begin(result), f);
     }
     
@@ -1109,7 +1089,7 @@ namespace origin
 
   // Fill
   template<typename O, typename T>
-    void o_fill(O first, O last, const T& value)
+    void fill(O first, O last, const T& value)
     {
       static_assert(Fill<O, T>(), "");
       assert(is_writable_range(first, last, value));
@@ -1129,14 +1109,14 @@ namespace origin
       static_assert(Copyable<T>(), "");
       static_assert(Output_range<T>(), "");
       
-      return o_fill(std::begin(range), std::end(range));
+      return fill(std::begin(range), std::end(range));
     }
     
     
     
   // Fill n
   template<typename O, typename T>
-    inline O o_fill_n(O first, Distance_type<O> n, const T& value)
+    inline O fill_n(O first, Difference_type<O> n, const T& value)
     {
       static_assert(Copyable<T>(), "");
       static_assert(Weak_output_iterator<O, T>(), "");
@@ -1153,7 +1133,7 @@ namespace origin
     
   // Generate
   template<typename O, typename F>
-    inline F o_generate(O first, O last, F gen)
+    inline F generate(O first, O last, F gen)
     {
       static_assert(Function<F>(), "");
       static_assert(Output_iterator<O, Result_of<F()>>(), "");
@@ -1176,14 +1156,14 @@ namespace origin
       static_assert(Function<F>(), "");
       static_assert(Range_fill<Rx, Result_of<F()>>(), "");
 
-      return o_generate(std::begin(range), std::end(range), gen);
+      return generate(std::begin(range), std::end(range), gen);
     }
     
     
     
   // Generate n
   template<typename O, typename F>
-    std::pair<O, F> o_generate_n(O first, Distance_type<O> n, F gen)
+    std::pair<O, F> generate_n(O first, Difference_type<O> n, F gen)
     {
       static_assert(Function<F>(), "");
       static_assert(Output_iterator<O, Result_of<F()>>(), "");
@@ -1208,7 +1188,7 @@ namespace origin
 
   // Reverse (iterator)
   template <typename I>
-    void o_reverse(I first, I last)
+    void reverse(I first, I last)
     {
       while (first != last) {
         --last;
@@ -1226,14 +1206,14 @@ namespace origin
     void reverse(R&& range)
     {
       static_assert(Bidirectional_range<Forwarded<R>>(), "");
-      return o_reverse(o_begin(range), o_end(range));
+      return reverse(begin(range), end(range));
     }
   
 
   
   // Reverse copy
   template <typename I, typename O>
-    void o_reverse_copy(I first, I last, O result)
+    void reverse_copy(I first, I last, O result)
     {
       while (first != last) {
         --result;
@@ -1251,7 +1231,7 @@ namespace origin {
 
   // Rotate
   template<typename I>
-    I o_rotate(I first, I mid, I last)
+    I rotate(I first, I mid, I last)
     {
       static_assert(Permutation<I>(), "");
 
@@ -1262,7 +1242,7 @@ namespace origin {
   
   // Rotate copy
   template<typename I, typename O>
-    I o_rotate_copy(I first, I mid, I last, O result)
+    I rotate_copy(I first, I mid, I last, O result)
     {
       static_assert(Permutation<I>(), "");
 
@@ -1282,7 +1262,7 @@ namespace origin {
 
   // Random shuffle
   template <typename I>
-    void o_random_shuffle(I first, I last)
+    void random_shuffle(I first, I last)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Permutation<I>(), "");
@@ -1300,14 +1280,14 @@ namespace origin {
   template <typename R>
     void random_shuffle(R&& range)
     {
-      return o_random_shuffle(o_begin(range), o_end(range));
+      return random_shuffle(begin(range), end(range));
     }
 
 
       
   // Random shuffle (generator)
   template<typename I, typename Gen>
-    void o_random_shuffle(I first, I last, Gen&& rand)
+    void random_shuffle(I first, I last, Gen&& rand)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Permutation<I>(), "");
@@ -1324,7 +1304,7 @@ namespace origin {
   template <typename R, typename Gen>
     void random_shuffle(R&& range, Gen&& rand)
     {
-      return o_random_shuffle(o_begi(range), o_end(range), rand);
+      return random_shuffle(begi(range), end(range), rand);
     }
 
 
@@ -1333,7 +1313,7 @@ namespace origin {
   //
   // FIXME: Implement me!
   template<typename I, typename Gen>
-    void o_shuffle(I first, I last, Gen&& rand)
+    void shuffle(I first, I last, Gen&& rand)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Permutation<I>(), "");
@@ -1347,7 +1327,7 @@ namespace origin {
   template <typename R, typename Gen>
     void shuffle(R&& range, Gen&& rand)
     {
-      o_shuffle(o_begin(range), o_end(range), rand);
+      shuffle(begin(range), end(range), rand);
     }
     
 
@@ -1357,14 +1337,14 @@ namespace origin {
   
   // Is partitioned
   template<typename I, typename P>
-    inline bool o_is_partitioned(I first, I last, P pred)
+    inline bool is_partitioned(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
 
       first = find_if_not(first, last, pred);
       if(first != last)
-        return none_of(o_next(first), last, pred);
+        return none_of(next(first), last, pred);
       else
         return true;
     }
@@ -1377,7 +1357,7 @@ namespace origin {
     {
       static_assert(Range_query<R, P>(), "");
 
-      return o_is_partitioned(std::begin(range), std::end(range), pred);
+      return is_partitioned(std::begin(range), std::end(range), pred);
     }
     
   
@@ -1388,7 +1368,7 @@ namespace origin {
   //
   // FIXME Actually implement me.
   template<typename I, typename P>
-    I o_partition_point(I first, I last, P pred)
+    I partition_point(I first, I last, P pred)
     {
       static_assert(Forward_iterator<I>(), "");
       static_assert(Query<I, P>(), "");
@@ -1404,21 +1384,21 @@ namespace origin {
       static_assert(Forward_range<R>(), "");
       static_assert(Range_query<R, P>(), "");
 
-      return o_partition_point(std::begin(range), std::end(range), pred);
+      return partition_point(std::begin(range), std::end(range), pred);
     }
     
   
   
   // Paritition
   template<typename I, typename P>
-    I o_partition(I first, I last, P pred)
+    I partition(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       static_assert(Permutation<I>(), "");
 
       first = find_if_not(first, last, pred);
       if(first != last)
-        exchange_if(o_next(first), last, first, pred);
+        exchange_if(next(first), last, first, pred);
       return first;
     }
 
@@ -1432,13 +1412,13 @@ namespace origin {
       static_assert(Range_query<Rx, P>(), "");
       static_assert(Range_permutation<Rx>(), "");
       
-      return o_partition(std::begin(range), std::end(range), pred);
+      return partition(std::begin(range), std::end(range), pred);
     }
   
   
   // Stable partition
   template<typename I, typename P>
-    I o_stable_partition(I first, I last, P pred)
+    I stable_partition(I first, I last, P pred)
     {
       return std::stable_partition(first, last, pred);
     }
@@ -1447,7 +1427,7 @@ namespace origin {
   
   // Partition copy
   template<typename I, typename Out1, typename Out2, typename P>
-    std::pair<Out1, Out2> o_partition_copy(I first, I last, Out1 out_true, Out2 out_false, P pred)
+    std::pair<Out1, Out2> partition_copy(I first, I last, Out1 out_true, Out2 out_false, P pred)
     {
       return std::partition_copy(first, last, out_true, out_false, pred);
     }
@@ -1494,11 +1474,12 @@ namespace origin {
 #include <origin/algorithm/minmax.hpp>
 #include <origin/algorithm/permutation.hpp>
 
+// Algorithm depends on memory for temporary buffer.
+#include <origin/memory.hpp>
 
 // Include definitions of container concepts needed for some algorithm
 // specializations (e.g., find).
 #include <origin/container.hpp>
-
 
 
 #endif

@@ -6,10 +6,15 @@
 // and conditions.
 
 #include <cassert>
-#include <vector>
 
 #include <origin/algorithm.hpp>
-#include <origin/testing.hpp>
+
+int main()
+{
+	
+}
+
+/*
 
 using namespace std;
 using namespace origin;
@@ -111,3 +116,5 @@ int main()
 	V v1 {1, 2, 3, 4, 5};
 	check_for_each(env, v1);
 }
+
+*/

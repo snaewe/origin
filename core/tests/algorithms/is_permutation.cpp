@@ -7,12 +7,10 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
-#include <complex>
 
+#include <origin/vector.hpp>
 #include <origin/algorithm.hpp>
 
-using namespace std;
 using namespace origin;
 
 int main()

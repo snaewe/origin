@@ -8,6 +8,8 @@
 #ifndef ORIGIN_UTILITY_TYPESTR_HPP
 #define ORIGIN_UTILITY_TYPESTR_HPP
 
+// FIXME: Deprecate the use of std::string in this header.
+
 #include <string>
 #include <cstring>
 #include <typeinfo>
@@ -67,7 +69,7 @@ namespace origin
     };
 
     
-  // Type to str.
+  // Type to string
   // The type_to_string class is a function object used to generate the name 
   // of a type. It is specialized for cv qualifiers and references so that 
   // they are preserved in the generated string.
@@ -138,7 +140,6 @@ namespace origin
     };
     
     
-    
   // Type list to string
   // Compute an intercalated list of type names (i.e., T1, T2, ..., Tn). This 
   // function (object) is intended to be used by typestr.
@@ -147,7 +148,7 @@ namespace origin
     {
       std::string operator()() const
       {
-        return typestr<T>() + ", " + typelist_to_string<Args...>{}();
+        return typestr<T>() + ", " + typelist_to_string<Args...> {}();
       }
     };
 
@@ -159,10 +160,10 @@ namespace origin
     };
 
   // Specialization for an empty type list
-  template<>
+  template <>
     struct typelist_to_string<>
     {
-      std::string operator()() const { return std::string{}; }
+      std::string operator()() const { return std::string {}; }
     };
 
 } // namespace origin

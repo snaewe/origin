@@ -7,11 +7,10 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
 
+#include <origin/vector.hpp>
 #include <origin/algorithm.hpp>
 
-using namespace std;
 using namespace origin;
 
 int main()
@@ -19,7 +18,7 @@ int main()
   vector<int> v = {1, 2, 3};
   do {
     for(auto i = v.begin(); i != v.end(); ++i)
-      cout << *i << ' ';
-    cout << '\n';
+      std::cout << *i << ' ';
+    std::cout << '\n';
   } while(next_permutation(v));
 }

@@ -23,6 +23,6 @@ int main()
   int nz[] = {1, 2, 3, 4};
   int z[] = {0, 0, 0};
   
-  assert(( equal(v.begin(), p.first, nz) ));
-  assert(( equal(out.begin(), p.second, z) ));
+  assert(( lexicographical_equal(v.begin(), p.first, nz, nz + 4) ));
+  assert(( lexicographical_equal(out.begin(), p.second, z, z + 3) ));
 }

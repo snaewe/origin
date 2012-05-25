@@ -9,10 +9,14 @@
 
 #include <origin/testing.hpp>
 
-
-using namespace std;
 using namespace origin;
 
+int main()
+{
+  
+}
+
+/*
 
 // All of (property)
 struct all_of_check
@@ -247,3 +251,5 @@ int main()
     quick_check(env, none_equal_check {}, range, value, less);
   }
 }
+
+*/

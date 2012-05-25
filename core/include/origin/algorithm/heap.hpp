@@ -187,13 +187,13 @@ namespace origin
   template<std::size_t D, typename R, typename Rel>
     void push_d_heap(R&& range, Rel comp)
     {
-      return push_d_heap<D>(o_begin(range), o_end(range), comp);
+      return push_d_heap<D>(begin(range), end(range), comp);
     }
 
   template<std::size_t D, typename R>
     void push_d_heap(R&& range)
     {
-      return push_d_heap<D>(o_begin(range), o_end(range));
+      return push_d_heap<D>(begin(range), end(range));
     }
 
     
@@ -297,20 +297,20 @@ namespace origin
   template<std::size_t D, typename R, typename Rel>
     void pop_d_heap(R&& range, R comp)
     {
-      pop_d_heap<D>(o_begin(range), o_end(range), comp);
+      pop_d_heap<D>(begin(range), end(range), comp);
     }
 
   template<std::size_t D, typename R>
     void pop_d_heap(R&& range)
     {
-      pop_d_heap<D>(o_begin(range), o_end(range));
+      pop_d_heap<D>(begin(range), end(range));
     }
 #endif
 
 
   // Is heap (iterator, relation)
   template<typename I, typename R>
-    inline bool o_is_heap(I first, I last, R comp)
+    inline bool is_heap(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
 
@@ -321,7 +321,7 @@ namespace origin
     
   // Is heap (iterator, less)
   template<typename I>
-    inline bool o_is_heap(I first, I last)
+    inline bool is_heap(I first, I last)
     {
       static_assert(Relational_query<I, lt>(), "");
       
@@ -334,7 +334,7 @@ namespace origin
   template<typename R, typename Rel>
     inline bool is_heap(const R& range, Rel comp)
     {
-      return o_is_heap(o_begin(range), o_end(range), comp);
+      return is_heap(begin(range), end(range), comp);
     }
     
   
@@ -343,14 +343,14 @@ namespace origin
   template<typename R>
     inline bool is_heap(const R& range)
     {
-      return o_is_heap(o_begin(range), o_end(range), lt());
+      return is_heap(begin(range), end(range), lt());
     }
   
   
   
   // Is heap until (iterator, relation)
   template<typename I, typename R>
-    inline I o_is_heap_until(I first, I last, R comp)
+    inline I is_heap_until(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
 
@@ -361,7 +361,7 @@ namespace origin
 
   // Is heap until (iterator, less)
   template<typename I>
-    inline I o_is_heap_until(I first, I last)
+    inline I is_heap_until(I first, I last)
     {
       static_assert(Relational_query<I>(), "");
       
@@ -372,24 +372,24 @@ namespace origin
   
   // Is heap until (range, relation)
   template<typename R, typename Rel>
-    inline auto is_heap_until(const R& range, Rel comp) -> decltype(o_begin(range))
+    inline auto is_heap_until(const R& range, Rel comp) -> decltype(begin(range))
     {
-      return o_is_heap_until(o_begin(range), o_end(range), comp);
+      return is_heap_until(begin(range), end(range), comp);
     }
   
   
   
   // Is heap until (range, less)
   template<typename R>
-    inline auto is_heap_until(const R& range) -> decltype(o_begin(range))
+    inline auto is_heap_until(const R& range) -> decltype(begin(range))
     {
-      return o_is_heap_until(o_begin(range), o_end(range), lt());
+      return is_heap_until(begin(range), end(range), lt());
     }
   
   
   // Push heap (iterator, relation)
   template<typename I, typename R>
-    inline void o_push_heap(I first, I last, R comp)
+    inline void push_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
 
@@ -400,11 +400,11 @@ namespace origin
     
   // Push heap (iterator, less)
   template<typename I>
-    inline void o_push_heap(I first, I last)
+    inline void push_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
 
-      return o_push_heap(first, last, lt());
+      return push_heap(first, last, lt());
     }
     
 
@@ -413,7 +413,7 @@ namespace origin
   template<typename R, typename Rel>
     inline void push_heap(R&& range, Rel comp)
     {
-      o_push_heap(o_begin(range), o_end(range), comp);
+      push_heap(begin(range), end(range), comp);
     }
     
     
@@ -422,14 +422,14 @@ namespace origin
   template<typename R>
     inline void push_heap(R&& range)
     {
-      o_push_heap(o_begin(range), o_end(range), lt());
+      push_heap(begin(range), end(range), lt());
     }
   
       
     
   // Pop heap (iterator, relation)
   template<typename I, typename R>
-    inline void o_pop_heap(I first, I last, R comp)
+    inline void pop_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
 
@@ -440,11 +440,11 @@ namespace origin
   
   // Pop heap (iterator, less)
   template<typename I>
-    inline void o_pop_heap(I first, I last)
+    inline void pop_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
       
-      o_pop_heap(first, last, lt());
+      pop_heap(first, last, lt());
     }
     
     
@@ -453,7 +453,7 @@ namespace origin
   template<typename R, typename Rel>
     inline void pop_heap(R&& range, Rel comp)
     {
-      o_pop_heap(o_begin(range), o_end(range), comp);
+      pop_heap(begin(range), end(range), comp);
     }
     
     
@@ -462,14 +462,14 @@ namespace origin
   template<typename R>
     inline void pop_heap(R&& range)
     {
-      o_pop_heap(o_begin(range), o_end(range), lt());
+      pop_heap(begin(range), end(range), lt());
     }
     
     
   
   // Make heap (iterator, relation)
   template<typename I, typename R>
-    void o_make_heap(I first, I last, R comp)
+    void make_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
 
@@ -480,11 +480,11 @@ namespace origin
   
   // Make heap (iterator, less)
   template<typename I>
-    void o_make_heap(I first, I last)
+    void make_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
 
-      o_make_heap(first, last, lt());
+      make_heap(first, last, lt());
     }
     
     
@@ -492,7 +492,7 @@ namespace origin
   template<typename R, typename Rel>
     void make_heap(R&& range, Rel comp)
     {
-      o_make_heap(o_begin(range), o_end(range), comp);
+      make_heap(begin(range), end(range), comp);
     }
     
     
@@ -500,14 +500,14 @@ namespace origin
   template<typename R>
     void make_heap(R&& range)
     {   
-      o_make_heap(o_begin(range), o_end(range), lt());
+      make_heap(begin(range), end(range), lt());
     }
 
     
     
   // Sort heap (iterator, relation)
   template<typename I, typename R>
-    void o_sort_heap(I first, I last, R comp)
+    void sort_heap(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
 
@@ -518,11 +518,11 @@ namespace origin
     
   // Sort heap (iterator, less)
   template<typename I>
-    void o_sort_heap(I first, I last)
+    void sort_heap(I first, I last)
     {
       static_assert(Sort<I>(), "");
 
-      o_sort_heap(first, last, lt());
+      sort_heap(first, last, lt());
     }
     
     
@@ -530,7 +530,7 @@ namespace origin
   template<typename R, typename Rel>
     void sort_heap(R&& range, Rel comp)
     {
-      o_sort_heap(o_begin(range), o_end(range), comp);
+      sort_heap(begin(range), end(range), comp);
     }
     
     
@@ -538,7 +538,7 @@ namespace origin
   template<typename R>
     void sort_heap(R&& range)
     {
-      o_sort_heap(o_begin(range), o_end(range), lt());
+      sort_heap(begin(range), end(range), lt());
     }
     
 

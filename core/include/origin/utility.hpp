@@ -8,12 +8,7 @@
 #ifndef ORIGIN_UTILITY_HPP
 #define ORIGIN_UTILITY_HPP
 
-#include <cassert>
-
-#include <origin/utility/meta.hpp>
-#include <origin/utility/typestr.hpp>
-
-#include <iosfwd>
+#include <type_traits>
 
 // The assume macro is used in conjunction with assert. It is used to state
 // a preconditon that is not intended to be evaluated or even compiled. This is 
@@ -21,16 +16,6 @@
 // complex dependencies, etc.
 #define assume(X)
 
-// The assert_if macro is used to conditionally assert an expression. If the
-// expression cond is true, then the expression expr is evaluated. 
-
-// Note that if NDEBUG is defined, the assertion expands into an empty 
-// statement.
-#ifdef NDEBUG
-#  define assert_if(cond, expr)
-#else
-#  define assert_if(Cond, Expr) if(Cond) assert(Expr)
-#endif
 
 namespace origin
 {
@@ -38,14 +23,12 @@ namespace origin
   // The default_t type is a tag class used to indicate the selection of a
   // default value. This is only used to support class template specialization.
   struct default_t { };
-
   
 
   // Unspecified type (utility)
   // The unspecified_t type is a tag class used to indicate that an argument
   // for a template parameter has not been specified.
   struct unspecified_t { };
-
   
 
   // Empty type (utility)
@@ -55,48 +38,51 @@ namespace origin
 
 
 
-  // Streamable<empty_t>
+  // Declval
+  // Declval acts as an expression that evaluates to the explicitly specified
+  // type. It must only be used in unevaluated contexts such as decltype,
+  // sizeof, or noexcept expressions.
   //
-  // TODO: Should we actually read and/or write something for this type? It
-  // might be kind of nice.
-  template <typename Char, typename Traits>
-    inline std::basic_ostream<Char, Traits>& 
-    operator<<(std::basic_ostream<Char, Traits>& os, empty_t)
-    { 
-      return os; 
-    }
-
-  template <typename Char, typename Traits>
-    inline std::basic_istream<Char, Traits>& 
-    operator>>(std::basic_istream<Char, Traits>& is, empty_t&)
-    { 
-      return is; 
-    }
-    
-    
-  // Laze false (trait)
-  // The lazy false function always evaluates to false. However, being a
-  // template, any calls to this function are inherently dependent on the
-  // argument type. Therefore, the compiler cannot eagerly replace the function
-  // call with the false literal. This is sometimes used to defer static
-  // assertions that are known to be failure cases.
+  // FIXME: Decouple this definition from the standard's by making my own
+  // add_rvalue_reference.
   template <typename T>
-    constexpr bool Lazy_false()
-    {
-      return false;
-    }
+    typename std::add_rvalue_reference<T>::type declval() noexcept;
 
 
 
-  // Swap (utility)
-  // A wrapper for the use of std::swap.
+  // Unwrap
+  // The unwrap provides an extension point for unwrapping objects from
+  // adaptors, allowing an algorithm or data structure to operate directly on
+  // the underlying type. For example, some iterator adaptors can be unwrapped
+  // to provide direct access to a pointer, allowing move, copy, and fill
+  // optimizations.
+  //
+  // By default, this function just returns the object it was passed. In other
+  // words, it is an identity function.
+  //
+  // TODO: We could actually have this be an "unwrappable" concept for types
+  // that can return some unerlying value. The question is, how deep do we
+  // unwrap? One level? Fully recursive? For now, unwrappable iterators must
+  // overload this function.
+
   template <typename T>
-    void o_swap(T& a, T& b)
-    {
-      using std::swap;
-      swap(a, b);
-    }
+    inline T& unwrap(T& x) { return x; }
+
+  template <typename T>
+    inline const T& unwrap(const T& x) { return x; }
+
+
+  // Unwrapped type
+  // An alias to the unwrapped type.
+  template <typename I>
+    using Unwrapped_type = decltype(unwrap(declval<I>()));
+    
+
 
 } // namespace origin
+
+
+// Utility components
+#include <origin/utility/typestr.hpp>
 
 #endif

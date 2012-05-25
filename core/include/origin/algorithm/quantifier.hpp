@@ -108,7 +108,7 @@ namespace origin
   // Returns true if first == last or pred(x) is true for all elements x in 
   // [first, last).
   template<typename I, typename P>
-    bool o_all_of(I first, I last, P pred)
+    bool all_of(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
@@ -130,7 +130,7 @@ namespace origin
     {
       static_assert(Input_iterator<I>(), "");
       static_assert(Convertible<Value_type<I>, bool>(), "");
-      return o_all_of(first, last, make_to_bool());
+      return all_of(first, last, make_to_bool());
     }
 
 
@@ -141,7 +141,7 @@ namespace origin
     inline bool all_of(const R& range, P pred)
     {
       static_assert(Range_query<R, P>(), "");
-      return o_all_of(o_begin(range), o_end(range), pred);
+      return all_of(begin(range), end(range), pred);
     }
     
     
@@ -153,7 +153,7 @@ namespace origin
     {
       static_assert(Input_range<R>(), "");
       static_assert(Convertible<Value_type<R>, bool>(), "");
-      return o_all_of(o_begin(range), o_end(range), make_to_bool());
+      return all_of(begin(range), end(range), make_to_bool());
     }
 
 
@@ -164,7 +164,7 @@ namespace origin
     inline bool all_of(std::initializer_list<T> list, P pred)
     {
       static_assert(Predicate<P, T>(), "");
-      return o_all_of(list.begin(), list.end(), pred);
+      return all_of(list.begin(), list.end(), pred);
     }
     
     
@@ -175,7 +175,7 @@ namespace origin
     inline bool all_of(std::initializer_list<T> list)
     {
       static_assert(Convertible<T, bool>(), "");
-      return o_all_of(list.begin(), list.end(), make_to_bool());
+      return all_of(list.begin(), list.end(), make_to_bool());
     }
     
     
@@ -216,7 +216,7 @@ namespace origin
     inline bool not_all_of(const R& range, P pred)
     {
       static_assert(Range_query<R, P>(), "");
-      return not_all_of(o_begin(range), o_end(range), pred);
+      return not_all_of(begin(range), end(range), pred);
     }
     
     
@@ -228,7 +228,7 @@ namespace origin
     {
       static_assert(Input_range<R>(), "");
       static_assert(Convertible<Value_type<R>, bool>(), "");
-      return not_all_of(o_begin(range), o_end(range), make_to_bool());
+      return not_all_of(begin(range), end(range), make_to_bool());
     }
     
 
@@ -291,7 +291,7 @@ namespace origin
     inline bool some_of(const R& range, P pred)
     {
       static_assert(Range_query<R, P>(), "");
-      return some_of(o_begin(range), o_end(range), pred);
+      return some_of(begin(range), end(range), pred);
     }
 
 
@@ -303,7 +303,7 @@ namespace origin
     {
       static_assert(Input_range<R>(), "");
       static_assert(Convertible<Value_type<R>, bool>(), "");
-      return some_of(o_begin(range), o_end(range), make_to_bool());
+      return some_of(begin(range), end(range), make_to_bool());
     }
     
     
@@ -332,7 +332,7 @@ namespace origin
   // None of
   // Returns true if pred(x) is false for all elements x in [first, last).
   template<typename I, typename P>
-    inline bool o_none_of(I first, I last, P pred)
+    inline bool none_of(I first, I last, P pred)
     {
       static_assert(Query<I, P>(), "");
       assert(is_readable_range(first, last));
@@ -352,7 +352,7 @@ namespace origin
   template<typename I>
     inline bool none_of(I first, I last)
     {
-      return o_none_of(first, last, make_to_bool());
+      return none_of(first, last, make_to_bool());
     }
 
 
@@ -364,7 +364,7 @@ namespace origin
     {
       static_assert(Range_query<R, P>(), "");
       
-      return o_none_of(o_begin(range), o_end(range), pred);
+      return none_of(begin(range), end(range), pred);
     }
  
  
@@ -374,7 +374,7 @@ namespace origin
   template<typename R>
     inline bool none_of(const R& range)
     {
-      return o_none_of(o_begin(range), o_end(range), make_to_bool());
+      return none_of(begin(range), end(range), make_to_bool());
     }
     
     
@@ -386,7 +386,7 @@ namespace origin
     {
       static_assert(Predicate<P, T>(), "");
 
-      return o_none_of(list.begin(), list.end(), pred);
+      return none_of(list.begin(), list.end(), pred);
     }
 
 
@@ -396,7 +396,7 @@ namespace origin
   template<typename T>
     inline bool none_of(std::initializer_list<T> list)
     {
-      return o_none_of(list.begin(), list.end(), make_to_bool());
+      return none_of(list.begin(), list.end(), make_to_bool());
     }
 
     
@@ -412,7 +412,7 @@ namespace origin
       
       first = o_find_if(first, last, pred);
       if (first != last)
-        return o_none_of(++first, last, pred);
+        return none_of(++first, last, pred);
       else
         return false;
     }
@@ -436,7 +436,7 @@ namespace origin
     {
       static_assert(Range_query<R, P>(), "");
       
-      return one_of(o_begin(range), o_end(range), pred);
+      return one_of(begin(range), end(range), pred);
     }
  
  
@@ -446,7 +446,7 @@ namespace origin
   template<typename R>
     inline bool one_of(const R& range)
     {
-      return one_of(o_begin(range), o_end(range), make_to_bool());
+      return one_of(begin(range), end(range), make_to_bool());
     }
 
     
@@ -505,7 +505,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline bool all_equal(const R& range, const T& value, Rel comp)
     {
-      return all_equal(o_begin(range), o_end(range), value, comp);
+      return all_equal(begin(range), end(range), value, comp);
     }
     
     
@@ -516,7 +516,7 @@ namespace origin
     inline bool all_equal(const R& range, const T& value)
     {
       static_assert(Range_search<R, T>(), "");
-      return all_equal(o_begin(range), o_end(range), value);
+      return all_equal(begin(range), end(range), value);
     }
     
     
@@ -574,7 +574,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline bool not_all_equal(const R& range, const T& value, Rel comp)
     {
-      return not_all_equal(o_begin(range), o_end(range), value, comp);
+      return not_all_equal(begin(range), end(range), value, comp);
     }
 
     
@@ -586,7 +586,7 @@ namespace origin
     {
       static_assert(Range_search<R, T>(), "");
 
-      return not_all_equal(o_begin(range), o_end(range), value);
+      return not_all_equal(begin(range), end(range), value);
     }
 
     
@@ -644,7 +644,7 @@ namespace origin
     inline bool some_equal(const R& range, const T& value, C comp)
     {
       static_assert(Range_search<R, T, C>(), "");
-      return some_equal(o_begin(range), o_end(range), value, comp);
+      return some_equal(begin(range), end(range), value, comp);
     }
 
     
@@ -655,7 +655,7 @@ namespace origin
     inline bool some_equal(const R& range, const T& value)
     {
       static_assert(Range_search<R, T, Equal_to>(), "");
-      return some_equal(o_begin(range), o_end(range), value, eq());
+      return some_equal(begin(range), end(range), value, eq());
     }
 
 
@@ -714,7 +714,7 @@ namespace origin
   template<typename R, typename T, typename Rel>
     inline bool none_equal(const R& range, const T& value, Rel comp)
     {
-      return none_equal(o_begin(range), o_end(range), value, comp);
+      return none_equal(begin(range), end(range), value, comp);
     }
 
     
@@ -726,7 +726,7 @@ namespace origin
     {
       static_assert(Range_search<R, T>(), "");
 
-      return none_equal(o_begin(range), o_end(range), value);
+      return none_equal(begin(range), end(range), value);
     }
 
 
@@ -787,7 +787,7 @@ namespace origin
     inline bool one_equal(const R& range, const T& value)
     {
       static_assert(Range_search<R, T>(), "");
-      return one_equal(o_begin(range), o_end(range), value);
+      return one_equal(begin(range), end(range), value);
     }
 
 
@@ -798,7 +798,7 @@ namespace origin
     inline bool one_equal(const R& range, const T& value, Rel comp)
     {
       static_assert(Range_search<R, T>(), "");
-      return one_equal(o_begin(range), o_end(range), value, comp);
+      return one_equal(begin(range), end(range), value, comp);
     }
 
     

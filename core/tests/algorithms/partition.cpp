@@ -7,11 +7,10 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
 
+#include <origin/vector.hpp>
 #include <origin/algorithm.hpp>
 
-using namespace std;
 using namespace origin;
 
 bool neg(int n) { return n < 0; }
@@ -22,7 +21,9 @@ int main()
   vector<int> v2 = {-1, -2, -3, 1, 2, 3};
 
   partition(v1, neg);
-  for(auto x : v1) cout << x << ' '; cout << '\n';
+  for(auto x : v1) 
+    std::cout << x << ' '; 
+  std::cout << '\n';
   assert(is_partitioned(v1, neg));
   assert(is_permutation(v1, v2));
 }

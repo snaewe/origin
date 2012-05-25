@@ -64,7 +64,7 @@ namespace origin
   {
     template <typename I, typename T>
       auto operator()(I first, I last, const T& value) const
-        -> Requires<Writable<I, T>(), bool>
+        -> Requires<Copy_writable<I, T>(), bool>
       {
         if (first == last)
           return true;
@@ -271,7 +271,7 @@ namespace origin
   struct random_access_advance_identity
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, n, last))
@@ -281,7 +281,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -293,7 +293,7 @@ namespace origin
   struct random_access_advance_result
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, n, last))
@@ -304,7 +304,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -316,7 +316,7 @@ namespace origin
   struct random_access_next_result
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, n, last))
@@ -326,7 +326,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -338,7 +338,7 @@ namespace origin
   struct random_access_retreat_identity
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, -n, last))
@@ -348,7 +348,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -360,7 +360,7 @@ namespace origin
   struct random_access_retreat_result
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, -n, last))
@@ -371,7 +371,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -383,7 +383,7 @@ namespace origin
   struct random_access_prev_result
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, -n, last))
@@ -393,7 +393,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -405,7 +405,7 @@ namespace origin
   struct random_access_commutativity
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, n, last))
@@ -415,7 +415,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -427,7 +427,7 @@ namespace origin
   struct random_access_associativity
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, 2 * n, last))
@@ -437,7 +437,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -449,7 +449,7 @@ namespace origin
   struct random_access_peano
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (exceeds_limits(first, n, last))
@@ -460,7 +460,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -475,7 +475,7 @@ namespace origin
   struct subscript_equivalence
   {
     template <typename I>
-      auto operator()(I first, I last, Distance_type<I> n) const
+      auto operator()(I first, I last, Difference_type<I> n) const
         -> Requires<Random_access_iterator<I>(), bool>
       {
         if (iterative_bounded_next(first, n, last) == last)
@@ -485,7 +485,7 @@ namespace origin
       }
 
     template <typename R>
-      auto operator()(const R& range, Distance_type<R> n) const
+      auto operator()(const R& range, Difference_type<R> n) const
         -> Requires<Random_access_range<R>(), bool>
       {
         return (*this)(begin(range), end(range), n);
@@ -600,10 +600,10 @@ namespace origin
       template <typename Env, typename Range_gen>
         void operator()(Env& env, Range_gen&& range)
         {
-          using R = Result_type<Forwarded<Range_gen>>;
+          using R = Result_of<Auto<Range_gen>()>;
 
           // By default, evaluate distances over small values.
-          std::uniform_int_distribution<Distance_type<R>> dist {0, 5};
+          std::uniform_int_distribution<Difference_type<R>> dist {0, 5};
           auto num = checkable_var(env, dist);
           
           check(env, bidirectional_range_spec<I> {}, range);

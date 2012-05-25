@@ -60,67 +60,68 @@ namespace origin
   template <typename I, typename O>
     inline void copy_step(I& i, O& o)
     {
-      static_assert(Weak_input_iterator<I>(), "");
-      static_assert(Weak_output_iterator<O, Value_type<I>>(), "");
-
       *o = *i;
       ++i;
       ++o;
     }
-    
-    
-    
-  // Copy
-  // Copy the elements in a range a into another range b.
-  //
-  // FIXME: Optimize this algorithm for trivially copyable types.
-  template <typename I, typename O>
-    inline O o_copy(I first, I last, O result)
-    {
-      static_assert(Copy<I, O>(), "");
-      assert(is_readable_range(first, last));
-      assume(is_writable_range(result, distance(first, last), *first));
-      // FIXME: Overlapping requirements
 
+
+
+  // Copy implementation
+  //
+  // FIXME: The optimizations should require trivially copy assignable, but
+  // GCC does not support those traits yet.
+  template <typename I, typename O>
+    inline O copy_impl(I first, I last, O result)
+    {
       while (first != last)
         copy_step(first, result);
       return result;
     }
   
-
-
-  // Copy (range to iterator)
-  // Copy the elements from range into the output range [first, ...).
-  template <typename I, typename O>
-    inline auto copy(const I& range, O result)
-      -> Requires<Range_copy_out<I, O>(), O>
+  template <typename T>
+    inline auto copy_impl(const T* first, const T* last, T* result) 
+      -> Requires<Trivial<T>(), T*>
     {
-      // FIXME: Overlapping requirements
-      return o_copy(o_begin(range), o_end(range), result);
-    }
+      std::size_t n = last - first;
+      std::memcpy(result, first, n * sizeof(T));
+      return result + n;
+    }  
 
-
-  
-  // Copy (range to range)
-  // Copy the elements from range into result where size(range) <= size(result).
-  template <typename I, typename O>
-    inline auto copy(const I& range, O&& result)
-      -> Requires<Range_copy<I, Forwarded<O>>(), decltype(o_begin(result))>
+  template <typename T>
+    inline auto copy_impl(T* first, T* last, T* result) 
+      -> Requires<Trivial<T>(), T*> 
     {
-      assume(size(range) <= size(out));
-      // FIXME: Overlapping requirements
-      
-     return o_copy(o_begin(range), o_end(range), o_begin(result));
+      std::size_t n = last - first;
+      std::memcpy(result, first, n * sizeof(T));
+      return result + n;
     }
 
 
 
-  // Copy n
-  template<typename I, typename O>
-    inline O o_copy_n(I first, Distance_type<I> n, O result)
+  // Copy
+  // Copy the elements in the range [first, last) to the output range pointed
+  // at by result.
+
+  template <typename I, typename O>
+    inline O copy(I first, I last, O result)
     {
       static_assert(Copy<I, O>(), "");
-      
+      assert(is_readable_range(first, last));
+      assume(is_writable_range(result, distance(first, last), *first));
+      assume(not_overlapped(first, last, result));
+      return copy_impl(unwrap(first), unwrap(last), unwrap(result));
+    }
+  
+
+
+  // Copy n implementation
+  //
+  // FIXME: The optimizations should require trivially copy assignable, but
+  // GCC does not support those traits yet.
+  template <typename I, typename O>
+    inline O copy_n_impl(I first, Difference_type<I> n, O result)
+    {
       while(n != 0) {
         copy_step(first, result);
         --n;
@@ -128,16 +129,44 @@ namespace origin
       return result;
     }
 
+  template <typename T>
+    inline auto copy_n_impl(const T* first, std::ptrdiff_t n, T* result) 
+      -> Requires<Trivial<T>(), T*>
+    {
+      std::memcpy(result, first, n * sizeof(T));
+      return result + n;
+    }  
+
+  template <typename T>
+    inline auto copy_n_impl(T* first, std::ptrdiff_t n, T* result) 
+      -> Requires<Trivial<T>(), T*> 
+    {
+      std::memcpy(result, first, n * sizeof(T));
+      return result + n;
+    }  
+
+
+  // Copy n
+  // Copy the values in the range [first, first + n) into the output range
+  // pointed to be result.
+  template <typename I, typename O>
+    inline O copy_n(I first, Difference_type<I> n, O result)
+    {
+      static_assert(Copy<I, O>(), "");
+      return copy_n_impl(unwrap(first), n, unwrap(result));
+    }
+
+
 
 
   // Copy if
-  template<typename I, typename O, typename P>
-    inline O o_copy_if(I first, I last, O result, P pred)
+  template <typename I, typename O, typename P>
+    inline O copy_if(I first, I last, O result, P pred)
     {
       static_assert(Query<I, P>(), "");
       static_assert(Copy<I, O>(), "");
       assert(is_readable_range(first, last));
-      assume(is_writable_range(result, o_count_if(first, last, pred), *first));
+      assume(is_writable_range(result, count_if(first, last, pred), *first));
       
       while(first != last) {
         if(pred(*first))
@@ -148,23 +177,11 @@ namespace origin
       return result;
     }
     
-    
   
-  // Copy if (range)
-  template<typename I, typename O, typename P>
-    inline void copy_if(const I& in, O& out, P pred)
-    {
-      static_assert(Range_query<I, P>(), "");
-      static_assert(Range_copy<I, O>(), "");
-      assume(size(out) >= count_if(in, pred));
-
-      o_copy_if(std::begin(in), std::end(in), std::begin(out), pred);
-    }
-
 
     
   // Copy if not
-  template<typename I, typename O, typename P>
+  template <typename I, typename O, typename P>
     inline O copy_if_not(I first, I last, O result, P pred)
     {
       while(first != last) {
@@ -175,33 +192,16 @@ namespace origin
       }
       return result;
     }
-    
-    
 
-  // Copy if not (range)
-  template<typename R, typename O, typename P>
-    inline void copy_if_not(R&& in, O&& out, P pred)
-    {
-      using Rx = Forwarded<R>;
-      using Ox = Forwarded<O>;
-      static_assert(Range_query<Rx, P>(), "");
-      static_assert(Copy<Rx, Ox>(), "");
-      
-      o_copy_if_not(std::begin(in), std::end(in), std::begin(out), pred);
-    }
 
-    
+
 
   // Copy backward step
   // Decrement both iterators and copy the value of *i to the object pointed
   // at by o.
-  template<typename I, typename O>
-    void copy_backward_step(I& i, O& o)
+  template <typename I, typename O>
+    inline void copy_backward_step(I& i, O& o)
     {
-      static_assert(Bidirectional_iterator<I>(), "");
-      static_assert(Bidirectional_iterator<O>(), "");
-      static_assert(Output_iterator<O, Value_type<I>>(), "");
-
       --i;
       --o;
       *o = *i;
@@ -209,8 +209,11 @@ namespace origin
     
 
   // Copy backward
-  template<typename I, typename O>
-    inline O o_copy_backward(I first, I last, O result)
+  //
+  // TODO: Optimize for the the case where the value can be trivially moved
+  // from the input range to the output range.
+  template <typename I, typename O>
+    inline O copy_backward(I first, I last, O result)
     {
       static_assert(Bidirectional_iterator<I>(), "");
       static_assert(Bidirectional_iterator<O>(), "");
@@ -224,14 +227,13 @@ namespace origin
     
   
   // Copy backward (range)
-  template<typename R1, typename R2>
-    inline void copy_backward(const R1& in, R2& out)
+  template <typename R, typename O>
+    inline void copy_backward(const R& in, O&& out)
     {
-      static_assert(Bidirectional_range<R1>(), "");
-      static_assert(Bidirectional_range<R2>(), "");
-      static_assert(Range_copy<R1, R2>(), "");
-      
-      return o_copy_backward(std::begin(in), std::end(in), std::begin(out));
+      static_assert(Bidirectional_range<O>(), "");
+      static_assert(Bidirectional_range<Auto<O>>(), "");
+      static_assert(Range_copy<R, Auto<O>>(), "");
+      return copy_backward(begin(in), end(in), begin(out));
     }
 
 
@@ -239,15 +241,41 @@ namespace origin
   // Move step
   // Move the value of *i into the object pointed at by *o and increment both
   // iterators.
-  template<typename I, typename O>
+  template <typename I, typename O>
     void move_step(I& i, O& o)
     {
-      static_assert(Weak_input_iterator<I>(), "");
-      static_assert(Weak_output_iterator<O, Value_type<I>&&>(), "");
-
       *o = std::move(*i);
       ++i;
       ++o;
+    }
+
+
+
+  // Move implementation
+  template <typename I, typename O>
+    inline O move_impl(I first, I last, O result)
+    {
+      while(first != last)
+        move_step(first, result);
+      return result;
+    }
+
+  template <typename T>
+    inline auto move(const T* first, const T* last, T* result)
+      -> Requires<Trivial<T>(), T*>
+    {
+      std::ptrdiff_t n = last - first;
+      std::memmove(result, first, n * sizeof(T));
+      return result + n;
+    }
+
+  template <typename T>
+    inline auto move(T* first, T* last, T* result)
+      -> Requires<Trivial<T>(), T*>
+    {
+      std::ptrdiff_t n = last - first;
+      std::memmove(result, first, n * sizeof(T));
+      return result + n;
     }
 
     
@@ -255,34 +283,32 @@ namespace origin
   // Move
   // Move the elements in the range [first, last) into the range 
   // [result, result + (last - first)).
-  template<typename I, typename O>
-    inline O o_move(I first, I last, O result)
+  template <typename I, typename O>
+    inline O move(I first, I last, O result)
     {
       static_assert(Move<I, O>(), "");
       assert(is_readable_range(first, last));
       assume(is_movable_range(result, distance(first, last), *first));
-
-      while(first != last)
-        move_step(first, result);
-      return result;
+      return move_impl(unwrap(first), unwrap(last), unwrap(result));
     }
   
   
   
   // Move (range)
-  template<typename I, typename O>
-    inline void move(const I& i, O& o)
+  template <typename R, typename O>
+    inline void move(const R& i, O o)
     {
-      static_assert(Range_move<I, O>(), "");
+      static_assert(Range_move<R, O>(), "");
       assume(size(i) <= size(o));
-      
-      o_copy(std::begin(i), std::end(i), std::begin(o));
+      move(begin(i), end(i), begin(o));
     }
 
-    
-  
+
+
+
+
   // Move if
-  template<typename I, typename O, typename P>
+  template <typename I, typename O, typename P>
     inline O move_if(I first, I last, O result)
     {
       static_assert(Query<I, P>(), "");
@@ -302,7 +328,7 @@ namespace origin
     
     
   // Move if (range)
-  template<typename R, typename O, typename P>
+  template <typename R, typename O, typename P>
     inline void move_if(R&& in, O&& out, P pred)
     {
       static_assert(Range_query<R, P>(), "");
@@ -313,7 +339,7 @@ namespace origin
     
     
   // Move if not
-  template<typename I, typename O, typename P>
+  template <typename I, typename O, typename P>
     inline O move_if_not(I first, I last, O result)
     {
       static_assert(Query<I, P>(), "");
@@ -333,7 +359,7 @@ namespace origin
     
     
   // Move if not (range)
-  template<typename R, typename O, typename P>
+  template <typename R, typename O, typename P>
     inline void move_if_not(R&& in, O&& out, P pred)
     {
       static_assert(Range_query<R, P>(), "");
@@ -344,66 +370,86 @@ namespace origin
     
     
   // Move backward step
-  // Move the value of *i into the object pointed at by *o and increment both
-  // iterators.
-  template<typename I, typename O>
-    void move_backward_step(I& i, O& o)
+  // Decrement both iterators and move the representation of *i to the object 
+  // pointed at by o.
+  template <typename I, typename O>
+    inline void move_backward_step(I& i, O& o)
     {
-      static_assert(Bidirectional_iterator<I>(), "");
-      static_assert(Bidirectional_iterator<O>(), "");
-      static_assert(Output_iterator<O, Value_type<I>>(), "");
-
       --i;
       --o;
       *o = std::move(*i);
     }
 
-    
-    
-  // Move backward
-  template<typename I, typename O>
-    inline O o_move_backward(I first, I last, O result)
-    {
-      static_assert(Bidirectional_iterator<I>(), "");
-      static_assert(Bidirectional_iterator<O>(), "");
-      static_assert(Move<I, O>(), "");
 
-      while(first != last)
+  // Move backward implementation
+  template <typename I, typename O>
+    inline O move_backward_impl(I first, I last, O result)
+    {
+      while (first != last)
         move_backward_step(first, result);
       return result;
     }
 
-
-    
-  // Move backward (range)
-  template<typename I, typename O>
-    inline void move_backward(const I& in, O& out)
+  template <typename T>
+    inline auto move_backward_impl(const T* first, const T* last, T* result)
+      -> Requires<Trivial<T>(), T*>
     {
-      static_assert(Bidirectional_range<I>(), "");
-      static_assert(Bidirectional_range<O>(), "");
-      static_assert(Range_move<I, O>(), "");
-
-      return o_move_backward(std::begin(in), std::end(in), std::begin(out));
+      std::ptrdiff_t n = last - first;
+      result -= n;
+      std::memmove(result, first, n * sizeof(T));
+      return result;
     }
-  
+
+  template <typename T>
+    inline auto move_backward_impl(T* first, T* last, T* result)
+      -> Requires<Trivial<T>(), T*>
+    {
+      std::ptrdiff_t n = last - first;
+      result -= n;
+      std::memmove(result, first, n * sizeof(T));
+      return result;
+    }
+
+
+  // Move backward
+  //
+  // FIXME: Write type type requirements and preconditions of this algorithm.
+  template <typename I, typename O>
+    inline O move_backward(I first, I last, O result)
+    {
+      return move_backward_impl(unwrap(first), unwrap(last), unwrap(result));
+    }
+
+
+  // Move backward (range)
+  template <typename R, typename O>
+    inline O move_backward(const R& range, O result)
+    {
+      return move_backward(begin(range), end(range), begin(result));
+    }
+
+
 
 
   // Iterator swap
-  template<typename I1, typename I2>
-    inline void o_iter_swap(I1 i, I2 j)
+  //
+  // FIXME: I am just about 100% sure that Value_type<I1> and Value_type<I2>
+  // must be the same type to guarantee correct behavior. 
+  //
+  // FIXME: Do not call std::swap! Call origin's swap.
+  template <typename I1, typename I2>
+    inline void iter_swap(I1 i, I2 j)
     {
-      static_assert(Writable<I1, Value_type<I2>&&>(), "");
-      static_assert(Writable<I2, Value_type<I1>&&>(), "");
+      static_assert(Move_writable<I1, Value_type<I2>>(), "");
+      static_assert(Move_writable<I2, Value_type<I1>>(), "");
 
-      Value_type<I1> x = std::move(*i);
-      *i = std::move(*j);
-      *j = std::move(x);
+      std::swap(*i, *j);
     }
 
 
     
   // Exchange step
-  template<typename I1, typename I2>
+  template <typename I1, typename I2>
     inline void exchange_step(I1& i, I2& j)
     {
       iter_swap(i, j);
@@ -411,13 +457,12 @@ namespace origin
       ++j;
     }
 
-    
-    
+
   // Exchange
   //
   // This is the same as swap_ranges in the standard library and exchange_values
   // in Elements of Programming.
-  template<typename I1, typename I2>
+  template <typename I1, typename I2>
     inline I2 exchange(I1 first1, I1 last1, I2 first2)
     {
       static_assert(Move<I1, I2>(), "");
@@ -433,7 +478,7 @@ namespace origin
   // Exchange if
   // Selectively exchange the values of [first1, last1) and 
   // [first2, first2 + n).
-  template<typename I1, typename I2, typename P>
+  template <typename I1, typename I2, typename P>
     inline I2 exchange_if(I1 first1, I1 last1, I2 first2, P pred)
     {
       while(first1 != last1) {

@@ -11,12 +11,12 @@ origin_run_test(optional optional.cpp)
 origin_run_test(functional functional.cpp)
 origin_run_test(memory memory.cpp)
 
-add_subdirectory(testing)
-add_subdirectory(utils)
+# FIXME: The testing directory is temporarily broken.
+
+# add_subdirectory(testing)
 add_subdirectory(traits)
 add_subdirectory(concepts)
 
 add_subdirectory(iterator)
-add_subdirectory(containers)
 add_subdirectory(ranges)
 add_subdirectory(algorithms)

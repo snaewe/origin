@@ -7,12 +7,14 @@
 
 
 origin_run_test(iter_concepts concepts.cpp)
+origin_run_test(iter_facade facade.cpp)
 
 origin_run_test(iter_counter counter.cpp)
+origin_run_test(iter_stride stride.cpp)
+origin_run_test(iter_reverse reverse.cpp)
 # origin_run_test(enumerator enumerator.cpp)
 
-origin_run_test(iter_filter filter_iterator.cpp)
-origin_run_test(iter_transform transform_iterator.cpp)
-origin_run_test(iter_stride stride_iterator.cpp)
-origin_run_test(iter_zip zip_iterator.cpp)
+origin_run_test(iter_filter filter.cpp)
+origin_run_test(iter_transform transform.cpp)
+origin_run_test(iter_zip zip.cpp)
 

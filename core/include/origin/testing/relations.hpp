@@ -212,7 +212,8 @@ namespace origin
     template <typename Env, typename R, typename T>
       void operator()(Env& env, R&& r, T&& value) const
       {
-        using Ord = Result_type<Forwarded<R>>;
+        using Value = decltype(value());
+        using Ord = Result_of<Auto<R>(Value, Value)>;
         using Eq = Symmetric_complement_of<Ord>;
 
         auto dist = adapt_distribution<Eq>(r.distribution());

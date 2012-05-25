@@ -29,8 +29,7 @@ namespace origin
   template <typename Gen>
     constexpr bool Random_bit_generator()
     {
-      return Has_result_type<Gen>() // Gen::result_type
-          && Function<Gen>();       // gen() -> result_type
+      return Function<Gen>();
     }
   
 
@@ -87,7 +86,7 @@ namespace origin
   template <typename Var>
     constexpr bool Random_variable()
     {
-      return Function<Var>() && Has_result_type<Var>();
+      return Function<Var>();
     }
 
 
@@ -183,7 +182,7 @@ namespace origin
     public:
       using engine_type = Eng;
       using distribution_type = Dist;
-      using result_type = Result_type<Dist>;
+      using result_type = Result_of<Dist(Eng)>;
 
       random_variable() = default;
       random_variable(Eng e, Dist d) : eng(e), dist(d) { }
@@ -303,7 +302,7 @@ namespace origin
       // static_assert(Constructible<Result, Result_type<Dist>>(), "");
 
       using this_type = adapted_distribution<Dist, Result>;
-      using wrapped_type = Result_type<Dist>;
+      using wrapped_type = Result_of<Dist(std::minstd_rand&)>;
     public:
       using result_type = Result;
 
@@ -508,7 +507,7 @@ namespace origin
     {
       using this_type = random_tuple_generator<Dists...>;
     public:
-      using result_type = std::tuple<Result_type<Dists>...>;
+      using result_type = std::tuple<Result_of<Dists(std::minstd_rand&)>...>;
       
       random_tuple_generator() : dists{}  { }
       random_tuple_generator(Dists&&... ds) : dists{ds...} { }

@@ -6,37 +6,31 @@
 // and conditions.
 
 #include <cassert>
-#include <vector>
 #include <iostream>
 
+#include <origin/vector.hpp>
 #include <origin/range/permutation.hpp>
 
-using namespace std;
 using namespace origin;
 
 template<typename R>
   void print(R const& r)
   {
     for(auto x : r)
-      cout << x << " ";
-    cout << "\n";
+      std::cout << x << " ";
+    std::cout << "\n";
   }
 
 int main()
 {
-  {
-    vector<int> v = {1, 2, 3};
-    for(auto r : all_permutations(v))
-      print(r);
-    cout << "---\n";
-  }
+  vector<int> v1 = {1, 2, 3};
+  for(auto r : permutations(v1))
+    print(r);
+
+  std::cout << '\n';
   
-  {
-    vector<int> v = {1, 2, 3, 4, 5};
-    for(auto r : permutations(v, 3)) {
-      for(auto x : r)
-        cout << x << ' ';
-      cout << '\n';
-    }
-  }
+  // FIXME: Is this right?
+  vector<int> v = {1, 2, 3, 4, 5};
+  for(auto r : partial_permutations(v, 3))
+    print(r);
 }

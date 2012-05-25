@@ -50,7 +50,7 @@ namespace origin
   // and valid expressions:
   //
   //    - Value_type<C>     // The type of sub-object
-  //    - Distance_type<C>  // Distance between sub-object positions
+  //    - Difference_type<C>  // Distance between sub-object positions
   //    - begin(c)          // An iterator to the first sub-object
   //    - end(c)            // An iterator past the last sub-object
   //    - size(c)           // The number of sub-objects
@@ -78,7 +78,7 @@ namespace origin
   template<typename C>
     constexpr bool Has_container_types()
     {
-      return Has_value_type<C>() && Has_distance_type<C>();
+      return Has_value_type<C>() && Has_difference_type<C>();
     }
 
   // A helper class for checking syntactic requirements.

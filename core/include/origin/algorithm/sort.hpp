@@ -56,7 +56,7 @@ namespace origin
   // Is sorted
   // Returns true if *i <= *(i + 1) for all iterators i in [first, last).
   template<typename I>
-    bool o_is_sorted(I first, I last)
+    bool is_sorted(I first, I last)
     {
       static_assert(Order_query<I>(), "");
       assert(is_readable_range(first, last));
@@ -70,7 +70,7 @@ namespace origin
   // Is sorted (relation)
   // Returns true if !comp(*(i + 1), *i) for all iterators i in [first, last).
   template<typename I, typename R>
-    bool o_is_sorted(I first, I last, R comp)
+    bool is_sorted(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
       assert(is_readable_range(first, last));
@@ -88,7 +88,7 @@ namespace origin
     {
       static_assert(Range_order_query<R>(), "");
       
-      return o_is_sorted(o_begin(range), o_end(range));
+      return is_sorted(begin(range), end(range));
     }
   
   
@@ -101,14 +101,14 @@ namespace origin
       static_assert(Range_relational_query<R, Rel>(), "");
       assert(is_strict_weak_order(comp));
       
-      return o_is_sorted(o_begin(range), o_end(range), comp);
+      return is_sorted(begin(range), end(range), comp);
     }
   
 
 
   // Is sorted until
   template<typename I>
-    I o_is_sorted_until(I first, I last)
+    I is_sorted_until(I first, I last)
     {
       static_assert(Order_query<I>(), "");
 
@@ -120,7 +120,7 @@ namespace origin
   
   // Is sorted until (relation)
   template<typename I, typename R>
-    I o_is_sorted_until(I first, I last, R comp)
+    I is_sorted_until(I first, I last, R comp)
     {
       static_assert(Relational_query<I, R>(), "");
       assert(is_readable_range(first, last));
@@ -133,30 +133,30 @@ namespace origin
   
   // Is sorted until (range)
   template<typename R>
-    auto is_sorted_until(const R& range) -> decltype(o_begin(range))
+    auto is_sorted_until(const R& range) -> decltype(begin(range))
     {
       static_assert(Range_order_query<R>(), "");
       
-      return o_is_sorted_until(o_begin(range), o_end(range));
+      return is_sorted_until(begin(range), end(range));
     }
     
     
     
   // Is sorted until (range)
   template<typename R, typename Rel>
-    auto is_sorted_until(const R& range, Rel comp) -> decltype(o_begin(range))
+    auto is_sorted_until(const R& range, Rel comp) -> decltype(begin(range))
     {
       static_assert(Range_relational_query<R, Rel>(), "");
       assert(is_strict_weak_order(comp));
       
-      return o_is_sorted_until(o_begin(range), o_end(range), comp);
+      return is_sorted_until(begin(range), end(range), comp);
     }
     
     
 
   // Sort
   template<typename I>
-    void o_sort(I first, I last)
+    void sort(I first, I last)
     {
       static_assert(Sort<I>(), "");
       assert(is_permutable_range(first, last));
@@ -168,7 +168,7 @@ namespace origin
     
   // Sort (relation)
   template<typename I, typename R>
-    void o_sort(I first, I last, R comp)
+    void sort(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
       assert(is_permutable_range(first, last));
@@ -185,7 +185,7 @@ namespace origin
     {
       static_assert(Range_sort<Forwarded<R>>(), "");
       
-      return o_sort(o_begin(range), o_end(range));
+      return sort(begin(range), end(range));
     }
   
   
@@ -196,14 +196,14 @@ namespace origin
       static_assert(Range_sort<Forwarded<R>, Rel>(), "");
       assert(is_strict_weak_order(comp));
       
-      return o_sort(o_begin(range), o_end(range), comp);
+      return sort(begin(range), end(range), comp);
     }
 
     
     
   // Stable sort
   template<typename I>
-    void o_stable_sort(I first, I last)
+    void stable_sort(I first, I last)
     {
       static_assert(Sort<I>(), "");
       assert(is_permutable_range(first, last));
@@ -215,7 +215,7 @@ namespace origin
     
   // Stable sort (relation)
   template<typename I, typename R>
-    void o_stable_sort(I first, I last, R comp)
+    void stable_sort(I first, I last, R comp)
     {
       static_assert(Sort<I, R>(), "");
       assert(is_permutable_range(first, last));
@@ -232,7 +232,7 @@ namespace origin
     {
       static_assert(Range_sort<Forwarded<R>>(), "");
       
-      return o_stable_sort(o_begin(range), o_end(range));
+      return stable_sort(begin(range), end(range));
     }
 
 
@@ -244,7 +244,7 @@ namespace origin
       static_assert(Range_sort<Forwarded<R>, Rel>(), "");
       assert(is_strict_weak_order(comp));
       
-      return o_stable_sort(o_begin(range), o_end(range), comp);
+      return stable_sort(begin(range), end(range), comp);
     }
 
 
@@ -259,7 +259,7 @@ namespace origin
     
   // Partial sort
   template<typename I>
-    void o_partial_sort(I first, I middle, I last)
+    void partial_sort(I first, I middle, I last)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Sort<I>(), "");
@@ -272,7 +272,7 @@ namespace origin
     
   // Partial sort (relation)
   template<typename I, typename R>
-    void o_partial_sort(I first, I middle, I last, R comp)
+    void partial_sort(I first, I middle, I last, R comp)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Sort<I, R>(), "");
@@ -286,7 +286,7 @@ namespace origin
     
   // Partial sort copy
   template<typename I1, typename I2>
-    void o_partial_sort_copy(I1 first, I1 last, I2 result_first, I2 result_last)
+    void partial_sort_copy(I1 first, I1 last, I2 result_first, I2 result_last)
     {
       static_assert(Random_access_iterator<I2>(), "");
       static_assert(Copy<I1, I2>(), "");
@@ -301,7 +301,7 @@ namespace origin
     
   // Partial sort copy (relation)
   template<typename I1, typename I2, typename R>
-    void o_partial_sort_copy(I1 first, I1 last, I2 result_first, I2 result_last, R comp)
+    void partial_sort_copy(I1 first, I1 last, I2 result_first, I2 result_last, R comp)
     {
       static_assert(Random_access_iterator<I2>(), "");
       static_assert(Copy<I1, I2>(), "");
@@ -322,7 +322,7 @@ namespace origin
       static_assert(Range_copy<R1, Forwarded<R2>>(), "");
       static_assert(Range_sort<Forwarded<R2>>(), "");
 
-      return o_partial_sort_copy(o_begin(in), o_end(in), o_begin(out), o_end(out));
+      return partial_sort_copy(begin(in), end(in), begin(out), end(out));
     }
 
 
@@ -335,7 +335,7 @@ namespace origin
       static_assert(Range_copy<R1, Forwarded<R2>>(), "");
       static_assert(Range_sort<Forwarded<R2>, Rel>(), "");
 
-      return o_partial_sort_copy(o_begin(in), o_end(in), o_begin(out), o_end(out), comp);
+      return partial_sort_copy(begin(in), end(in), begin(out), end(out), comp);
     }
 
   
@@ -347,7 +347,7 @@ namespace origin
   
   // Nth element
   template<typename I>
-    void o_nth_element(I first, I nth, I last)
+    void nth_element(I first, I nth, I last)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Sort<I>(), "");
@@ -359,7 +359,7 @@ namespace origin
 
   // Nth element (relation)
   template<typename I, typename R>
-    void o_nth_element(I first, I nth, I last, R comp)
+    void nth_element(I first, I nth, I last, R comp)
     {
       static_assert(Random_access_iterator<I>(), "");
       static_assert(Sort<I, R>(), "");

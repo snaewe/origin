@@ -54,30 +54,7 @@ namespace origin
       return Equality_comparable_concept<T, U>::check();
     }
 
-} // namespace origin
 
-
-
-// Equality comparison (adaptation)
-// If T has no members, then T's value cannot be distinguished from its type.
-// Effectively, T represents a single value.
-template <typename T>
-  inline auto operator==(const T& a, const T& b) 
-    -> origin::Requires<origin::Empty<T>(), bool>
-  {
-    return true;
-  }
-
-template <typename T>
-  inline auto operator!=(const T& a, const T& b) 
-    -> origin::Requires<origin::Empty<T>(), bool>
-  {
-    return true;
-  }
-
-
-
-namespace origin {
 
   // Weakly ordered (concept)
   // A type is weakly ordered if it defines the standard relational operators
@@ -347,21 +324,19 @@ namespace origin {
   //
   // Note that a value type is never just the result type of an accessor
   // function -- it is never a cv-qualified or reference type.
-  //
-  // In general 
+
+
+  // Type deduction hook.
+  subst_failure deduce_value_type(...);
+
+  // If T can be dereferenced, then the value type is the result of that
+  // operation minus reference and const-qualifiers.
+  template <typename T>
+    auto deduce_value_type(default_t, const T&) 
+      -> Requires<Has_dereference<T>(), Unqualified<Dereference_result<T>>>;
 
   namespace traits
   {
-    // Type deduction hook.
-    subst_failure deduce_value_type(...);
-
-    // If T can be dereferenced, then the value type is the result of that
-    // operation minus reference and const-qualifiers.
-    template <typename T>
-      auto deduce_value_type(default_t, const T&) 
-        -> Requires<Has_dereference<T>(), Unqualified<Dereference_result<T>>>;
-
-
     // Deduce the value type associated with T. We first look for an 
     // associated member type, then default to the deduction overloads.
     template <typename T, bool = Has_associated_value_type<T>()>
@@ -380,7 +355,6 @@ namespace origin {
       };
 
   } // namespace traits
-  
 
 
   // Value traits (traits class)
@@ -392,19 +366,6 @@ namespace origin {
     {
       using type = typename traits::get_value_type<T>::type;
     };
-
-  template <typename T>
-    struct value_traits<T&> : value_traits<T> { };
-
-  template <typename T>
-    struct value_traits<T&&> : value_traits<T> { };
-
-  template <typename T, std::size_t N>
-    struct value_traits<T[N]>
-    {
-      using type = T;
-    };
-
 
 
   // Value type (alias)
@@ -425,54 +386,67 @@ namespace origin {
 
     
 
-  // Distance Type
-  // The distance type is a type that encodes the distance between two 
-  // objects (e.g., iterators, pointers, and integral types in general).
+  // Difference Type
+  // The difference type is a type that encodes the difference of two objects
+  // in memory (in the abstract). It is most commonly used to describe the
+  // difference between pointers and iterators.
   //
-  // This is called difference type in the standard library. We rename it
-  // to be an accordance with the Palo Alto TR. Distance is also easier to
-  // write than difference.
+  // We generally assume that the difference type applies to discrete (not
+  // continuous) linearly ordered types.
+
+  // Type deduction hook. 
+  subst_failure deduce_difference_type(...);
+
+  // For pointers, this is simply ptrdiff_t.
+  template <typename T>
+    std::ptrdiff_t deduce_difference_type(default_t, T*);
+
+  // For integral types, it is a signed integer type.
   //
-  // User-defined types model this concepts by containing a nested member
-  // called the difference_type (i.e., T::difference_type must be a valid
-  // type name). The distance type is implicitly defined for integral types
-  // pointers, and statically sized arrays.
+  // FIXME: This is probably incorrect; we may need to return the next
+  // largest integer type.
+  template <typename T>
+    auto deduce_difference_type(default_t, T) 
+      -> Requires<Signed<T>(), T>;
+
+  template <typename T>
+    auto deduce_difference_type(default_t, T) 
+      -> Requires<Unsigned<T>(), Make_signed<T>>;
+
+
+  // If T is a class that does not have a minus operator, but does have a
+  // pre-increment operator, then we can guess ptrdiff_t.
+  template <typename T>
+    auto deduce_difference_type(default_t, T) 
+      -> Requires<Class<T>() &&  Has_pre_increment<T>() && !Has_minus<T>(), 
+                  std::ptrdiff_t>;
+
+  // If T is a class with a minus operator, then the difference type is
+  // simply the result of that type.
   //
-  // The notion of "distance" as used in most concept designs is somewhat
-  // artificial in that it generally required to be explicitly specified. A
-  // more natural approach would be to deduce the distance type as a result
-  // of the distance() function as if it were required by all differentiable
-  // values.
+  // FIXME: T is also required to be linearly ordered and the result type
+  // probably has to be an integer (not Integral?)
+  template <typename T>
+    auto deduce_difference_type(default_t, T)
+      -> Requires<Class<T>() &&  Has_pre_increment<T>() && Has_minus<T>(), 
+                  Minus_result<T>>;
 
-  namespace traits {
-    // Type deduction hook. 
-    subst_failure deduce_distance_type(...);
-
-    template <typename T>
-      auto deduce_distance_type(default_t, T) -> Requires<Arithmetic<T>(), T>;
-
-    // We can provide a reasonable guess for all other incrementable 
-    // user-defined types as ptrdiff_t. This is basically a default guess for
-    // all iterator-like types.
-    template <typename T>
-      auto deduce_distance_type(default_t, T) 
-        -> Requires<Class<T>() && Has_pre_increment<T>(), std::ptrdiff_t>;
-
-
+  namespace traits 
+  {
     // Get the distance type associated with T.
     template <typename T, bool = Has_associated_difference_type<T>()>
-      struct get_distance_type;
+      struct get_difference_type;
 
     template <typename T>
-      struct get_distance_type<T, true>
+      struct get_difference_type<T, true>
       {
         using type = typename T::difference_type;
       };
 
     template <typename T>
-      struct get_distance_type<T, false>
+      struct get_difference_type<T, false>
       {
-        using type = decltype(deduce_distance_type(default_t {}, std::declval<T>()));
+        using type = decltype(deduce_difference_type(default_t {}, std::declval<T>()));
       };
   } // namespace traits
 
@@ -483,33 +457,9 @@ namespace origin {
   // type with a specific set of types. This traits class is specialized for
   // pointers, arrays, and initializer lists, by default.
   template <typename T>
-    struct distance_traits
+    struct difference_traits
     {
-      using type = typename traits::get_distance_type<T>::type;
-    };
-
-  template <typename T>
-    struct distance_traits<T&> : distance_traits<T> { };
-
-  template <typename T>
-    struct distance_traits<T&&> : distance_traits<T> { };
-
-  template <typename T>
-    struct distance_traits<T*>
-    {
-      using type = std::ptrdiff_t;
-    };
-  
-  template <typename T, std::size_t N>
-    struct distance_traits<T[N]>
-    {
-      using type = std::ptrdiff_t;
-    };
-
-  template <typename T>
-    struct distance_traits<std::initializer_list<T>>
-    {
-      using type = std::ptrdiff_t;
+      using type = typename traits::get_difference_type<T>::type;
     };
 
 
@@ -517,16 +467,16 @@ namespace origin {
   // Distance type (alias)
   // An alias to the associated distance type, if supported.
   template <typename T>
-    using Distance_type = typename distance_traits<T>::type;
+    using Difference_type = typename difference_traits<T>::type;
     
 
 
   // Has distance type (trait)
   // Returns true if T has an associated difference type.
   template <typename T>
-    constexpr bool Has_distance_type()
+    constexpr bool Has_difference_type()
     {
-      return Subst_succeeded<Distance_type<T>>();
+      return Subst_succeeded<Difference_type<T>>();
     }
 
 
@@ -536,15 +486,14 @@ namespace origin {
   // structure. For example, the number of elemnts in a container, or the
   // number of rows and columns in a matrix. 
 
+  // This function is called to deduce the size type within some conceptual
+  // domain. This declaration depends on ADL to find overloads for differnt
+  // conceptual domains.
+  subst_failure deduce_size_type(...);
 
   // Infrastructrue for deducing a size type.
   namespace traits
   {
-    // This function is called to deduce the size type within some conceptual
-    // domain. This declaration depends on ADL to find overloads for differnt
-    // conceptual domains.
-    subst_failure deduce_size_type(...);
-
     // Deduce the associate size type of T. If T has an explicitly associated
     // size type, then that is taken to be T's size type. Otherwise, we expect
     // the associated size type be deduced from the member function size().
