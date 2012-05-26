@@ -8,7 +8,7 @@
 #ifndef ORIGIN_ALGORITHM_FIND_HPP
 #define ORIGIN_ALGORITHM_FIND_HPP
 
-#include <algorithm>
+#include <origin/algorithm/core.hpp>
 
 namespace origin
 {
@@ -89,11 +89,22 @@ namespace origin
 
 
   // Find 
-  // Return the first iterator i in [first, last) where comp(*i, value) is true
-  // or last if no such iterator exists.
+  //
+  // Return the first iterator i where *i matches value. The meaning of matching
+  // depends on the condition imposed by the relation, comp. There are four
+  // overloads of this function:
+  //
+  //    find(first, last, value, comp) ~> i
+  //    find(first, last, value) ~> i
+  //    find(range, value, comp) ~> i
+  //    find(range, value) ~> comp
+  //
+  // The algorithm returns the iterator where *i matches value or an iterator
+  // past the end of the range.
 
   template <typename I, typename T, typename R>
-    I find(I first, I last, const T& value, R comp)
+    inline I 
+    find(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
@@ -104,26 +115,31 @@ namespace origin
     }
 
   template <typename I, typename T>
-    inline I find(I first, I last, const T& value)
+    inline I 
+    find(I first, I last, const T& value)
     {
       return find(first, last, value, eq());
     }
 
   template <typename R, typename T, typename C>
-    inline auto find(R&& range, const T& value, C comp) -> decltype(begin(range))
+    inline auto 
+    find(R&& range, const T& value, C comp) -> decltype(begin(range))
     {
       return find(begin(range), end(range), value, comp);
     }
 
   template <typename R, typename T>
-    inline auto find(R&& range, const T& value) 
+    inline auto 
+    find(R&& range, const T& value) 
       -> Requires<!Has_member_find<Forwarded<R>, T>(), decltype(begin(range))>
     {
       return find(begin(range), end(range), value, eq());
     }
 
+  // Optimization for sets and maps.
   template <typename C, typename T>
-    auto find(C&& cont, const T& value) -> decltype(cont.find(value))
+    inline auto 
+    find(C&& cont, const T& value) -> decltype(cont.find(value))
     {
       return cont.find(value);
     }
@@ -131,6 +147,7 @@ namespace origin
 
 
   // Find not equal
+  //
   // Returns the first iterator i in [first, last) where *i != value or last
   // if no such iterator exists.
   //
@@ -158,7 +175,16 @@ namespace origin
     }
     
 
-  // FIXME: These names are okay.
+
+
+  // Find not equal
+  //
+  // Returns the first iterator i in a range where *i = value. There are two
+  // overloads of this function:
+  //
+  //    find_not_equal(first, last, value) ~> i
+  //    find_not_equal(range, value) ~> i
+
   template <typename I, typename T>
     inline I 
     find_not_equal(I first, I last, const T& value)
@@ -178,8 +204,10 @@ namespace origin
   // Find next
   // Returns the first iterator i in [first + 1, last) where comp(*i, value) is
   // or true last if no such iterator exists or first == last.
+
   template <typename I, typename T, typename R>
-    inline I find_next(I first, I last, const T& value, R comp)
+    inline I 
+    find_next(I first, I last, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(( is_readable_range(first, last) ));
@@ -190,8 +218,8 @@ namespace origin
         return last;
     }
     
-      
-        
+
+
   // Find next
   // Returns the first iterator i in [first + 1, last) where *i == value or
   // last if no such iterator exists or first == last.
@@ -199,7 +227,8 @@ namespace origin
   // Note that there is no corresponding range version of this function. The
   // operation is only intended to be applied to iterators.
   template <typename I, typename T>
-    inline I find_next(I first, I last, const T& value)
+    inline I 
+    find_next(I first, I last, const T& value)
     {
       static_assert(Search<I, T>(), "");
       assert(is_readable_range(first, last));
@@ -213,7 +242,8 @@ namespace origin
   // Return the nth iterator i in [first, last) where *i == value or last if
   // there are fewer than n elements equal to value.
   template <typename I, typename T, typename R>
-    I find_nth(I first, I last, Difference_type<I> n, const T& value, R comp)
+    I 
+    find_nth(I first, I last, Difference_type<I> n, const T& value, R comp)
     {
       static_assert(Search<I, T, R>(), "");
       assert(is_readable_range(first, last));
@@ -407,6 +437,70 @@ namespace origin
       return last1;
     }
 
+
+  // Find mismatch
+  // Returns a pair of iterators denoting the position where two ranges do
+  // not match. There are four overloads of this algorithm:
+  //
+  //    find_mismatch(first1, last, first2, last, comp) ~> {i, j}
+  //    find_mismatch(first1, last, first2, last) ~> {i, j}
+  //    find_mismatch(range1, range2, comp) ~> {i, j}
+  //    find_mismatch(range1, range2) ~> {i, j}
+  //
+  // The first two search for a mismatch in the iterator ranges [first1, last1)
+  // and [first2, last), and the last two do the same for bounded ranges range1
+  // and range2.
+  //
+  // The algorithm returns a pair of iterators i and j such that i is in
+  // [first1, last], j is in [first2, last2] (note closed ranges), and the
+  // values of i and j do not match. The definition of matching is determined by
+  // the relation used to compare the those elements. The first overload
+  // compares the elements of the two ranges using a relation, comp. The second
+  // compares elements for equality.
+  //
+  // In the standard library, the iterator versions are called mismatch and
+  // take only 3 arguments.
+
+  template<typename I1, typename I2, typename Comp>
+    inline std::pair<I1, I2> 
+    find_mismatch(I1 first1, I1 last1, I2 first2, I2 last2, Comp comp)
+    {
+      static_assert(Comparison<I1, I2, Comp>(), "");
+      assert(is_readable_range(first1, last1));
+      assume(is_readable_range(first2, last2));
+
+      while (first1 != last1 && first2 != last2 && comp(*first1, *first2)) {
+        ++first1;
+        ++first2;
+      }
+      return {first1, first2};
+    }
+
+  template <typename I1, typename I2>
+    inline std::pair<I1, I2>
+    find_mismatch(I1 first1, I1 last1, I2 first2, I2 last2)
+    {
+      return find_mismatch(first1, last1, first2, last2, eq());
+    }
+
+  template <typename R1, typename R2, typename Comp>
+    inline auto 
+    find_mismatch(R1&& range1, R2&& range2, Comp comp)
+      -> decltype(find_mismatch(begin(range1), end(range1), 
+                                begin(range2), end(range2), comp))
+    {
+      return find_mismatch(begin(range1), end(range1), 
+                           begin(range2), end(range2), comp);
+    }
+
+  template <typename R1, typename R2>
+    inline auto mismatch(R1&& range1, R2&& range2)
+      -> decltype(find_mismatch(begin(range1), end(range1), 
+                                begin(range2), end(range2), lt()))
+    {
+      return find_mismatch(begin(range1), end(range1), 
+                           begin(range2), end(range2), eq());
+    }
 
     
   // Find first in
