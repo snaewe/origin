@@ -5,19 +5,23 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-
-# Add a new test run test for a given source code file. This adds a target for
-# building the executable and a test target for the CTest.
-#
-#   origin_run_test(target src [args])
-#
-# Target is the name of the target, and src is the name of the source file.
-# Command-line arguments to the test can also be specified.
-macro(origin_run_test target src)
-  origin_executable(${target} ${src})
-  add_test(test_${target} ${target} ${ARGN})
-endmacro()
-
 # Turn on testing.
 enable_testing()
 
+
+# Turning this option off will cause any components named "testing" to be
+# omitted from libraries. It is generally useful to export testing components
+# in debug builds (but not release builds).
+option(ORIGIN_EXPORT_TESTING "Include testing components in libraries" ON)
+
+
+# Turning this option off will cause the unit tests not to be compiled
+# with the main libraries.
+option(ORIGIN_BUILD_TESTS "Build test suite" ON)
+
+
+if(${ORIGIN_BUILD_TESTS})
+  if(NOT ${ORIGIN_EXPORT_TESTING})
+    message(FATAL_ERROR "Cannot build test suite without testing components.")
+  endif()
+endif()

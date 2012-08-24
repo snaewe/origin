@@ -5,10 +5,4 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-cmake_minimum_required(VERSION 2.8)
-
-# Make sure that we can find Origin's CMake macros.
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-include(Origin)
-
-add_subdirectory(origin)
+add_subdirectory(matrix)

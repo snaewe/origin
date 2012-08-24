@@ -5,10 +5,15 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-cmake_minimum_required(VERSION 2.8)
+origin_module(
+  VERSION 0.1.0
+  AUTHORS Andrew Sutton <andrew.n.sutton -at- gmail.com>
 
-# Make sure that we can find Origin's CMake macros.
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-include(Origin)
+  IMPORT origin.type
+         origin.sequence
+         origin.data
 
-add_subdirectory(origin)
+  EXPORT optional
+         testing
+)
+

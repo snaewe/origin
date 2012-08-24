@@ -21,7 +21,6 @@ if (MPFR_FOUND)
 endif()
 
 
-
 # Define a Profile build mode.
 # TODO: Support for profiling is not very good right now. This should be
 # improved substantially.
@@ -55,6 +54,14 @@ if (ORIGIN_USE_MPFR)
         include_directories(${MPFR_INCLUDE_DIR})
         link_directories(${MPFR_LIBRARY_DIR})
 endif()
+
+
+# Every origin executable must be linked against the Origin binary.
+# FIXME: This probably needs to be tied into the dependency stuff. For example,
+# if Graph depends on Foo (and Foo has a binary part), then all Graph 
+# executables should link against origin-foo.a (or.so or .dll).
+list(APPEND ORIGIN_LIBRARIES origin)
+
 
 # Build a set of warning flags.
 set(ORIGIN_WARNINGS "-Wall -Wno-unused-variable -Wno-unused-value")
