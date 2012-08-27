@@ -39,6 +39,5 @@ int main()
 
   // This should fail.
   // Matrix_ref m5 = m1 + m2;
-
 }
 

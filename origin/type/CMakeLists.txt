@@ -5,12 +5,6 @@
 # LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 # and conditions.
 
-# FIXME: The testing module should be handled separately. In fact, it might
-# be nice to have a TEST directive that indicates which libraries are 
-# specifically intended as sub-libraries that are dedicated to testing. The
-# reason is that we don't want to require users to link against testing
-# binaries.
-
 origin_module(
   VERSION 0.1.0
   AUTHORS Andrew Sutton <andrew.n.sutton -at- gmail.com>

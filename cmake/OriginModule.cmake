@@ -50,7 +50,17 @@ macro(origin_module)
 
   # Compute the module name by finding the relative path to the current
   # module directory and pre-pending "origin". 
-  file(RELATIVE_PATH path ${ORIGIN_MODULE_ROOT} ${CMAKE_CURRENT_SOURCE_DIR})
+  if(ORIGIN_OUT_OF_TRUNK)
+    # If we're out of the trunk, then pretend that the current source dir
+    # would be a module hanging off of the module root (i.e., origin.fake).
+    file(RELATIVE_PATH path ${ORIGIN_FAKE_ROOT} ${CMAKE_CURRENT_SOURCE_DIR})
+    if(NOT path)
+      get_filename_component(path ${ORIGIN_FAKE_ROOT} NAME)
+    endif()
+    message(${path})
+  else()
+    file(RELATIVE_PATH path ${ORIGIN_MODULE_ROOT} ${CMAKE_CURRENT_SOURCE_DIR})
+  endif()
   string(REPLACE "/" "." path ${path})
   set(module origin.${path})
 

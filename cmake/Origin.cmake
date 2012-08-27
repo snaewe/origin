@@ -10,11 +10,32 @@
 if(NOT ORIGIN_INCLUDED)
   set(ORIGIN_INCLUDED TRUE)
 
+
+  # Did the user set ORIGIN_ROOT in the environment? Don't overwrite a 
+  # previous setting!
+  if (NOT ORIGIN_ROOT)
+    set(ORIGIN_ROOT $ENV{ORIGIN_ROOT})
+  endif()
+  
+  # Find the project root. Either we're building in that directory or we
+  # are not. If not, the variable ORIGIN_ROOT must be defined.
+  if(NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/Origin.cmake)
+    if(ORIGIN_ROOT)
+      set(ORIGIN_OUT_OF_TRUNK true)
+      set(ORIGIN_PROJECT_ROOT ${ORIGIN_ROOT})
+      set(ORIGIN_FAKE_ROOT ${CMAKE_SOURCE_DIR})
+      message (STATUS "Using Origin root ${ORIGIN_PROJECT_ROOT}")
+  else()
+      message(FATAL_ERROR "ORIGIN_ROOT must be set for out-of-trunk libraries")
+    endif()
+  else()
+    set(ORIGIN_PROJECT_ROOT ${CMAKE_SOURCE_DIR})
+  endif()
+
   # Set basic tree information. The project root is the top-level directory
   # that includes the build system and the module root. The module root
   # is the top-level of all modules.
-  set(ORIGIN_PROJECT_ROOT ${CMAKE_SOURCE_DIR})
-  set(ORIGIN_MODULE_ROOT ${CMAKE_SOURCE_DIR}/origin)
+  set(ORIGIN_MODULE_ROOT ${ORIGIN_PROJECT_ROOT}/origin)
 
 
   # Set the directory containing Origin's CMake modules: the build system.
@@ -30,8 +51,11 @@ if(NOT ORIGIN_INCLUDED)
   set(CMAKE_CXX_FLAGS "-std=c++11")
 
   # Make sure that we can include files as <origin/xxx>.
-  include_directories(${ORIGIN_PROJECT_ROOT})  
-
+  # FIXME: It would be nice if...
+  include_directories(${ORIGIN_PROJECT_ROOT})
+  if (ORIGIN_OUT_OF_TRUNK)
+    include_directories(${ORIGIN_FAKE_ROOT}/..)
+  endif()
 
   # Include Origin-specific macros
   include(OriginVersion)
