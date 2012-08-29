@@ -144,6 +144,62 @@ namespace origin
     }
 
 
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Find Next
+  //
+  // Returns the first iterator i in [first + 1, last) where *i == value.
+  //
+  // Parameters:
+  //    - first, last -- A bounded readable range
+  //    - value       -- A value
+  //
+  // Returns:
+  //   The first iterator in [first + 1, last) where *i == value.
+  //
+  // Remarks: 
+  //   This algorithm is not a part of the C++ standard library.
+  template <typename I, typename T>
+    inline I
+    find_next(I first, I last, const T& value)
+    {
+      static_assert(Input_iterator<I>(), "");
+      static_assert(Equality_comparable<T, Value_type<I>>(), "");
+      if (first != last)
+        return std::find(std::next(first), last, value);
+      else
+        return last;
+    }
+
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Find Next If
+  //
+  // Returns the first iterator i in [first + 1, last) where pred(*i) is true.
+  //
+  // Parameters:
+  //    - first, last -- A bounded readable range
+  //    - pred        -- A predicate function
+  //
+  // Returns:
+  //   The first iterator in [first + 1, last) where pred(*i) is true.
+  //
+  // Remarks: 
+  //   This algorithm is not a part of the C++ standard library.
+  template <typename I, typename P>
+    inline I
+    find_next_if(I first, I last, P pred)
+    {
+      static_assert(Input_iterator<I>(), "");
+      static_assert(Predicate<P, Value_type<I>>(), "");
+      if (first != last)
+        return std::find_if(std::next(first), last, pred);
+      else
+        return last;
+    }
+
+
   //////////////////////////////////////////////////////////////////////////////
   // Find End
   //

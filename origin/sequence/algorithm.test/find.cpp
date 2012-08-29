@@ -17,6 +17,25 @@ using namespace origin;
 
 bool odd(int n) { return n & 1; }
 
+
+void test_find_next()
+{
+  // find_next if is defined in terms of find.
+  // f != l ? find_next(f, l, x) <=> find(next(f), l, x) : l;
+  int a[] {0, 1, 0};
+  assert(find_next(a, a, 0) == a);
+  assert(find_next(a, a + 3, 0) == a + 2);
+}
+
+void test_find_next_if()
+{
+  // find_next_if is defined in terms of find.
+  // f != l ? find_next_if(f, l, p) <=> find(next(f), l, p) : l;
+  int a[] {1, 0, 1};
+  assert(find_next_if(a, a, odd) == a);
+  assert(find_next_if(a, a + 3, odd) == a + 2);
+}
+
 int main()
 {
   using V = vector<int>;
