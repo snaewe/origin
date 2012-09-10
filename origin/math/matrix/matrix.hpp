@@ -376,10 +376,13 @@ namespace origin
       // TODO: Create overloads that allow the specification of a default
       // value as the last argument and one that allows the specification of
       // a default value and an allocator as the last pairs of arguments.
-      template <typename... Exts,
-                typename = Requires<sizeof...(Exts) == N>>
+      template <typename... Exts>
         explicit
         matrix(Exts... exts);
+
+      // Disable the initializer list constructor.
+      template <typename U>
+        matrix(std::initializer_list<U> list) = delete;
 #endif
 
       matrix(Matrix_initializer<T, N> init, const allocator_type& alloc = {});
@@ -522,7 +525,7 @@ namespace origin
       { }
 #else
   template <typename T, std::size_t N>
-    template <typename... Exts, typename X>
+    template <typename... Exts>
       inline
       matrix<T, N>::matrix(Exts... exts)
         : dims(exts...), elems(dims.size())

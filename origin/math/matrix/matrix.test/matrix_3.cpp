@@ -53,6 +53,8 @@ int main()
   assert(m2.extent(0) == 5);
   assert(m2.extent(1) == 4);
   assert(m2.extent(2) == 3);
-#endif
 
+  // matrix<int, 3> m3{1, 2, 3};
+  matrix<int, 3> m3(1, 2, 3);
+#endif
 }
