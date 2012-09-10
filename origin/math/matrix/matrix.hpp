@@ -54,6 +54,7 @@ namespace origin
       // arguments.
       //
       // FIXME: Write type requirements (must be the same as T? Convertible?).
+      // Also, sizeof(Exts...) == N?
       template <typename... Exts,
                 typename = Requires<All(Convertible<Exts, T>()...)>>
         matrix_shape(Exts... es);
@@ -66,7 +67,7 @@ namespace origin
       // Construct a matrix over the extents given in the range [first, last).
       // The size of the [first, last) must be the same as the order of the
       // shape (N).
-      template <typename I>
+      template <typename I, typename = Requires<Input_iterator<I>()>>
         matrix_shape(I first, I last);
 
 
@@ -131,7 +132,7 @@ namespace origin
     template <typename... Exts, typename Req>
       inline
       matrix_shape<T, N>::matrix_shape(Exts... es)
-        : exts{es...}
+        : exts{T(es)...}
       {
         static_assert(sizeof...(Exts) == N, "");
         count();
@@ -147,7 +148,7 @@ namespace origin
     }
 
   template <typename T, std::size_t N>
-    template <typename I>
+    template <typename I, typename X>
       inline
       matrix_shape<T, N>::matrix_shape(I first, I last)
       {
@@ -356,6 +357,7 @@ namespace origin
       matrix& operator=(const matrix_ref<this_type, N>& x);
 
 
+#if ORIGIN_MATRIX_USE_SHAPE_CTOR
       // Construct a matrix of the specified shape.
       explicit
       matrix(const shape_type& shape, 
@@ -370,7 +372,15 @@ namespace origin
                const value_type& value = {},
                const allocator_type& alloc = {},
                matrix_impl::Requires_1D<Int, N>* = {});
-
+#else
+      // TODO: Create overloads that allow the specification of a default
+      // value as the last argument and one that allows the specification of
+      // a default value and an allocator as the last pairs of arguments.
+      template <typename... Exts,
+                typename = Requires<sizeof...(Exts) == N>>
+        explicit
+        matrix(Exts... exts);
+#endif
 
       matrix(Matrix_initializer<T, N> init, const allocator_type& alloc = {});
       matrix& operator=(Matrix_initializer<T, N> init);
@@ -492,6 +502,7 @@ namespace origin
       elems.assign(x.begin(), x.end());
     }
 
+#ifdef ORIGIN_MATRIX_USE_SHAPE_CTOR
   template <typename T, std::size_t N>
     inline
     matrix<T, N>::matrix(const shape_type& shape, 
@@ -509,6 +520,14 @@ namespace origin
                            matrix_impl::Requires_1D<Int, N>*)
         : dims(size_type(n)), elems(n, value, alloc)
       { }
+#else
+  template <typename T, std::size_t N>
+    template <typename... Exts, typename X>
+      inline
+      matrix<T, N>::matrix(Exts... exts)
+        : dims(exts...), elems(dims.size())
+      { }
+#endif
 
 
   // FIXME: This is not as efficient as it could be since it resizes and then

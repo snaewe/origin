@@ -24,4 +24,22 @@ int main()
   assert(m1.extent(1) == 4);
   assert(m1.size() == 8);
   cout << m1 << '\n';
+
+#ifndef ORIGIN_MATRIX_USE_SHAPE_CTOR
+  // Using parens calls the size initializer
+  matrix<int, 2> m2(5, 3);
+  assert(m2.extent(0) == 5);
+  assert(m2.extent(1) == 3);
+
+  // Make sure that we can be completely ambiguous and still get the
+  // right thing.
+  matrix<std::size_t, 2> m3(3, 2);
+  assert(m3.extent(0) == 3);
+  assert(m3.extent(1) == 2);
+
+  matrix<std::size_t, 2> m4(3ul, 2);
+  assert(m4.extent(0) == 3);
+  assert(m4.extent(1) == 2);
+#endif
+
 }

@@ -46,4 +46,13 @@ int main()
   assert(m1.extent(1) == 4);
   assert(m1.extent(2) == 2);
   assert(m1.size() == 24);
+
+#ifndef ORIGIN_MATRIX_USE_SHAPE_CTOR
+  // Using parens calls the size initializer
+  matrix<int, 3> m2(5, 4, 3);
+  assert(m2.extent(0) == 5);
+  assert(m2.extent(1) == 4);
+  assert(m2.extent(2) == 3);
+#endif
+
 }
