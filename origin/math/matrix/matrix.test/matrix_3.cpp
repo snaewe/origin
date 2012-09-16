@@ -46,6 +46,7 @@ int main()
   assert(m1.extent(1) == 4);
   assert(m1.extent(2) == 2);
   assert(m1.size() == 24);
+  cout << m1 << '\n';
 
 #ifndef ORIGIN_MATRIX_USE_SHAPE_CTOR
   // Using parens calls the size initializer

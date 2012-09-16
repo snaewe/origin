@@ -542,7 +542,6 @@ namespace origin
     inline
     matrix<T, N>::matrix(Matrix_initializer<T, N> init, const allocator_type& alloc)
       : dims(matrix_impl::shape<N, size_type>(init))
-      , elems(dims.size(), T{}, alloc)
     {
       elems.resize(dims.size());
       matrix_impl::assign_init<N>(init, elems.data());
