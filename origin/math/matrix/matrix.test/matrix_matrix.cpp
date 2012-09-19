@@ -5,8 +5,6 @@
 // LICENSE.txt or http://www.opensource.org/licenses/mit-license.php for terms
 // and conditions.
 
-#define private public
-
 #include <iostream>
 
 #include <origin/math/matrix/matrix.hpp>

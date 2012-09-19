@@ -168,5 +168,124 @@ namespace matrix_impl
       insert_flattened(list.begin(), list.end(), vec);
     }
 
+
+  // ------------------------------------------------------------------------ //
+  //                              Algorithms
+
+  // Compute the a variant of partial product of the in array, storing the
+  // results in the out array. This implementation stores the multiplicative
+  // identinity in the first element
+  //
+  // The resulting vector is used to compute indexes in column-major order.
+  template <typename Array>
+    inline std::size_t
+    forward_partial_product(const Array& in, Array& out)
+    {
+      using T = Value_type<Array>;
+      std::multiplies<T> mul;
+      auto f = in.begin();
+      auto l = --in.end();
+      auto o = out.begin();
+      *o++ = T(1);
+      std::partial_sum(f, l, o, mul);
+      return *(--o) * *l;
+    }
+
+  // Compute the partial product, in reverse order, of the in array, storing
+  // the results in the out array.
+  template <typename Array>
+    inline std::size_t
+    reverse_partial_product(const Array& in, Array& out)
+    {
+      using T = Value_type<Array>;
+      std::multiplies<T> mul;
+      auto f = in.rbegin();
+      auto l = --in.rend();
+      auto o = out.rbegin();
+      *o++ = T(1);
+      o = std::partial_sum(f, l, o, mul);
+      return *(--o) * *l;
+    }
+
+
+  // ------------------------------------------------------------------------ //
+  //                          Derive Extents
+
+
+  // Used in derive_extents, returns true if the array is not jagged. That is,
+  // all sub-initializers of list must have the same size.
+  template <typename List>
+    inline bool
+    check_non_jagged(const List& list)
+    {
+      auto i = list.begin();
+      for (auto j = i + 1; j != list.end(); ++j) {
+        if (i->size() != j->size())
+          return false;
+      }
+      return true;
+    }
+
+
+  // Derive extents implementation, matches when N == 1.
+  template <std::size_t N, typename I, typename List>
+    inline Requires<(N == 1), void>
+    derive_extents(I& first, I last, const List& list)
+    {
+      assert(first != last);
+      *first++ = list.size();
+    }
+
+  // Derive extents implementation, matches when N > 1.
+  template <std::size_t N, typename I, typename List>
+    inline Requires<(N > 1), void>
+    derive_extents(I& first, I last, const List& list)
+    {
+      assert(check_non_jagged(list));
+      assert(first != last);
+      *first++ = list.size();
+      derive_extents<N - 1>(first, last, *list.begin());
+    }
+
+  // Returns the matrix shape corresponding to a sequence of nested initialize
+  // lists. Here, List is sequence of nested initializer lists. Note that the
+  // nested list must be non-jagged; all initializer lists at the same depth
+  // must have the same length.
+  template <std::size_t N, typename List>
+    inline void
+    derive_extents(std::array<std::size_t, N>& extents, const List& list)
+    {
+      auto first = extents.begin();
+      auto last = extents.end();
+      derive_extents<N>(first, last, list);
+      assert(first == last);
+    }
+
+  // ------------------------------------------------------------------------ //
+  //                          Compute Row
+
+  // Returns a reference to the nth row in a matrix.
+  //
+  // The function takes a base object (whose order must be 1 greater than N),
+  // a pointer p to the start of a matrix or matrix reference descirbed by
+  // base, and n, the row to return.
+
+  // When N > 0, we are returning a matrix reference of N dimensions.
+  template <typename T, typename Base>
+    inline Requires<(Base::order > 1), matrix_ref<T, Base::order - 1>>
+    row(const Base& b, T* p, std::size_t n)
+    {
+      return {b.row(), p + n * b.extents[1]};
+    }
+
+  // When N == 0, we are returning an element reference, possibly const
+  // qualified.
+  template <typename T, typename Base>
+    inline Requires<(Base::order == 1), matrix_ref<T, 0>>
+    row(const Base& b, T* p, std::size_t n)
+    {
+      return *(p + n);
+    }
+
 } // namespace matrix_impl
 
