@@ -11,66 +11,25 @@
 
 namespace matrix_impl
 {
-  // Safely deduce the result of the expression x.shape().
+  // Safely deduce the result type of the expression x.order.
   template <typename T>
-    struct get_shape_type
+    struct get_order_type
     {
     private:
       template <typename X>
-        static typename X::shape_type check(const X& x);
+        static auto check(const X& x) -> decltype(x.order);
 
       static subst_failure check(...);
     public:
       using type = decltype(check(std::declval<T>()));
     };
 
-  // Safely deduce the associated type name T::row_reference.
+  // Returns true if the experssion x.order is valid.
   template <typename T>
-    struct get_associated_row_reference
+    constexpr bool Has_order()
     {
-    private:
-      template <typename X>
-        static typename X::row_reference check(X&&);
-
-      static subst_failure check(...);
-    public:
-      using type = decltype(checK(std::declval<T>()));
-    };
-
-  
-  // Safely deduce the associatd type name T::const_row_reference.
-  template <typename T>
-    struct get_associated_const_row_reference
-    {
-    private:
-      template <typename X>
-        static typename X::const_row_reference check(X&&);
-
-      static subst_failure check(...);
-    public:
-      using type = decltype(checK(std::declval<T>()));
-    }; 
-
-
-
-  // Used to enable specific interface features for 1D data structures. Here,
-  // T is a placeholder template parameter used to guarantee that the 
-  // constraint is not evaluated until instantiation.
-  template <typename T, std::size_t N>
-    using Requires_1D = Requires<Same<T, T>() && (N == 1)>;
-
-
-  // Used to define the reference type of matrix references. It depends on
-  // the const-ness of T.
-  template <typename T, typename A>
-    using Matrix_ref = 
-      If<Const<T>(), typename A::const_reference, typename A::reference>;
-
-  // Used to define the pointer type of matrix references. It depends on the
-  // const-ness of T.
-  template <typename T, typename A>
-    using Matrix_ptr =
-      If<Const<T>(), typename A::const_pointer, typename A::pointer>;
+      return Subst_succeeded<typename get_order_type<T>::type>();
+    }
 
 
 
@@ -92,6 +51,19 @@ namespace matrix_impl
   template <typename T>
     struct matrix_init<T, 0>;
 
+
+
+  template <typename T>
+    struct initializer_type
+    {
+      using type = T;
+    };
+
+  template <typename T>
+    struct initializer_type<std::initializer_list<T>>
+    {
+      using type = typename initializer_type<T>::type;
+    };
 
 } // namespace matrix_impl
 

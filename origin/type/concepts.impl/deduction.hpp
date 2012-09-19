@@ -67,12 +67,17 @@ namespace type_impl
   // 
   // FIXME: The rule for Size_type should be:
   //    1. If the member is associated, use that.
-  //    2. If Difference_type is defined, use the unsigned version of that.
-  //    3. Subst failure everywhere else.
+  //    2. If x.size() is valid, the result type of that.
+  //    3. If Difference_type is defined, use the unsigned version of that.
+  //    4. Subst failure everywhere else.
+  //
+  // The implementation does not currently check Difference_type.
 
-  // Deduction hook.
+  // Deduction hooks.
   subst_failure deduce_size_type(...);
 
+  template <typename T>
+    auto deduce_size_type(default_t, const T& x) ->decltype(x.size());
 
   // Safely deduce the associate size type of T. 
   template <typename T, bool = Has_associated_size_type<T>()>

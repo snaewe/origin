@@ -16,22 +16,26 @@ using namespace origin;
 
 // Tests for 2D use of matrices:
 
+enum {
+  a = 10, b, c, d, e, f, g, h, i, j ,k, l
+};
+
 int main()
 {
   using T = matrix<int, 2>;
-  matrix<T, 2> m {
+  matrix<T, 2> m { // 3x2
     { // row 0
       {{1, 2}, {3, 4}}, // col 0
       {{4, 5}, {6, 7}}, // col 1
     },
     { // row 1
-      {{8, 9},     {0xa, 0xb}}, // col 0
-      {{0xc, 0xd}, {0xe, 0xf}}, // col 1
+      {{8, 9}, {a, b}}, // col 0
+      {{c, d}, {e, f}}, // col 1
     },
-    { // row 3
+    { // row 2
       {{1, 2}, {3, 4}}, // col 0
       {{4, 5}, {6, 7}}, // col 1
-    }
+    },
   };
   assert(m.extent(0) == 3);
   assert(m.extent(1) == 2);
@@ -42,4 +46,6 @@ int main()
   cout << m(1, 1) << '\n';
   cout << m(2, 0) << '\n';
   cout << m(2, 1) << '\n';
+  cout << '\n';
+  cout << m << '\n';
 }

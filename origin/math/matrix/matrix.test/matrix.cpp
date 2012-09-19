@@ -16,4 +16,11 @@ using namespace origin;
 
 int main()
 {
+  // TODO: Check common type traits and concepts.
+  //
+  // Note that most common type traits (e.g,. Size_type, Difference_type)
+  // don't actually matter unless you're doing weird stuff with an Allocator.
+  // But nobody (rightfully) does weird stuff with allocators.
+  using M = matrix<int, 1>;
+  static_assert(Same<Size_type<M>, std::size_t>(), "");
 }

@@ -21,7 +21,7 @@ namespace matrix_impl
   // TODO: These should probably be moved into the functional module.
   ////////////////////////////////////////////////////////////////////////////
 
-  template< typename T>
+  template <typename T>
     struct assign
     {
       T& operator()(T& a, T const& b) const { return a = b; }
@@ -135,173 +135,38 @@ namespace matrix_impl
   //////////////////////////////////////////////////////////////////////////////
 
 
-  // A helper class for extracting the extents from a nested sequence of
-  // initializer lists. Note that dimensions are recorded left-to right in the
-  // dims array such that the greatest index in dims corresponds to the 
-  // outermost array size.
-  template <std::size_t N>
-    struct extent_from_init
+  // TODO: This algorithm could be generalized to flatten an arbitrary
+  // initializer list structure.
+
+  // For iterators over the leaf nodes, insert elements into the back of the
+  // vector. We generally assume that the vector has sufficient capacity for
+  // all such insertions, but insert guarantees that it will resize if needed.
+  template <typename T, typename Vec>
+    void 
+    initialize(const T* first, const T* last, Vec& vec)
     {
-      // Get 
-      template <typename List, typename Size>
-        static void get(const List& list, Size* dims)
-        {
-          assert(check_list(list));
-          *dims = list.size();
-          ++dims;
-          extent_from_init<N - 1>::get(*list.begin(), dims);
-        }
-
-      // Returns true if all the sub-lists are the same size.
-      template <typename List>
-        static bool check_list(const List& list)
-        {
-          auto i = list.begin();
-          for(auto j = i + 1; j != list.end(); ++j) {
-            if (i->size() != j->size())
-              return false;
-          }
-          return true;
-        };
-    };
-
-  template <>
-    struct extent_from_init<1>
-    {
-      template <typename T, typename Size>
-        static void get(const std::initializer_list<T>& list, Size* dims)
-        {
-          *dims = list.size();
-          ++dims;
-        }
-    };
-
-
-  // Returns the matrix shape corresponding to a sequence of nested initialize
-  // lists.
-  template <std::size_t N, typename Size, typename List>
-    inline matrix_shape<Size, N> 
-    shape(const List& list)
-    {
-      Size dims[N];
-      extent_from_init<N>::get(list, dims);
-      return {dims, dims + N};
+      vec.insert(vec.end(), first, last);
     }
 
-
-
-  template <std::size_t N>
-    struct copy_from_init
+  // For iterators into nested initializer lists, recursively intiailize each
+  // sub-initializeer.
+  template <typename T, typename Vec>
+    void initialize(const std::initializer_list<T>* first,
+                    const std::initializer_list<T>* last,
+                    Vec& vec)
     {
-      template <typename List, typename T>
-        static T* put(const List& list, T* p)
-        {
-          for (const auto& l : list)
-            p = copy_from_init<N - 1>::put(l, p);
-          return p;
-        }
-    };
-
-  template <>
-    struct copy_from_init<1>
-    {
-      template <typename List, typename T>
-        static T* put(const List& list, T* p)
-        {
-          std::copy(list.begin(), list.end(), p);
-          return p + list.size();
-        }
-    };
-
-
-  template <std::size_t N, typename List, typename T>
-    void assign_init(const List& list, T* p)
-    {
-      copy_from_init<N>::put(list, p);
+      while (first != last) {
+        initialize(first->begin(), first->end(), vec);
+        ++first;
+      }
     }
 
-
-  // Return an element reference for T (possibly const).
-  template <typename T>
-    using Element_reference = If<Const<T>(), const T&, T&>;
-
-
-  // Determines the row type of a matrix. If N is 0, then the row type is
-  // simply the scalar type T. Otherwise, the row type is a row matrix of
-  // the given dimension.
-  template <typename T, std::size_t N>
-    using Row_type = If<(N == 0), Element_reference<T>, matrix_ref<T, N>>;
-
-
-
-  // Offset
-  //
-  // Returns the address of the nth element in a table whose element counts
-  // are given in the range [first, last). That is, each value in that range
-  // denotes the number of contiguous elements in that table. 
-  //
-  // Note that these functions are defined over iterators, but they're
-  // expected to be pointers.
-
-  // This overload is specifically for 1D matrices, hence the single
-  // index n. Note that size + 1 is PTE of the sizes array owned by the
-  // calling Matrix.
-  template <typename Size>
-    inline Size
-    offset(const Size* size, Size n)
+  // Copy the elements from the initializer list nesting into contiguous
+  // elements in the vector.
+  template <typename T, typename Vec>
+    void initialize(const std::initializer_list<T>& list, Vec& vec)
     {
-      assert(n < *size);
-      return n;
-    }
-
-  // Here, {n, args...} are the indexes of the requested element. Note that
-  // size + 1 + sizeof...(Args) is PTE of the sizes array owned by the shape 
-  // of the calling matrix.
-  template <typename Size, typename... Args>
-    inline Size
-    offset(const Size* size, Size n, Args... args)
-    {
-      assert(n * *(size + 1) < *size);
-      ++size;
-      return (n * *size) + offset(size, args...);
-    }
-
-
-
-  // Row
-  //
-  // Returns a reference to the nth row of the matrix m, with base being the
-  // originating matrix.
-  //
-  // FIXME: It would be nice to use Row_reference<M> and Row_refernce<const M> 
-  // in these algorithms.
-  template <typename M>
-    inline Requires<(M::order() != 1), typename M::row_reference>
-    row(M& m, Size_type<M> n)
-    {
-      return {m.shape().inner(), m.data() + n * m.shape().size(1)};
-    }
-
-  template <typename M>
-    inline Requires<(M::order() != 1), typename M::const_row_reference>
-    row(const M& m, Size_type<M> n)
-    {
-      return {m.shape().inner(), m.data() + n * m.shape().size(1)};
-    }
-
-  // Specializations for the case where N == 1
-  template <typename M>
-    inline Requires<(M::order() == 1), typename M::row_reference>
-    row(M& m, Size_type<M> n)
-    {
-      return *(m.data() + n);
-    }
-
-  template <typename M>
-    inline Requires<(M::order() == 1), typename M::const_row_reference>
-    row(const M& m, Size_type<M> n)
-    {
-      return *(m.data() + n);
+      initialize(list.begin(), list.end(), vec);
     }
 
 } // namespace matrix_impl

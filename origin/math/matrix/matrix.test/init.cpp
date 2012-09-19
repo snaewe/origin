@@ -37,7 +37,7 @@ int main()
   assert (r1 == cr1);
   assert(r1.data() == cr1.data());
 
-  // This should fail.
-  // Matrix_ref m5 = m1 + m2;
+  // This should fail -- deleted function.
+  // Matrix_ref m5 = m + m;
 }
 
