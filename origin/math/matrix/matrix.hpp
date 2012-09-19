@@ -288,7 +288,7 @@ namespace origin
       : base(init)
     {
       elems.reserve(base.size);
-      matrix_impl::initialize(init, elems);
+      matrix_impl::insert_flattened(init, elems);
       assert(elems.size() == base.size);
     }
 

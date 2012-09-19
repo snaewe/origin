@@ -9,17 +9,18 @@
 #  error Do not include this file directly. Include matrix/matrix.hpp.
 #endif
 
+// NOTE: Facilities in this header could be moved into more general libraries.
+
 namespace matrix_impl
 {
-  ////////////////////////////////////////////////////////////////////////////
-  // Operations
+  // ------------------------------------------------------------------------ //
+  //                            Operations
   //
   // The following function objects extend the usual set found in the 
   // <functional> library and provide abstractions over assignment and 
   // arithmetic compound assignment operators.
   //
   // TODO: These should probably be moved into the functional module.
-  ////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
     struct assign
@@ -59,8 +60,8 @@ namespace matrix_impl
 
 
 
-  ////////////////////////////////////////////////////////////////////////////
-  // Apply
+  // ------------------------------------------------------------------------ //
+  //                                Apply
   //
   // Apply a value, x, to each element of a mutable range. There are two
   // overloads of this function:
@@ -125,15 +126,11 @@ namespace matrix_impl
       }
     }
 
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Matrix Support
+  // ------------------------------------------------------------------------ //
+  //                          Insert Flattened
   //
-  // The following features support the generic implementation of the matrix
-  // and matrix_ref classes.
-  //////////////////////////////////////////////////////////////////////////////
-
+  // Insert the elements of a initializer list nesting into a vector such that
+  // each subsequent set of "leaf" values are copied into a contiguous memory.
 
   // TODO: This algorithm could be generalized to flatten an arbitrary
   // initializer list structure.
@@ -142,8 +139,8 @@ namespace matrix_impl
   // vector. We generally assume that the vector has sufficient capacity for
   // all such insertions, but insert guarantees that it will resize if needed.
   template <typename T, typename Vec>
-    void 
-    initialize(const T* first, const T* last, Vec& vec)
+    inline void 
+    insert_flattened(const T* first, const T* last, Vec& vec)
     {
       vec.insert(vec.end(), first, last);
     }
@@ -151,12 +148,13 @@ namespace matrix_impl
   // For iterators into nested initializer lists, recursively intiailize each
   // sub-initializeer.
   template <typename T, typename Vec>
-    void initialize(const std::initializer_list<T>* first,
+    inline void 
+    insert_flattened(const std::initializer_list<T>* first,
                     const std::initializer_list<T>* last,
                     Vec& vec)
     {
       while (first != last) {
-        initialize(first->begin(), first->end(), vec);
+        insert_flattened(first->begin(), first->end(), vec);
         ++first;
       }
     }
@@ -164,9 +162,10 @@ namespace matrix_impl
   // Copy the elements from the initializer list nesting into contiguous
   // elements in the vector.
   template <typename T, typename Vec>
-    void initialize(const std::initializer_list<T>& list, Vec& vec)
+    inline void 
+    insert_flattened(const std::initializer_list<T>& list, Vec& vec)
     {
-      initialize(list.begin(), list.end(), vec);
+      insert_flattened(list.begin(), list.end(), vec);
     }
 
 } // namespace matrix_impl

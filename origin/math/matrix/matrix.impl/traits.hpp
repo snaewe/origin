@@ -51,19 +51,5 @@ namespace matrix_impl
   template <typename T>
     struct matrix_init<T, 0>;
 
-
-
-  template <typename T>
-    struct initializer_type
-    {
-      using type = T;
-    };
-
-  template <typename T>
-    struct initializer_type<std::initializer_list<T>>
-    {
-      using type = typename initializer_type<T>::type;
-    };
-
 } // namespace matrix_impl
 
