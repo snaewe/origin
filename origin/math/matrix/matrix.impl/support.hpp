@@ -168,9 +168,81 @@ namespace matrix_impl
       insert_flattened(list.begin(), list.end(), vec);
     }
 
+  // ------------------------------------------------------------------------ //
+  //                       Begin/End Argument Pack
+  //
+  // Return iterators to the beginning and ending of elements in an argument
+  // pack. Note that elements must all have the same type.
+
+  template <typename T, typename... Ts>
+    auto begin_args(T&& t, Ts&&... ts) -> decltype(&t)
+    {
+      static_assert(Same<T, Ts...>(), "");
+      return &t;
+    }
+
+
+  template <typename T>
+    auto end_args(T&& x) -> decltype(&x)
+    {
+      return &x + 1;
+    }
+
+  template <typename T, typename... Ts>
+    auto end_args(T&& t, Ts&&... ts) 
+      -> decltype(end_args(std::forward<Ts>(ts)...))
+    {
+      static_assert(Same<T, Ts...>(), "");
+      return end_args(std::forward<Ts>(ts)...);
+    }
+
+
 
   // ------------------------------------------------------------------------ //
   //                              Algorithms
+
+  // NOTE: Some of these could be moved into an algoirthm or numeric header.
+
+  // A helper function for creating a reverse iterator over a pointer.
+  template <typename T>
+    inline std::reverse_iterator<T*> rev(T* p) 
+    { 
+      return std::reverse_iterator<T*>(p); 
+    }
+
+
+  // Compute the product of a sequence of elements.
+  template <typename I>
+    inline Value_type<I>
+    product(I first, I last)
+    {
+      using T = Value_type<I>;
+      std::multiplies<T> mul;
+      return std::accumulate(first, last, T(1), mul);
+    }
+
+  template <typename R>
+    inline Value_type<R>
+    product(const R range)
+    {
+      using std::begin;
+      using std::end;
+      return product(begin(range), end(range));
+    }
+
+
+  // Compute the inner product of a two vectors.
+  template <typename R1, typename R2>
+    inline Value_type<R1>
+    inner_product(const R1& range1, R2& range2)
+    {
+      using std::begin;
+      using std::end;
+      return std::inner_product(begin(range1), end(range1), 
+                                begin(range2),
+                                Value_type<R1>(0));
+    }
+
 
   // Compute the a variant of partial product of the in array, storing the
   // results in the out array. This implementation stores the multiplicative
@@ -181,29 +253,38 @@ namespace matrix_impl
     inline std::size_t
     forward_partial_product(const Array& in, Array& out)
     {
+      using std::begin;
+      using std::end;
       using T = Value_type<Array>;
+
       std::multiplies<T> mul;
-      auto f = in.begin();
-      auto l = --in.end();
-      auto o = out.begin();
-      *o++ = T(1);
-      std::partial_sum(f, l, o, mul);
+      auto f = begin(in);
+      auto l = end(in);
+      auto o = begin(out);
+      *o = T(1);
+      std::partial_sum(f, --l, ++o, mul);
       return *(--o) * *l;
     }
 
+
   // Compute the partial product, in reverse order, of the in array, storing
   // the results in the out array.
+  //
+  // The resulting vector is used to compute indexes in row-major order.
   template <typename Array>
     inline std::size_t
     reverse_partial_product(const Array& in, Array& out)
     {
+      using std::begin;
+      using std::end;
       using T = Value_type<Array>;
+
       std::multiplies<T> mul;
-      auto f = in.rbegin();
-      auto l = --in.rend();
-      auto o = out.rbegin();
-      *o++ = T(1);
-      o = std::partial_sum(f, l, o, mul);
+      auto f = rev(end(in));
+      auto l = rev(begin(in));
+      auto o = rev(end(out));
+      *o = T(1);
+      o = std::partial_sum(f, --l, ++o, mul);
       return *(--o) * *l;
     }
 

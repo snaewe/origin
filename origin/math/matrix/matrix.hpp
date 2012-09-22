@@ -84,6 +84,93 @@ namespace origin
 
 
 #include "matrix.impl/support.hpp" // Miscellaneous facilities
+
+
+// The matrix descriptor class describes the extents and strides of an
+// N-dimensional array, and the total number of elements (size) of the array.
+//
+// The descriptor class supports the computation of offsets in an array. Given
+// an N-dimensional vector I = (I_i, I_2, ... I_N) of indices, the index of an
+// element in an array with an N-dimensional descriptor D = (s, E, S) where E 
+// and S are the N-dimensional extent and stride vectors is:
+//
+//    s + inner_product(I, S);
+//
+// The computation defined only when I_i < E_i for all i in [0, N).
+template <std::size_t N>
+  struct matrix_descriptor
+  {
+    // A default-initialized descriptor has no elements and the extents in each
+    // dimension are all 0, as are the strides.
+    matrix_descriptor();
+
+    // Extent initialization
+    // Initialize the matrix with the given sequence of extents. If rmo is
+    // true (or not given), initialize the stride vector for row-major
+    // ordering, else column-major ordering.
+    matrix_descriptor(std::initializer_list<std::size_t> e, bool rmo = true );
+
+    // Stride initialization
+    // Initialize the matrix with the given sequence of extents and strides.
+    matrix_descriptor(std::size_t s,
+                      std::initializer_list<std::size_t> ext,
+                      std::initializer_list<std::size_t> str);
+
+    template <typename... Dims>
+      std::size_t operator()(Dims... dims) const;
+
+    std::size_t size;       // Number of elements in the array
+    std::size_t start;      // The starting offset of the array
+    std::size_t extents[N]; // Extents of an array
+    std::size_t strides[N]; // Strides between slices in each dimension
+  };
+
+
+template <std::size_t N>
+  inline
+  matrix_descriptor<N>::matrix_descriptor()
+    : size(0), start(0), extents(), strides()
+  { }
+
+template <std::size_t N>
+  inline
+  matrix_descriptor<N>::
+  matrix_descriptor(std::initializer_list<std::size_t> e, bool rmo) 
+    : start(0)
+  {
+    std::copy(e.begin(), e.end(), extents);
+    if (rmo) {
+      size = matrix_impl::reverse_partial_product(extents, strides);
+    } else {
+      size = matrix_impl::forward_partial_product(extents, strides);
+    }
+  }
+
+template <std::size_t N>
+  inline
+  matrix_descriptor<N>::
+  matrix_descriptor(std::size_t s,
+                    std::initializer_list<std::size_t> ext,
+                    std::initializer_list<std::size_t> str)
+    : size(matrix_impl::product(ext)), start(s)
+  {
+    assert(e.size() == N);
+    assert(s.size() == N);
+    copy(extents, ext);
+    copy(strides, str);
+  }
+
+template <std::size_t N>
+  template <typename... Dims>
+    inline std::size_t
+    matrix_descriptor<N>::operator()(Dims... dims) const
+    {
+      // TODO: Is there any reason why I can't build an iterator directly
+      // over dims?
+      std::size_t indexes[N] {dims...};
+      return start + matrix_impl::inner_product(indexes, strides);
+    }
+
 #include "matrix.impl/base.hpp"    // Includes matrix_base
 
 
