@@ -20,8 +20,8 @@ enum {
 
 int main()
 {
-  using T = matrix<int, 2>;
-  matrix<T, 2> m { // 3x2
+  using M = matrix<int, 2>;
+  matrix<M, 2> m { // 3x2
     { // row 0
       {{1, 2}, {3, 4}}, // col 0
       {{4, 5}, {6, 7}}, // col 1
@@ -37,6 +37,7 @@ int main()
   };
   assert(m.extent(0) == 3);
   assert(m.extent(1) == 2);
+  assert(m.size() == 6);
 
   cout << m(0, 0) << '\n';
   cout << m(0, 1) << '\n';
@@ -45,5 +46,5 @@ int main()
   cout << m(2, 0) << '\n';
   cout << m(2, 1) << '\n';
   cout << '\n';
-  cout << m << '\n';
+  // cout << m << '\n';
 }

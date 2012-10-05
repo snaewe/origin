@@ -72,6 +72,8 @@ template <typename T, std::size_t N>
     // Base swap
     void swap(matrix_base& base);
 
+    // FIXME: Wrap these in a slice class.
+    std::size_t start;  // The starting index of the slice
     array_type extents; // The dimensions of the matrix
     array_type strides; // The partial product of dimensions
     std::size_t size;   // The total size of the matrix
@@ -126,11 +128,14 @@ template <typename T, std::size_t N>
     {
       static_assert(sizeof...(Dims) == N, "");
 
+      // TODO: Assert that dims are in bounds.
+
       // Copy arguments into a vector.
       std::size_t args[N] { std::size_t(dims)... };
 
       // The index is the inner product of given indexes and strides.
-      return std::inner_product(args, args + N, strides.begin(), std::size_t(0));
+      constexpr std::size_t zero = 0;
+      return start + std::inner_product(args, args + N, strides.begin(), zero);
     }
 
 template <typename T, std::size_t N>

@@ -13,118 +13,6 @@
 
 namespace matrix_impl
 {
-  // ------------------------------------------------------------------------ //
-  //                            Operations
-  //
-  // The following function objects extend the usual set found in the 
-  // <functional> library and provide abstractions over assignment and 
-  // arithmetic compound assignment operators.
-  //
-  // TODO: These should probably be moved into the functional module.
-
-  template <typename T>
-    struct assign
-    {
-      T& operator()(T& a, T const& b) const { return a = b; }
-    };
-
-  template <typename T>
-    struct plus_assign
-    {
-      T& operator()(T& a, T const& b) const { return a += b; }
-    };
-
-  template <typename T>
-    struct minus_assign
-    {
-      T& operator()(T& a, T const& b) const { return a -= b; }
-    };
-
-  template <typename T>
-    struct multiplies_assign 
-    {
-      T& operator()(T& a, T const& b) const { return a *= b; }
-    };
-
-  template <typename T>
-    struct divides_assign
-    {
-      T& operator()(T& a, T const& b) const { return a /= b; }
-    };
-
-  template <typename T>
-    struct modulus_assign
-    {
-      T& operator()(T& a, T const& b) const { return a %= b; }
-    };
-
-
-
-  // ------------------------------------------------------------------------ //
-  //                                Apply
-  //
-  // Apply a value, x, to each element of a mutable range. There are two
-  // overloads of this function:
-  //
-  //    apply(first, last, value, f)
-  //    apply(first1, last1, first2, last2, f)
-  //
-  // The first overload applies a single value to each element in the range
-  // [first, last), while the second applies 
-
-
-  // Apply f(*i, value) to each iterator i in the mutable range [first, last).
-  // Note that f may (and is generally expected to) modify the object referred
-  // to by *i.
-  //
-  // Parameters:
-  //    first, last -- A bounded, mutable range
-  //    value -- The value being applied to each element in [first, last)
-  //
-  // Requires:
-  //    Mutable_iterator<I1>
-  //    Input_iterator<I2>
-  //    Function<F, Value_type<I1>&, Value_type<I2>
-  //
-  // Returns:
-  //    The function object f.
-  template <typename I, typename T, typename F>
-    inline F 
-    apply(I first, I last, const T& value, F f)
-    {
-      while (first != last) {
-        f(*first, value);
-        ++first;
-      }
-      return f;
-    }
-
-
-  // Apply f(*i, *j) to each iterator i in the mutable range [first1, last1) and
-  // each corresponding j in the input range [first2, last2). Note that f may
-  // (and is generally expected to) modify the object referred to by *i.
-  //
-  // Parameters:
-  //    first1, last1 -- A bounded, mutable range
-  //    first2, last2 -- A bounded input range
-  //
-  // Requires:
-  //    Mutable_iterator<I1>
-  //    Input_iterator<I2>
-  //    Function<F, Value_type<I1>&, Value_type<I2>
-  //
-  // Returns:
-  //    The function object f.  
-  template <typename I1, typename I2, typename F>
-    inline F 
-    apply_each(I1 first1, I1 last1, I2 first2, F f)
-    {
-      while (first1 != last1) {
-        f(*first1, *first2);
-        ++first1;
-        ++first2;
-      }
-    }
 
   // ------------------------------------------------------------------------ //
   //                          Insert Flattened
@@ -168,81 +56,9 @@ namespace matrix_impl
       insert_flattened(list.begin(), list.end(), vec);
     }
 
-  // ------------------------------------------------------------------------ //
-  //                       Begin/End Argument Pack
-  //
-  // Return iterators to the beginning and ending of elements in an argument
-  // pack. Note that elements must all have the same type.
-
-  template <typename T, typename... Ts>
-    auto begin_args(T&& t, Ts&&... ts) -> decltype(&t)
-    {
-      static_assert(Same<T, Ts...>(), "");
-      return &t;
-    }
-
-
-  template <typename T>
-    auto end_args(T&& x) -> decltype(&x)
-    {
-      return &x + 1;
-    }
-
-  template <typename T, typename... Ts>
-    auto end_args(T&& t, Ts&&... ts) 
-      -> decltype(end_args(std::forward<Ts>(ts)...))
-    {
-      static_assert(Same<T, Ts...>(), "");
-      return end_args(std::forward<Ts>(ts)...);
-    }
-
-
 
   // ------------------------------------------------------------------------ //
   //                              Algorithms
-
-  // NOTE: Some of these could be moved into an algoirthm or numeric header.
-
-  // A helper function for creating a reverse iterator over a pointer.
-  template <typename T>
-    inline std::reverse_iterator<T*> rev(T* p) 
-    { 
-      return std::reverse_iterator<T*>(p); 
-    }
-
-
-  // Compute the product of a sequence of elements.
-  template <typename I>
-    inline Value_type<I>
-    product(I first, I last)
-    {
-      using T = Value_type<I>;
-      std::multiplies<T> mul;
-      return std::accumulate(first, last, T(1), mul);
-    }
-
-  template <typename R>
-    inline Value_type<R>
-    product(const R range)
-    {
-      using std::begin;
-      using std::end;
-      return product(begin(range), end(range));
-    }
-
-
-  // Compute the inner product of a two vectors.
-  template <typename R1, typename R2>
-    inline Value_type<R1>
-    inner_product(const R1& range1, R2& range2)
-    {
-      using std::begin;
-      using std::end;
-      return std::inner_product(begin(range1), end(range1), 
-                                begin(range2),
-                                Value_type<R1>(0));
-    }
-
 
   // Compute the a variant of partial product of the in array, storing the
   // results in the out array. This implementation stores the multiplicative
@@ -253,38 +69,29 @@ namespace matrix_impl
     inline std::size_t
     forward_partial_product(const Array& in, Array& out)
     {
-      using std::begin;
-      using std::end;
       using T = Value_type<Array>;
-
       std::multiplies<T> mul;
-      auto f = begin(in);
-      auto l = end(in);
-      auto o = begin(out);
-      *o = T(1);
-      std::partial_sum(f, --l, ++o, mul);
+      auto f = in.begin();
+      auto l = --in.end();
+      auto o = out.begin();
+      *o++ = T(1);
+      std::partial_sum(f, l, o, mul);
       return *(--o) * *l;
     }
 
-
   // Compute the partial product, in reverse order, of the in array, storing
   // the results in the out array.
-  //
-  // The resulting vector is used to compute indexes in row-major order.
   template <typename Array>
     inline std::size_t
     reverse_partial_product(const Array& in, Array& out)
     {
-      using std::begin;
-      using std::end;
       using T = Value_type<Array>;
-
       std::multiplies<T> mul;
-      auto f = rev(end(in));
-      auto l = rev(begin(in));
-      auto o = rev(end(out));
-      *o = T(1);
-      o = std::partial_sum(f, --l, ++o, mul);
+      auto f = in.rbegin();
+      auto l = --in.rend();
+      auto o = out.rbegin();
+      *o++ = T(1);
+      o = std::partial_sum(f, l, o, mul);
       return *(--o) * *l;
     }
 
@@ -328,45 +135,80 @@ namespace matrix_impl
       derive_extents<N - 1>(first, last, *list.begin());
     }
 
-  // Returns the matrix shape corresponding to a sequence of nested initialize
-  // lists. Here, List is sequence of nested initializer lists. Note that the
-  // nested list must be non-jagged; all initializer lists at the same depth
-  // must have the same length.
+
   template <std::size_t N, typename List>
-    inline void
-    derive_extents(std::array<std::size_t, N>& extents, const List& list)
+    inline std::array<std::size_t, N>
+    derive_extents(const List& list)
     {
-      auto first = extents.begin();
-      auto last = extents.end();
-      derive_extents<N>(first, last, list);
-      assert(first == last);
+      std::array<std::size_t, N> a;
+      auto f = a.begin();
+      auto l = a.end();
+      derive_extents<N>(f, l, list);
+      assert(f == l);
+
+      return a;
     }
 
-  // ------------------------------------------------------------------------ //
-  //                          Compute Row
 
-  // Returns a reference to the nth row in a matrix.
-  //
-  // The function takes a base object (whose order must be 1 greater than N),
-  // a pointer p to the start of a matrix or matrix reference descirbed by
-  // base, and n, the row to return.
-
-  // When N > 0, we are returning a matrix reference of N dimensions.
-  template <typename T, typename Base>
-    inline Requires<(Base::order > 1), matrix_ref<T, Base::order - 1>>
-    row(const Base& b, T* p, std::size_t n)
+  // Compute an array of strides for for the given extents such that indexing
+  // will compute a row-major ordering. The total number of elements in the
+  // slice is returned.
+  template <std::size_t N>
+    inline std::size_t
+    init_row_major(const std::size_t (&extents)[N], std::size_t (&strides)[N])
     {
-      return {b.row(), p + n * b.extents[1]};
+      strides[N - 1] = 1;
+      for (std::size_t i = N - 1; i != 0; --i) {
+        strides[i - 1] = strides[i] * extents[i];
+      }
+      return extents[0] * strides[0];
     }
 
-  // When N == 0, we are returning an element reference, possibly const
-  // qualified.
-  template <typename T, typename Base>
-    inline Requires<(Base::order == 1), matrix_ref<T, 0>>
-    row(const Base& b, T* p, std::size_t n)
+
+
+  // Returns true if each element in range is within the bounds of the
+  // corresponding extent.
+  template <std::size_t N, typename... Dims>
+    inline bool
+    check_bounds(const matrix_slice<N>& slice, Dims... dims)
     {
-      return *(p + n);
+      std::size_t indexes[N] {std::size_t(dims)...};
+      std::less<std::size_t> lt;
+      return std::equal(indexes, indexes + N, slice.extents, lt);
+      return check_bounds(slice, indexes);
     }
+
+
+// -------------------------------------------------------------------------- //
+//                              Slicing
+//
+// The follwoing algorithms support common slicing operations.
+
+// Compute an (N-1)D slice from an N-D slice. This is done by copying all
+// extents and strides into the smaller-dimensional slice by excluding the
+// Mth dimension. Note that:
+//    If M == 0, this is called a row slice.
+//    If M == 1, this is called a column slice.
+//    If M == 2, this is a slice of the "z" plane.
+//
+// TODO: For fun, make a version that slices over a sequence of dimensions.
+template <std::size_t M, std::size_t N>
+  inline void 
+  slice_dim(std::size_t n, const matrix_slice<N>& in, matrix_slice<N-1>& out)
+  {
+    // static_assert(M < N, "");
+
+    out.size = in.size / in.extents[M];       // Scale the size of the matrix
+    out.start = in.start + n * in.strides[M]; // Compute the starting offset
+
+    // Copy into out.extents all those from in except those in the Mth dim.
+    auto e = std::copy_n(in.extents, M, out.extents);
+    std::copy_n(in.extents + M + 1, N - M - 1, e);
+
+    // Copy into out.strides all those from in except those in the Mth dim.
+    auto s = std::copy_n(in.strides, M, out.strides);
+    std::copy_n(in.strides + M + 1, N - M - 1, s);
+  }
 
 } // namespace matrix_impl
 

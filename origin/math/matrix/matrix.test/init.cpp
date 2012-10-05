@@ -14,30 +14,9 @@
 using namespace std;
 using namespace origin;
 
-// Test the initialization patterns of matrix and matrix_ref.
+// FIXME: Erase this test. It's not longer meaningful.
 
 int main()
 {
-  using Matrix = matrix<int, 2>;
-  using Matrix_ref = matrix_ref<int, 2>;
-  using Const_matrix_ref = matrix_ref<const int, 2>;
-
-  Matrix m {{0, 1}, {2, 3}};
-
-  auto a = m + m;
-  static_assert(Same<Matrix, decltype(a)>(), "");
-
-  const Matrix& cm = m;
-  Const_matrix_ref cr1 = cm;
-  Const_matrix_ref cr2 = m;
-  assert(cr1 == cr2);
-  assert(cr1.data() == cr2.data());
-
-  Matrix_ref r1 = m;
-  assert (r1 == cr1);
-  assert(r1.data() == cr1.data());
-
-  // This should fail -- deleted function.
-  // Matrix_ref m5 = m + m;
 }
 

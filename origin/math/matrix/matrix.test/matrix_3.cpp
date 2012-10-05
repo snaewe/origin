@@ -48,14 +48,15 @@ int main()
   assert(m1.size() == 24);
   cout << m1 << '\n';
 
-#ifndef ORIGIN_MATRIX_USE_SHAPE_CTOR
   // Using parens calls the size initializer
   matrix<int, 3> m2(5, 4, 3);
   assert(m2.extent(0) == 5);
   assert(m2.extent(1) == 4);
   assert(m2.extent(2) == 3);
+  assert(m2.size() == 5 * 4 * 3);
+  cout << m2 << '\n';
 
+  // Cannot value-initialize a matrix from a flat list. We can't deduce the
+  // extents of the matrix.
   // matrix<int, 3> m3{1, 2, 3};
-  matrix<int, 3> m3(1, 2, 3);
-#endif
 }
