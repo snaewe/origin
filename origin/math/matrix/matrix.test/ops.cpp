@@ -25,6 +25,7 @@ template <typename T, typename U>
 matrix<Common_type<T, U>, 2>
 multiply(const matrix<T, 2>& a, const matrix<U, 2>& b)
 {
+  assert(a.cols() == b.rows());
   matrix<Common_type<T, U>, 2> r(a.rows(), b.cols());
   for (size_t i = 0; i < a.rows(); ++i)
     for (size_t j = 0; j < b.cols(); ++j)

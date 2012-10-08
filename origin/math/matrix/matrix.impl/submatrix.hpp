@@ -45,6 +45,32 @@ template <typename T, std::size_t N>
     // pointed to by p.
     submatrix(const matrix_slice<N>& s, T* p);
 
+    // Matrix initialization
+    //
+    // Initialize the submatrix so that it refers to another matrix x, or assign
+    // the elements of that matrix into this sub-matrix. Note that we explicitly
+    // prohibit the initialization of a sub-matrix from an rvalue matrix. That
+    // is a recipe for leaking memory.
+    //
+    // Assigning from a sub-matrix copies the values from x.
+    submatrix(matrix<value_type, N>& x);
+    submatrix(const matrix<value_type, N>& x);
+    submatrix(matrix<value_type, N>&&) = delete;
+
+    submatrix& operator=(const matrix<value_type, N>& x);
+
+
+    // Submatrix conversion
+    //
+    // Allow implicit conversion from a non-const submatrix to a const
+    // submatrix.
+    template <typename U>
+      submatrix(const submatrix<U, N>& x);
+
+    template <typename U>
+      submatrix& operator=(const submatrix<U, N>& x);
+
+
     // Destruction
     ~submatrix() = default;
 
@@ -54,10 +80,10 @@ template <typename T, std::size_t N>
     // Returns the shape of the matrix.
 
     // Return the array of extents describing the shape of the matrix.
-    const matrix_slice<N>& descriptor() const { return slice; }
+    const matrix_slice<N>& descriptor() const { return desc; }
 
     // Returns the extent of the matrix in the nth dimension. 
-    std::size_t extent(std::size_t n) const { return slice.extents[n]; }
+    std::size_t extent(std::size_t n) const { return desc.extents[n]; }
 
     // Returns the number of rows (0th extent) in the matrix.
     std::size_t rows() const { return extent(0); }
@@ -66,7 +92,7 @@ template <typename T, std::size_t N>
     std::size_t cols() const { return extent(1); }
 
     // Returns the total number of elements contained in the matrix.
-    std::size_t size() const { return slice.size; }
+    std::size_t size() const { return desc.size; }
 
 
     // Element access
@@ -95,6 +121,20 @@ template <typename T, std::size_t N>
     // Return a submatrix referring to the nth column.
     submatrix<T, N-1>       col(std::size_t n);
     submatrix<const T, N-1> col(std::size_t n) const;
+
+
+    // Slicing
+    //
+    // Returns a submatrix referring to the elements in a[i] to a[i + n - 1].
+    // If n is unspecified, then return the slice until the end of the
+    // matrix.
+    //
+    // TODO: Design a generalized slicing interface.
+    submatrix<T, N>       slice(std::size_t i);
+    submatrix<const T, N> slice(std::size_t i) const;
+
+    submatrix<T, N>       slice(std::size_t i, std::size_t n);
+    submatrix<const T, N> slice(std::size_t i, std::size_t n) const;
 
 
     // Data access
@@ -127,22 +167,69 @@ template <typename T, std::size_t N>
 
 
     // Iterators
-    iterator begin() { return {slice, ptr}; }
-    iterator end()   { return {slice, ptr, true}; }
+    iterator begin() { return {desc, ptr}; }
+    iterator end()   { return {desc, ptr, true}; }
 
-    const_iterator begin() const { return {slice, ptr}; }
-    const_iterator end() const   { return {slice, ptr, true}; }
+    const_iterator begin() const { return {desc, ptr}; }
+    const_iterator end() const   { return {desc, ptr, true}; }
+
+
+    void swap(submatrix& x);
+    void swap_rows(std::size_t m, std::size_t n);
 
   private:
-    matrix_slice<N> slice; // Descirbes the submatrix
+    matrix_slice<N> desc; // Descirbes the submatrix
     T* ptr;                // Points to the first element of a matrix
   };
 
 
 template <typename T, std::size_t N>
   inline
+  submatrix<T, N>::submatrix(matrix<value_type, N>& x)
+    : desc(x.descriptor()), ptr(x.data())
+  { }
+
+template <typename T, std::size_t N>
+  inline
+  submatrix<T, N>::submatrix(const matrix<value_type, N>& x)
+    : desc(x.descriptor()), ptr(x.data())
+  { }
+
+template <typename T, std::size_t N>
+  inline submatrix<T, N>&
+  submatrix<T, N>::operator=(const matrix<value_type, N>& x)
+  {
+      // FIXME: Is this right? Should we just assign values or resize the
+      // vector based o what x is?
+    assert(same_extents(desc, x.descriptor()));
+    apply(x, [](T& a, const T& b) { a = b; });
+    return *this;
+  }
+
+template <typename T, std::size_t N>
+  template <typename U>
+    inline
+    submatrix<T, N>::submatrix(const submatrix<U, N>& x)
+      : desc(x.descriptor()), ptr(x.ptr)
+    { }
+
+template <typename T, std::size_t N>
+  template <typename U>
+    inline submatrix<T, N>&
+    submatrix<T, N>::operator=(const submatrix<U, N>& x)
+    {
+      // FIXME: Is this right? Should we just assign values or resize the
+      // vector based o what x is?
+      assert(same_extents(desc, x.descriptor()));
+      apply(x, [](T& a, const U& b) { a = b; });
+      return *this;
+    }
+
+
+template <typename T, std::size_t N>
+  inline
   submatrix<T, N>::submatrix(const matrix_slice<N>& s, T* p)
-    : slice(s), ptr(p)
+    : desc(s), ptr(p)
   { }
 
 template <typename T, std::size_t N>
@@ -150,8 +237,8 @@ template <typename T, std::size_t N>
     inline T&
     submatrix<T, N>::operator()(Dims... dims)
     {
-      assert(matrix_impl::check_bounds(slice, dims...));
-      return *(ptr + slice(dims...));
+      assert(matrix_impl::check_bounds(desc, dims...));
+      return *(ptr + desc(dims...));
     }
 
 template <typename T, std::size_t N>
@@ -159,8 +246,8 @@ template <typename T, std::size_t N>
     inline const T&
     submatrix<T, N>::operator()(Dims... dims) const
     {
-      assert(matrix_impl::check_bounds(slice, dims...));
-      return *(ptr + slice(dims...));
+      assert(matrix_impl::check_bounds(desc, dims...));
+      return *(ptr + desc(dims...));
     }
 
 
@@ -170,8 +257,8 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(0));
     matrix_slice<N-1> row;
-    matrix_impl::slice_dim<0>(n, slice, row);
-    return {data(), row};
+    matrix_impl::slice_dim<0>(n, desc, row);
+    return {ptr, row};
   }
 
 template <typename T, std::size_t N>
@@ -180,7 +267,7 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(0));
     matrix_slice<N-1> row;
-    matrix_impl::slice_dim<0>(n, slice, row);
+    matrix_impl::slice_dim<0>(n, desc, row);
     return {row, ptr};
   }
 
@@ -191,8 +278,8 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(1));
     matrix_slice<N-1> col;
-    matrix_impl::slice_dim<1>(n, slice, col);
-    return {data(), col};
+    matrix_impl::slice_dim<1>(n, desc, col);
+    return {ptr, col};
   }
 
 template <typename T, std::size_t N>
@@ -201,8 +288,55 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(1));
     matrix_slice<N-1> col;
-    matrix_impl::slice_dim<1>(n, slice, col);
-    return {data(), col};
+    matrix_impl::slice_dim<1>(n, desc, col);
+    return {ptr, col};
+  }
+
+
+template <typename T, std::size_t N>
+  inline submatrix<T, N>
+  submatrix<T, N>::slice(std::size_t i)
+  {
+    if (i >= rows()) i = 0;
+    matrix_slice<N> s = desc;
+    s.start = desc.start + i * desc.strides[0];
+    s.extents[0] = rows() - i;
+    return {s, ptr};
+  }
+
+template <typename T, std::size_t N>
+  inline submatrix<const T, N>
+  submatrix<T, N>::slice(std::size_t i) const
+  {
+    if (i >= rows()) i = 0;
+    matrix_slice<N> s = desc;
+    s.start = desc.start + i * desc.strides[0];
+    s.extents[0] = rows() - i;
+    return {s, ptr};
+  }
+
+template <typename T, std::size_t N>
+  inline submatrix<T, N>
+  submatrix<T, N>::slice(std::size_t i, std::size_t n)
+  {
+    if (i >= rows()) i = 0;
+      if (i + n > rows()) n = rows() - i;
+    matrix_slice<N> s = desc;
+    s.start = desc.start + i * desc.strides[0];
+    s.extents[0] = n;
+    return {s, ptr};
+  }
+
+template <typename T, std::size_t N>
+  inline submatrix<const T, N>
+  submatrix<T, N>::slice(std::size_t i, std::size_t n) const
+  {
+    if (i >= rows()) i = 0;
+      if (i + n > rows()) n = rows() - i;
+    matrix_slice<N> s = desc;
+    s.start = desc.start + i * desc.strides[0];
+    s.extents[0] = n;
+    return {s, ptr};
   }
 
 
@@ -221,7 +355,7 @@ template <typename T, std::size_t N>
     inline submatrix<T, N>&
     submatrix<T, N>::apply(const M& m, F f)
     {
-      assert(same_extents(slice, m.descriptor()));
+      assert(same_extents(desc, m.descriptor()));
       auto i = begin();
       auto j = m.begin();
       while (i != end()) {
@@ -300,6 +434,27 @@ template <typename T, std::size_t N>
     {
       using U = Value_type<M>;
       return apply(m, [&](T& t, const U& u) { t -= u; });
+    }
+
+
+  // Swap
+  template <typename T, std::size_t N>
+    inline void
+    submatrix<T, N>::swap(submatrix& x)
+    {
+      using std::swap;
+      swap(desc, x.desc);
+      swap(ptr, x.ptr);
+    }
+
+  // Swap rows
+  template <typename T, std::size_t N>
+    inline void
+    submatrix<T, N>::swap_rows(std::size_t m, std::size_t n)
+    {
+      auto a = (*this)[m];
+      auto b = (*this)[n];
+      std::swap_ranges(a.begin(). a.end(), b.begin());
     }
 
 

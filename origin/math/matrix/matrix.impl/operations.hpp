@@ -39,14 +39,18 @@ template <typename M>
   }
 
 
-// Equality comparable
+
+// ------------------------------------------------------------------------ //
+//                          Equality Comparable
+//
 // Two matrices compare equal when they have the same elements. Comparing
 // matrices described by different slices is undefined behavior.
+
 template <typename M1, typename M2>
   inline Requires<Matrix<M1>() && Matrix<M2>(), bool> 
   operator==(const M1& a, const M2& b)
   { 
-    assert(a.descriptor() == b.descriptor());
+    assert(same_extents(a, b));
     return std::equal(a.begin(), a.end(), b.begin());
   }
 
@@ -56,7 +60,6 @@ template <typename M1, typename M2>
   { 
     return !(a == b);
   }
-    
 
 
 // NOTE: This operation is kind of funny because it is heterogeneous in its
@@ -88,7 +91,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator+(const matrix<T, N>& a, const matrix<T, N>& b)
   {
-    assert(a.descriptor() == b.descriptor());
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result += b;
   }
@@ -97,7 +100,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator+(const submatrix<T, N>& a, const submatrix<T, N>& b)
   {
-    assert(a.extents == b.extents);
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result += b;
   }
@@ -106,7 +109,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator+(const matrix<T, N>& a, const submatrix<T, N>& b)
   {
-    assert(a.extents == b.extents);
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result += b;
   }
@@ -115,7 +118,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator+(const submatrix<T, N>& a, const matrix<T, N>& b)
   {
-    assert(a.extents == b.extents);
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result += b;
   }
@@ -130,7 +133,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator-(const matrix<T, N>& a, const matrix<T, N>& b)
   {
-    asssert(a.dim() == b.dim());
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return a -= b;
   }
@@ -139,7 +142,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator-(const submatrix<T, N>& a, const submatrix<T, N>& b)
   {
-    assert(a.dim() == b.dim());
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result -= b;
   }
@@ -149,7 +152,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator-(const matrix<T, N>& a, const submatrix<T, N>& b)
   {
-    assert(a.dim() == b.dim());
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result -= b;
   }
@@ -158,7 +161,7 @@ template <typename T, std::size_t N>
   inline matrix<T, N>
   operator-(const submatrix<T, N>& a, const matrix<T, N>& b)
   {
-    assert(a.dim() == b.dim());
+    assert(same_extents(a, b));
     matrix<T, N> result = a;
     return result -= b;
   }

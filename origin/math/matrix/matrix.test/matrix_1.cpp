@@ -52,7 +52,7 @@ void test_init()
 void test_access()
 {
   // Test element access.
-  matrix<int, 1> m  {0, 1, 2, 3};
+  matrix<int, 1> m {0, 1, 2, 3};
   assert(m(0) == 0);
 
   // Test slicing. Note that slices in 1D are proxies.
@@ -64,6 +64,21 @@ void test_access()
   int n = 0;
   for ( ; i != m.end(); ++i, ++n)
     assert(*i == n);
+}
+
+void test_slice()
+{
+  cout << "--- slice ---\n";
+  matrix<int, 1> m {0, 1, 2, 3, 4, 5};
+  auto s1 = m.slice(2);
+  cout << s1 << '\n';
+  auto s2 = m.slice(1, 3);
+  cout << s2 << '\n';
+  auto s3 = m.slice(1, 5); // Check at the boundary.
+  cout << s3 << '\n';
+
+  assert(m.slice(0) == m); // A nice identity
+  cout << "----------\n";
 }
 
 void test_ops()
@@ -100,5 +115,6 @@ int main()
 {
   test_init();
   test_access();
+  test_slice();
   test_ops();
 }

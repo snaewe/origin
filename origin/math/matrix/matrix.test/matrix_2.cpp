@@ -73,6 +73,30 @@ void test_access()
     cout << m.col(i) << '\n';
 }
 
+void test_slice()
+{
+  cout << "--- slice ---\n";
+  matrix<int, 2> m {
+    {0, 1, 2, 3},
+    {4, 5, 6, 7},
+    {8, 9, 10, 11}
+  };
+
+  auto s1 = m.slice(1);
+  cout << s1 << '\n';
+  auto s2 = m.slice(0, 2);
+  cout << s2 << '\n';
+  auto s3 = m.slice(1, 2);
+  cout << s3 << '\n';
+
+  assert(m.slice(0) == m);
+  assert(m.slice(1) == m.slice(1, 2));
+
+  cout << m[2].slice(2) << '\n';
+
+  cout << "----------\n";
+}
+
 void test_ops()
 {
   matrix<int, 2> m {
@@ -138,5 +162,6 @@ int main()
 {
   test_init();
   test_access();
+  test_slice();
   test_ops();
 }

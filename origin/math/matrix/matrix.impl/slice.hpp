@@ -162,12 +162,37 @@ template <std::size_t N>
     return !(a == b);
   }
 
+
+// -------------------------------------------------------------------------- //
+//                              Streaming
+//
+// Primarily for debugging purposes, print a slice descriptor as a triple:
+// start, extents, and strides.
+template <typename C, typename T, std::size_t N>
+  std::basic_ostream<C, T>&
+  operator<<(std::basic_ostream<C, T>& os, const matrix_slice<N>& s)
+  {
+    os << '[' << s.start << ',' << '[';
+    for (auto i = 0; i < N - 1; ++i)
+      os << s.extents[i] << ',';
+    os << s.extents[N-1] << ']' << ',' << '[';
+    for (auto i = 0; i < N - 1; ++i)
+      os << s.strides[i] << ',';
+    os << s.strides[N-1] << ']' << ']';
+    return os;
+  }
+
+
+
 // -------------------------------------------------------------------------- //
 //                              Same Extents
 //
 // The same_extents function returns true when two slices describe matrices
 // with the same order and extents. The starting offset and strides do not
 // factor into the comparison.
+//
+// An overload is provided for Matrix types. It compares the descriptors of its
+// matrix arguments.
 template <std::size_t N>
   inline bool
   same_extents(const matrix_slice<N>& a, const matrix_slice<N>& b)
@@ -175,6 +200,14 @@ template <std::size_t N>
     return a.order == b.order
         && std::equal(a.extents, a.extents + N, b.extents);
   }
+
+template <typename M1, typename M2>
+  inline bool
+  same_extents(const M1& a, const M2& b)
+  {
+    return same_extents(a.descriptor(), b.descriptor());
+  }
+
 
 
 // -------------------------------------------------------------------------- //
@@ -220,3 +253,5 @@ template <std::size_t N>
   {
     return slice<1>(s, n);
   }
+
+
