@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <array>
 #include <numeric>
-#include <iostream> // FIXME: Remove me!
 
 #include <origin/type/concepts.hpp>
 #include <origin/type/typestr.hpp>
@@ -158,8 +157,14 @@ namespace origin
       // Return the slice describing the matrix.
       const matrix_slice<N>& descriptor() const { return slice; }
 
-      // Returns the extent of the matrix in the nth dimension.
+      // Returns the extent of the matrix in the nth dimension. 
       std::size_t extent(std::size_t n) const { return slice.extents[n]; }
+
+      // Returns the number of rows (0th extent) in the matrix.
+      std::size_t rows() const { return extent(0); }
+
+      // Returns the number of columns (1st extent) in the matrix.
+      std::size_t cols() const { return extent(1); }
 
       // Returns the total number of elements contained in the matrix.
       std::size_t size() const { return slice.size; }
