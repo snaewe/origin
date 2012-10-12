@@ -70,14 +70,17 @@ void test_slice()
 {
   cout << "--- slice ---\n";
   matrix<int, 1> m {0, 1, 2, 3, 4, 5};
-  auto s1 = m.slice(2);
-  cout << s1 << '\n';
-  auto s2 = m.slice(1, 3);
-  cout << s2 << '\n';
-  auto s3 = m.slice(1, 5); // Check at the boundary.
-  cout << s3 << '\n';
 
-  assert(m.slice(0) == m); // A nice identity
+  auto s1 = m(2);
+  cout << s1 << '\n'; // 2
+
+  auto s2 = m(slice(1, 3));
+  cout << s2 << '\n'; // 1 2 3
+  
+  auto s3 = m(slice(1, 5)); // Check at the boundary.
+  cout << s3 << '\n'; // 1 2 3 4 5
+
+  // assert(m.slice(0) == m); // A nice identity
   cout << "----------\n";
 }
 
@@ -117,4 +120,15 @@ int main()
   test_access();
   test_slice();
   test_ops();
+
+
+  matrix<int, 1> m {0, 1, 2, 3, 4, 5, 6 };
+
+  for (int i = 0; i != 7; ++i) {
+    // assert(&m.s(i) == m.data() + i);
+  }
+
+  m(0);
+  m(slice(1, 2));
+
 }

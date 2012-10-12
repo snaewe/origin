@@ -7,3 +7,8 @@
 
 #include "matrix.hpp"
 
+namespace origin
+{
+  slice slice::all {0, std::size_t(-1), 1};
+}
+

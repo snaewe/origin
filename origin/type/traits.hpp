@@ -299,8 +299,10 @@ namespace origin
   //////////////////////////////////////////////////////////////////////////////
 
 
-
-  // Returns true if each boolean argument is true or if no arguments are given.
+  // ------------------------------------------------------------------------ //
+  //                                All
+  //
+  // Returns true if every argument is true or if no arguments are given.
   // This function can be used to evaluate a concept or type constraint for all
   // types in a template parameter pack. For example:
   //
@@ -315,6 +317,36 @@ namespace origin
     constexpr bool All(bool b, Args... args)
     {
       return b && All(args...);
+    }
+
+
+  // ------------------------------------------------------------------------ //
+  //                                Some
+  //
+  // Returns true if some (at least one) argument is true.
+
+  constexpr bool Some() { return false; }
+
+  template <typename... Args>
+    constexpr bool Some(bool b, Args... args)
+    {
+      return b || Some(args...);
+    }
+
+
+  // ------------------------------------------------------------------------ //
+  //                                None
+  //
+  // Returns true if every argument is false or if no arguments are given.
+  //
+  // Note that all arguments must be convertible to bool.
+
+  constexpr bool None() { return true; }
+
+  template <typename... Args>
+    constexpr bool None(bool b, Args... args)
+    {
+      return !b && None(args...);
     }
 
 

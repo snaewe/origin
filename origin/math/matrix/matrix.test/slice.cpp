@@ -141,7 +141,7 @@ int main()
   print(enumerate(s)); // [0, 24)
 
   // Slices of a row (in the 0th dimension)
-  matrix_slice<2> r = slice<0>(s, 1);
+  matrix_slice<2> r = slice_row(s, 1);
   assert(eq(r.extents, {4, 3}));
   assert(eq(r.strides, {3, 1}));
   assert(r.size == 12);
@@ -151,14 +151,14 @@ int main()
                        // 18 19 20
                        // 21 22 23
 
-  matrix_slice<1> rr = slice<0>(r, 2);
+  matrix_slice<1> rr = slice_row(r, 2);
   assert(eq(rr.extents, {3}));
   assert(eq(rr.strides, {1}));
   assert(rr.size == 3);
   assert(rr.start == 18);
   print(enumerate(rr)); // 18, 19, 20
 
-  matrix_slice<1> rc = slice<1>(r, 1);
+  matrix_slice<1> rc = slice_col(r, 1);
   assert(eq(rc.extents, {4}));
   assert(eq(rc.strides, {3}));
   assert(rc.size == 4);
@@ -166,7 +166,7 @@ int main()
   print(enumerate(rc)); // 13, 16, 19, 22
 
   // Slices along a column (in the 1st dimension)
-  matrix_slice<2> c = slice<1>(s, 2);
+  matrix_slice<2> c = slice_col(s, 2);
   assert(eq(c.extents, {2, 3}));
   assert(eq(c.strides, {12, 1}));
   assert(c.size == 6);
@@ -174,14 +174,14 @@ int main()
   print(enumerate(c));  // 6  7  8
                         // 18 19 20
 
-  matrix_slice<1> cr = slice<0>(c, 1);
+  matrix_slice<1> cr = slice_row(c, 1);
   assert(eq(cr.extents, {3}));
   assert(eq(cr.strides, {1}));
   assert(cr.size == 3);
   assert(cr.start == 18);
   print(enumerate(cr)); // 18 19 20
 
-  matrix_slice<1> cc = slice<1>(c, 1);
+  matrix_slice<1> cc = slice_col(c, 1);
   assert(eq(cc.extents, {2}));
   assert(eq(cc.strides, {12}));
   assert(cc.size == 2);
@@ -189,7 +189,7 @@ int main()
   print(enumerate(cc)); // 7 19
 
   // Slice along the z-plane (in the 2nd dimension)
-  matrix_slice<2> z = slice<2>(s, 1);
+  matrix_slice<2> z = slice_dimension<2>(s, 1);
   assert(eq(z.extents, {2, 4}));
   assert(eq(z.strides, {12, 3}));
   assert(z.size == 8);
@@ -197,14 +197,14 @@ int main()
   print(enumerate(z)); // 1  4  7  10
                        // 13 16 19 22
 
-  matrix_slice<1> zr = slice<0>(z, 1);
+  matrix_slice<1> zr = slice_row(z, 1);
   assert(eq(zr.extents, {4}));
   assert(eq(zr.strides, {3}));
   assert(zr.size == 4);
   assert(zr.start == 13);
   print(enumerate(zr)); // 13 16 19 22
 
-  matrix_slice<1> zc = slice<1>(z, 2);
+  matrix_slice<1> zc = slice_col(z, 2);
   assert(eq(zc.extents, {2}));
   assert(eq(zc.strides, {12}));
   assert(zc.size == 2);

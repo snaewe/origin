@@ -27,6 +27,11 @@ template <std::size_t N>
 
     matrix_slice() = default;
 
+    // Copy semantics
+    matrix_slice(const matrix_slice&) = default;
+    matrix_slice& operator=(const matrix_slice&) = default;
+
+
     // Create a slice from a range of extents with the a starting offset, s.
     // This requires that size(range) == N.
     template <typename R>
@@ -209,7 +214,6 @@ template <typename M1, typename M2>
   }
 
 
-
 // -------------------------------------------------------------------------- //
 //                              Slicing
 //
@@ -231,7 +235,7 @@ template <typename M1, typename M2>
 // TODO: For fun, make a version that slices over a sequence of dimensions.
 template <std::size_t M, std::size_t N>
   inline matrix_slice<N-1>
-  slice(const matrix_slice<N>& s, std::size_t n)
+  slice_dimension(const matrix_slice<N>& s, std::size_t n)
   {
     matrix_slice<N-1> r;
     matrix_impl::slice_dim<M>(n, s, r);
@@ -243,7 +247,7 @@ template <std::size_t N>
   inline matrix_slice<N-1>
   slice_row(const matrix_slice<N>& s, std::size_t n)
   {
-    return slice<0>(s, n);
+    return slice_dimension<0>(s, n);
   }
 
 // Compute the nth column slie of the given matrix.
@@ -251,7 +255,7 @@ template <std::size_t N>
   inline matrix_slice<N-1>
   slice_col(const matrix_slice<N>& s, std::size_t n)
   {
-    return slice<1>(s, n);
+    return slice_dimension<1>(s, n);
   }
 
 

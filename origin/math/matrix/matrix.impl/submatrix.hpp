@@ -31,19 +31,23 @@ template <typename T, std::size_t N>
     // Default construction
     submatrix() = delete;
 
+
     // Move semantics
-    submatrix(submatrix&&) = default;
-    submatrix& operator=(submatrix&&) = default;
+    // FIXME: The implementation is not exception-safe.
+    submatrix(submatrix&& x);
+    submatrix& operator=(submatrix&& x);
 
     // Copy semantics
-    submatrix(const submatrix&) = default;
-    submatrix& operator=(const submatrix& x) = default;
+    submatrix(const submatrix& x);
+    submatrix& operator=(const submatrix& x);
+
 
     // Slice initialization
     //
     // Initialize the submatrix over the slice, s, starting at the element
     // pointed to by p.
     submatrix(const matrix_slice<N>& s, T* p);
+
 
     // Matrix initialization
     //
@@ -95,15 +99,29 @@ template <typename T, std::size_t N>
     std::size_t size() const { return desc.size; }
 
 
-    // Element access
-    template <typename... Dims>
-      T& operator()(Dims... dims);
+    // Subscripting
+    //
+    // Returns a reference to the element at the index given by the sequence
+    // of indexes, args.
 
-    template <typename... Dims>
-      const T& operator()(Dims... dims) const;
+    template <typename... Args>
+      Requires<matrix_impl::Requesting_element<Args...>(), T&>
+      operator()(Args... args);
+
+    template <typename... Args>
+      Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+      operator()(Args... args) const;
+
+    template <typename... Args>
+      Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+      operator()(const Args&... args);
+
+    template <typename... Args>
+      Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+      operator()(const Args&... args) const;
 
 
-    // Row
+    // Row subscripting
     //
     // Return a submatrix referring to the nth row. This is equivalent to
     // calling m.row(n).
@@ -121,20 +139,6 @@ template <typename T, std::size_t N>
     // Return a submatrix referring to the nth column.
     submatrix<T, N-1>       col(std::size_t n);
     submatrix<const T, N-1> col(std::size_t n) const;
-
-
-    // Slicing
-    //
-    // Returns a submatrix referring to the elements in a[i] to a[i + n - 1].
-    // If n is unspecified, then return the slice until the end of the
-    // matrix.
-    //
-    // TODO: Design a generalized slicing interface.
-    submatrix<T, N>       slice(std::size_t i);
-    submatrix<const T, N> slice(std::size_t i) const;
-
-    submatrix<T, N>       slice(std::size_t i, std::size_t n);
-    submatrix<const T, N> slice(std::size_t i, std::size_t n) const;
 
 
     // Data access
@@ -181,6 +185,41 @@ template <typename T, std::size_t N>
     matrix_slice<N> desc; // Descirbes the submatrix
     T* ptr;                // Points to the first element of a matrix
   };
+
+
+template <typename T, std::size_t N>
+  inline
+  submatrix<T, N>::submatrix(submatrix&& x)
+    : desc(x.desc), ptr(x.ptr)
+  { }
+
+template <typename T, std::size_t N>
+  inline submatrix<T, N>&
+  submatrix<T, N>::operator=(submatrix&& x)
+  {
+    assert(same_extents(desc, x.desc));
+    // FIXME: This does not guarantee exception safety. If move throws, this
+    // operator may leak resources. The algorithm must be specialized on
+    // whether T is nothrow-movable.
+    std::move(x.begin(), x.end(), begin());
+    return *this;
+  }
+
+
+template <typename T, std::size_t N>
+  inline
+  submatrix<T, N>::submatrix(const submatrix& x)
+    : desc(x.desc), ptr(x.ptr)
+  { }
+
+template <typename T, std::size_t N>
+  inline submatrix<T, N>&
+  submatrix<T, N>::operator=(const submatrix& x)
+  {
+    assert(same_extents(desc, x.desc));
+    copy(x.begin(), x.end(), begin());
+    return *this;
+  }
 
 
 template <typename T, std::size_t N>
@@ -233,22 +272,43 @@ template <typename T, std::size_t N>
   { }
 
 template <typename T, std::size_t N>
-  template <typename... Dims>
-    inline T&
-    submatrix<T, N>::operator()(Dims... dims)
+  template <typename... Args>
+    inline Requires<matrix_impl::Requesting_element<Args...>(), T&>
+    submatrix<T, N>::operator()(Args... args)
     {
-      assert(matrix_impl::check_bounds(desc, dims...));
-      return *(ptr + desc(dims...));
+      assert(matrix_impl::check_bounds(desc, args...));
+      return *(ptr + desc(args...));
     }
 
 template <typename T, std::size_t N>
-  template <typename... Dims>
-    inline const T&
-    submatrix<T, N>::operator()(Dims... dims) const
+  template <typename... Args>
+    inline Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+    submatrix<T, N>::operator()(Args... args) const
     {
-      assert(matrix_impl::check_bounds(desc, dims...));
-      return *(ptr + desc(dims...));
+      assert(matrix_impl::check_bounds(desc, args...));
+      return *(ptr + desc(args...));
     }
+
+template <typename T, std::size_t N>
+  template <typename... Args>
+    inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+    submatrix<T, N>::operator()(const Args&... args)
+    {
+      matrix_slice<N> d;
+      d.start = desc.start + matrix_impl::do_slice(desc, d, args...);
+      return {d, ptr};
+    }
+
+template <typename T, std::size_t N>
+  template <typename... Args>
+    inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+    submatrix<T, N>::operator()(const Args&... args) const
+    {
+      matrix_slice<N> d;
+      d.start = desc.start + matrix_impl::do_slice(desc, d, args...);
+      return {d, ptr};
+    }
+
 
 
 template <typename T, std::size_t N>
@@ -292,52 +352,6 @@ template <typename T, std::size_t N>
     return {ptr, col};
   }
 
-
-template <typename T, std::size_t N>
-  inline submatrix<T, N>
-  submatrix<T, N>::slice(std::size_t i)
-  {
-    if (i >= rows()) i = 0;
-    matrix_slice<N> s = desc;
-    s.start = desc.start + i * desc.strides[0];
-    s.extents[0] = rows() - i;
-    return {s, ptr};
-  }
-
-template <typename T, std::size_t N>
-  inline submatrix<const T, N>
-  submatrix<T, N>::slice(std::size_t i) const
-  {
-    if (i >= rows()) i = 0;
-    matrix_slice<N> s = desc;
-    s.start = desc.start + i * desc.strides[0];
-    s.extents[0] = rows() - i;
-    return {s, ptr};
-  }
-
-template <typename T, std::size_t N>
-  inline submatrix<T, N>
-  submatrix<T, N>::slice(std::size_t i, std::size_t n)
-  {
-    if (i >= rows()) i = 0;
-      if (i + n > rows()) n = rows() - i;
-    matrix_slice<N> s = desc;
-    s.start = desc.start + i * desc.strides[0];
-    s.extents[0] = n;
-    return {s, ptr};
-  }
-
-template <typename T, std::size_t N>
-  inline submatrix<const T, N>
-  submatrix<T, N>::slice(std::size_t i, std::size_t n) const
-  {
-    if (i >= rows()) i = 0;
-      if (i + n > rows()) n = rows() - i;
-    matrix_slice<N> s = desc;
-    s.start = desc.start + i * desc.strides[0];
-    s.extents[0] = n;
-    return {s, ptr};
-  }
 
 
 template <typename T, std::size_t N>
@@ -468,6 +482,8 @@ template <typename T, std::size_t N>
     class submatrix<T, 0>
     {
     public:
+      submatrix() = delete;
+
       submatrix(const matrix_slice<0>& s, T* p) : ptr(p + s.start) { }
 
       // Modifying operators

@@ -79,20 +79,49 @@ void test_slice()
   matrix<int, 2> m {
     {0, 1, 2, 3},
     {4, 5, 6, 7},
-    {8, 9, 10, 11}
+    {8, 9, 10, 11},
+    {12, 13, 14, 15}
   };
+  cout << m << '\n';
 
-  auto s1 = m.slice(1);
-  cout << s1 << '\n';
-  auto s2 = m.slice(0, 2);
-  cout << s2 << '\n';
-  auto s3 = m.slice(1, 2);
-  cout << s3 << '\n';
 
-  assert(m.slice(0) == m);
-  assert(m.slice(1) == m.slice(1, 2));
+  auto sm1 = m(1, slice(1));
+  cout << sm1 << '\n'; // 5 6 7
 
-  cout << m[2].slice(2) << '\n';
+  auto sm2 = m(slice(2), 1);
+  cout << sm2 << '\n'; // 9 
+                       // 13
+
+  auto sm3 = m(slice(1), slice(1));
+  cout << sm3 << '\n'; // 5  6  7
+                       // 9  10 11
+                       // 13 14 15
+
+  auto sm4 = m(slice::all, 2);
+  cout << sm4 << '\n'; // 2
+                       // 6
+                       // 10
+                       // 14
+
+  auto sm5 = m(slice::all, slice(1, 2, 2));
+  cout << sm5 << '\n'; // 1  3
+                       // 5  7
+                       // 9  11
+                       // 13 15
+
+  auto sm6 = m(slice::all, slice(1, 2, 3));
+  cout << sm6 << '\n'; // 1
+                       // 5
+                       // 9
+                       // 13
+
+  auto sm7 = m(slice(0, 2, 2), slice::all);
+  cout << sm7 << '\n'; // 0 1  2  3
+                       // 8 9 10 11
+
+  auto sm8 = m(slice(0, 2, 2), slice(0, 2, 2));
+  cout << sm8 << '\n'; // 0  2
+                       // 8 10
 
   cout << "----------\n";
 }
@@ -164,4 +193,6 @@ int main()
   test_access();
   test_slice();
   test_ops();
+
+
 }

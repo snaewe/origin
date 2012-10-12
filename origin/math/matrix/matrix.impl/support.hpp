@@ -210,5 +210,80 @@ template <std::size_t M, std::size_t N>
     std::copy_n(in.strides + M + 1, N - M - 1, s);
   }
 
+
+
+  // Mores slicing.
+
+  template <std::size_t D, std::size_t N>
+    inline std::size_t
+    do_slice_dim(const matrix_slice<N>& os, matrix_slice<N>& ns, slice s)
+    {
+      constexpr std::size_t I = N - D;
+      
+      // If the starting point is past the extent, we're requesting the
+      // entire slice.
+      if (s.start >= os.extents[I])
+        s.start = 0;
+
+      // If the lenght is large or the slice requests more elements than are
+      // available, make it stop at the right extent.
+      if (s.length > os.extents[I] || s.start + s.length > os.extents[I])
+        s.length = os.extents[I] - s.start;
+
+      // If the stride over-runs the edge of the matrix, re-compute the length
+      // so that we stop after the right number of increments. This is:
+      //
+      //    l = ceil(d/s)
+      //
+      // where d is the distance from the start to the extent, and s is the
+      // stride. 
+      if (s.start + s.length * s.stride > os.extents[I])
+        s.length = ((os.extents[I] - s.start) + s.stride - 1) / s.stride;
+
+      // Compute the extents and stride in this dimension.
+      ns.extents[I] = s.length;
+      ns.strides[I] = os.strides[I] * s.stride;
+      return s.start * os.strides[I];
+    }
+
+  // Slicing a single column is the same as a 1-count slice at the current
+  // dimension.
+  template <std::size_t D, std::size_t N>
+    inline std::size_t
+    do_slice_dim(const matrix_slice<N>& os, matrix_slice<N>& ns, std::size_t n) 
+    {
+      return do_slice_dim<D>(os, ns, slice(n, 1, 1));
+    }
+
+
+  template <std::size_t N>
+    inline std::size_t
+    do_slice(const matrix_slice<N>& os, matrix_slice<N>& ns) 
+    {
+      return 0;
+    }
+
+  // Translate the slice arguments is {s, args...} into a new slice descriptor
+  // (ns), and return the offset of the first element of the matrix. Note that
+  // the returned element is effectively computed as the dot product of the
+  // starting offsets of each slice argument with the strides of the original
+  // slice (os).
+  //
+  // All of the heavy lifting is done in do_slice_dim.
+  //
+  // Extensions: It is possible to reduce the dimensionality of the resulting
+  // slice when we encounter slice::none arguments or plain index. An index
+  // requests only a single element, so we can effectively compute drop the
+  // corresponding dimension.
+  template <std::size_t N, typename T, typename... Args>
+    inline std::size_t
+    do_slice(const matrix_slice<N>& os, matrix_slice<N>& ns, const T& s, const Args&... args)
+    {
+      std::size_t m = do_slice_dim<sizeof...(Args) + 1>(os, ns, s);
+      std::size_t n = do_slice(os, ns, args...);
+      return m + n;
+    }
+
+
 } // namespace matrix_impl
 

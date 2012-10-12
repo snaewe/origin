@@ -55,7 +55,7 @@ classical_elimination(Mat& A, Vec& b)
     
     for (size_t i = j + 1; i < n; ++i) {
       double m = A(i, j) / pivot;
-      A[i].slice(j) = scale_and_add(A[j].slice(j), -m, A[i].slice(j));
+      A[i](slice(j)) = scale_and_add(A[j](slice(j)), -m, A[i](slice(j)));
       b(i) -= m * b(j);
     }
   }
@@ -67,7 +67,11 @@ back_substitution(const Mat& A, const Vec& b)
   const size_t n = A.rows();
   Vec x(n);
   for (size_t i = n - 1; i < n; --i) {
-    double s = b(i) - dot_product(A[i].slice(i + 1), x.slice(i + 1));
+    // FIXME: I should write A(i, slice(i+1)) instead of what's below. That
+    // would require me reduce dimensions for non-slice arguments to the
+    // subscript operator.
+    double s = b(i) - dot_product(A[i](slice(i + 1)), x(slice(i + 1)));
+
     if (double m = A(i, i))
       x(i) = s / m;
     else

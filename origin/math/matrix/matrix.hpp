@@ -8,6 +8,7 @@
 #ifndef ORIGIN_MATH_MATRIX_HPP
 #define ORIGIN_MATH_MATRIX_HPP
 
+
 #include <cassert>
 #include <algorithm>
 #include <array>
@@ -23,6 +24,38 @@ namespace origin
   template <std::size_t N> class matrix_slice;
   template <typename T, std::size_t N> class matrix;
   template <typename T, std::size_t N> class submatrix;
+
+
+
+// -------------------------------------------------------------------------- //
+//                              Slice Object
+//
+// A slice describes a sequence of elements in some dimension of a matrix.
+// It is a triple comprised of a starting index, a number of elements, and the
+// stride between subsequent elements.
+//
+// The special members slice::none and slice::all represent the selection of
+// no or all elements in a particular dimension.
+struct slice
+{
+  slice()
+    : start(-1), length(-1), stride(1)
+  { }
+
+  explicit slice(std::size_t s)
+    : start(s), length(-1), stride(1)
+  { }
+
+  slice(std::size_t s, std::size_t l, std::size_t n = 1)
+    : start(s), length(l), stride(n)
+  { }
+
+  static slice all;
+
+  std::size_t start;
+  std::size_t length;
+  std::size_t stride;
+};
 
 
 #include "matrix.impl/traits.hpp" // Type traits
@@ -58,6 +91,10 @@ namespace origin
 #include "matrix.impl/support.hpp"  // Helper algorithms
 #include "matrix.impl/slice.hpp"    // Includes matrix_slice
 #include "matrix.impl/iterator.hpp" // Includes slice_iterator
+
+
+
+
 
 
   // ------------------------------------------------------------------------ //
@@ -104,20 +141,20 @@ namespace origin
       ~matrix() = default;
 
 
-      // Matrix reference iniitalization
+      // Matrix assignment.
       //
-      // Initialize the matrix from the matrix reference by copying its
-      // elements. Note that we can't move initialize from a matrix reference
-      // since the reference does not own its elements.
+      // Initialize or assign this matrix by copying the matrix x. In the
+      // case of assignment, the original matrix is destroyed and replaced by
+      // the copy.
       //
-      // This conversion is enabled whenver the element type of U can be
-      // converted to the value type T. This accommodates both conversion
-      // and const differences.
-      template <typename U>
-        matrix(const submatrix<U, N>& x);
+      // The order of the two matrices must be the same, and the value type of
+      // M must be convertible to this matrix's value type.
+      template <typename M, typename = Requires<Matrix<M>()>>
+        matrix(const M& x);
       
-      template <typename U>
-        matrix& operator=(const submatrix<U, N>& x);
+      template <typename M, typename = Requires<Matrix<M>()>>
+        matrix& operator=(const M& x);
+
 
       // Slice initialization
       //
@@ -176,18 +213,29 @@ namespace origin
       std::size_t size() const { return desc.size; }
 
 
-      // Element access
+      // Subscripting
       //
       // Returns a reference to the element at the index given by the sequence
-      // of indexes, Exts.
-      template <typename... Dims>
-        T& operator()(Dims... dims);
-      
-      template <typename... Dims>
-        const T& operator()(Dims... dims) const;
+      // of indexes, args.
+
+      template <typename... Args>
+        Requires<matrix_impl::Requesting_element<Args...>(), T&>
+        operator()(Args... args);
+
+      template <typename... Args>
+        Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+        operator()(Args... args) const;
+
+      template <typename... Args>
+        Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+        operator()(const Args&... args);
+
+      template <typename... Args>
+        Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+        operator()(const Args&... args) const;
 
 
-      // Row access
+      // Row subscripting
       //
       // Returns a submatrix referring to the nth row of the matrix. This is
       // the equivalent to m.row(n).
@@ -205,20 +253,6 @@ namespace origin
       // Returns a submatrix referring to the nth column of the matrix.
       submatrix<T, N-1>       col(std::size_t n);
       submatrix<const T, N-1> col(std::size_t n) const;
-
-
-      // Slicing
-      //
-      // Returns a submatrix referring to the elements in a[i] to a[i + n - 1].
-      // If n is unspecified, then return the slice until the end of the
-      // matrix.
-      //
-      // TODO: Design a generalized slicing interface.
-      submatrix<T, N>       slice(std::size_t i);
-      submatrix<const T, N> slice(std::size_t i) const;
-
-      submatrix<T, N>       slice(std::size_t i, std::size_t n);
-      submatrix<const T, N> slice(std::size_t i, std::size_t n) const;
 
 
       // Data access
@@ -271,28 +305,31 @@ namespace origin
       void clear();
 
     private:
+      void make_slice(matrix_slice<N>&, std::size_t);
+      void make_slice(matrix_slice<N>&, std::size_t, std::size_t);
+      void make_slice(matrix_slice<N>&, std::size_t, std::size_t, std::size_t);
+
+    private:
       matrix_slice<N> desc; // Describing slice
       std::vector<T> elems; // Underlying elements
     };
 
 
   template <typename T, std::size_t N>
-    template <typename U>
+    template <typename M, typename X>
     inline
-    matrix<T, N>::matrix(const submatrix<U, N>& x)
+    matrix<T, N>::matrix(const M& x)
       : desc(x.descriptor()), elems(x.begin(), x.end())
     {
-      static_assert(Convertible<U, T>(), "");
+      static_assert(Convertible<Value_type<M>, T>(), "");
     }
 
   template <typename T, std::size_t N>
-    template <typename U>
+    template <typename M, typename X>
     inline matrix<T, N>&
-    matrix<T, N>::operator=(const submatrix<U, N>& x)
+    matrix<T, N>::operator=(const M& x)
     {
-      // FIXME: Is this right? Should we just assign values or resize the
-      // vector based o what x is?
-      assert(same_extents(desc, x.descriptor()));
+      desc = x.descriptor();
       elems.assign(x.begin(), x.end());
       return*this;
     }
@@ -331,24 +368,48 @@ namespace origin
       return *this;
     }
 
+
+  // Subscripting
+
   template <typename T, std::size_t N>
-    template <typename... Exts>
-      inline T&
-      matrix<T, N>::operator()(Exts... exts)
+    template <typename... Args>
+      inline Requires<matrix_impl::Requesting_element<Args...>(), T&>
+      matrix<T, N>::operator()(Args... args)
       {
-        assert(matrix_impl::check_bounds(desc, exts...));
-        return *(data() + desc(exts...));
+        assert(matrix_impl::check_bounds(desc, args...));
+        return *(data() + desc(args...));
       }
 
   template <typename T, std::size_t N>
-    template <typename... Exts>
-      inline const T&
-      matrix<T, N>::operator()(Exts... exts) const
+    template <typename... Args>
+      inline Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+      matrix<T, N>::operator()(Args... args) const
       {
-        assert(matrix_impl::check_bounds(desc, exts...));
-        return *(data() + desc(exts...));
+        assert(matrix_impl::check_bounds(desc, args...));
+        return *(data() + desc(args...));
       }
 
+  template <typename T, std::size_t N>
+    template <typename... Args>
+      inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+      matrix<T, N>::operator()(const Args&... args)
+      {
+        matrix_slice<N> d;
+        d.start = matrix_impl::do_slice(desc, d, args...);
+        return {d, data()};
+      }
+
+  template <typename T, std::size_t N>
+    template <typename... Args>
+      inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+      matrix<T, N>::operator()(const Args&... args) const
+      {
+        matrix_slice<N> d;
+        d.start = matrix_impl::do_slice(desc, d, args...);
+        return {d, data()};
+      }
+
+  // Row
 
   template <typename T, std::size_t N>
     inline submatrix<T, N-1>
@@ -370,6 +431,7 @@ namespace origin
       return {row, data()};
     }
 
+  // Column
 
   template <typename T, std::size_t N>
     inline submatrix<T, N-1>
@@ -389,53 +451,6 @@ namespace origin
       matrix_slice<N-1> col;
       matrix_impl::slice_dim<1>(n, desc, col);
       return {col, data()};
-    }
-
-
-  template <typename T, std::size_t N>
-    inline submatrix<T, N>
-    matrix<T, N>::slice(std::size_t i)
-    {
-      if (i >= rows()) i = 0;
-      matrix_slice<N> s = desc;
-      s.start = i * desc.strides[0];
-      s.extents[0] = rows() - i;
-      return {s, data()};
-    }
-
-  template <typename T, std::size_t N>
-    inline submatrix<const T, N>
-    matrix<T, N>::slice(std::size_t i) const
-    {
-      if (i >= rows()) i = 0;
-      matrix_slice<N> s = desc;
-      s.start = i * desc.strides[0];
-      s.extents[0] = rows() - i;
-      return {s, data()};
-    }
-
-  template <typename T, std::size_t N>
-    inline submatrix<T, N>
-    matrix<T, N>::slice(std::size_t i, std::size_t n)
-    {
-      if (i >= rows()) i = 0;
-      if (i + n > rows()) n = rows() - i;
-      matrix_slice<N> s = desc;
-      s.start = i * desc.strides[0];
-      s.extents[0] = n;
-      return {s, data()};
-    }
-
-  template <typename T, std::size_t N>
-    inline submatrix<const T, N>
-    matrix<T, N>::slice(std::size_t i, std::size_t n) const
-    {
-      if (i >= rows()) i = 0;
-      if (i + n > rows()) n = rows() - i;
-      matrix_slice<N> s = desc;
-      s.start = i * desc.strides[0];
-      s.extents[0] = n;
-      return {s, data()};
     }
 
 
@@ -567,6 +582,8 @@ namespace origin
     class matrix<T, 0>
     {
     public:
+      matrix() = default;
+
       // Initialize the pseudo-matrix.
       matrix(const T& x) : elem(x) { }
 
@@ -586,6 +603,7 @@ namespace origin
 // Supporting classes
 #include "matrix.impl/submatrix.hpp"  // Include submatrix
 #include "matrix.impl/operations.hpp" // Includes matrix operators
+
 
 } // namespace origin
 

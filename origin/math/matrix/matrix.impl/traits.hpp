@@ -51,5 +51,53 @@ namespace matrix_impl
   template <typename T>
     struct matrix_init<T, 0>;
 
+
+
+
+  // The subscript operator requests an element when all elements are
+  // convertible to size_t.
+  template <typename... Args>
+    constexpr bool Requesting_element()
+    {
+      return All(Convertible<Args, std::size_t>()...);
+    }
+
+  // The subscript operator requests an element when all elements are either
+  // convertible to size_t or 
+  template <typename... Args>
+    constexpr bool Requesting_slice()
+    {
+      return All((Convertible<Args, std::size_t>() || Same<Args, slice>())...)
+          && Some(Same<Args, slice>()...);
+    }
+
+
+
+  template <typename... Args>
+    struct count_slices;
+
+  template <>
+    struct count_slices<>
+    {
+      static constexpr std::size_t value = 0;
+    };
+
+  template <typename T, typename... Args>
+    struct count_slices<T, Args...>
+    {
+      static constexpr std::size_t value = 
+        Same<T, slice>() + count_slices<Args...>::value;
+    };
+
+  template <typename... Args>
+    constexpr std::size_t Count_slices()
+    {
+      return count_slices<Args...>::value;
+    }
+
+  template <typename T, std::size_t N, typename... Args>
+    using Slice_result = submatrix<T, Count_slices<Args...>()>;
+
+
 } // namespace matrix_impl
 
