@@ -29,9 +29,6 @@ template <typename R, typename T>
 
 
 
-
-
-
 template <std::size_t N>
   struct slice_enumerator
   {
@@ -44,7 +41,7 @@ template <std::size_t N>
       fill_n(indexes, N, 0);
       if (limit) {
         indexes[0] = slice.extents[0];
-        offset = slice(indexes);
+        offset = slice.offset(indexes);
       } else {
         offset = s.start;
       }

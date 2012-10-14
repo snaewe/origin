@@ -70,8 +70,11 @@ back_substitution(const Mat& A, const Vec& b)
     // FIXME: I should write A(i, slice(i+1)) instead of what's below. That
     // would require me reduce dimensions for non-slice arguments to the
     // subscript operator.
-    double s = b(i) - dot_product(A[i](slice(i + 1)), x(slice(i + 1)));
 
+    // cout << x(slice(i + 1)) << '\n';
+    cout << i + 1 << ' ' << A[i](slice(i + 1)) << '\n';
+    cout << "-----\n";
+    double s = b(i) - dot_product(A[i](slice(i + 1)), x(slice(i + 1)));
     if (double m = A(i, i))
       x(i) = s / m;
     else
@@ -123,7 +126,7 @@ void solve(size_t n)
     cout << "x = " << x << '\n';
     cout << "----------\n";
     auto r = multiply(A, x);
-    cout << "Ax = b <=> " << r << '\n';
+    cout << "Ax == " << r << '\n'; // should be the same as b
 
     // TODO: I could assert this, but I'm not going to.
 

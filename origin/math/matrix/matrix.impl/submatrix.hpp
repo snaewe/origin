@@ -295,8 +295,8 @@ template <typename T, std::size_t N>
     submatrix<T, N>::operator()(const Args&... args)
     {
       matrix_slice<N> d;
-      d.start = desc.start + matrix_impl::do_slice(desc, d, args...);
-      return {d, ptr};
+      desc.get_slice(d, args...);
+      return {d, data()};
     }
 
 template <typename T, std::size_t N>
@@ -305,10 +305,9 @@ template <typename T, std::size_t N>
     submatrix<T, N>::operator()(const Args&... args) const
     {
       matrix_slice<N> d;
-      d.start = desc.start + matrix_impl::do_slice(desc, d, args...);
-      return {d, ptr};
+      desc.get_slice(d, args...);
+      return {d, data()};
     }
-
 
 
 template <typename T, std::size_t N>
@@ -317,7 +316,7 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(0));
     matrix_slice<N-1> row;
-    matrix_impl::slice_dim<0>(n, desc, row);
+    slice_dimension<0>(n, desc, row);
     return {ptr, row};
   }
 
@@ -327,7 +326,7 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(0));
     matrix_slice<N-1> row;
-    matrix_impl::slice_dim<0>(n, desc, row);
+    slice_dimension<0>(n, desc, row);
     return {row, ptr};
   }
 
@@ -338,7 +337,7 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(1));
     matrix_slice<N-1> col;
-    matrix_impl::slice_dim<1>(n, desc, col);
+    slice_dimension<1>(n, desc, col);
     return {ptr, col};
   }
 
@@ -348,7 +347,7 @@ template <typename T, std::size_t N>
   {
     assert(n < extent(1));
     matrix_slice<N-1> col;
-    matrix_impl::slice_dim<1>(n, desc, col);
+    slice_dimension<1>(n, desc, col);
     return {ptr, col};
   }
 
