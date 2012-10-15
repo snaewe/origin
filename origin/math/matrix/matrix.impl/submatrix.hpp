@@ -105,19 +105,19 @@ template <typename T, std::size_t N>
     // of indexes, args.
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_element<Args...>(), T&>
+      Requires<matrix_impl::Index_sequence<Args...>(), T&>
       operator()(Args... args);
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+      Requires<matrix_impl::Index_sequence<Args...>(), const T&>
       operator()(Args... args) const;
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+      Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<T, N>>
       operator()(const Args&... args);
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+      Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<const T, N>>
       operator()(const Args&... args) const;
 
 
@@ -273,7 +273,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_element<Args...>(), T&>
+    inline Requires<matrix_impl::Index_sequence<Args...>(), T&>
     submatrix<T, N>::operator()(Args... args)
     {
       assert(matrix_impl::check_bounds(desc, args...));
@@ -282,7 +282,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_element<Args...>(), const T&>
+    inline Requires<matrix_impl::Index_sequence<Args...>(), const T&>
     submatrix<T, N>::operator()(Args... args) const
     {
       assert(matrix_impl::check_bounds(desc, args...));
@@ -291,32 +291,26 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<T, N>>
+    inline Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<T, N>>
     submatrix<T, N>::operator()(const Args&... args)
     {
-      matrix_slice<N> d;
-      desc.get_slice(d, args...);
-      return {d, data()};
+      return {{desc, args...}, ptr};
     }
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_slice<Args...>(), submatrix<const T, N>>
+    inline Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<const T, N>>
     submatrix<T, N>::operator()(const Args&... args) const
     {
-      matrix_slice<N> d;
-      desc.get_slice(d, args...);
-      return {d, data()};
+      return {{desc, args...}, ptr};
     }
-
 
 template <typename T, std::size_t N>
   inline submatrix<T, N-1>
   submatrix<T, N>::row(std::size_t n)
   {
     assert(n < extent(0));
-    matrix_slice<N-1> row;
-    slice_dimension<0>(n, desc, row);
+    matrix_slice<N-1> row(desc, size_constant<0>(), n);
     return {ptr, row};
   }
 
@@ -325,8 +319,7 @@ template <typename T, std::size_t N>
   submatrix<T, N>::row(std::size_t n) const
   {
     assert(n < extent(0));
-    matrix_slice<N-1> row;
-    slice_dimension<0>(n, desc, row);
+    matrix_slice<N-1> row(desc, size_constant<0>(), n);
     return {row, ptr};
   }
 
@@ -336,8 +329,7 @@ template <typename T, std::size_t N>
   submatrix<T, N>::col(std::size_t n)
   {
     assert(n < extent(1));
-    matrix_slice<N-1> col;
-    slice_dimension<1>(n, desc, col);
+    matrix_slice<N-1> col(desc, size_constant<1>(), n);
     return {ptr, col};
   }
 
@@ -346,8 +338,7 @@ template <typename T, std::size_t N>
   submatrix<T, N>::col(std::size_t n) const
   {
     assert(n < extent(1));
-    matrix_slice<N-1> col;
-    slice_dimension<1>(n, desc, col);
+    matrix_slice<N-1> col(desc, size_constant<1>(), n);
     return {ptr, col};
   }
 

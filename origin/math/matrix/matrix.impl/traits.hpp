@@ -54,18 +54,20 @@ namespace matrix_impl
 
 
 
-  // The subscript operator requests an element when all elements are
-  // convertible to size_t.
+  // Returns true if Args is an index sequence. An index sequence is a list
+  // of integral types that can all be converted to size_t.
   template <typename... Args>
-    constexpr bool Requesting_element()
+    constexpr bool Index_sequence()
     {
       return All(Convertible<Args, std::size_t>()...);
     }
 
-  // The subscript operator requests an element when all elements are either
-  // convertible to size_t or 
+  // Returns true if Args is a slice sequence. A slice sequence is a list of
+  // slice requests, comprised of indexes (types convertible to size_t), and
+  // at least one slice types. Note that a slice sequence comprised of all
+  // indexes is an index sequence.
   template <typename... Args>
-    constexpr bool Requesting_slice()
+    constexpr bool Slice_sequence()
     {
       return All((Convertible<Args, std::size_t>() || Same<Args, slice>())...)
           && Some(Same<Args, slice>()...);

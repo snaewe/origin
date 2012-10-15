@@ -75,7 +75,7 @@ template <std::size_t N>
 
     // Create a slice from a range of extents with the a starting offset, s.
     // This requires that size(range) == N.
-    template <typename R>
+    template <typename R, typename = Requires<Range<R>()>>
       matrix_slice(std::size_t s, R&& range);
 
     // Create a slice with a starting offset s, and the extents, exts.
@@ -87,23 +87,45 @@ template <std::size_t N>
                  std::initializer_list<std::size_t> exts,
                  std::initializer_list<std::size_t> strs);
 
-    // Offset
+
+    // Slice initialization
     //
-    // Compute the offset of an element that corresponds to a sequence of
-    // indexes. The indexes can be given using the following syntaxes:
+    // Initialize this matrix from s and a sequence of slices, args. A
+    // slice sequence contains any number of indexes and at least one slice.
+    template <std::size_t M, typename... Args>
+      matrix_slice(const matrix_slice<M>&, const Args&... args);
+
+    // Row initialization
     //
-    //    s(dims...)   // N index arguments
-    //    s({dims...}) // An initializer list with N arguments
+    // Initialize this matrix so that it describes a slice of the nth row of
+    // in the Dth dimension of the matrix slice, s.
     //
-    // This computation does not check that each index is within the bound
-    // specified by its correspdonding extent.
+    // NOTE: M is generally expected to be the same as N+1 but is allowed to
+    // vary so that we can eventually create even smaller dimensional slices.
+    template <std::size_t M, typename T, std::size_t D>
+      matrix_slice(const matrix_slice<M>& s, 
+                   std::integral_constant<T, D>,
+                   std::size_t n);
+
+
+    // Subscripting
+    //
+    // Return either an offset or or a slice, depending on the function
+    // arguments.
+    //
+    //    s(indexes...) // Returns an offset
+    //    s(slices...)  // Returns a matrix_slice
+    //
+    // An index sequence is a sequence of types that are all convertible to
+    // size_t. A slice sequence ontains any number of indexes and at least one
+    // slice type.
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_element<Args...>(), std::size_t>
+      Requires<matrix_impl::Index_sequence<Args...>(), std::size_t>
       operator()(Args... args) const;
 
     template <typename... Args>
-      Requires<matrix_impl::Requesting_slice<Args...>(), matrix_slice<N>>
+      Requires<matrix_impl::Slice_sequence<Args...>(), matrix_slice<N>>
       operator()(const Args&... args) const;
 
 
@@ -111,24 +133,25 @@ template <std::size_t N>
     template <typename R>
       std::size_t offset(R&& range) const;
 
-    // Compute the slice.
-    template <typename... Args>
-      void get_slice(matrix_slice<N>& out, const Args&...) const;
 
+    // Returns a slice describing the nth row in the Dth dimension.
+    template <std::size_t D>
+      matrix_slice<N-1> row(std::size_t n) const;
 
   private:
-    std::size_t init();
+    void init();
     
-    std::size_t do_slice(matrix_slice<N>&) const;
+    template <std::size_t M, typename T, typename... Args>
+      std::size_t do_slice(const matrix_slice<M>&, const T&, const Args&...);
 
-    template <typename T, typename... Args>
-      std::size_t do_slice(matrix_slice<N>&, const T&, const Args&...) const;
+    template <std::size_t M>
+      std::size_t do_slice(const matrix_slice<M>&);
 
-    template <std::size_t D>
-      std::size_t do_slice_dim(matrix_slice<N>&, slice) const;
+    template <std::size_t D, std::size_t M>
+      std::size_t do_slice_dim(const matrix_slice<M>&, slice);
 
-    template <std::size_t D>
-      std::size_t do_slice_dim(matrix_slice<N>&, std::size_t) const;
+    template <std::size_t D, std::size_t M>
+      std::size_t do_slice_dim(const matrix_slice<M>&, std::size_t);
 
   public:
     std::size_t size;
@@ -139,14 +162,14 @@ template <std::size_t N>
 
 
 template <std::size_t N>
-  template <typename R>
+  template <typename R, typename X>
     matrix_slice<N>::matrix_slice(std::size_t s, R&& range)
       : start(s)
     {
       using std::begin;
       using std::end;
       std::copy(begin(range), end(range), extents);
-      size = init();
+      init();
     }
 
 template <std::size_t N>
@@ -156,7 +179,7 @@ template <std::size_t N>
   {
     assert(exts.size() == N);
     std::copy(exts.begin(), exts.end(), extents);
-    size = init();
+    init();
   }
 
 template <std::size_t N>
@@ -169,17 +192,38 @@ template <std::size_t N>
     assert(strs.size() == N);
     std::copy(exts.begin(), exts.end(), extents);
     std::copy(strs.begin(), strs.end(), strides);
-
-    // Compute the size of the slice.
-    std::multiplies<std::size_t> mul;
-    constexpr std::size_t zero = 0;
-    size = std::accumulate(extents, extents + N, zero, mul);
+    size = extents[0] * strides[0];
   }
+
+template <std::size_t N>
+  template <std::size_t M, typename... Args>
+    matrix_slice<N>::matrix_slice(const matrix_slice<M>& s, const Args&... args)
+    {
+      static_assert(matrix_impl::Slice_sequence<Args...>(), "");
+      start = s.start + do_slice(s, args...);
+      size = extents[0] * strides[0];
+    }
+
+
+template <std::size_t N>
+  template <std::size_t M, typename T, std::size_t D>
+    matrix_slice<N>::matrix_slice(const matrix_slice<M>& s, 
+                                  std::integral_constant<T, D>, 
+                                  std::size_t n)
+      : size(s.size / s.extents[D]), start(s.start + n * s.strides[D])
+    {
+      static_assert(D <= N, "");
+      static_assert(N < M, "");
+      // Copy the extetns and strides, excluding the Dth dimension.
+      std::copy_n(s.extents + D + 1, N - D, std::copy_n(s.extents, D, extents));
+      std::copy_n(s.strides + D + 1, N - D, std::copy_n(s.strides, D, strides));
+    }
+
 
 
 template <std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_element<Args...>(), std::size_t>
+    inline Requires<matrix_impl::Index_sequence<Args...>(), std::size_t>
     matrix_slice<N>::operator()(Args... args) const
     {
       static_assert(sizeof...(Args) == N, "");
@@ -189,13 +233,13 @@ template <std::size_t N>
 
 template <std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Requesting_slice<Args...>(), matrix_slice<N>>
+    inline Requires<matrix_impl::Slice_sequence<Args...>(), matrix_slice<N>>
     matrix_slice<N>::operator()(const Args&... args) const
     {
-      matrix_slice<N> d;
-      get_slice(d, args...);
-      return d;
+      return {*this, args...};
     }
+
+
 
 template <std::size_t N>
   template <typename R>
@@ -207,14 +251,12 @@ template <std::size_t N>
       return start + std::inner_product(strides, strides+N, begin(range), zero);
     }
 
-// Compute a slice for the specified arguments.
 template <std::size_t N>
-  template <typename... Args>
-    inline void
-    matrix_slice<N>::get_slice(matrix_slice<N>& out, const Args&... args) const
+  template <std::size_t D>
+    inline matrix_slice<N-1>
+    matrix_slice<N>::row(std::size_t n) const
     {
-      static_assert(matrix_impl::Requesting_slice<Args...>(), "");
-      out.start = do_slice(out, args...);
+      return {*this, size_constant<D>(), n};
     }
 
 
@@ -238,19 +280,6 @@ template <std::size_t N>
 //    If M == 2, this is a slice of the "z" plane.
 //
 // TODO: For fun, make a version that slices over a sequence of dimensions.
-template <std::size_t M, std::size_t N>
-  inline void 
-  slice_dimension(std::size_t n, const matrix_slice<N>& in, matrix_slice<N-1>& out)
-  {
-    out.size = in.size / in.extents[M];       // Scale the size of the matrix
-    out.start = in.start + n * in.strides[M]; // Compute the starting offset
-
-    // Copy into out.extents all those from in except those in the Mth dim.
-    std::copy_n(in.extents+M+1, N-M-1, std::copy_n(in.extents, M, out.extents));
-
-    // Copy into out.strides all those from in except those in the Mth dim.
-    std::copy_n(in.strides+M+1, N-M-1, std::copy_n(in.strides, M, out.strides));
-  }
 
 
 // Compute an (N-1)D slice from an N-D slice. This is done by copying all
@@ -261,30 +290,32 @@ template <std::size_t M, std::size_t N>
 //    If M == 2, this is a slice of the "z" plane.
 //
 // TODO: For fun, make a version that slices over a sequence of dimensions.
-template <std::size_t M, std::size_t N>
-  inline matrix_slice<N-1>
-  slice_dimension(const matrix_slice<N>& s, std::size_t n)
-  {
-    matrix_slice<N-1> r;
-    slice_dimension<M>(n, s, r);
-    return r;
-  }
 
-// Compute the nth row slice of the given matrix.
-template <std::size_t N>
-  inline matrix_slice<N-1>
-  slice_row(const matrix_slice<N>& s, std::size_t n)
-  {
-    return slice_dimension<0>(s, n);
-  }
 
-// Compute the nth column slie of the given matrix.
-template <std::size_t N>
-  inline matrix_slice<N-1>
-  slice_col(const matrix_slice<N>& s, std::size_t n)
-  {
-    return slice_dimension<1>(s, n);
-  }
+// template <std::size_t M, std::size_t N>
+//   inline matrix_slice<N-1>
+//   slice_dimension(const matrix_slice<N>& s, std::size_t n)
+//   {
+//     matrix_slice<N-1> r;
+//     slice_dimension<M>(n, s, r);
+//     return r;
+//   }
+
+// // Compute the nth row slice of the given matrix.
+// template <std::size_t N>
+//   inline matrix_slice<N-1>
+//   slice_row(const matrix_slice<N>& s, std::size_t n)
+//   {
+//     return slice_dimension<0>(s, n);
+//   }
+
+// // Compute the nth column slie of the given matrix.
+// template <std::size_t N>
+//   inline matrix_slice<N-1>
+//   slice_col(const matrix_slice<N>& s, std::size_t n)
+//   {
+//     return slice_dimension<1>(s, n);
+//   }
 
 
 
@@ -292,14 +323,14 @@ template <std::size_t N>
 // This is effectively the partial product of extents, computed in reverse,
 // with 1 being the stride in the innermost dimension.
 template <std::size_t N>
-  inline std::size_t
+  inline void
   matrix_slice<N>::init()
   {
     strides[N - 1] = 1;
     for (std::size_t i = N - 1; i != 0; --i) {
       strides[i - 1] = strides[i] * extents[i];
     }
-    return extents[0] * strides[0];
+    size = extents[0] * strides[0];
   }
 
 
@@ -307,19 +338,19 @@ template <std::size_t N>
 // Note that dim is an integral_constant specifying the dimension in which the
 // slice is computed.
 template <std::size_t N>
-  template <std::size_t D>
+  template <std::size_t D, std::size_t M>
   inline std::size_t
-  matrix_slice<N>::do_slice_dim(matrix_slice<N>& out, slice s) const
+  matrix_slice<N>::do_slice_dim(const matrix_slice<M>& desc, slice s)
   {
     // If the starting point is past the extent, we're requesting the
     // entire slice.
-    if (s.start >= extents[D])
+    if (s.start >= desc.extents[D])
       s.start = 0;
 
     // If the lenght is large or the slice requests more elements than are
     // available, make it stop at the right extent.
-    if (s.length > extents[D] || s.start + s.length > extents[D])
-      s.length = extents[D] - s.start;
+    if (s.length > desc.extents[D] || s.start + s.length > desc.extents[D])
+      s.length = desc.extents[D] - s.start;
 
     // If the stride over-runs the edge of the matrix, re-compute the length
     // so that we stop after the right number of increments. This is:
@@ -328,29 +359,26 @@ template <std::size_t N>
     //
     // where d is the distance from the start to the extent, and s is the
     // stride. 
-    if (s.start + s.length * s.stride > extents[D])
-      s.length = ((extents[D] - s.start) + s.stride - 1) / s.stride;
+    if (s.start + s.length * s.stride > desc.extents[D])
+      s.length = ((desc.extents[D] - s.start) + s.stride - 1) / s.stride;
 
     // Compute the extents and stride in this dimension.
-    out.extents[D] = s.length;
-    out.strides[D] = strides[D] * s.stride;
-    return s.start * strides[D];
+    extents[D] = s.length;
+    strides[D] = desc.strides[D] * s.stride;
+    return s.start * desc.strides[D];
   }
 
 // Slicing a single column is the same as a 1-count slice at the current
 // dimension. Here, dim is an integral_constant specifying the dimension
 // being sliced.
 template <std::size_t N>
-  template <std::size_t D>
+  template <std::size_t D, std::size_t M>
     inline std::size_t
-    matrix_slice<N>::do_slice_dim(matrix_slice<N>& out, std::size_t n) const
+    matrix_slice<N>::do_slice_dim(const matrix_slice<M>& desc, std::size_t n)
     {
-      return do_slice_dim<D>(out, slice(n, 1, 1));
+      return do_slice_dim<D>(desc, slice(n, 1, 1));
     }
 
-template <std::size_t N>
-  inline std::size_t
-  matrix_slice<N>::do_slice(matrix_slice<N>& out) const { return 0; }
 
 // Translate the slice arguments is {s, args...} into the output slice, and
 // return the offset of the first element of the matrix. Note that the returned
@@ -363,15 +391,26 @@ template <std::size_t N>
 // we encounter slice::none arguments or plain index. An index requests only a
 // single element, so we can effectively compute drop the corresponding
 // dimension.
+
 template <std::size_t N>
-  template <typename T, typename... Args>
+  template <std::size_t M, typename T, typename... Args>
     inline std::size_t
-    matrix_slice<N>::do_slice(matrix_slice<N>& out, const T& s, const Args&... args) const
+    matrix_slice<N>::do_slice(const matrix_slice<M>& desc, 
+                              const T& s, 
+                              const Args&... args)
     {
       constexpr std::size_t D = N - sizeof...(Args) - 1;
-      std::size_t m = do_slice_dim<D>(out, s);
-      std::size_t n = do_slice(out, args...);
+      std::size_t m = do_slice_dim<D>(desc, s);
+      std::size_t n = do_slice(desc, args...);
       return m + n;
+    }
+
+template <std::size_t N>
+  template <std::size_t M>
+    inline std::size_t
+    matrix_slice<N>::do_slice(const matrix_slice<M>& desc)
+    {
+      return 0; 
     }
 
 

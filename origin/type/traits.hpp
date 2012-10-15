@@ -25,8 +25,8 @@ namespace origin
 
 
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Boolean Constant                                                  meta.bool
+  // ------------------------------------------------------------------------ //
+  // Boolean Constant                                                [meta.bool]
   //
   // An alias for the type integral_constant<bool, X>. This type is provided
   // purely for convenience. This simplifies the writing of some type traits.
@@ -46,6 +46,15 @@ namespace origin
   // exist solely for the purose of adapting those names to the Origin style.
   using True_type = std::true_type;
   using False_type = std::false_type;
+
+
+
+  // ------------------------------------------------------------------------ //
+  // Size Constant                                                   [meta.size]
+  //
+  // An alias for integral_constant<size_t, N>.
+  template <std::size_t N>
+    using size_constant = std::integral_constant<std::size_t, N>;
 
 
 

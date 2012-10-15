@@ -434,10 +434,13 @@ template <typename M1, typename M2, typename M3>
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-// Streaming
+// -------------------------------------------------------------------------- //
+// Output
 //
 // Write the matrix to the the given output stream.
+//
+// TODO: Write extensions that allow for pretty printing of matrices.
+
 template <typename C, typename T, typename M>
   inline Requires<Matrix<M>(), std::basic_ostream<C, T>&>
   operator<<(std::basic_ostream<C, T>& os, const M& m)
@@ -447,6 +450,69 @@ template <typename C, typename T, typename M>
       os << m[i];
       if (i + 1 != rows(m))
         os << ',';
+    }
+    os << ']';
+    return os;
+  }
+
+
+template <typename M, std::size_t D = M::order>
+  struct pretty_matrix
+  {
+    pretty_matrix(const M& m) : matrix(m), depth(0) { }
+    pretty_matrix(const M& m, std::size_t d) : matrix(m), depth(d) { }
+
+    const M& matrix;
+    std::size_t depth;
+  };
+
+template <typename M>
+  Requires<Matrix<M>(), pretty_matrix<M>>
+  pretty(const M& m) { return pretty_matrix<M> {m}; }
+
+template <typename M>
+  Requires<Matrix<M>(), pretty_matrix<M>>
+  pretty(const M& m, std::size_t d) { return pretty_matrix<M> {m, d}; }
+
+
+template <typename C, typename T, typename M, std::size_t D>
+  inline Requires<Matrix<M>(), std::basic_ostream<C, T>&>
+  operator<<(std::basic_ostream<C, T>& os, pretty_matrix<M, D> p)
+  {
+    const auto& m = p.matrix;
+    const std::size_t n = m.rows();
+    
+    // Indent
+    for (std::size_t i = 0; i < p.depth; ++i)
+      os << ' ';
+
+    // Write this level of matrix.
+    os << '[' << '\n';
+    for (std::size_t i = 0; i < n; ++i) {
+      os << pretty(m[i], p.depth + 1);
+      if (i + 1 != n) os << ',';
+      os << '\n';
+    }
+    os << ']';
+    return os;
+  }
+
+template <typename C, typename T, typename M>
+  inline Requires<Matrix<M>(), std::basic_ostream<C, T>&>
+  operator<<(std::basic_ostream<C, T>& os, const pretty_matrix<M, 1>& p)
+  {
+    const auto& m = p.matrix;
+    const std::size_t n = m.size();
+
+    // Indent
+    for (std::size_t i = 0; i < p.depth; ++i)
+      os << ' ';
+
+    // Write the 1d matrix 
+    os << '[';
+    for (std::size_t i = 0; i < n; ++i) {
+      os << m(i);
+      if (i + 1 != n) os << ',';
     }
     os << ']';
     return os;

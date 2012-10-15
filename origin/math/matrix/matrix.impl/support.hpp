@@ -163,18 +163,5 @@ namespace matrix_impl
     }
 
 
-
-// -------------------------------------------------------------------------- //
-//                              Slicing
-//
-// The follwoing algorithms support common slicing operations.
-//
-// TODO: Allow dimensional reduction for slices on indexes and those taking
-// slice::none as an argument.
-
-
-// Mores slicing.
-
-
 } // namespace matrix_impl
 

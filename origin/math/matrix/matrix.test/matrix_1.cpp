@@ -72,7 +72,9 @@ void test_slice()
   matrix<int, 1> m {0, 1, 2, 3, 4, 5};
 
   auto s1 = m(2);
-  cout << s1 << '\n'; // 2
+  assert(s1 == 2);
+
+  // FIXME: Actually implement these checks.
 
   auto s2 = m(slice(1, 3));
   cout << s2 << '\n'; // 1 2 3
@@ -80,7 +82,10 @@ void test_slice()
   auto s3 = m(slice(1, 5)); // Check at the boundary.
   cout << s3 << '\n'; // 1 2 3 4 5
 
-  // assert(m.slice(0) == m); // A nice identity
+  // Some identities
+  assert(m(slice(0)) == m);
+  assert(m(slice::all) == m);
+
   cout << "----------\n";
 }
 
