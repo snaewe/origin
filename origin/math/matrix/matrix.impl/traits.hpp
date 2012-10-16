@@ -98,7 +98,7 @@ namespace matrix_impl
     }
 
   template <typename T, std::size_t N, typename... Args>
-    using Slice_result = submatrix<T, Count_slices<Args...>()>;
+    using Slice_result = matrix_ref<T, Count_slices<Args...>()>;
 
 
 } // namespace matrix_impl

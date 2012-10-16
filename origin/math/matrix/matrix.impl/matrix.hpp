@@ -10,8 +10,8 @@
 #endif
 
 
-// ------------------------------------------------------------------------ //
-//                              Matrix
+// -------------------------------------------------------------------------- //
+// Matrix                                                          [matrix.decl]
 //
 // The matrix template an N-dimensional array of elements of type T. The
 // matrix class provides support for indexing, slicing and basic arithmetic
@@ -140,32 +140,32 @@ template <typename T, std::size_t N>
       operator()(Args... args) const;
 
     template <typename... Args>
-      Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<T, N>>
+      Requires<matrix_impl::Slice_sequence<Args...>(), matrix_ref<T, N>>
       operator()(const Args&... args);
 
     template <typename... Args>
-      Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<const T, N>>
+      Requires<matrix_impl::Slice_sequence<Args...>(), matrix_ref<const T, N>>
       operator()(const Args&... args) const;
 
 
     // Row subscripting
     //
-    // Returns a submatrix referring to the nth row of the matrix. This is
-    // the equivalent to m.row(n).
-    submatrix<T, N-1>       operator[](std::size_t n)       { return row(n); }
-    submatrix<const T, N-1> operator[](std::size_t n) const { return row(n); }
+    // Returns a reference to the nth row of the matrix. This is the equivalent
+    // to m.row(n).
+    matrix_ref<T, N-1>       operator[](std::size_t n)       { return row(n); }
+    matrix_ref<const T, N-1> operator[](std::size_t n) const { return row(n); }
 
     // Row
     //
-    // Returns a submatrix referring to the nth row of the matrix.
-    submatrix<T, N-1>       row(std::size_t n);
-    submatrix<const T, N-1> row(std::size_t n) const;
+    // Returns a matrix_ref referring to the nth row of the matrix.
+    matrix_ref<T, N-1>       row(std::size_t n);
+    matrix_ref<const T, N-1> row(std::size_t n) const;
 
     // Column
     //
-    // Returns a submatrix referring to the nth column of the matrix.
-    submatrix<T, N-1>       col(std::size_t n);
-    submatrix<const T, N-1> col(std::size_t n) const;
+    // Returns a matrix_ref referring to the nth column of the matrix.
+    matrix_ref<T, N-1>       col(std::size_t n);
+    matrix_ref<const T, N-1> col(std::size_t n) const;
 
 
     // Data access
@@ -304,7 +304,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<T, N>>
+    inline Requires<matrix_impl::Slice_sequence<Args...>(), matrix_ref<T, N>>
     matrix<T, N>::operator()(const Args&... args)
     {
       matrix_slice<N> d {desc, args...};
@@ -313,7 +313,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   template <typename... Args>
-    inline Requires<matrix_impl::Slice_sequence<Args...>(), submatrix<const T, N>>
+    inline Requires<matrix_impl::Slice_sequence<Args...>(), matrix_ref<const T, N>>
     matrix<T, N>::operator()(const Args&... args) const
     {
       matrix_slice<N> d {desc, args...};
@@ -323,7 +323,7 @@ template <typename T, std::size_t N>
 // Row
 
 template <typename T, std::size_t N>
-  inline submatrix<T, N-1>
+  inline matrix_ref<T, N-1>
   matrix<T, N>::row(std::size_t n)
   {
     assert(n < rows());
@@ -332,7 +332,7 @@ template <typename T, std::size_t N>
   }
 
 template <typename T, std::size_t N>
-  inline submatrix<const T, N-1>
+  inline matrix_ref<const T, N-1>
   matrix<T, N>::row(std::size_t n) const
   {
     assert(n < rows());
@@ -343,7 +343,7 @@ template <typename T, std::size_t N>
 // Column
 
 template <typename T, std::size_t N>
-  inline submatrix<T, N-1>
+  inline matrix_ref<T, N-1>
   matrix<T, N>::col(std::size_t n)
   {
     assert(n < cols());
@@ -352,7 +352,7 @@ template <typename T, std::size_t N>
   }
 
 template <typename T, std::size_t N>
-  inline submatrix<const T, N-1>
+  inline matrix_ref<const T, N-1>
   matrix<T, N>::col(std::size_t n) const
   {
     assert(n < cols());

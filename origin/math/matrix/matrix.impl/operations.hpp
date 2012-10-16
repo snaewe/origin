@@ -78,7 +78,7 @@ template <typename M1, typename M2>
 //
 // NOTE: We may be able to generalize and differentiate the addition of 
 // matrices vs. matrix references in the the future. A fully general matrix
-// slice would have the same properties as submatrix w.r.t. to addition
+// slice would have the same properties as matrix_ref w.r.t. to addition
 // and subtraction.
 
 
@@ -98,7 +98,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator+(const submatrix<T, N>& a, const submatrix<T, N>& b)
+  operator+(const matrix_ref<T, N>& a, const matrix_ref<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -107,7 +107,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator+(const matrix<T, N>& a, const submatrix<T, N>& b)
+  operator+(const matrix<T, N>& a, const matrix_ref<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -116,7 +116,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator+(const submatrix<T, N>& a, const matrix<T, N>& b)
+  operator+(const matrix_ref<T, N>& a, const matrix<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -140,7 +140,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator-(const submatrix<T, N>& a, const submatrix<T, N>& b)
+  operator-(const matrix_ref<T, N>& a, const matrix_ref<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -150,7 +150,7 @@ template <typename T, std::size_t N>
 // Cross-type subtraction
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator-(const matrix<T, N>& a, const submatrix<T, N>& b)
+  operator-(const matrix<T, N>& a, const matrix_ref<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -159,7 +159,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator-(const submatrix<T, N>& a, const matrix<T, N>& b)
+  operator-(const matrix_ref<T, N>& a, const matrix<T, N>& b)
   {
     assert(same_extents(a, b));
     matrix<T, N> result = a;
@@ -194,7 +194,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator+(const submatrix<T, N>& x, const T& n)
+  operator+(const matrix_ref<T, N>& x, const T& n)
   {
     matrix<T, N> result = x;
     return result += n;
@@ -202,7 +202,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator+(const T& n, const submatrix<T, N>& x)
+  operator+(const T& n, const matrix_ref<T, N>& x)
   {
     matrix<T, N> result = x;
     return result += n;
@@ -228,7 +228,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator-(const submatrix<T, N>& x, const T& n)
+  operator-(const matrix_ref<T, N>& x, const T& n)
   {
     matrix<T, N> result = x;
     return result -= n;
@@ -263,7 +263,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator*(const submatrix<T, N>& x, const T& n)
+  operator*(const matrix_ref<T, N>& x, const T& n)
   {
     matrix<T, N> result = x;
     return result *= n;
@@ -271,7 +271,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator*(const T& n, const submatrix<T, N>& x)
+  operator*(const T& n, const matrix_ref<T, N>& x)
   {
     matrix<T, N> result = x;
     return result *= n;
@@ -297,7 +297,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator/(const submatrix<T, N>& x, const T& n)
+  operator/(const matrix_ref<T, N>& x, const T& n)
   {
     matrix<T, N> result = x;
     return result /= n;
@@ -322,7 +322,7 @@ template <typename T, std::size_t N>
 
 template <typename T, std::size_t N>
   inline matrix<T, N>
-  operator%(const submatrix<T, N>& x, const T& n)
+  operator%(const matrix_ref<T, N>& x, const T& n)
   {
     matrix<T, N> result = x;
     return result %= n;
@@ -355,7 +355,7 @@ template <typename T>
 
 template <typename T>
   inline matrix<T, 2>
-  operator*(const submatrix<T, 2>& a, const submatrix<T, 2>& b) 
+  operator*(const matrix_ref<T, 2>& a, const matrix_ref<T, 2>& b) 
   {
     matrix<T, 2> result (a.dims());
     matrix_product(a, b, result);
@@ -365,7 +365,7 @@ template <typename T>
 // Cross product multiplication.
 template <typename T>
   inline matrix<T, 2>
-  operator*(const matrix<T, 2>& a, const submatrix<T, 2>& b) 
+  operator*(const matrix<T, 2>& a, const matrix_ref<T, 2>& b) 
   {
     matrix<T, 2> result (a.dims());
     matrix_product(a, b, result);
@@ -374,7 +374,7 @@ template <typename T>
 
 template <typename T>
   inline matrix<T, 2>
-  operator*(const submatrix<T, 2>& a, const matrix<T, 2>& b) 
+  operator*(const matrix_ref<T, 2>& a, const matrix<T, 2>& b) 
   {
     matrix<T, 2> result (a.dims());
     matrix_product(a, b, result);
