@@ -348,7 +348,7 @@ template <typename T>
   inline matrix<T, 2>
   operator*(const matrix<T, 2>& a, const matrix<T, 2>& b) 
   {
-    matrix<T, 2> result (a.dims());
+    matrix<T, 2> result (a.rows(), b.cols());
     matrix_product(a, b, result);
     return result;
   }
@@ -397,9 +397,9 @@ template <typename M1, typename M2, typename M3>
   void 
   matrix_product(const M1& a, const M2& b, M3& out)
   {
-    static_assert(M1::order() == 2, "");
-    static_assert(M2::order() == 2, "");
-    static_assert(M3::order() == 2, "");
+    static_assert(M1::order == 2, "");
+    static_assert(M2::order == 2, "");
+    static_assert(M3::order == 2, "");
     assert(cols(a) == rows(b));
     assert(rows(a) == rows(out));
     assert(cols(b) == cols(out));

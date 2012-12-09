@@ -24,7 +24,7 @@ namespace origin
   struct slice;
   template <std::size_t N> class matrix_slice;
   template <typename T, std::size_t N> class matrix;
-  template <typename T, std::size_t N> class submatrix;
+  template <typename T, std::size_t N> class matrix_ref;
 
 
 // Type traits implementations
@@ -65,7 +65,7 @@ namespace origin
 
 // Matrix classes
 #include "matrix.impl/matrix.hpp"
-#include "matrix.impl/submatrix.hpp"
+#include "matrix.impl/matrix_ref.hpp"
 
 // Arithmetic and linear operations
 #include "matrix.impl/operations.hpp"

@@ -33,6 +33,7 @@ multiply(const matrix<T, 2>& a, const matrix<U, 2>& b)
   return r;
 }
 
+
 int main()
 {
   matrix<int, 2> a {
@@ -45,4 +46,10 @@ int main()
     {0, 4}
   };
   cout << multiply(a, b) << '\n';
+
+  {
+    matrix<int,2> m1 = {{1,2,3}, {4,5,6}};
+    matrix<int,2> m2 = {{1,2}, {3,4}, {5,6}};
+    cout << m1 * m2 << '\n';
+  }
 }

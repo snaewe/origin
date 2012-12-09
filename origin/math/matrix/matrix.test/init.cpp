@@ -34,8 +34,8 @@ int main()
   cout << m3 << '\n';
 
   // Create a sub-matrix bound to m1.
-  submatrix<int, 2> sm1 = m1;
-  submatrix<int, 2> sm2 = m3;
+  matrix_ref<int, 2> sm1 = m1;
+  matrix_ref<int, 2> sm2 = m3;
   assert(sm1 == m1);
 
 
