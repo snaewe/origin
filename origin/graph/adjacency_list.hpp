@@ -15,6 +15,9 @@
 #include <origin/type/empty.hpp>
 #include <origin/graph/handle.hpp>
 
+#include <origin/graph/adjacency_list.impl/pool.hpp>
+
+#if 0
 namespace origin
 {
   // ------------------------------------------------------------------------ //
@@ -300,7 +303,7 @@ namespace origin
       vertex_type* v = new_vertex(x);
       return verts_.insert(v);
     }
-};
-
+}
+#endif
 
 #endif

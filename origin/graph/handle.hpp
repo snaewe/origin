@@ -24,30 +24,31 @@ namespace origin
   // TODO: Disable arithmetic operations?
   class handle
   {
-    static constexpr size_t null = -1;
   public:
+    static constexpr std::size_t null = -1;
+
     handle(std::size_t n = null);
 
     // Boolean
     explicit operator bool() const;
 
     // Integral
-    operator size_t() const { return value; }
+    operator std::size_t() const { return value; }
     
     // Hashable
     std::size_t hash() const;
     
-    size_t value;
+    std::size_t value;
   };
   
   inline
-  handle::handle(size_t n) : value(n) { }
+  handle::handle(std::size_t n) : value(n) { }
 
   inline 
   handle::operator bool() const { return value != null; }
   
   inline std::size_t 
-  handle::hash() const { return std::hash<size_t>()(value); }
+  handle::hash() const { return std::hash<std::size_t>{}(value); }
 
   // Equality
   inline bool 
@@ -83,7 +84,7 @@ namespace origin
   // the same as a normal handle in every way except its type.
   struct vertex_handle : handle
   {
-    using handle::handle;
+    vertex_handle(std::size_t n = null) : handle(null) { }
   };
 
   // ------------------------------------------------------------------------ //
@@ -93,7 +94,7 @@ namespace origin
   // the same as a normal handle in every way except its type.
   struct edge_handle : handle
   {
-    using handle::handle;
+    edge_handle(std::size_t n = null) : handle(null) { }
   };
 
 } // namespace origin
