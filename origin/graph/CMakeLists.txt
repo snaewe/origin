@@ -10,6 +10,8 @@ origin_module(
   AUTHORS Andrew Sutton <andrew.n.sutton -at- gmail.com>
           Michael Lopez <michael.lopez.332 -at- gmail.com
 
+  IMPORT origin.type
+
   EXPORT handle
          adjacency_list
 )
