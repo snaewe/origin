@@ -87,15 +87,113 @@ namespace origin
     vertex_handle(std::size_t n = npos) : handle(n) { }
   };
 
+
   // ------------------------------------------------------------------------ //
-  //                             Edge Handle
+  //                              Edge Handle
   //
-  // An edge handle is a handle specifically for graph vertices. It is
-  // the same as a normal handle in every way except its type.
+  // An edge hadnle is a handle specifically for graph edges that are uniquely
+  // identified by a single number. This is an uncommon property for graph
+  // data structures. More frequently, edge handles are source/target pairs
+  // or source/target/edge triples. See simple_edge_handle and multi_edge_handle
+  // for details.
   struct edge_handle : handle
   {
     edge_handle(std::size_t n = npos) : handle(n) { }
   };
+
+
+  // ------------------------------------------------------------------------ //
+  //                              Simple Edge Handle
+  //
+  // An edge handle is a source/target pair that uniquely identifies an edge.
+  //
+  // TODO: Implement edge_handle.
+
+
+
+  // ------------------------------------------------------------------------ //
+  //                            Multi-edge Handle
+  //
+  // A multi-edge handle is a triple, describing source and target handles,
+  // along with an edge descriptor. The source and target handles are usual
+  // vertex handles (i.e., indexes), but the edge component may vary based on
+  // the graph implementation. It is most often a pointer or index.
+  //
+  template<typename E>
+    struct multi_edge_handle
+    {
+      using handle_type = E;
+
+      multi_edge_handle()
+        : value(vertex_handle::npos, vertex_handle::npos, E{})
+      { }
+
+      multi_edge_handle(vertex_handle s, vertex_handle t, E e)
+        : value(s, t, e)
+      { }
+
+      vertex_handle source() const { return std::get<0>(value); }
+      vertex_handle target() const { return std::get<1>(value); }
+      handle_type edge() const { return std::get<2>(value); }
+
+      // Hashable
+      std::size_t hash() const;
+
+      std::tuple<vertex_handle, vertex_handle, E> value;
+    };
+
+  template<typename E>
+    inline std::size_t
+    multi_edge_handle<E>::hash() const
+    {
+      // FIXME: Stop using GCC internal functions for hashing.
+      return std::_Hash_bytes(&value, sizeof(value), 0);
+    }
+
+  // Equality
+  template<typename E>
+    inline bool
+    operator==(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return a.value == b.value;
+    }
+
+  template<typename E>
+    inline bool
+    operator!=(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return !(a == b);
+    }
+
+  // Ordering
+  template<typename E>
+    inline bool
+    operator<(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return a.value < b.value;
+    }
+
+  template<typename E>
+    inline bool
+    operator>(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return b < a;
+    }
+
+  template<typename E>
+    inline bool
+    operator<=(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return !(b < a);
+    }
+
+  template<typename E>
+    inline bool
+    operator>=(const multi_edge_handle<E>& a, const multi_edge_handle<E>& b)
+    {
+      return !(a < b);
+    }
+
 
 } // namespace origin
 
@@ -104,107 +202,20 @@ namespace origin
 namespace std 
 {
   template<>
-    struct hash<origin::handle>
+    struct hash<origin::vertex_handle>
     {
-      std::size_t operator()(origin::handle x) const { return x.hash(); }
+      std::size_t 
+      operator()(origin::vertex_handle x) const { return x.hash(); }
     };
+
+  template<typename E>
+    struct hash<origin::multi_edge_handle<E>>
+    {
+      std::size_t 
+      operator()(const origin::multi_edge_handle<E>& h) { return h.hash(); }
+    };
+
 } // namespace std
 
-
-#if 0
-namespace origin
-{
-  // Handle iterator
-  // The handle iterator implements an iterator over handles. The properties
-  // of the iterator depend on the handle's value type. If the handle's value
-  // type is std::size_t, then the iterator is a random access iterator. If
-  // not, it may be a forward or bidirectional iterator.
-  //
-  // The handle iterator takes two parameters: the underlying handle type and
-  // the value type of that handle (which should never be explicitly given).
-  // The intent is to partially specialize handle iterators based on the
-  // underlying value type. This allows specializations to define value-specific
-  // iterators for different models. For example:
-  //
-  //    handle_iterator<H, size_t>        For default vertex and edge handles
-  //    handle_iterator<H, vertex_node*>  Iterator over vertex nodes
-  //
-  // Note that only the size_t specialization is given here. Other graph
-  // data structures must explicitly specialize this for their node types.
-  template<typename H, typename T = Value_type<H>>
-    class handle_iterator;
-
-  // Handle iterator (integer)
-  // The default specialization for handle iterators.
-  template<typename H>
-    class handle_iterator<H, std::size_t>
-    {
-    public:
-      using value_type        = H;
-      using reference         = const H&;
-      using pointer           = const H*;
-      using difference_type   = std::ptrdiff_t;
-      using iterator_category = std::random_access_iterator_tag;
-
-      handle_iterator() : handle{} { }
-      handle_iterator(std::size_t x) : handle{x} { }
-
-      reference operator*() const  { return handle; }
-      pointer   operator->() const { return &handle; }
-
-      // Equatable
-      bool operator==(handle_iterator x) const { return handle == x.handle; }
-      bool operator!=(handle_iterator x) const { return handle != x.handle; }
-
-      // TotallyOrdered
-      bool operator<(handle_iterator x) const  { return handle < x.handle; }
-      bool operator>(handle_iterator x) const  { return handle > x.handle; }
-      bool operator<=(handle_iterator x) const { return handle <= x.handle; }
-      bool operator>=(handle_iterator x) const { return handle >= x.handle; }
-
-      // Increment
-      handle_iterator& operator++() { ++handle.impl.value; return *this; }
-      handle_iterator operator++(int) { handle_iterator tmp{*this}; ++*this; return tmp; }
-
-      // Decrement
-      handle_iterator& operator--() { --handle.impl.value; return *this; }
-      handle_iterator operator--(int) { handle_iterator tmp{*this}; --*this; return tmp; }
-
-      // Advance
-      handle_iterator& operator+=(difference_type n) { handle.impl.value += n; return *this; }
-      handle_iterator& operator-=(difference_type n) { handle.impl.value -= n; return *this; }
-
-      // 
-      friend handle_iterator operator+(handle_iterator i, difference_type n) 
-      { 
-        i += n; 
-        return i; 
-      }
-
-      friend handle_iterator operator+(difference_type n, handle_iterator i) 
-      { 
-        i += n; 
-        return i; 
-      }
-      
-      friend handle_iterator operator-(handle_iterator i, difference_type n) 
-      { 
-        i -= n; 
-        return i; 
-      }
-      
-      // Distance
-      friend difference_type operator-(handle_iterator i, handle_iterator j)
-      {
-        return i->value() - j->value();
-      }
-
-    private:
-      H handle;
-    };
-
-} // namespace origin
-
-#endif
 
 #endif

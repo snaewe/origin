@@ -96,6 +96,7 @@ namespace origin
 
         // Erase
         void erase(std::size_t x);
+        void clear();
 
         // Iterators
         iterator begin() { return iterator(this, head_); }
@@ -483,6 +484,17 @@ namespace origin
         free_.push(n);
       }
 
+    // Reset the pool to its initial state.
+    template<typename T>
+      inline void
+      pool<T>::clear()
+      {
+        // std::priority_queue does not have clear() method, so we have to
+        // reset it by brute force.
+        free_ = std::move(queue_type());
+        nodes_.clear();
+      }
+
 
     // ---------------------------------------------------------------------- //
     //                                Pool Node
@@ -629,11 +641,11 @@ namespace origin
         // Const conversion.
         template<typename U>
           pool_iterator(const pool_iterator<U>& x)
-            : p_(x.dataset()), i_(x.index())
+            : p_(x.container()), i_(x.index())
           { }
 
         // Returns the pool being iterated over.
-        pool_type* dataset() const { return p_; }
+        pool_type* container() const { return p_; }
 
         // Returns the current index of the iterator.
         std::size_t index() const { return i_; }

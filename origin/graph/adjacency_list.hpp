@@ -66,6 +66,9 @@ namespace origin
         V&       value()       { return std::get<2>(data); }
         const V& value() const { return std::get<2>(data); }
 
+        void add_out(std::size_t e) { out().push_back(e); }
+        void add_in(std::size_t e) { in().push_back(e); }
+
         std::tuple<edge_list, edge_list, V> data;
       };
 
@@ -162,7 +165,38 @@ namespace origin
     //                            Edge Representation
 
     template<typename E>
-      using edge_pool = pool<int>;
+      struct edge
+      {
+        using value_type = E;
+
+        edge()
+          : data(-1, -1, E{})
+        { }
+
+        edge(std::size_t s, std::size_t t)
+          : data(s, t, E{})
+        { }
+
+        template<typename... Args>
+          edge(std::size_t s, std::size_t t, Args&&... args)
+            : data(s, t, std::forward<Args>(args)...)
+          { }
+
+        std::size_t& source()       { return std::get<0>(data); }
+        std::size_t  source() const { return std::get<0>(data); }
+
+        std::size_t& target()       { return std::get<1>(data); }
+        std::size_t  target() const { return std::get<1>(data); }
+
+        E&       value()       { return std::get<2>(data); }
+        const E& value() const { return std::get<2>(data); }
+
+        std::tuple<std::size_t, std::size_t,  E> data;
+      };
+
+
+    template<typename E>
+      using edge_pool = pool<edge<E>>;
 
 
   } // namespace adjacency_list_impl
@@ -178,9 +212,11 @@ namespace origin
       using vertex_node = adjacency_list_impl::vertex<V>;
       using vertex_set = adjacency_list_impl::vertex_pool<V>;
 
+      using edge_node = adjacency_list_impl::edge<E>;
       using edge_set = adjacency_list_impl::edge_pool<E>;
     public:
       using vertex = vertex_handle;
+      using edge = edge_handle;
       using vertex_range = adjacency_list_impl::vertex_range<V>;
 
 
@@ -191,19 +227,46 @@ namespace origin
       bool        empty() const { return edges_.empty(); }
       std::size_t size() const  { return edges_.size(); }
 
-      // Data access
-      V&       operator()(vertex v)       { return verts_[v].value(); }
-      const V& operator()(vertex v) const { return verts_[v].value(); }
+      // Edge properties
+      vertex source(edge e) const { return get_edge(e).source(); }
+      vertex target(edge e) const { return get_edge(e).target(); }
 
+      // Data access
+      V&       operator()(vertex v)       { return get_vertex(v).value(); }
+      const V& operator()(vertex v) const { return get_vertex(v).value(); }
+
+      E&       operator()(edge e)       { return get_edge(e).value(); }
+      const E& operator()(edge e) const { return get_edge(e).value(); }
+
+
+      // Vertex set
       vertex add_vertex();
       vertex add_vertex(V&& x);
       vertex add_vertex(const V& x);
-
       void remove_vertex(vertex v);
+      void remove_vertices();
+
+      // Edge set
+      edge add_edge(vertex u, vertex v);
+      edge add_edge(vertex u, vertex v, E&& x);
+      edge add_edge(vertex u, vertex v, const E& x);
+      void remove_edge(edge e);
+      void remove_edges(vertex u, vertex v);
+      void remove_edges(vertex v);
+      void remove_edges();
 
 
       // Iterators
       vertex_range vertices() { return {verts_.begin(), verts_.end()}; }
+
+    private:
+      vertex_node&       get_vertex(vertex v)       { return verts_[v]; }
+      const vertex_node& get_vertex(vertex v) const { return verts_[v]; }
+
+      edge_node&       get_edge(edge e)       { return edges_[e]; }
+      const edge_node& get_edge(edge e) const { return edges_[e]; }
+
+      edge link_edge(vertex u, vertex v, std::size_t e);
 
     private:
       vertex_set verts_;
@@ -241,7 +304,49 @@ namespace origin
       verts_.erase(v);
     }
 
+  template<typename V, typename E>
+    inline void
+    directed_adjacency_list<V, E>::remove_vertices()
+    {
+      edges_.clear();
+      verts_.clear();
+    }
 
+  template<typename V, typename E>
+    inline auto
+    directed_adjacency_list<V, E>::add_edge(vertex u, vertex v) -> edge
+    {
+      std::size_t e = edges_.emplace(u, v);
+      return link_edge(u, v, e);
+    }
+
+  template<typename V, typename E>
+    inline auto
+    directed_adjacency_list<V, E>::add_edge(vertex u, vertex v, E&& x) -> edge
+    {
+      std::size_t e = edges_.emplace(u, v, std::move(x));
+      return link_edge(e);
+    }
+
+  template<typename V, typename E>
+    inline auto
+    directed_adjacency_list<V, E>::add_edge(vertex u, vertex v, const E& x) -> edge
+    {
+      std::size_t e = edges_.emplace(u, v, x);
+      return link_edge(e);
+    }
+
+
+  template<typename V, typename E>
+    inline auto
+    directed_adjacency_list<V, E>::link_edge(vertex u, vertex v, std::size_t e) -> edge
+    {
+      vertex_node& un = get_vertex(u);
+      vertex_node& vn = get_vertex(v);
+      un.add_out(e);
+      vn.add_in(e);
+      return e;
+    }
 
 
 } // namespace origin

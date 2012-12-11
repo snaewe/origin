@@ -64,7 +64,6 @@ check_add()
   assert(g.order() == 3);
 }
 
-
 void
 check_remove()
 {
@@ -85,6 +84,19 @@ check_remove()
   assert(g.order() == 0);
 }
 
+void
+check_add_edge()
+{
+  using G = directed_adjacency_list<char, int>;
+  G g;
+  auto u = g.add_vertex('a');
+  auto v = g.add_vertex('b');
+
+  auto e = g.add_edge(u, v);
+  assert(g.source(e) == u);
+  assert(g.target(e) == v);
+}
+
 int main()
 {
   // trace_insert();
@@ -92,4 +104,6 @@ int main()
   check_default();
   check_add();
   check_remove();
+
+  check_add_edge();
 }
