@@ -25,9 +25,9 @@ namespace origin
   class handle
   {
   public:
-    static constexpr std::size_t null = -1;
+    static constexpr std::size_t npos = -1;
 
-    handle(std::size_t n = null);
+    handle(std::size_t n = npos);
 
     // Boolean
     explicit operator bool() const;
@@ -45,7 +45,7 @@ namespace origin
   handle::handle(std::size_t n) : value(n) { }
 
   inline 
-  handle::operator bool() const { return value != null; }
+  handle::operator bool() const { return value != npos; }
   
   inline std::size_t 
   handle::hash() const { return std::hash<std::size_t>{}(value); }
@@ -84,7 +84,7 @@ namespace origin
   // the same as a normal handle in every way except its type.
   struct vertex_handle : handle
   {
-    vertex_handle(std::size_t n = null) : handle(null) { }
+    vertex_handle(std::size_t n = npos) : handle(n) { }
   };
 
   // ------------------------------------------------------------------------ //
@@ -94,7 +94,7 @@ namespace origin
   // the same as a normal handle in every way except its type.
   struct edge_handle : handle
   {
-    edge_handle(std::size_t n = null) : handle(null) { }
+    edge_handle(std::size_t n = npos) : handle(n) { }
   };
 
 } // namespace origin

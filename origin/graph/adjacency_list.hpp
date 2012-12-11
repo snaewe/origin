@@ -8,257 +8,164 @@
 #ifndef ORIGIN_GRAPH_ADJACENCY_LIST_HPP
 #define ORIGIN_GRAPH_ADJACENCY_LIST_HPP
 
-#include <vector>
+#include <cassert>
+
+#include <iostream>
 #include <queue>
+#include <tuple>
+#include <vector>
 
 #include <origin/type/concepts.hpp>
 #include <origin/type/empty.hpp>
+#include <origin/type/typestr.hpp>
 #include <origin/graph/handle.hpp>
 
 #include <origin/graph/adjacency_list.impl/pool.hpp>
 
-#if 0
 namespace origin
 {
-  // ------------------------------------------------------------------------ //
-  //                                Empty Base
-  //
-  // The empty base facility is used to compress a possibly empty type out
-  // of a data structure. This is useful when a class has a non-dependent
-  // component that can be fully separated from a single dependent element
-  // (e.g., a linked list node).
-  template<typename T, bool = Empty<T>()>
-    struct empty_base;
-
-  template<typename T>
-    struct empty_base<T, true> : T
-    {
-      template<typename... Args>
-        empty_base(Args&&... args) : T(std::forward<Args>()...) { }
-
-      T&       data()       { return *this; }
-      const T& data() const { return *this; }
-    };
-
-  template<typename T>
-    struct empty_base<T, false>
-    {
-      template<typename... Args>
-        empty_base(Args&&... args) : data_(std::forward<Args>()...) { }
-
-      T&       data()       { return data_; }
-      const T& data() const { return data_; }
-      
-      T data_;
-    };
-
-
 
   namespace adjacency_list_impl
   {
     struct vertex_base;
     struct edge_base;
 
-    using edge_list = std::vector<edge_handle>;
 
     // ---------------------------------------------------------------------- //
     //                           Vertex Representation
     
-    struct vertex_base
-    {
-      vertex_base* next;
-      vertex_base* prev;
-      edge_list out;     // Out edges
-      edge_list in;      // In edges
-    };
-
+    // A vertex in the adjacency list is implemented as a pair of edge lisst. An
+    // edge list is simoply a vector of indexes that refer to edges in a
+    // separate edge container.
+    //
+    // Note that the class will compress the value type if it is empty.
     template<typename V>
-      struct vertex : vertex_base, empty_base<V>
+      struct vertex
       {
+        using value_type = V;
+        using edge_list = std::vector<std::size_t>;
+    
+        vertex()
+          : data()
+        { }
+
         template<typename... Args>
           vertex(Args&&... args) 
-            : empty_base<V>(std::forward<Args>(args)...) 
+            : data(edge_list{}, edge_list{}, std::forward<Args>(args)...)
           { }
+
+        // Returns the out ege list
+        edge_list&       out()       { return std::get<0>(data); }
+        const edge_list& out() const { return std::get<0>(data); }
+        
+        // Returns the in edge list
+        edge_list&       in()       { return std::get<1>(data); }
+        const edge_list& in() const { return std::get<1>(data); }
+
+        // Returns the user-supplied data object.
+        V&       value()       { return std::get<2>(data); }
+        const V& value() const { return std::get<2>(data); }
+
+        std::tuple<edge_list, edge_list, V> data;
       };
+
+    // A vertex set is a pool of vertices.
+    template<typename V>
+      using vertex_pool = pool<vertex<V>>;
+
+
+
+    // ---------------------------------------------------------------------- //
+    //                            Vertex Iterator
+    //
+    // The vertex iterator wraps a pool iterator and returns vertex handles
+    // when dereferenced. Vertex iteratrs are forward iterators.
+    template<typename I>
+      struct vertex_iterator
+      {
+        vertex_iterator(I i)
+          : iter(i)
+        { }
+
+        vertex_handle operator*() const;
+
+        vertex_iterator& operator++();
+        vertex_iterator  operator++(int);
+
+        I iter;
+      };
+
+    template<typename I>
+      inline vertex_handle
+      vertex_iterator<I>::operator*() const
+      {
+        return iter.index();
+      }
+
+    template<typename I>
+      inline vertex_iterator<I>&
+      vertex_iterator<I>::operator++()
+      {
+        ++iter;
+        return *this;
+      }
+
+    template<typename I>
+      inline vertex_iterator<I>
+      vertex_iterator<I>::operator++(int)
+      {
+        vertex_iterator tmp = *this;
+        ++iter;
+        return tmp;
+      }
+
+    // Equality
+    template<typename I>
+      inline bool
+      operator==(const vertex_iterator<I>& a, const vertex_iterator<I>& b)
+      {
+        return a.iter == b.iter;
+      }
+
+    template<typename I>
+      inline bool
+      operator!=(const vertex_iterator<I>& a, const vertex_iterator<I>& b)
+      {
+        return a.iter != b.iter;
+      }
+    
+
+    // FIXME: This should go away and I should be using bounded_range!
+    template<typename I>
+      struct bounded_vertex_range
+      {
+        using iterator = vertex_iterator<I>;
+
+        bounded_vertex_range(I f, I l)
+          : first(f), last(l)
+        { }
+
+        iterator begin() const { return first; }
+        iterator end() const   { return last; }
+
+        iterator first;
+        iterator last;
+      };
+
+    // An alias for the vertex range.
+    template<typename V>
+      using vertex_range = 
+        bounded_vertex_range<typename vertex_pool<V>::const_iterator>;
 
 
     // ---------------------------------------------------------------------- //
     //                            Edge Representation
 
-    struct edge_base
-    {
-      vertex_handle source;
-      vertex_handle target;
-    };
-
     template<typename E>
-      struct edge : edge_base
-      {
-        E data;
-      };
+      using edge_pool = pool<int>;
 
-    // ---------------------------------------------------------------------- //
-    //                              Node Pool
-    //
-    // The node pool is the basis for the vertex and edge sets in the adjacency
-    // list data structure. It is, first and foremost, a vector of pointers to
-    // nodes. The node vector has the special property that when an element is
-    // erased, the index of the erased object is saved in a dead index queue.
-    // Any insertion into that list will reuse dead indices before increasing
-    // the size of the vertex set.
-    //
-    //
-    // This data structure has some similarity to conventional object pools
-    // except that it doesn't really allocate memory, and it has additional
-    // requirements. In particular, it must maintain the correspondence between
-    // indices and the objects that they are mapped to. We also have to
-    // provide efficient iteration over elements in the pool.
-    template<typename T>
-      struct node_pool
-      {
-        size_t insert(T* p);
 
-        T* erase(std::size_t n);
-
-      private:
-        std::size_t append(T* p);
-        std::size_t reuse(T* p);
-
-        std::size_t take();
-
-        T* find_prev(std::size_t n) const;
-        T* find_next(std::size_t n) const;
-
-        void link_prev(T* p, T* prev);
-        void link_next(T* p, T* next);
-        void link_tail(T* p);
-      public:
-
-        std::vector<T*>    nodes; // The actual node vector
-        std::queue<size_t> dead;  // The dead vertex list
-      };
-
-    // Insert the node p into the vector. If there are dead indices, reuse
-    // one. Otherwise, append the vertex.
-    template<typename T>
-      inline size_t
-      node_pool<T>::insert(T* p)
-      {
-        if (dead.empty())
-          return append(p);
-        else
-          return reuse(p);
-      }
-
-    // Erase the node at the specified index, and adding the index to the dead
-    // queue. Return a pointer to the node being erased. If the node was already
-    // erased, no action is taken, and nullptr is returned.
-    template<typename T>
-      inline T*
-      node_pool<T>::erase(size_t n)
-      {
-        if (nodes[n]) {
-          dead.push(n);
-          T* p = nodes[n];
-          nodes[n] = nullptr;
-          return p;
-        }
-        return nullptr;
-      }
-
-    // Append the ndoe to the vector.
-    template<typename T>
-      inline std::size_t
-      node_pool<T>::append(T* p)
-      {
-        link_tail(p);
-        nodes.push_back(p);
-        return --nodes.size();
-      }
-
-    // Reuse the next index from the dead list.
-    template<typename T>
-      inline std::size_t
-      node_pool<T>::reuse(T* p)
-      {
-        size_t n = take();
-        link_prev(p, find_prev(n));
-        link_next(p, find_next(n));
-        nodes[n] = p;
-        return n;
-      }
-
-    // Take the next index out of the dead list.
-    template<typename T>
-      inline std::size_t
-      node_pool<T>::take()
-      {
-        size_t n = dead.front();
-        dead.pop();
-        return n;
-      }
-
-    // Return a pointer to the previous live node or nullptr if there are none.
-    template<typename T>
-      inline T*
-      node_pool<T>::find_prev(size_t n) const
-      {
-        const T** first = &nodes[n] - 1;
-        const T** last = &nodes.front() - 1;
-        while (first != last && !*first)
-          --first;
-        return first != last ? *first : nullptr;
-      }
-
-    // Return a pointer to the next live node or nullptr if there are none.
-    template<typename T>
-      inline T*
-      node_pool<T>::find_next(size_t n) const
-      {
-        const T** first = &nodes[n] + 1;
-        const T** last = &nodes.back() + 1;
-        while (first != last && !*first)
-          ++first;
-        return first != last ? *first : nullptr;
-      }
-
-    // Link p so that its previous node is prev.
-    template<typename T>
-      inline void
-      node_pool<T>::link_prev(T* p, T* prev)
-      {
-        p->prev = prev;
-        if (prev)
-          prev->next = p;      
-      }
-
-    // Link p so that its next node is next.
-    template<typename T>
-      inline void
-      node_pool<T>::link_next(T* p, T* next)
-      {
-        p->next = next;
-        if (next)
-          next->prev = p;
-      }
-
-    // Link p to the tail of the pool.
-    template<typename T>
-      inline void
-      node_pool<T>::link_tail(T* p)
-      {
-        T* tail = nodes.back();
-        tail->next = p;
-        p->prev = tail;
-      }
-
-    // ---------------------------------------------------------------------- //
-    //                                  Aliases
-
-    template<typename V>
-      using vertex_pool = node_pool<vertex<V>>;
-
-  } // adjacency_list_impl
+  } // namespace adjacency_list_impl
 
 
   // ------------------------------------------------------------------------ //
@@ -268,42 +175,75 @@ namespace origin
   template<typename V = empty_t, typename E = empty_t>
     class directed_adjacency_list
     {
-      using vertex_type = adjacency_list_impl::vertex<V>;
+      using vertex_node = adjacency_list_impl::vertex<V>;
       using vertex_set = adjacency_list_impl::vertex_pool<V>;
+
+      using edge_set = adjacency_list_impl::edge_pool<E>;
     public:
       using vertex = vertex_handle;
+      using vertex_range = adjacency_list_impl::vertex_range<V>;
+
+
+      // Observers
+      bool        null() const  { return verts_.empty(); }
+      std::size_t order() const { return verts_.size(); }
+
+      bool        empty() const { return edges_.empty(); }
+      std::size_t size() const  { return edges_.size(); }
+
+      // Data access
+      V&       operator()(vertex v)       { return verts_[v].value(); }
+      const V& operator()(vertex v) const { return verts_[v].value(); }
 
       vertex add_vertex();
       vertex add_vertex(V&& x);
       vertex add_vertex(const V& x);
 
+      void remove_vertex(vertex v);
+
+
+      // Iterators
+      vertex_range vertices() { return {verts_.begin(), verts_.end()}; }
+
     private:
       vertex_set verts_;
+      edge_set edges_;
     };
 
+
+  // Add a vertex to the graph, returning a handle to the new object. If
+  // V is a user-supplied type, its value is default constructed.
   template<typename V, typename E>
     inline auto
     directed_adjacency_list<V, E>::add_vertex() -> vertex
     {
-      return add_vertex(V{});
+      return verts_.emplace();
     }
 
   template<typename V, typename E>
-    auto
+    inline auto
     directed_adjacency_list<V, E>::add_vertex(V&& x) -> vertex
     {
-      vertex_type* v = new_vertex(std::move(x));
-      return verts_.insert(v);
+      return verts_.emplace(std::move(x));
     }
 
   template<typename V, typename E>
-    auto
+    inline auto
     directed_adjacency_list<V, E>::add_vertex(const V& x) -> vertex
     {
-      vertex_type* v = new_vertex(x);
-      return verts_.insert(v);
+      return verts_.emplace(x);
     }
-}
-#endif
+
+  template<typename V, typename E>
+    inline void
+    directed_adjacency_list<V, E>::remove_vertex(vertex v)
+    {
+      verts_.erase(v);
+    }
+
+
+
+
+} // namespace origin
 
 #endif

@@ -56,6 +56,7 @@ namespace origin
       class pool
       {
         friend class pool_iterator<T>;
+        friend class pool_iterator<const T>;
       public:
         using value_type = T;
         using node_type = pool_node<T>;
@@ -89,7 +90,9 @@ namespace origin
         const T& operator[](std::size_t n) const;
 
         // Insert
+        std::size_t insert(T&& x);
         std::size_t insert(const T& x);
+        template<typename... Args> std::size_t emplace(Args&&... args);
 
         // Erase
         void erase(std::size_t x);
@@ -125,14 +128,18 @@ namespace origin
         bool alive(std::size_t n) const { return node(n).valid(); }
 
         // Insertion functions
-        std::size_t append(const T& x);
-        void append_empty(const T& x);
-        void append_nonempty(std::size_t n, const T& x);
+        // These functions have their arguments forwarded as parameter packs
+        // so I don't have to implement different versions of the same logic
+        // for copy insertion, move insertion, and emplacement. It's a pain,
+        // and it's gross, but it should be fast.
+        template<typename... Args> std::size_t append(Args&&... x);
+        template<typename... Args> void append_empty(Args&&... x);
+        template<typename... Args> void append_nonempty(std::size_t n, Args&&... x);
 
-        std::size_t reuse(const T& x);
-        void reuse_front(const T& x);
-        void reuse_middle(std::size_t n, const T& x);
-        void reuse_end(std::size_t n, const T& x);
+        template<typename... Args> std::size_t reuse(Args&&... x);
+        template<typename... Args> void reuse_front(Args&&... x);
+        template<typename... Args> void reuse_middle(std::size_t n, Args&&... x);
+        template<typename... Args> void reuse_end(std::size_t n, Args&&... x);
 
         std::size_t take();
 
@@ -200,7 +207,18 @@ namespace origin
         return nodes_[n].get();
       }
 
-    // Insert the node p into the vector. If there are dead indices, reuse
+    // Move inser the value x into the pool.
+    template<typename T>
+      inline std::size_t
+      pool<T>::insert(T&& x)
+      {
+        if (free_.empty())
+          return append(std::move(x));
+        else
+          return reuse(std::move(x));
+      }
+
+    // Copy the value x into the vector. If there are dead indices, reuse
     // one. Otherwise, append the vertex.
     template<typename T>
       inline std::size_t
@@ -212,31 +230,45 @@ namespace origin
           return reuse(x);
       }
 
+    template<typename T>
+      template<typename... Args>
+      inline std::size_t
+      pool<T>::emplace(Args&&... args)
+      {
+        if (free_.empty())
+          return append(std::forward<Args>(args)...);
+        else
+          return reuse(std::forward<Args>(args)...);
+      }
+
+
 
     // Insert the value x at the end of the node list, returning the index
     // at which the object was stored.
     template<typename T>
-      inline std::size_t
-      pool<T>::append(const T& x)
-      {
-        std::size_t n = nodes_.size();
-        if (nodes_.empty())
-          append_empty(x);
-        else
-          append_nonempty(n, x);
-        return n;
-      }
+      template<typename... Args>
+        inline std::size_t
+        pool<T>::append(Args&&... args)
+        {
+          std::size_t n = nodes_.size();
+          if (nodes_.empty())
+            append_empty(std::forward<Args>(args)...);
+          else
+            append_nonempty(n, std::forward<Args>(args)...);
+          return n;
+        }
 
     // Insert the value x into the front of the node list. This happens only
     // when the pool is completely empty.
     template<typename T>
-      inline void
-      pool<T>::append_empty(const T& x)
-      {
-        nodes_.emplace_back(0, 0, x);
-        head_ = 0;
-        tail_ = 0;
-      }
+      template<typename... Args>
+        inline void
+        pool<T>::append_empty(Args&&... args)
+        {
+          nodes_.emplace_back(0, 0, std::forward<Args>(args)...);
+          head_ = 0;
+          tail_ = 0;
+        }
 
     // Insert the value x into the list. This corresponds to thje following
     // layout.
@@ -247,29 +279,31 @@ namespace origin
     // x. There are no free indexes in the pool. Note that n == nodes_.size(),
     // whichn is the index of x.
     template<typename T>
-      inline void
-      pool<T>::append_nonempty(std::size_t n, const T& x)
-      {
-        nodes_.emplace_back(tail_, n, x);
-        tail().next = n;
-        tail_ = n;
-      }
+      template<typename... Args>
+        inline void
+        pool<T>::append_nonempty(std::size_t n, Args&&... args)
+        {
+          nodes_.emplace_back(tail_, n, std::forward<Args>(args)...);
+          tail().next = n;
+          tail_ = n;
+        }
 
 
     // Reuse a free index to store the object x.
     template<typename T>
-      inline std::size_t
-      pool<T>::reuse(const T& x)
-      {
-        std::size_t n = take();
-        if (n == 0)
-          reuse_front(x);
-        else if (n < tail_)
-          reuse_middle(n, x);
-        else
-          reuse_end(n, x);
-        return n;
-      }
+      template<typename... Args>
+        inline std::size_t
+        pool<T>::reuse(Args&&... args)
+        {
+          std::size_t n = take();
+          if (n == 0)
+            reuse_front(std::forward<Args>(args)...);
+          else if (n < tail_)
+            reuse_middle(n, std::forward<Args>(args)...);
+          else
+            reuse_end(n, std::forward<Args>(args)...);
+          return n;
+        }
 
     // Reuse the free index at the front of the pool. This corresponds to the
     // following layout.
@@ -283,20 +317,21 @@ namespace origin
     // overwrite the initial element. Here, we make p the both the head and
     // the tail.
     template<typename T>
-      inline void
-      pool<T>::reuse_front(const T& x)
-      {
-        node_type& p = node(0);
-        if (head_ != npos) {
-          p.assign(0, head_, x);
-          head().prev = 0;
-          head_ = 0;
-        } else {
-          p.assign(0, 0, x);
-          head_ = 0;
-          tail_ = 0;
+      template<typename... Args>
+        inline void
+        pool<T>::reuse_front(Args&&... args)
+        {
+          node_type& p = node(0);
+          if (head_ != npos) {
+            p.assign(0, head_, std::forward<Args>(args)...);
+            head().prev = 0;
+            head_ = 0;
+          } else {
+            p.assign(0, 0, std::forward<Args>(args)...);
+            head_ = 0;
+            tail_ = 0;
+          }
         }
-      }
 
 
 
@@ -310,16 +345,17 @@ namespace origin
     // object, q. Otherwise, n would not be the least free index. The next
     // live object, r, is directly accessible from q.
     template<typename T>
-      inline void
-      pool<T>::reuse_middle(std::size_t n, const T& x)
-      {
-        node_type& p = node(n);
-        node_type& q = node(n - 1);
-        node_type& r = next(q);
-        p.assign(n - 1, q.next, x);
-        q.next = n;
-        r.prev = n;
-      }
+      template<typename... Args>
+        inline void
+        pool<T>::reuse_middle(std::size_t n, Args&&... args)
+        {
+          node_type& p = node(n);
+          node_type& q = node(n - 1);
+          node_type& r = next(q);
+          p.assign(n - 1, q.next, std::forward<Args>(args)...);
+          q.next = n;
+          r.prev = n;
+        }
 
     // Reuse the free index at the end of the pool. This corresponds to the
     // pool layout:
@@ -332,14 +368,15 @@ namespace origin
     // also possible. Second, it is always the case that n == t + 1 (I'm not
     // sure what that knowledge buys me though).
     template<typename T>
-      inline void
-      pool<T>::reuse_end(std::size_t n, const T& x)
-      {
-        node_type& p = node(n);
-        p.assign(tail_, n, x);
-        tail().next = n;
-        tail_ = n;
-      }
+      template<typename... Args>
+        inline void
+        pool<T>::reuse_end(std::size_t n, Args&&... args)
+        {
+          node_type& p = node(n);
+          p.assign(tail_, n, std::forward<Args>(args)...);
+          tail().next = n;
+          tail_ = n;
+        }
 
     // Take the next free index from the free list.
     template<typename T>
@@ -584,9 +621,22 @@ namespace origin
       public:
         using value_type = Remove_const<T>;
         using pool_type = If<Const<T>(), const pool<value_type>, pool<value_type>>;
+        using node_type = If<Const<T>(), const pool_node<value_type>, pool_node<value_type>>;
 
         pool_iterator();
         pool_iterator(pool_type* p, std::size_t i);
+
+        // Const conversion.
+        template<typename U>
+          pool_iterator(const pool_iterator<U>& x)
+            : p_(x.dataset()), i_(x.index())
+          { }
+
+        // Returns the pool being iterated over.
+        pool_type* dataset() const { return p_; }
+
+        // Returns the current index of the iterator.
+        std::size_t index() const { return i_; }
 
         T& operator*() const;
         T* operator->() const;
@@ -599,9 +649,10 @@ namespace origin
 
       private:
         void incr();
-
-        pool_type* p_; // The pool
-        std::size_t    i_; // The current index
+      
+      public:
+        pool_type*  p_; // The pool
+        std::size_t i_; // The current index
       };
 
     template<typename T>
@@ -666,9 +717,9 @@ namespace origin
       inline void
       pool_iterator<T>::incr() 
       {
-        const pool_node<T>& n = p_->node(i_);
+        const node_type& n = p_->node(i_);
         i_ = (n.next == i_ ? pool_node<T>::npos : n.next);
       }
 
-  } // adjacency_list_impl
-}
+  } // namespace adjacency_list_impl
+} // namespace origin
