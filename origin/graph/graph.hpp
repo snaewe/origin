@@ -90,8 +90,8 @@ namespace origin
       inline bool
       operator()(Edge<G> e) const 
       {
-        Vertex<G> a = source(e);
-        Vertex<G> b = target(e);
+        Vertex<G> a = source(g, e);
+        Vertex<G> b = target(g, e);
         if (Directed_graph<G>())
           return (u == a && v == b);
         else

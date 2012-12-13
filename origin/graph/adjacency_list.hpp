@@ -153,7 +153,7 @@ namespace origin
       };
 
     // An (incident) edge list is a vector of indexes.
-    using edge_list = std::vector<std::size_t>;
+    using edge_list = std::vector<edge_handle>;
   
     // An alias for the edge pool.
     template<typename E>
@@ -232,8 +232,8 @@ namespace origin
         // Out edges
         std::size_t out_degree() const { return out().size(); }
 
-        void insert_out(std::size_t e) { insert_edge(out(), e); }
-        void erase_out(std::size_t e)  { erase_edge(out(), e); }
+        void insert_out(edge_handle e) { insert_edge(out(), e); }
+        void erase_out(edge_handle e)  { erase_edge(out(), e); }
 
         iterator begin_out() { return out().begin(); }
         iterator end_out()   { return out().end(); }
@@ -243,8 +243,8 @@ namespace origin
         // In edges
         std::size_t in_degree() const { return in().size(); }
         
-        void insert_in(std::size_t e) { insert_edge(in(), e); }
-        void erase_in(std::size_t e)  { erase_edge(in(), e); }
+        void insert_in(edge_handle e) { insert_edge(in(), e); }
+        void erase_in(edge_handle e)  { erase_edge(in(), e); }
 
         iterator begin_in() { return in().begin(); }
         iterator end_in()   { return in().end(); }
@@ -252,8 +252,8 @@ namespace origin
         const_iterator end_in() const   { return in().end(); }
 
         // Helper functions
-        void insert_edge(edge_list& l, std::size_t e);
-        void erase_edge(edge_list& l, std::size_t e);
+        void insert_edge(edge_list& l, edge_handle e);
+        void erase_edge(edge_list& l, edge_handle e);
 
       public:
         std::tuple<edge_list, edge_list, V> data;
@@ -261,14 +261,14 @@ namespace origin
 
     template<typename V>
       inline void
-      vertex<V>::insert_edge(edge_list& l, std::size_t e)
+      vertex<V>::insert_edge(edge_list& l, edge_handle e)
       {
         l.push_back(e);
       }
 
     template<typename V>
       inline void
-      vertex<V>::erase_edge(edge_list& l, std::size_t e)
+      vertex<V>::erase_edge(edge_list& l, edge_handle e)
       {
         auto i = std::find(l.begin(), l.end(), e);
         if (i != l.end())
@@ -340,7 +340,7 @@ namespace origin
       const E& operator()(edge e) const { return get_edge(e).value(); }
 
       // Edge relation
-      bool operator()(vertex u, vertex v) const;
+      edge operator()(vertex u, vertex v) const;
 
       // Vertex set
       vertex add_vertex();
@@ -374,8 +374,8 @@ namespace origin
       const edge_node& get_edge(edge e) const { return edges_[e]; }
 
       // Helper functions for finding, connecting, disconnecting edges.
-      bool find_out_edge(vertex u, vertex v) const;
-      bool find_in_edge(vertex u, vertex v) const;
+      edge find_out_edge(vertex u, vertex v) const;
+      edge find_in_edge(vertex u, vertex v) const;
       void link_edge(vertex u, vertex v, edge e);
       void unlink_edge(vertex u, vertex v, edge e);
       void unlink_out_edge(vertex u, vertex v);
@@ -402,8 +402,8 @@ namespace origin
 
 
   template<typename V, typename E>
-    inline bool
-    directed_adjacency_list<V, E>::operator()(vertex u, vertex v) const
+    inline auto
+    directed_adjacency_list<V, E>::operator()(vertex u, vertex v) const -> edge
     {
       if (out_degree(u) <= in_degree(v))
         return find_out_edge(u, v);
@@ -412,19 +412,21 @@ namespace origin
     }
 
   template<typename V, typename E>
-    inline bool
-    directed_adjacency_list<V, E>::find_out_edge(vertex u, vertex v) const
+    inline auto
+    directed_adjacency_list<V, E>::find_out_edge(vertex u, vertex v) const -> edge
     {
       const vertex_node& un = get_vertex(u);
-      return any_of(un.out(), has_target(*this, v));
+      auto i = find_if(un.out(), has_target(*this, v));
+      return i != un.end_out() ? *i : edge();
     }
 
   template<typename V, typename E>
-    inline bool
-    directed_adjacency_list<V, E>::find_in_edge(vertex u, vertex v) const
+    inline auto
+    directed_adjacency_list<V, E>::find_in_edge(vertex u, vertex v) const -> edge
     {
       const vertex_node& vn = get_vertex(v);
-      return any_of(vn.in(), has_source(*this, v));
+      auto i = find_if(vn.in(), has_source(*this, v));
+      return i != vn.end_in() ? *i : edge();
     }
 
   // Add a vertex to the graph, returning a handle to the new object. If
@@ -643,7 +645,7 @@ namespace origin
     directed_adjacency_list<V, E>::unlink_target(edge e)
     {
       vertex_node& t = get_vertex(target(e));
-      auto i = find(t.in(), e.value);
+      auto i = find(t.in(), e);
       t.in().erase(i);
       edges_.erase(e);
     }
@@ -656,7 +658,7 @@ namespace origin
     directed_adjacency_list<V, E>::unlink_source(edge e)
     {
       vertex_node& t = get_vertex(source(e));
-      auto i = find(t.out(), e.value);
+      auto i = find(t.out(), e);
       t.out().erase(i);
       edges_.erase(e);
     }
@@ -848,7 +850,7 @@ namespace origin
       const E& operator()(edge e) const { return get_edge(e).value(); }
 
       // Relation
-      bool operator()(vertex u, vertex v) const;
+      edge operator()(vertex u, vertex v) const;
 
       // Vertex set
       vertex add_vertex();
@@ -881,8 +883,10 @@ namespace origin
       const edge_node& get_edge(edge e) const { return edges_[e]; }
 
       // Helper functions
-      bool find_edge(vertex u, vertex v) const;
+      edge find_edge(vertex u, vertex v) const;
       void link_edge(vertex u, vertex v, edge e);
+      void unlink_loop(vertex v, edge e);
+      void unlink_edge(vertex u, vertex v, edge e);
 
       using has_source = origin::has_source<this_type>;
       using has_target = origin::has_target<this_type>;
@@ -895,8 +899,8 @@ namespace origin
 
   // Returns true if the an edge {u, v} is in the graph.
   template<typename V, typename E>
-    inline bool
-    undirected_adjacency_list<V, E>::operator()(vertex u, vertex v) const
+    inline auto
+    undirected_adjacency_list<V, E>::operator()(vertex u, vertex v) const -> edge
     {
       if (degree(u) <= degree(v))
         return find_edge(u, v);
@@ -904,16 +908,14 @@ namespace origin
         return find_edge(v, u);
     }
 
+  // Search the edges of u
   template<typename V, typename E>
-    inline bool
-    undirected_adjacency_list<V, E>::find_edge(vertex u, vertex v) const
+    inline auto
+    undirected_adjacency_list<V, E>::find_edge(vertex u, vertex v) const -> edge
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
-      if (any_of(un.edges(), has_ends(*this, u, v)))
-        return true;
-      else
-        return any_of(vn.edges(), ends(*this, u, v));
+      const vertex_node& un = get_vertex(u);
+      auto i = find_if(un.edges(), has_ends(*this, u, v));
+      return i != un.end() ? *i : edge();
     }
 
 
@@ -996,9 +998,6 @@ namespace origin
       vn.insert(e);
     }
 
-
-#if 0
-
   // Remove the specified edge from the graph.
   template<typename V, typename E>
     inline void
@@ -1007,18 +1006,18 @@ namespace origin
       vertex u = source(e);
       vertex v = target(e);
       if (u == v)
-        unlink_loop(u, e);
+        unlink_loop(u, e);    
       else
         unlink_edge(u, v, e);
-      unlink_edge(source(e), target(e), e);
     }
+
 
   // Unlink the given edge from the vertex, when the edge is looped.
   template<typename V, typename E>
     inline void
     undirected_adjacency_list<V, E>::unlink_loop(vertex v, edge e)
     {
-      auto pred = [&](edge x) { return x != e; }
+      auto pred = [&](edge x) { return x != e; };
       vertex_node& vn = get_vertex(v);
       auto i = partition(vn.edges(), pred);
       if (i != vn.end()) {
@@ -1039,16 +1038,18 @@ namespace origin
       vertex_node& un = get_vertex(u);
       vertex_node& vn = get_vertex(v);
 
-      // This isn't right.
-      if (auto i = find(un.edges(), e)) {
+      // Find the edge in the corresponding edge lists, and then erase them.
+      auto i = find(un.edges(), e);
+      auto j = find(vn.edges(), e);
+      if (i != un.end()) {
         edges_.erase(*i);
         un.edges().erase(i);
-      }
-      if (auto i = find(vn.edges(), e)) {
-        edges_.erase(*i);
-        vn.edges().erase(i);
+        vn.edges().erase(j);
       }
     }
+
+#if 0
+
 
   // Remove the first edge connecting u to v.
   template<typename V, typename E>

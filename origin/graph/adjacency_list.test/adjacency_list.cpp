@@ -278,6 +278,39 @@ check_undir_add_edge()
 }
 
 
+void
+check_undir_remove_edge()
+{
+  cout << "*** undirected add edge ***\n";
+  using G = undirected_adjacency_list<char, int>;
+  G g;
+  constexpr int N = 3;
+  for (int i = 0; i < N; ++i)
+    g.add_vertex('a' + i);
+
+  vector<G::edge> v;
+  int k = 1;
+  for (int i = 0; i < N; ++i) {
+    for (int j = i; j < N; ++j)
+      v.push_back(g.add_edge(i, j, k++));
+  }
+  cout << io::edge_list(g) << '\n';
+
+  assert(g(0, 0) == v[0]);
+  g.remove_edge(g(0, 0));
+  cout << io::edge_list(g) << '\n';
+  g.remove_edge(g(0, 1));
+  cout << io::edge_list(g) << '\n';
+
+  g.remove_edge(g(0, 2));
+  g.remove_edge(g(1, 1));
+  g.remove_edge(g(1, 2));
+  g.remove_edge(g(2, 2));
+  assert(g.empty());
+  cout << io::vertex_list(g) << '\n';
+}
+
+
 int main()
 {
   // trace_insert();
@@ -292,5 +325,6 @@ int main()
   // check_remove_vertex_edges();
   // check_remove_all_edges();
 
-  check_undir_add_edge();
+  // check_undir_add_edge();
+  check_undir_remove_edge();
 }
