@@ -8,6 +8,22 @@
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 
+namespace origin
+{
+  // ------------------------------------------------------------------------ //
+  //                                                             [graph.generic]
+  //                          Generic Graph Interface
+  //
+  // The generic graph interface is a set of types and operations defined
+  // commonly for various graph data structures.
+
+  template<typename G>
+    using Vertex = typename G::vertex;
+
+  template<typename G>
+    using Edge = typename G::edge;
+
+} // namespace origin
 
 
 #endif
