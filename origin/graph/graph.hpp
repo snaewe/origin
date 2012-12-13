@@ -8,6 +8,8 @@
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 
+#include <origin/graph/concepts.hpp>
+
 namespace origin
 {
   // ------------------------------------------------------------------------ //
@@ -22,6 +24,85 @@ namespace origin
 
   template<typename G>
     using Edge = typename G::edge;
+
+
+  // Retursn the source vertex of an edge in g.
+  template<typename G>
+    inline Vertex<G>
+    source(const G& g, Edge<G> e) { return g.source(e); }
+
+  // Returns the target vertex of an edge in g.
+  template<typename G>
+    inline Vertex<G>
+    target(const G& g, Edge<G> e) { return g.target(e); }
+
+
+
+  // ------------------------------------------------------------------------ //
+  //                                                                [graph.pred]
+  //                          Common Graph Predicates
+  //
+  // The following function objects are useful in a number of graph operations.
+  //
+  //    has_target<G>
+  //    has_source<G>
+  //
+
+  // Returns true when an edge is is the same as some target vertex.
+  template<typename G>
+    struct has_target
+    {
+      has_target(const G& g, Vertex<G> v)
+        : g(g), v(v)
+      { }
+
+      inline bool
+      operator()(Edge<G> e) const { return target(g, e) == v; }
+
+      const G&  g;
+      Vertex<G> v;
+    };
+
+  // Returns true when an edge is is the same as some source vertex.
+  template<typename G>
+    struct has_source
+    {
+      has_source(const G& g, Vertex<G> v)
+        : g(g), v(v)
+      { }
+
+      inline bool
+      operator()(Edge<G> e) const { return source(g, e) == v; }
+
+      const G&  g;
+      Vertex<G> v;
+    };
+
+
+  // Returns true when an edge is is the same as some source vertex.
+  template<typename G>
+    struct has_ends
+    {
+      has_ends(const G& g, Vertex<G> u, Vertex<G> v)
+        : g(g), u(u), v(v)
+      { }
+
+      inline bool
+      operator()(Edge<G> e) const 
+      {
+        Vertex<G> a = source(e);
+        Vertex<G> b = target(e);
+        if (Directed_graph<G>())
+          return (u == a && v == b);
+        else
+          return (u == a && v == b) || (u == b && v == a);
+      }
+
+      const G&  g;
+      Vertex<G> u;
+      Vertex<G> v;
+    };
+
 
 } // namespace origin
 

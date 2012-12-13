@@ -14,6 +14,7 @@
 namespace origin 
 {
   // ------------------------------------------------------------------------ //
+  //                                                              [graph.handle]
   //                              Handle
   //
   // A handle is an ordinal value type used to represent an object in a data

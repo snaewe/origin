@@ -90,6 +90,8 @@ check_remove_vertex()
 void
 check_add_edge()
 {
+  cout << "*** add edge ***\n";
+
   using G = directed_adjacency_list<char, int>;
   G g;
   auto u = g.add_vertex('u');
@@ -99,11 +101,20 @@ check_add_edge()
   auto e1 = g.add_edge(u, v, 1);
   assert(g.source(e1) == u);
   assert(g.target(e1) == v);
+  assert(g(u, v));
+  assert(!g(v, u));
 
   auto e2 = g.add_edge(v, w, 2);
   for (auto e : g.edges())
     cout << g(e) << ' ';
   cout << '\n';
+
+  g.add_edge(u, w, 3);
+  g.add_edge(w, v, 4);
+  for (auto e : g.out_edges(u))
+    cout << io::edge(g, e) << '\n';
+  for (auto e : g.in_edges(v))
+    cout << io::edge(g, e) << '\n';
 }
 
 void
@@ -250,17 +261,36 @@ check_remove_all_edges()
 }
 
 
+void
+check_undir_add_edge()
+{
+  cout << "*** undirected add edge ***\n";
+  using G = undirected_adjacency_list<char, int>;
+  G g;
+  constexpr int N = 3;
+  for (int i = 0; i < N; ++i)
+    g.add_vertex('a' + i);
+
+  g.add_edge(0, 1);
+  g.add_edge(2, 1);
+  assert(g.size() == 2);
+  cout << io::edge_list(g) << '\n';
+}
+
+
 int main()
 {
-  trace_insert();
+  // trace_insert();
 
-  check_default_init();
-  check_add_vertex();
-  check_remove_vertex();
+  // check_default_init();
+  // check_add_vertex();
+  // check_remove_vertex();
 
-  check_add_edge();
-  check_remove_edge();
-  check_remove_multi_edge();
-  check_remove_vertex_edges();
-  check_remove_all_edges();
+  // check_add_edge();
+  // check_remove_edge();
+  // check_remove_multi_edge();
+  // check_remove_vertex_edges();
+  // check_remove_all_edges();
+
+  check_undir_add_edge();
 }
