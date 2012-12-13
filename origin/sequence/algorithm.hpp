@@ -14,27 +14,31 @@
 
 namespace origin
 {
-  //////////////////////////////////////////////////////////////////////////////
-  // Quantifiers                                                      algo.quant
+  // ------------------------------------------------------------------------ //
+  //                                                                [algo.quant]
+  //                              Quantifiers
   //
   // The quantifier algorithms evaluate a range of elements to determine if
   // all elements in that range posess that property, some (or any) do, or
   // if none do. The property is defined by a predicate function.
-  //////////////////////////////////////////////////////////////////////////////
 
 
-  //////////////////////////////////////////////////////////////////////////////
-  // All Of
+  // ------------------------------------------------------------------------ //
+  //                                                            [algo.quant.all]
+  //                                  All
   //
-  // The all_of algorithm determines if all elements in range possess or satisfy
-  // the property indicated by a unary predicate, pred.
+  // The all algorithms return true when some condition holds for all elements
+  // in a range. There are serveral variations:
   //
-  // Parameters:
-  //    range -- An Input_range
-  //    pred -- A unary Predicate over the value type of range
+  //    all_of(first, last, pred)
+  //    all_of(range, pred)
   //
-  // Returns:
-  //    True if and only if pred(*i) is true for each iterator i in range.
+  //    all_match(first, last, value)
+  //    all_match(first, last, value, comp)
+  //    all_match(range, value)
+  //    all_match(range, value, comp)
+
+  // Returns true iff pred(x) is true for all x in range.
   template <typename R, typename P>
     inline bool
     all_of(const R& range, P pred)
@@ -44,18 +48,64 @@ namespace origin
       return std::all_of(begin(range), end(range), pred);
     }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Any Of
+  // Returns true iff x == value for all x in [first, last).
   //
-  // The any_of algorithm determines if any element in range possesses or
-  // satisfies the property indicated by a unary predicate, pred.
+  // FIXME: This should call all_match(first, last, value, eq()), but I don't
+  // have advanced functional support yet.
+  template<typename I, typename T>
+    inline Requires<Input_iterator<I>(), bool>
+    all_match(I first, I last, const T& value)
+    {
+      while (first != last && *first == value)
+        ++first;
+      return first == last;
+    }
+
+  // Returns true iff comp(x, value) for all x in [first, last).
+  template<typename I, typename T, typename C>
+    inline bool
+    all_match(I first, I last, const T& value, C comp)
+    {
+      while (first != last && comp(*first, value))
+        ++first;
+      return first == last;
+    }
+
+  // Returns true iff x == value for all x in range.
+  template<typename R, typename T>
+    inline bool
+    all_match(const R& range, const T& value)
+    {
+      using std::begin;
+      using std::end;
+      return all_match(begin(range), end(range), value);
+    }
+
+  template<typename R, typename T, typename C>
+    inline Requires<Input_range<R>(), bool>
+    all_match(const R& range, const T& value, C comp)
+    {
+      using std::begin;
+      using std::end;
+      return all_match(begin(range), end(range), value, comp);
+    }
+
+  // ------------------------------------------------------------------------ //
+  //                                                            [algo.quant.any]
+  //                                 Any
   //
-  // Parameters:
-  //    range -- An Input_range
-  //    pred -- A unary Predicate over the value type of range
+  // The any algorithms return true when some condition holds for any element
+  // in a range. There are serveral variations:
   //
-  // Returns:
-  //    True if and only if pred(*i) is true for each iterator i in range.
+  //    any_of(first, last, pred)
+  //    any_of(range, pred)
+  //
+  //    any_match(first, last, value)
+  //    any_match(first, last, value, comp)
+  //    any_match(range, value)
+  //    any_match(range, value, comp)
+
+  // Returns true if pred(x) is true for any element in range.
   template <typename R, typename P>
     inline bool
     any_of(const R& range, P pred)
@@ -65,19 +115,63 @@ namespace origin
       return std::any_of(begin(range), end(range), pred);
     }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // None Of
+  // Returns true if x == value for some x in [first, last).
+  template<typename I, typename T>
+    inline Requires<Input_iterator<I>(), bool>
+    any_match(I first, I last, const T& value)
+    {
+      while (first != last && *first != value)
+        ++first;
+      return first != last;
+    }
+
+  // Returns true if comp(x, value) is true for some x in [first, last).
+  template<typename I, typename T, typename C>
+    inline bool
+    any_match(I first, I last, const T& value, C comp)
+    {
+      while (first != last && !comp(*first, value))
+        ++first;
+      return first != last;
+    }
+
+  // Returns true if x == value for some x in range.
+  template<typename R, typename T>
+    inline bool
+    any_match(const R& range, const T& value)
+    {
+      using std::begin;
+      using std::end;
+      return any_match(begin(range), end(range), value);
+    }
+
+  template<typename R, typename T, typename C>
+    inline Requires<Input_range<R>(), bool>
+    any_match(const R& range, const T& value, C comp)
+    {
+      using std::begin;
+      using std::end;
+      return any_match(begin(range), end(range), value, comp);
+    }
+
+
+  // ------------------------------------------------------------------------ //
+  //                                                           [algo.quant.none]
+  //                                  None
   //
-  // The none_of algorithm determines if no elements in range possesses or
-  // satisfies the property indicated by a unary predicate, pred.
+  // The any algorithms return true when some condition holds for any element
+  // in a range. There are serveral variations:
   //
-  // Parameters:
-  //    range -- An Input_range
-  //    pred -- A unary Predicate on the value type of range
+  //    none_of(first, last, pred)
+  //    none_of(range, pred)
   //
-  // Returns:
-  //    True if and only if pred(*i) is true for each iterator i in range.
-  template <typename R, typename P>
+  //    none_match(first, last, value)
+  //    none_match(first, last, value, comp)
+  //    none_match(range, value)
+  //    none_match(range, value, comp)
+    
+  // Returns true if pred(x) is false for all x in range.
+  template<typename R, typename P>
     inline bool
     none_of(const R& range, P pred)
     {
@@ -86,9 +180,47 @@ namespace origin
       return std::none_of(begin(range), end(range), pred);
     }
 
+  // Returns true x == value is false for all x in [first, last).
+  template<typename I, typename T>
+    inline Requires<Input_iterator<I>(), bool>
+    none_match(I first, I last, const T& value)
+    {
+      while (first != last && *first != value)
+        ++first;
+      return first == last;
+    }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // For Each                                                      algo.for_each
+  template<typename I, typename T, typename C>
+    inline bool
+    none_match(I first, I last, const T& value, C comp)
+    {
+      while (first != last && !comp(*first, value))
+        ++first;
+      return first == last;
+    }
+
+  template<typename R, typename T>
+    inline bool
+    none_match(const R& range, const T& value)
+    {
+      using std::begin;
+      using std::end;
+      return none_match(begin(range), end(range), value);
+    }
+
+  template<typename R, typename T, typename C>
+    inline Requires<Input_range<R>(), bool>
+    none_match(const R& range, const T& value, C comp)
+    {
+      using std::begin;
+      using std::end;
+      return none_match(begin(range), end(range), value, comp);
+    }
+
+
+  // ------------------------------------------------------------------------ //
+  //                                                            [algo.for_eaach]
+  //                                  For Each
   //
   // The for_each algorithm applies the function, f, to each iterator i in
   // range.
@@ -110,10 +242,11 @@ namespace origin
 
 
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Find
+  // ------------------------------------------------------------------------ //
+  //                                                                 [algo.find]
+  //                                    Find
   //
-  //////////////////////////////////////////////////////////////////////////////
+  // The find algorithms search///
 
   template <typename R, typename T>
     inline Iterator_of<R> 
@@ -142,7 +275,6 @@ namespace origin
       using std::end;
       return std::find_if_not(begin(range), end(range), pred);
     }
-
 
 
   //////////////////////////////////////////////////////////////////////////////
