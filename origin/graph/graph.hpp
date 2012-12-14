@@ -26,7 +26,17 @@ namespace origin
     using Edge = typename G::edge;
 
 
-  // Retursn the source vertex of an edge in g.
+  // Returns a range over the vertices of a graph.
+  template<typename G>
+    inline auto
+    vertices(const G& g) -> decltype(g.vertices()) { return g.vertices(); }
+
+  // Returns a range over the edges of a graph.
+  template<typename G>
+    inline auto
+    edges(const G& g) -> decltype(g.edges()) { return g.edges(); }
+
+  // Returns the source vertex of an edge in g.
   template<typename G>
     inline Vertex<G>
     source(const G& g, Edge<G> e) { return g.source(e); }
@@ -78,31 +88,21 @@ namespace origin
       Vertex<G> v;
     };
 
-
-  // Returns true when an edge is is the same as some source vertex.
+  // Returns true if an edge has an end equal to v.
   template<typename G>
-    struct has_ends
+    struct has_endpoint
     {
-      has_ends(const G& g, Vertex<G> u, Vertex<G> v)
-        : g(g), u(u), v(v)
-      { }
+      has_endpoint(const G& g, Vertex<G> v) : g(g), v(v)  { }
 
       inline bool
-      operator()(Edge<G> e) const 
+      operator()(Edge<G> e) const
       {
-        Vertex<G> a = source(g, e);
-        Vertex<G> b = target(g, e);
-        if (Directed_graph<G>())
-          return (u == a && v == b);
-        else
-          return (u == a && v == b) || (u == b && v == a);
+        return source(g, e) == v || target(g, e) == v;
       }
-
-      const G&  g;
-      Vertex<G> u;
+      
+      const G& g;
       Vertex<G> v;
     };
-
 
 } // namespace origin
 

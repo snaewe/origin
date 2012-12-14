@@ -120,7 +120,7 @@ check_add_edge()
 void
 check_remove_edge()
 {
-  cout << "*** remove edge ***\n";
+  cout << "*** remove first edge ***\n";
 
   // Build a graph.
   using G = directed_adjacency_list<char, int>;
@@ -311,6 +311,101 @@ check_undir_remove_edge()
 }
 
 
+template<typename G>
+  G build_n_graph(int n)
+  {
+    G g;
+    for (int i = 0; i < n; ++i)
+      g.add_vertex('a' + i);
+    return g;
+  }
+
+// Construct an n-vertex reflexive clique.
+template<typename G>
+  G build_reflexive_clique(int n)
+  {
+    G g = build_n_graph<G>(n);
+    int x = 0;
+    for (int i = 0; i < n; ++i) {
+      for (int j = i; j < n; ++j)
+        g.add_edge(i, j, x++);
+    }
+    return g;
+  }
+
+// Construct an n-vertex reflexive bidirected clique.
+template<typename G>
+  G build_reflexive_bidi_clique(int n)
+  {
+    G g = build_n_graph<G>(n);
+    int x = 0;
+    for (int i = 0; i < n; ++i) {
+      for (int j = i; j < n; ++j) {
+        g.add_edge(i, j, x++);
+        g.add_edge(j, i, x++);
+      }
+    }
+    return g;
+  }
+
+template<typename G>
+  void
+  check_remove_first_simple_edge()
+  {
+    G g = build_reflexive_clique<G>(3);
+    cout << io::edge_list(g) << '\n';
+
+    // TODO: Actually assert these properties.
+
+    // Remove a loop and test
+    g.remove_edge(0, 0);
+    cout << io::edge_list(g) << '\n';
+
+    // Remove a non-loop and test
+    g.remove_edge(0, 1);
+    cout << io::edge_list(g) << '\n';
+
+    // Remove the rest and test
+    g.remove_edge(0, 2);
+    g.remove_edge(1, 1);
+    g.remove_edge(1, 2);
+    g.remove_edge(2, 2);
+    assert(g.empty());
+  }
+
+template<typename G>
+  void
+  check_remove_first_multi_edge()
+  {
+    G g = build_reflexive_bidi_clique<G>(3);
+    cout << io::edge_list(g) << '\n';
+
+    // TODO: Actually assert tested properties.
+
+    // Remove a loop and test
+    g.remove_edge(0, 0);
+    cout << io::edge_list(g) << '\n';
+    g.remove_edge(0, 0);
+    cout << io::edge_list(g) << '\n';
+
+    // Remove a non-loop and test
+    g.remove_edge(0, 1);
+    cout << io::edge_list(g) << '\n';
+    g.remove_edge(1, 0);
+    cout << io::edge_list(g) << '\n';
+
+    // // Remove the rest and test
+    g.remove_edge(0, 2);
+    g.remove_edge(2, 0);
+    g.remove_edge(1, 1);
+    g.remove_edge(1, 1);
+    g.remove_edge(1, 2);
+    g.remove_edge(2, 1);
+    g.remove_edge(2, 2);
+    g.remove_edge(2, 2);
+    assert(g.empty());
+  }
+
 int main()
 {
   // trace_insert();
@@ -326,5 +421,9 @@ int main()
   // check_remove_all_edges();
 
   // check_undir_add_edge();
-  check_undir_remove_edge();
+  // check_undir_remove_edge();
+
+  using G = undirected_adjacency_list<char, int>;
+  check_remove_first_simple_edge<G>();
+  check_remove_first_multi_edge<G>();
 }

@@ -324,8 +324,8 @@ namespace origin
       std::size_t size() const  { return edges_.size(); }
 
       // Vertex observers
-      std::size_t out_degree(vertex v) const { return get_vertex(v).out_degree(); }
-      std::size_t in_degree(vertex v) const  { return get_vertex(v).in_degree(); }
+      std::size_t out_degree(vertex v) const { return node(v).out_degree(); }
+      std::size_t in_degree(vertex v) const  { return node(v).in_degree(); }
       std::size_t degree(vertex v) const { return out_degree(v) + in_degree(v); }
 
       // Edge observers
@@ -333,8 +333,8 @@ namespace origin
       vertex target(edge e) const { return get_edge(e).target(); }
 
       // Data access
-      V&       operator()(vertex v)       { return get_vertex(v).value(); }
-      const V& operator()(vertex v) const { return get_vertex(v).value(); }
+      V&       operator()(vertex v)       { return node(v).value(); }
+      const V& operator()(vertex v) const { return node(v).value(); }
 
       E&       operator()(edge e)       { return get_edge(e).value(); }
       const E& operator()(edge e) const { return get_edge(e).value(); }
@@ -367,8 +367,8 @@ namespace origin
       incidence_range in_edges(vertex v) const;
 
     private:
-      vertex_node&       get_vertex(vertex v)       { return verts_[v]; }
-      const vertex_node& get_vertex(vertex v) const { return verts_[v]; }
+      vertex_node&       node(vertex v)       { return verts_[v]; }
+      const vertex_node& node(vertex v) const { return verts_[v]; }
 
       edge_node&       get_edge(edge e)       { return edges_[e]; }
       const edge_node& get_edge(edge e) const { return edges_[e]; }
@@ -415,7 +415,7 @@ namespace origin
     inline auto
     directed_adjacency_list<V, E>::find_out_edge(vertex u, vertex v) const -> edge
     {
-      const vertex_node& un = get_vertex(u);
+      const vertex_node& un = node(u);
       auto i = find_if(un.out(), has_target(*this, v));
       return i != un.end_out() ? *i : edge();
     }
@@ -424,7 +424,7 @@ namespace origin
     inline auto
     directed_adjacency_list<V, E>::find_in_edge(vertex u, vertex v) const -> edge
     {
-      const vertex_node& vn = get_vertex(v);
+      const vertex_node& vn = node(v);
       auto i = find_if(vn.in(), has_source(*this, v));
       return i != vn.end_in() ? *i : edge();
     }
@@ -502,8 +502,8 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::link_edge(vertex u, vertex v, edge e)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       un.insert_out(e);
       vn.insert_in(e);
     }
@@ -522,8 +522,8 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_edge(vertex u, vertex v, edge e)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       un.erase_out(e);
       vn.erase_in(e);
       edges_.erase(e);
@@ -545,7 +545,7 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_out_edge(vertex u, vertex v)
     {
-      vertex_node& un = get_vertex(u);
+      vertex_node& un = node(u);
       unlink_first_edge(un.out(), has_target(*this, v));
     }
 
@@ -553,7 +553,7 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_in_edge(vertex u, vertex v)
     {
-      vertex_node& vn = get_vertex(v);
+      vertex_node& vn = node(v);
       unlink_first_edge(vn.in(), has_source(*this, u));
     }
 
@@ -582,8 +582,8 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_out_edges(vertex u, vertex v)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       unlink_multi_edge(un.out(), vn.in(), has_target(*this, v));
     }
 
@@ -591,8 +591,8 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_in_edges(vertex u, vertex v)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       unlink_multi_edge(vn.in(), un.out(), has_source(*this, u));
     }
 
@@ -627,7 +627,7 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::remove_edges(vertex v)
     {
-      vertex_node& vn = get_vertex(v);
+      vertex_node& vn = node(v);
       
       // Clear the out edges
       for (auto e : vn.out())
@@ -644,7 +644,7 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_target(edge e)
     {
-      vertex_node& t = get_vertex(target(e));
+      vertex_node& t = node(target(e));
       auto i = find(t.in(), e);
       t.in().erase(i);
       edges_.erase(e);
@@ -657,7 +657,7 @@ namespace origin
     inline void
     directed_adjacency_list<V, E>::unlink_source(edge e)
     {
-      vertex_node& t = get_vertex(source(e));
+      vertex_node& t = node(source(e));
       auto i = find(t.out(), e);
       t.out().erase(i);
       edges_.erase(e);
@@ -697,7 +697,7 @@ namespace origin
     inline auto
     directed_adjacency_list<V, E>::out_edges(vertex v) const -> incidence_range
     {
-      const vertex_node& vn = get_vertex(v);
+      const vertex_node& vn = node(v);
       return {incidence_iter(vn.begin_out()), incidence_iter(vn.end_out())};
     }
 
@@ -705,7 +705,7 @@ namespace origin
     inline auto
     directed_adjacency_list<V, E>::in_edges(vertex v) const -> incidence_range
     {
-      const vertex_node& vn = get_vertex(v);
+      const vertex_node& vn = node(v);
       return {incidence_iter(vn.begin_in()), incidence_iter(vn.end_in())};
     }
 
@@ -832,7 +832,7 @@ namespace origin
       std::size_t size() const  { return edges_.size(); }
 
       // Vertex observers
-      std::size_t degree(vertex v) const { return get_vertex(v).degree(); }
+      std::size_t degree(vertex v) const { return node(v).degree(); }
 
       // Edge observers
       
@@ -843,8 +843,8 @@ namespace origin
       vertex target(edge e) const { return get_edge(e).target(); }
 
       // Data access
-      V&       operator()(vertex v)       { return get_vertex(v).value(); }
-      const V& operator()(vertex v) const { return get_vertex(v).value(); }
+      V&       operator()(vertex v)       { return node(v).value(); }
+      const V& operator()(vertex v) const { return node(v).value(); }
 
       E&       operator()(edge e)       { return get_edge(e).value(); }
       const E& operator()(edge e) const { return get_edge(e).value(); }
@@ -876,8 +876,8 @@ namespace origin
       incidence_range incident_edges(vertex v) const;
 
     private:
-      vertex_node&       get_vertex(vertex v)       { return verts_[v]; }
-      const vertex_node& get_vertex(vertex v) const { return verts_[v]; }
+      vertex_node&       node(vertex v)       { return verts_[v]; }
+      const vertex_node& node(vertex v) const { return verts_[v]; }
 
       edge_node&       get_edge(edge e)       { return edges_[e]; }
       const edge_node& get_edge(edge e) const { return edges_[e]; }
@@ -887,10 +887,18 @@ namespace origin
       void link_edge(vertex u, vertex v, edge e);
       void unlink_loop(vertex v, edge e);
       void unlink_edge(vertex u, vertex v, edge e);
+      void unlink_first_loop(vertex v);
+      void unlink_first_edge(vertex u, vertex v);
 
-      using has_source = origin::has_source<this_type>;
-      using has_target = origin::has_target<this_type>;
-      using has_ends = origin::has_ends<this_type>;
+      template<typename I>
+        I find_endpoint(I first, I last, vertex v) const;
+
+      template<typename S, typename I>
+        void erase_loop(S& seq, I iter);
+
+      template<typename S, typename I>
+        void erase_edge(S& seq1, I iter1, S& seq2, I iter2);
+
 
     private:
       vertex_set verts_;
@@ -908,15 +916,33 @@ namespace origin
         return find_edge(v, u);
     }
 
-  // Search the edges of u
+  // Return an handle to the first edge connecting u to v, or an invalid handle
+  // if no such edges exist.
+  //
+  // Note that, if u and v are connected, then v will appear as an endpoint of
+  // an edge (i.e., either source or target of that edge) in the incidence list
+  // of u.
   template<typename V, typename E>
     inline auto
     undirected_adjacency_list<V, E>::find_edge(vertex u, vertex v) const -> edge
     {
-      const vertex_node& un = get_vertex(u);
-      auto i = find_if(un.edges(), has_ends(*this, u, v));
-      return i != un.end() ? *i : edge();
+      const vertex_node& n = node(v);
+      auto first = n.begin();
+      auto last = n.end();
+      auto i = find_endpoint(first, last, v);
+      return i != last ? *i : edge();
     }
+
+  // Return an iterator to the the first incident edge whose end (either
+  // source or target) is equal to v.
+  template<typename V, typename E>
+    template<typename I>
+      inline I
+      undirected_adjacency_list<V, E>::find_endpoint(I first, I last, vertex v) const
+        {
+          using P = has_endpoint<this_type>;
+          return find_if(first, last, P(*this, v));
+        }
 
 
   // Add a vertex to the graph, returning a handle to the new object. If
@@ -992,8 +1018,8 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::link_edge(vertex u, vertex v, edge e)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       un.insert(e);
       vn.insert(e);
     }
@@ -1017,17 +1043,21 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_loop(vertex v, edge e)
     {
-      auto pred = [&](edge x) { return x != e; };
-      vertex_node& vn = get_vertex(v);
-      auto i = partition(vn.edges(), pred);
-      if (i != vn.end()) {
-        // Erase the edge globally
-        edges_.erase(*i);
-
-        // Erase the ends from the vector
-        vn.edges().erase(i, vn.end());
-      }
+      vertex_node& n = node(v);
+      auto i = find(n.edges(), e);
+      if (i != n.end())
+        erase_loop(n.edges(), i);
     }
+
+  // Erase the loop edge referred to by the edge list iterator i.
+  template<typename V, typename E>
+    template<typename S, typename I>
+      inline void
+      undirected_adjacency_list<V, E>::erase_loop(S& seq, I iter)
+      {
+        edges_.erase(*iter);
+        seq.erase(iter, std::next(iter, 2));
+      }
 
   // Unlink the given edge from the source and target vertices, and erase
   // it from the edge set.
@@ -1035,58 +1065,69 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_edge(vertex u, vertex v, edge e)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
 
       // Find the edge in the corresponding edge lists, and then erase them.
       auto i = find(un.edges(), e);
       auto j = find(vn.edges(), e);
-      if (i != un.end()) {
-        edges_.erase(*i);
-        un.edges().erase(i);
-        vn.edges().erase(j);
-      }
+      if (i != un.end())
+        erase_edge(un.edges(), i, vn.edges(), j);
     }
 
-#if 0
-
+  // Erase the edge e from the graph by removing the endpoints and the edge
+  // object.
+  template<typename V, typename E>
+    template<typename S, typename I>
+      inline void
+      undirected_adjacency_list<V, E>::erase_edge(S& seq1, I iter1, S& seq2, I iter2)
+        {
+          edges_.erase(*iter1);
+          seq1.erase(iter1);
+          seq2.erase(iter2);
+        }
 
   // Remove the first edge connecting u to v.
   template<typename V, typename E>
     inline void
     undirected_adjacency_list<V, E>::remove_edge(vertex u, vertex v)
     {
-      if (out_degree(u) <= in_degree(v))
-        unlink_out_edge(u, v);
+      if (u == v)
+        unlink_first_loop(v);
+      else if (degree(u) <= degree(v))
+        unlink_first_edge(u, v);
       else
-        unlink_in_edge(u, v);
+        unlink_first_edge(v, u);
     }
 
+  // Find and remove the first loop connecting v to itself.
   template<typename V, typename E>
     inline void
-    undirected_adjacency_list<V, E>::unlink_out_edge(vertex u, vertex v)
+    undirected_adjacency_list<V, E>::unlink_first_loop(vertex v)
     {
-      vertex_node& un = get_vertex(u);
-      unlink_first_edge(un.out(), has_target(*this, v));
+      vertex_node& n = node(v); 
+      auto first = n.begin();
+      auto last = n.end();
+      auto i = find_endpoint(first, last, v);
+      if (i != last)
+        erase_loop(n.edges(), i);
     }
 
+  // Find and remove the first edge connecting u to v.
   template<typename V, typename E>
     inline void
-    undirected_adjacency_list<V, E>::unlink_in_edge(vertex u, vertex v)
+    undirected_adjacency_list<V, E>::unlink_first_edge(vertex u, vertex v)
     {
-      vertex_node& vn = get_vertex(v);
-      unlink_first_edge(vn.in(), has_source(*this, u));
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
+      
+      auto i = find_endpoint(un.begin(), un.end(), v);
+      auto j = find(vn.begin(), vn.end(), *i);
+      if (i != vn.end())
+        erase_edge(un.edges(), i, vn.edges(), j);
     }
 
-  template<typename V, typename E>
-    template<typename S, typename P>
-      inline void
-      undirected_adjacency_list<V, E>::unlink_first_edge(S& seq, P pred)
-      {
-        auto i = find_if(seq, pred);
-        if (i != seq.end());
-          remove_edge(*i);
-      }
+#if 0
 
   // Remove all edges connecting u to v. 
   template<typename V, typename E>
@@ -1103,8 +1144,8 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_out_edges(vertex u, vertex v)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       unlink_multi_edge(un.out(), vn.in(), has_target(*this, v));
     }
 
@@ -1112,8 +1153,8 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_in_edges(vertex u, vertex v)
     {
-      vertex_node& un = get_vertex(u);
-      vertex_node& vn = get_vertex(v);
+      vertex_node& un = node(u);
+      vertex_node& vn = node(v);
       unlink_multi_edge(vn.in(), un.out(), has_source(*this, u));
     }
 
@@ -1148,7 +1189,7 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::remove_edges(vertex v)
     {
-      vertex_node& vn = get_vertex(v);
+      vertex_node& vn = node(v);
       
       // Clear the out edges
       for (auto e : vn.out())
@@ -1165,7 +1206,7 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_target(edge e)
     {
-      vertex_node& t = get_vertex(target(e));
+      vertex_node& t = node(target(e));
       auto i = find(t.in(), e.value);
       t.in().erase(i);
       edges_.erase(e);
@@ -1178,7 +1219,7 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::unlink_source(edge e)
     {
-      vertex_node& t = get_vertex(source(e));
+      vertex_node& t = node(source(e));
       auto i = find(t.out(), e.value);
       t.out().erase(i);
       edges_.erase(e);
@@ -1220,7 +1261,7 @@ namespace origin
     inline auto
     undirected_adjacency_list<V, E>::incident_edges(vertex v) const -> incidence_range
     {
-      const vertex_node& vn = get_vertex(v);
+      const vertex_node& vn = node(v);
       return {incidence_iter(vn.begin()), incidence_iter(vn.end())};
     }
 
