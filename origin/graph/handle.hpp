@@ -85,7 +85,7 @@ namespace origin
   // the same as a normal handle in every way except its type.
   struct vertex_handle : handle
   {
-    vertex_handle(std::size_t n = npos) : handle(n) { }
+    using handle::handle;
   };
 
 
@@ -99,7 +99,7 @@ namespace origin
   // for details.
   struct edge_handle : handle
   {
-    edge_handle(std::size_t n = npos) : handle(n) { }
+    using handle::handle;
   };
 
 

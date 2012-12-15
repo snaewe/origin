@@ -19,12 +19,6 @@ namespace origin
   // The generic graph interface is a set of types and operations defined
   // commonly for various graph data structures.
 
-  template<typename G>
-    using Vertex = typename G::vertex;
-
-  template<typename G>
-    using Edge = typename G::edge;
-
 
   // Returns a range over the vertices of a graph.
   template<typename G>
@@ -45,6 +39,47 @@ namespace origin
   template<typename G>
     inline Vertex<G>
     target(const G& g, Edge<G> e) { return g.target(e); }
+
+  // Returns true if v is an isolated vertex. An isolated vertex is one that
+  // has no incident edges.
+  template<typename G>
+    inline bool
+    is_isolated(const G& g, Vertex<G> v) { return g.degree(v) == 0; }
+
+
+  // Returns true iff v is the source vertex of e.
+  template<typename G>
+    inline bool
+    is_source(const G& g, Edge<G> e, Vertex<G> v) { return source(g, e) == v; }
+
+  // Returns true iff v is the target vertex of e.
+  template<typename G>
+    inline bool
+    is_target(const G& g, Edge<G> e, Vertex<G> v) { return target(g, e) == v; }
+
+  // Returns true iff v is an endpoint (source or target) of e.
+  template<typename G>
+    inline bool
+    is_endpoint(const G& g, Edge<G> e, Vertex<G> v)
+    {
+      return is_source(g, e, v) || is_target(g, e, v);
+    }
+
+  // Returns true if e is a self loop.
+  template<typename G>
+    inline bool
+    is_loop(const G& g, Edge<G> e) { return source(g, e) == target(g, e); }
+
+  // Return the opposite endpoint of the edge e in v. If v is not an endpoint
+  // of e, the result is undefined.
+  template<typename G>
+    inline Vertex<G>
+    opposite(const G& g, Edge<G> e, Vertex<G> v)
+    {
+      assert(is_endpoint(g, e, v));
+      Vertex<G> u = source(g, e);
+      return u == v ? target(g, e) : u;
+    }
 
 
 
@@ -92,7 +127,9 @@ namespace origin
   template<typename G>
     struct has_endpoint
     {
-      has_endpoint(const G& g, Vertex<G> v) : g(g), v(v)  { }
+      has_endpoint(const G& g, Vertex<G> v) 
+        : g(g), v(v)  
+      { }
 
       inline bool
       operator()(Edge<G> e) const
@@ -100,6 +137,24 @@ namespace origin
         return source(g, e) == v || target(g, e) == v;
       }
       
+      const G& g;
+      Vertex<G> v;
+    };
+
+  // Returns true when an edge e is a loop on vertex v.
+  template<typename G>
+    struct is_looped
+    {
+      is_looped(const G& g, Vertex<G> v)
+        : g(g), v(v) 
+      { }
+
+      inline bool
+      operator()(Edge<G> e) const
+      {
+        return is_source(g, e, v) && is_target(g, e, v);
+      }
+
       const G& g;
       Vertex<G> v;
     };

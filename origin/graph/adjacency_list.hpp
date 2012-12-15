@@ -873,7 +873,7 @@ namespace origin
       // Iterators
       vertex_range    vertices() const;
       edge_range      edges() const;
-      incidence_range incident_edges(vertex v) const;
+      incidence_range edges(vertex v) const;
 
     private:
       vertex_node&       node(vertex v)       { return verts_[v]; }
@@ -889,6 +889,8 @@ namespace origin
       void unlink_edge(vertex u, vertex v, edge e);
       void unlink_first_loop(vertex v);
       void unlink_first_edge(vertex u, vertex v);
+      void unlink_multi_loop(vertex v);
+      void unlink_multi_edge(vertex u, vertex v);
 
       template<typename I>
         I find_endpoint(I first, I last, vertex v) const;
@@ -1127,61 +1129,44 @@ namespace origin
         erase_edge(un.edges(), i, vn.edges(), j);
     }
 
-#if 0
-
   // Remove all edges connecting u to v. 
   template<typename V, typename E>
     inline void
     undirected_adjacency_list<V, E>::remove_edges(vertex u, vertex v)
     {
-      if (out_degree(u) <= in_degree(v))
-        unlink_out_edges(u, v);
-      else
-        unlink_in_edges(u, v);
+      if (u == v)
+        unlink_multi_loop(u);
+      else 
+        unlink_multi_edge(u, v);
     }
 
   template<typename V, typename E>
     inline void
-    undirected_adjacency_list<V, E>::unlink_out_edges(vertex u, vertex v)
+    undirected_adjacency_list<V, E>::unlink_multi_loop(vertex v)
     {
-      vertex_node& un = node(u);
-      vertex_node& vn = node(v);
-      unlink_multi_edge(un.out(), vn.in(), has_target(*this, v));
+      using P = is_looped<this_type>;
+      vertex_node& n = node(v);
+      auto i = partition(n, negate(P(*this, v)));
+      for (auto j = i; j != n.end(); advance(j, 2))
+        edges_.erase(*j);
+      n.edges().erase(i, n.end());
     }
 
   template<typename V, typename E>
     inline void
-    undirected_adjacency_list<V, E>::unlink_in_edges(vertex u, vertex v)
+    undirected_adjacency_list<V, E>::unlink_multi_edge(vertex u, vertex v)
     {
+      using P = has_endpoint<this_type>;
       vertex_node& un = node(u);
       vertex_node& vn = node(v);
-      unlink_multi_edge(vn.in(), un.out(), has_source(*this, u));
+
+      auto i = partition(un.edges(), negate(P(*this, v)));
+      auto j = partition(vn.edges(), negate(P(*this, u)));
+      for (auto k = i; k != un.end(); ++k)
+        edges_.erase(*k);
+      un.edges().erase(i, un.end());
+      vn.edges().erase(j, vn.end());
     }
-
-  // Remove all edges from seq1 that are connected to seq2. 
-  template<typename V, typename E>
-    template<typename S1, typename S2, typename P>
-      inline void
-      undirected_adjacency_list<V, E>::unlink_multi_edge(S1& seq1, S2& seq2, P pred)
-      {
-        // Partition the 1st sequence by the given predicate into "save" and
-        // "erase" components. 
-        //
-        // NOTE: We may want this to be a stable partition... not sure. It
-        // seems like the saved edges are not reordered by the partitioning.
-        auto i = partition(seq1, negate(pred));
-        for (auto j = i; j != seq1.end(); ++j) {
-          // Remove those edges from the in 2nd sequence.
-          auto k = remove(seq2, *j);
-          seq2.erase(k, seq2.end());
-
-          // Erase the edge from the graph's edge set.
-          edges_.erase(*j);
-        }
-
-        // Finally, erase those edges from the first sequence.
-        seq1.erase(i, seq1.end());
-      }
 
 
   // Remove all edges incident to the vertex v.
@@ -1191,38 +1176,28 @@ namespace origin
     {
       vertex_node& vn = node(v);
       
-      // Clear the out edges
-      for (auto e : vn.out())
-        unlink_target(e);
-      vn.out().clear();
-      
-      // Clear the in edges
-      for(auto e : vn.in())
-        unlink_source(e);
-      vn.in().clear();
-    }
-
-  template<typename V, typename E>
-    inline void
-    undirected_adjacency_list<V, E>::unlink_target(edge e)
-    {
-      vertex_node& t = node(target(e));
-      auto i = find(t.in(), e.value);
-      t.in().erase(i);
-      edges_.erase(e);
-    }
-
-  // Note that loops will not result in the double erasure of an edge. The
-  // edge is initially erased in unlink_source, and the erase operation
-  // here will have no effect.
-  template<typename V, typename E>
-    inline void
-    undirected_adjacency_list<V, E>::unlink_source(edge e)
-    {
-      vertex_node& t = node(source(e));
-      auto i = find(t.out(), e.value);
-      t.out().erase(i);
-      edges_.erase(e);
+      // Clear the incident edges by removing each edge from the incidence
+      // list of its corresponding endpoint. Handle loops differenty.
+      //
+      // TODO: This looks a little dense. It's also a little inefficient
+      // in the case of multigraphs. Ideally, we should find the set of
+      // edges connecting u to v and erase those in a single block.
+      auto i = vn.begin();
+      while (i != vn.end()) {
+        if (is_loop(*this, *i)) {
+          edges_.erase(*i);
+          std::advance(i, 2);
+        } else {
+          vertex_node& n = node(opposite(*this, *i, v));
+          auto j = find(n.edges(), *i);
+          if (j != n.end()) {
+            n.edges().erase(j);
+            edges_.erase(*i);
+          }
+          ++i;
+        }
+      }
+      vn.edges().clear();
     }
 
 
@@ -1231,14 +1206,10 @@ namespace origin
     inline void
     undirected_adjacency_list<V, E>::remove_edges()
     {
-      for (vertex_node& n : verts_) {
-        n.out().clear();
-        n.in().clear();
-      }
+      for (vertex_node& n : verts_)
+        n.edges().clear();
       edges_.clear();
     }
-
-#endif
 
   // Retrun a range over the vertex set.
   template<typename V, typename E>
@@ -1259,7 +1230,7 @@ namespace origin
   // Return a range over the out edges of the vertex v.
   template<typename V, typename E>
     inline auto
-    undirected_adjacency_list<V, E>::incident_edges(vertex v) const -> incidence_range
+    undirected_adjacency_list<V, E>::edges(vertex v) const -> incidence_range
     {
       const vertex_node& vn = node(v);
       return {incidence_iter(vn.begin()), incidence_iter(vn.end())};

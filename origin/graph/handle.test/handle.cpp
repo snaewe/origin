@@ -88,4 +88,7 @@ int main()
   edge_handle e;
   fe(e); // Ok
   // fv(e); // Error: cannot convert e to v
+
+  // FIXME: This should not work.
+  assert(v == e);
 }
