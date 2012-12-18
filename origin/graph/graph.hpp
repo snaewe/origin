@@ -65,6 +65,21 @@ namespace origin
       return is_source(g, e, v) || is_target(g, e, v);
     }
 
+  template<typename G>
+    inline Requires<Directed_graph<G>(), bool>
+    are_endpoints(const G& g, Edge<G> e, Vertex<G> u, Vertex<G> v)
+    {
+      return is_source(g, e, u) && is_target(g, e, v);
+    }
+
+  template<typename G>
+    inline Requires<Undirected_graph<G>(), bool>
+    are_endpoints(const G& g, Edge<G> e, Vertex<G> u, Vertex<G> v)
+    {
+      return (is_source(g, e, u) && is_target(g, e, v))
+          || (is_source(g, e, v) && is_target(g, e, u));
+    }
+
   // Returns true if e is a self loop.
   template<typename G>
     inline bool
@@ -138,6 +153,26 @@ namespace origin
       }
       
       const G& g;
+      Vertex<G> v;
+    };
+
+  // Returns true if an edge has endpoints equal to u and v (in that order).
+  // If G is undirected, then 
+  template<typename G>
+    struct has_endpoints
+    {
+      has_endpoints(const G& g, Vertex<G> u, Vertex<G> v)
+        : g(g), u(u), v(v)
+      { }
+
+      inline bool
+      operator()(Edge<G> e) const
+      {
+        return are_endpoints(g, e, u, v);
+      }
+
+      const G& g;
+      Vertex<G> u;
       Vertex<G> v;
     };
 

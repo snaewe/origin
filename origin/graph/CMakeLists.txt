@@ -14,5 +14,6 @@ origin_module(
 
   EXPORT handle
          adjacency_list
+         adjacency_vector
 )
 
