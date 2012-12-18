@@ -694,7 +694,8 @@ namespace origin
   // if no such edges exist.
   //
   // Note that, if u and v are connected, then the edge was added as either
-  // (u, v) or (v, u).
+  // (u, v) or (v, u). We prefer to search the vertex with the smaller degree
+  // for evidence of either construction.
   template<typename V, typename E>
     inline auto
     undirected_adjacency_vector<V, E>::find_edge(vertex u, vertex v) const -> edge
